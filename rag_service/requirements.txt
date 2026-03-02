@@ -1,0 +1,21 @@
+# Service ETL RAG — dépendances indépendantes du service principal
+
+# Framework HTTP
+fastapi==0.115.0
+uvicorn[standard]==0.30.6
+
+# Validation config
+pydantic-settings==2.5.2
+
+# Embeddings
+openai==1.51.0
+
+# Base de données vectorielle
+qdrant-client==1.12.1
+
+# Lecture de documents
+pypdf==4.3.1
+python-docx==1.1.2
+
+# Variables d'environnement
+python-dotenv==1.0.1

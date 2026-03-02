@@ -1,0 +1,119 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;600;700;800&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ── CSS custom properties ─────────────────────────────────── */
+/* Light mode (default) */
+:root {
+  --bg:      #f1f5f9;
+  --card:    #ffffff;
+  --border:  #e2e8f0;
+  --primary: #6366f1;
+  --muted:   hsl(215 15% 45%);
+  --radius:  0.75rem;
+}
+
+/* Dark mode */
+.dark {
+  --bg:     #0b1220;
+  --card:   #0f1929;
+  --border: rgba(255,255,255,0.06);
+  --muted:  hsl(215 15% 55%);
+}
+
+/* ── Global ─────────────────────────────────────────────────── */
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  background: var(--bg);
+}
+
+/* ── Scrollbars ─────────────────────────────────────────────── */
+::-webkit-scrollbar            { width: 4px; height: 4px; }
+::-webkit-scrollbar-track      { background: transparent; }
+::-webkit-scrollbar-thumb      { background: rgba(0,0,0,.10); border-radius: 2px; }
+::-webkit-scrollbar-thumb:hover{ background: rgba(99,102,241,.5); }
+.dark ::-webkit-scrollbar-thumb      { background: rgba(255,255,255,.07); }
+.dark ::-webkit-scrollbar-thumb:hover{ background: rgba(99,102,241,.45); }
+
+/* ── Utility : glass panel ──────────────────────────────────── */
+.glass-panel {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  box-shadow: 0 1px 3px rgba(0,0,0,.05), 0 4px 16px rgba(0,0,0,.04);
+}
+
+.dark .glass-panel {
+  background: rgba(15, 25, 41, 0.75);
+  border-color: rgba(255, 255, 255, 0.06);
+  box-shadow: 0 1px 3px rgba(0,0,0,.3);
+}
+
+/* ── Utility : glow border ──────────────────────────────────── */
+.glow-border {
+  border-color: rgba(99, 102, 241, 0.4) !important;
+  box-shadow: 0 0 0 1px rgba(99, 102, 241, 0.12), 0 0 24px rgba(99, 102, 241, 0.08);
+}
+
+/* ── Utility : text gradient ────────────────────────────────── */
+.text-gradient {
+  background: linear-gradient(135deg, #6366f1 0%, #818cf8 55%, #a5b4fc 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ── Font display (Space Grotesk) ───────────────────────────── */
+.font-display {
+  font-family: 'Space Grotesk', system-ui, sans-serif;
+}
+
+/* ── Input focus ring — indigo ──────────────────────────────── */
+.field:focus {
+  outline: none;
+  border-color: rgba(99,102,241,.5) !important;
+  box-shadow: 0 0 0 3px rgba(99,102,241,.10);
+}
+
+/* ── Range input ────────────────────────────────────────────── */
+input[type=range] { accent-color: #6366f1; }
+
+/* ── Select option background in dark mode ──────────────────── */
+.dark option { background: #0b1220; }
+
+/* ── Sidebar label utility ──────────────────────────────────── */
+.sidebar-label {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #64748b;
+}
+
+/* ── Word document typography ───────────────────────────────── */
+.word-body h1 { font-size:1.35rem; font-weight:700; color:#1e3a5f; margin:1.5rem 0 .5rem; }
+.word-body h2 {
+  font-size: 1.1rem; font-weight: 700; color: #1e3a5f;
+  margin: 1.8rem 0 .6rem; padding-bottom: .3rem;
+  border-bottom: 2px solid #1e3a5f;
+}
+.word-body h3 { font-size:1rem; font-weight:600; color:#2c5282; margin:1.2rem 0 .4rem; }
+.word-body p  { margin:0 0 .75rem; line-height:1.7; }
+.word-body ul, .word-body ol { padding-left:1.4rem; margin:.4rem 0 .75rem; }
+.word-body li { margin-bottom:.3rem; line-height:1.6; }
+.word-body strong { font-weight:700; }
+.word-body blockquote { border-left:3px solid #1e3a5f; padding-left:.75rem; color:#555; margin:.5rem 0; font-style:italic; }
+
+.word-body table { width:100%; border-collapse:collapse; margin:.9rem 0; font-size:.875rem; }
+.word-body thead tr { background:#1e3a5f; }
+.word-body th { color:#fff; padding:.45rem .8rem; text-align:left; font-weight:600; font-size:.825rem; letter-spacing:.02em; }
+.word-body td { border:1px solid #d1d5db; padding:.4rem .8rem; vertical-align:top; }
+.word-body tr:nth-child(even) td { background:#f3f6fb; }
+.word-body tr:hover td { background:#eef2f9; }
