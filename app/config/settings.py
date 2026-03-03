@@ -1,4 +1,5 @@
 from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic import model_validator
 from functools import lru_cache
 
 
@@ -71,6 +72,23 @@ class Settings(BaseSettings):
     # Authentification JWT
     # ------------------------------------------------------------------
 
+    # Origines autorisées pour les requêtes cross-origin (CORS).
+    # En développement (app_debug=True), ce champ est ignoré et tout est autorisé ("*").
+    # En production, lister explicitement le ou les domaines du frontend.
+    # Format dans .env : ALLOWED_ORIGINS=["https://monsite.com"]
+    # Si vide en production, le CORS sera bloqué → le frontend ne peut pas appeler l'API.
+    allowed_origins: list[str] = []
+    """Origines CORS autorisées en production. Vide = bloque tout en prod."""
+
+    # Liste blanche d'emails autorisés à s'inscrire.
+    # Format dans .env : ALLOWED_EMAILS=["alice@x.com","bob@y.com"]
+    # Vide = inscription ouverte à tous.
+    allowed_emails: list[str] = []
+    """Emails autorisés à s'inscrire. Vide = inscription ouverte."""
+
+    # Valeur par défaut intentionnellement faible : elle est connue publiquement
+    # (visible sur GitHub). En production, cette valeur DOIT être remplacée.
+    # Génération d'une clé forte : openssl rand -hex 32
     jwt_secret_key: str = "change-me-in-production"
     """Clé secrète pour signer les tokens JWT. À surcharger via JWT_SECRET_KEY dans .env."""
 
@@ -79,6 +97,64 @@ class Settings(BaseSettings):
 
     jwt_expire_minutes: int = 10080
     """Durée de vie des tokens JWT en minutes (défaut : 7 jours)."""
+
+    # ------------------------------------------------------------------
+    # Timeouts LLM
+    # ------------------------------------------------------------------
+
+    # Durée maximale d'un appel LLM individuel (brief ou section unique).
+    # Si le provider ne répond pas dans ce délai, on lève TimeoutError
+    # plutôt que de laisser la coroutine bloquer indéfiniment.
+    # Valeur recommandée : 60s par appel (les sections tournent en parallèle,
+    # donc le timeout total ressenti par l'utilisateur est ~60s, pas 8×60s).
+    llm_timeout_seconds: float = 60.0
+    """Timeout en secondes pour chaque appel LLM individuel (défaut : 60s)."""
+
+    @model_validator(mode="after")
+    def _valider_jwt_secret(self) -> "Settings":
+        """
+        Vérifie la sécurité de jwt_secret_key au démarrage de l'application.
+
+        Ce validateur s'exécute UNE SEULE FOIS quand Settings() est instancié,
+        c'est-à-dire au démarrage du serveur — pas à chaque requête.
+
+        Deux règles :
+        1. En production (APP_ENV=production), la clé par défaut est refusée.
+           Raison : cette valeur est publique sur GitHub → n'importe qui peut forger
+           des tokens valides s'il connaît la clé.
+
+        2. La clé doit faire au moins 32 caractères dans tous les environnements.
+           Raison : HS256 signe avec HMAC-SHA256. Une clé courte est vulnérable
+           aux attaques par dictionnaire.
+
+        Si une règle est violée → ValueError → l'application refuse de démarrer
+        avec un message d'erreur explicite.
+        """
+        cle_par_defaut = "change-me-in-production"
+
+        # Règle 1 : interdire la clé par défaut en production
+        if self.app_env == "production" and self.jwt_secret_key == cle_par_defaut:
+            raise ValueError(
+                "\n\n"
+                "  [SECURITE] JWT_SECRET_KEY est la valeur par défaut.\n"
+                "  En production, cette clé est publique sur GitHub : n'importe qui\n"
+                "  peut créer des tokens valides et usurper n'importe quel compte.\n\n"
+                "  Solution :\n"
+                "    1. Générez une clé forte : openssl rand -hex 32\n"
+                "    2. Ajoutez dans votre .env de prod : JWT_SECRET_KEY=<votre_clé>\n"
+            )
+
+        # Règle 2 : longueur minimale de 32 caractères (tous environnements)
+        if len(self.jwt_secret_key) < 32:
+            raise ValueError(
+                "\n\n"
+                "  [SECURITE] JWT_SECRET_KEY est trop courte "
+                f"({len(self.jwt_secret_key)} caractères, minimum : 32).\n"
+                "  Une clé courte est vulnérable aux attaques par dictionnaire.\n\n"
+                "  Solution : openssl rand -hex 32\n"
+            )
+
+        return self
 
     model_config = SettingsConfigDict(
         env_file=".env",

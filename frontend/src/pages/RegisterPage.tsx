@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { register } from '../api';
+import { useState, useEffect } from 'react';
+import { register, getPasswordRules, type PasswordRules } from '../api';
 
 type Props = {
   onSuccess: () => void;
@@ -13,6 +13,11 @@ export default function RegisterPage({ onSuccess, onGoLogin }: Props) {
   const [password, setPassword] = useState('');
   const [error,    setError]    = useState('');
   const [loading,  setLoading]  = useState(false);
+
+  // Règles chargées depuis le backend au montage du composant.
+  // Valeurs par défaut identiques aux constantes Python pendant le chargement.
+  const [rules, setRules] = useState<PasswordRules>({ min_length: 8, require_digit: true });
+  useEffect(() => { getPasswordRules().then(setRules); }, []);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -127,14 +132,18 @@ export default function RegisterPage({ onSuccess, onGoLogin }: Props) {
             </div>
             <div>
               <label className="block text-xs text-slate-400 mb-1.5 font-medium">
-                Mot de passe <span className="text-slate-600">(min. 6 caractères)</span>
+                Mot de passe{' '}
+                <span className="text-slate-600">
+                  {/* Le hint est construit dynamiquement depuis les règles du backend */}
+                  (min. {rules.min_length} caractères{rules.require_digit ? ', 1 chiffre' : ''})
+                </span>
               </label>
               <input
                 type="password"
                 value={password}
                 onChange={e => setPassword(e.target.value)}
                 placeholder="••••••••"
-                minLength={6}
+                minLength={rules.min_length}
                 required
                 style={inputStyle}
               />

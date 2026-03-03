@@ -8,15 +8,14 @@ from app.services.ao_parser_service import AOParserService
 from app.services.prompt_builder_service import PromptBuilderService
 from app.services.generation_service import GenerationService
 from app.services.rag_service import RagService
-from app.services.usage_service import UsageService
+from app.services.usage_service import UsageService, get_usage_service as _get_usage_service
 from app.services.history_service import HistoryService
 from app.services.user_service import UserService, get_user_service
 
 _bearer = HTTPBearer(auto_error=False)
 
-# Singletons — initialisés une seule fois au démarrage
-_rag_instance:   RagService   | None = None
-_usage_instance: UsageService | None = None
+# Singleton RAG — initialisé une seule fois au démarrage
+_rag_instance: RagService | None = None
 
 
 @lru_cache
@@ -50,11 +49,8 @@ def get_rag_service(settings: Settings = Depends(get_settings)) -> RagService:
 
 
 def get_usage_service() -> UsageService:
-    """Fournit l'instance singleton du compteur d'usage."""
-    global _usage_instance
-    if _usage_instance is None:
-        _usage_instance = UsageService()
-    return _usage_instance
+    """Fournit l'instance singleton du compteur d'usage (SQLite)."""
+    return _get_usage_service()
 
 
 @lru_cache(maxsize=1)

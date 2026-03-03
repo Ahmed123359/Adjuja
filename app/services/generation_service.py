@@ -64,10 +64,23 @@ class GenerationService:
         provider = self._creer_provider(request)
 
         # Étape 3 : Brief stratégique
+        # wait_for lève asyncio.TimeoutError si le provider ne répond pas dans le délai.
+        # On attrape cette exception séparément pour donner un message d'erreur précis.
         brief_sys, brief_usr = self._prompt_builder.build_brief_prompt(ao_parse, request)
         try:
-            brief_text, brief_tokens = await provider.generate_text(
-                brief_sys, brief_usr, _BRIEF_MAX_TOKENS, request.temperature
+            brief_text, brief_tokens = await asyncio.wait_for(
+                provider.generate_text(brief_sys, brief_usr, _BRIEF_MAX_TOKENS, request.temperature),
+                timeout=self._settings.llm_timeout_seconds,
+            )
+        except asyncio.TimeoutError:
+            return GenerationResult(
+                succes=False,
+                provider_utilise=provider.provider_name,
+                model_utilise=provider.current_model,
+                erreur=(
+                    f"Timeout : le brief stratégique n'a pas répondu en "
+                    f"{self._settings.llm_timeout_seconds:.0f}s. Réessayez."
+                ),
             )
         except Exception as e:
             return GenerationResult(
@@ -89,11 +102,17 @@ class GenerationService:
             sys_p, usr_p = self._prompt_builder.build_section_prompt(
                 cfg, ao_parse, request, brief_text, rag_context=rag_context
             )
-            return await provider.generate_text(sys_p, usr_p, _SECTION_MAX_TOKENS, request.temperature)
+            # Timeout individuel par section : si une section bloque, elle ne retarde pas
+            # les autres (les coroutines tournent en parallèle), mais elle échoue proprement.
+            return await asyncio.wait_for(
+                provider.generate_text(sys_p, usr_p, _SECTION_MAX_TOKENS, request.temperature),
+                timeout=self._settings.llm_timeout_seconds,
+            )
 
         try:
             section_results = await asyncio.gather(
-                *[_gen_section(c) for c in sections_config]
+                *[_gen_section(c) for c in sections_config],
+                return_exceptions=True,
             )
         except Exception as e:
             return GenerationResult(
@@ -102,6 +121,26 @@ class GenerationService:
                 model_utilise=provider.current_model,
                 erreur=f"Erreur lors de la génération des sections : {e}",
             )
+
+        # Vérifier si une section a levé une exception (TimeoutError ou autre)
+        for i, res in enumerate(section_results):
+            if isinstance(res, asyncio.TimeoutError):
+                return GenerationResult(
+                    succes=False,
+                    provider_utilise=provider.provider_name,
+                    model_utilise=provider.current_model,
+                    erreur=(
+                        f"Timeout : la section '{sections_config[i].titre}' n'a pas répondu en "
+                        f"{self._settings.llm_timeout_seconds:.0f}s. Réessayez."
+                    ),
+                )
+            if isinstance(res, Exception):
+                return GenerationResult(
+                    succes=False,
+                    provider_utilise=provider.provider_name,
+                    model_utilise=provider.current_model,
+                    erreur=f"Erreur lors de la section '{sections_config[i].titre}' : {res}",
+                )
 
         # Étape 5 : Assemblage
         sections: list[SectionReponse] = []

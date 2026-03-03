@@ -1,3 +1,5 @@
+import logging
+import time
 from fastapi import APIRouter, Depends, HTTPException, status
 from app.models.generation import GenerationRequest, GenerationResult
 from app.models.history import HistoryEntry
@@ -9,6 +11,7 @@ from app.api.dependencies import get_generation_service, get_usage_service, get_
 from app.api.routes.defaults_routes import _load_defaults
 
 router = APIRouter(prefix="/generate", tags=["Génération"])
+logger = logging.getLogger(__name__)
 
 
 @router.post(
@@ -62,13 +65,30 @@ async def generate_response(
     if not request.instructions_supplementaires and limits.instructions:
         request = request.model_copy(update={'instructions_supplementaires': limits.instructions})
 
+    logger.info(
+        "Génération démarrée — user=%s provider=%s model=%s langue=%s",
+        current_user.id, request.provider.value, request.model, request.langue,
+    )
+    debut = time.monotonic()
+
     try:
         result = await service.generate(request)
         if not result.succes:
+            # Erreur remontée par le service (ex: clé API invalide, quota LLM)
+            logger.error(
+                "Génération échouée — user=%s provider=%s erreur=%s",
+                current_user.id, request.provider.value, result.erreur,
+            )
             raise HTTPException(
                 status_code=status.HTTP_502_BAD_GATEWAY,
                 detail=result.erreur or "Erreur lors de la génération.",
             )
+
+        duree = time.monotonic() - debut
+        logger.info(
+            "Génération réussie — user=%s provider=%s tokens=%d durée=%.1fs",
+            current_user.id, result.provider_utilise, result.tokens_utilises or 0, duree,
+        )
 
         usage.add(result.tokens_utilises or 0)
 
@@ -89,12 +109,15 @@ async def generate_response(
     except HTTPException:
         raise
     except ValueError as e:
+        logger.warning("Paramètres invalides — user=%s erreur=%s", current_user.id, e)
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=str(e),
         )
     except Exception as e:
+        # exc_info=True inclut la stacktrace complète dans les logs pour diagnostic
+        logger.error("Erreur interne inattendue — user=%s", current_user.id, exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Erreur interne : {str(e)}",
+            detail="Une erreur interne est survenue.",
         )

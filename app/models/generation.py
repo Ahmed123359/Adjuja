@@ -63,7 +63,8 @@ class GenerationRequest(BaseModel):
     ao_texte: str = Field(
         ...,
         min_length=50,
-        description="Texte complet de l'appel d'offres (minimum 50 caractères)",
+        max_length=50_000,
+        description="Texte complet de l'appel d'offres (entre 50 et 50 000 caractères)",
     )
     provider: ProviderEnum = Field(
         default=ProviderEnum.ANTHROPIC,

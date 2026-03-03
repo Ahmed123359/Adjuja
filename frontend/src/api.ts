@@ -46,6 +46,21 @@ function buildDescription(d: CompanyData): string {
 
 // ── Authentification ───────────────────────────────────────────────────
 
+// Règles de mot de passe telles que définies côté backend.
+// Récupérées via l'API pour éviter toute duplication : modifier les constantes
+// Python dans user.py suffit pour mettre à jour le formulaire d'inscription.
+export type PasswordRules = { min_length: number; require_digit: boolean };
+
+export async function getPasswordRules(): Promise<PasswordRules> {
+  const res = await fetch('/api/v1/auth/password-rules');
+  if (!res.ok) {
+    // En cas d'échec réseau, on revient sur des valeurs conservatrices
+    // pour ne pas bloquer l'affichage du formulaire.
+    return { min_length: 8, require_digit: true };
+  }
+  return res.json();
+}
+
 export async function register(params: {
   nom: string; prenom: string; email: string; password: string;
 }): Promise<void> {
@@ -55,7 +70,15 @@ export async function register(params: {
     body:    JSON.stringify(params),
   });
   const data = await res.json();
-  if (!res.ok) throw new Error(typeof data.detail === 'string' ? data.detail : 'Erreur inscription.');
+  if (!res.ok) {
+    // Pydantic retourne detail comme tableau en cas d'erreur 422 (validation)
+    // ex: [{ loc: ["body","password"], msg: "Le mot de passe doit contenir au moins 8 caractères." }]
+    // Pour les autres erreurs (409 email déjà pris...), detail est une string.
+    if (Array.isArray(data.detail)) {
+      throw new Error(data.detail.map((e: { msg: string }) => e.msg).join(' '));
+    }
+    throw new Error(typeof data.detail === 'string' ? data.detail : 'Erreur inscription.');
+  }
   setToken(data.access_token);
 }
 

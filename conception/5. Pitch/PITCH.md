@@ -141,6 +141,48 @@ structurée et sur-mesure — en quelques secondes.
 
 ---
 
+## Ce que ça coûte vraiment : la transparence des coûts LLM
+
+> *Contrairement aux SaaS opaques, OffrIA vous laisse choisir votre provider et voir exactement ce que vous payez.*
+
+### Coût par génération (1 réponse AO complète = 9 appels LLM)
+
+| Provider | Modèle | Coût estimé / génération | Idéal pour |
+|---|---|:---:|---|
+| **Anthropic** | Claude Sonnet | ~1,65 MAD | Usage quotidien |
+| **Anthropic** | Claude Opus | ~8,25 MAD | AO complexes, enjeux élevés |
+| **OpenAI** | GPT-4o | ~2,20 MAD | Formulation commerciale |
+| **Mistral AI** | Mistral Large | ~0,90 MAD | Volume, souveraineté EU |
+
+*Estimations basées sur ~25 000 tokens par génération (input + output). Taux de change : 1 € ≈ 11 MAD. Prix indicatifs, mars 2026.*
+
+### Comparaison avec l'alternative humaine
+
+```
+Rédacteur AO sénior (salaire)     : 10 000 MAD / mois
+Jours ouvrés                       : 22 jours → ~450 MAD / jour
+Temps moyen sur un AO              : 2 jours
+──────────────────────────────────────────────────────
+Coût d'une réponse humaine         : ~900 MAD
+
+Coût d'une réponse OffrIA (Sonnet) : ~1,65 MAD
+──────────────────────────────────────────────────────
+Rapport coût                       : ×545
+```
+
+### Exemple concret : 20 AO / mois
+
+| Scénario | Coût LLM / mois | Coût humain équivalent |
+|---|:---:|:---:|
+| 20 AO avec Mistral Large | ~18 MAD | ~18 000 MAD |
+| 20 AO avec Claude Sonnet | ~33 MAD | ~18 000 MAD |
+| 20 AO avec Claude Opus | ~165 MAD | ~18 000 MAD |
+
+> **La vraie question n'est pas "combien ça coûte ?" mais "combien ça rapporte ?"**
+> Un seul marché remporté grâce à OffrIA rembourse des années d'utilisation.
+
+---
+
 ## Architecture technique (pour les curieux)
 
 ```
