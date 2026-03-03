@@ -170,6 +170,7 @@ export default function App({ onGoLanding }: { onGoLanding: () => void }) {
           onGenerate={handleGenerate}
           loading={appState === 'loading'}
           limitReached={isLimitReached}
+          isDark={isDark}
         />
         <RightPanel
           state={appState}

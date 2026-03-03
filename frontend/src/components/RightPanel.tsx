@@ -357,7 +357,7 @@ export default function RightPanel({ state, result, error, company, aoText, onRe
     });
   }
 
-  return (
+return (
     <div className="flex-1 flex flex-col overflow-hidden bg-slate-50 dark:bg-navy-900">
       {state === 'idle'    && <Dashboard usage={usage} ragStatus={ragStatus} history={history} onLoadHistory={onLoadHistory} onDeleteHistory={onDeleteHistory} onClearHistory={onClearHistory} />}
       {state === 'loading' && <Loading provider={result?.provider_utilise} model={result?.model_utilise} />}
@@ -383,7 +383,7 @@ export default function RightPanel({ state, result, error, company, aoText, onRe
               )}
             </div>
             <div className="flex items-center gap-2">
-              <button onClick={copyText}
+<button onClick={copyText}
                 className={`text-xs px-3 py-1.5 rounded-lg border transition-all ${
                   copied
                     ? 'bg-indigo-50 dark:bg-indigo-500/[.10] border-indigo-200 dark:border-indigo-500/30 text-indigo-600 dark:text-indigo-400'
