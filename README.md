@@ -19,6 +19,8 @@ en utilisant des modèles de langage (LLM) de votre choix : **Anthropic Claude**
 - [Design patterns et principes POO](#design-patterns-et-principes-poo)
 - [Installation](#installation)
 - [Configuration](#configuration)
+- [Authentification](#authentification)
+- [Base de données SQLite](#base-de-données-sqlite)
 - [Base de connaissances (RAG)](#base-de-connaissances-rag)
 - [Lancement](#lancement)
 - [Interface web](#interface-web)
@@ -227,7 +229,9 @@ reponse_ao_generation/
 │   │
 │   ├── models/
 │   │   ├── appel_offre.py             # AppelOffre, Section, Critere, TypeMarche
-│   │   └── generation.py             # GenerationRequest, GenerationResult, CompanyContext…
+│   │   ├── generation.py              # GenerationRequest, GenerationResult, CompanyContext…
+│   │   ├── history.py                 # HistoryEntry, HistorySummary (avec user_id)
+│   │   └── user.py                    # UserCreate, UserPublic, Token  ← NEW
 │   │
 │   ├── providers/                     # Couche d'abstraction LLM
 │   │   ├── base.py                    # AbstractLLMProvider (ABC)
@@ -240,13 +244,19 @@ reponse_ao_generation/
 │   │   ├── ao_parser_service.py       # Parse texte brut → AppelOffre structuré
 │   │   ├── prompt_builder_service.py  # Construit les prompts par section
 │   │   ├── generation_service.py      # Orchestration : brief + 8 sections en parallèle
-│   │   └── rag_service.py             # Lecture Qdrant (read-only, dégradation gracieuse)
+│   │   ├── rag_service.py             # Lecture Qdrant (read-only, dégradation gracieuse)
+│   │   ├── history_service.py         # CRUD SQLite table launches (filtre par user_id)
+│   │   ├── usage_service.py           # Compteur d'appels et tokens (global)
+│   │   └── user_service.py            # CRUD SQLite table users + vérification bcrypt  ← NEW
 │   │
 │   └── api/
-│       ├── dependencies.py            # Injection de dépendances FastAPI
+│       ├── dependencies.py            # Injection de dépendances + get_current_user()
 │       └── routes/
-│           ├── generation_routes.py   # POST /api/v1/generate
+│           ├── auth_routes.py         # POST /auth/register · /auth/login · GET /auth/me  ← NEW
+│           ├── generation_routes.py   # POST /api/v1/generate  (🔒 Bearer requis)
+│           ├── history_routes.py      # GET/DELETE /api/v1/history  (🔒 Bearer requis)
 │           ├── models_routes.py       # GET  /api/v1/models
+│           ├── usage_routes.py        # GET  /api/v1/usage
 │           └── rag_routes.py          # GET  /api/v1/rag/status · POST /api/v1/rag/index
 │
 ├── rag_service/                       # Microservice ETL (démarrage indépendant)
@@ -264,11 +274,18 @@ reponse_ao_generation/
 │   ├── company/                       # Présentation entreprise
 │   └── templates/                     # Modèles de réponses AO
 │
+├── data/                              # Données persistantes  ← NEW
+│   └── offria.db                      # SQLite : tables users + launches
+│
 ├── frontend/                          # Interface web React + Vite + Tailwind CSS
 │   ├── src/
-│   │   ├── components/                # Header, FormPanel, ResultPanel…
-│   │   ├── hooks/                     # useGenerate, useRagStatus…
-│   │   └── types.ts                   # Types TypeScript partagés
+│   │   ├── components/                # Header (affiche prénom + déconnexion), ...
+│   │   ├── pages/
+│   │   │   ├── LoginPage.tsx          # Formulaire de connexion  ← NEW
+│   │   │   └── RegisterPage.tsx       # Formulaire d'inscription  ← NEW
+│   │   ├── api.ts                     # Appels HTTP + helpers token Bearer
+│   │   ├── main.tsx                   # Root : machine d'état auth (loading/login/app)
+│   │   └── types.ts                   # Types TypeScript partagés (+ interface User)
 │   ├── index.html
 │   ├── vite.config.ts
 │   └── package.json
@@ -373,12 +390,143 @@ DEFAULT_MODEL=claude-opus-4-6
 APP_PORT=8000
 APP_DEBUG=true
 
+# Authentification JWT
+JWT_SECRET_KEY=offria-super-secret-change-me-in-production
+JWT_ALGORITHM=HS256
+JWT_EXPIRE_MINUTES=10080          # 7 jours
+
 # RAG (optionnel — dégradation gracieuse si absent)
 QDRANT_URL=http://qdrant:6333      # URL de la base vectorielle Qdrant
 RAG_ETL_URL=http://rag-etl:8001   # URL du microservice ETL (pour proxy /index)
 ```
 
 > Si `QDRANT_URL` n'est pas défini, la génération fonctionne normalement sans enrichissement RAG.
+>
+> **Important :** changer `JWT_SECRET_KEY` avant toute mise en production. Une clé faible
+> permettrait de forger des tokens valides.
+
+---
+
+## Authentification
+
+OffrIA utilise des **tokens JWT Bearer** pour protéger les routes de génération et d'historique.
+L'inscription est libre — n'importe qui peut créer un compte.
+
+### Flux utilisateur
+
+```
+Ouverture de l'app
+       │
+       ▼
+Token dans localStorage ?
+   ├── Oui → GET /auth/me ──► valide → page App
+   │                       └► 401   → page Login
+   └── Non → page Landing → CTA "Commencer" → page Login
+
+Login (POST /auth/login)
+   ├── Succès → token saved → page App
+   └── "S'inscrire" → page Register
+
+Register (POST /auth/register)
+   └── Succès → token saved → page App
+
+Déconnexion → token supprimé → page Login
+```
+
+### Endpoints auth
+
+| Méthode | Route | Corps | Description |
+|---------|-------|-------|-------------|
+| `POST` | `/api/v1/auth/register` | `{ nom, prenom, email, password }` | Crée un compte + retourne un token |
+| `POST` | `/api/v1/auth/login` | `{ email, password }` | Connexion + retourne un token |
+| `GET` | `/api/v1/auth/me` | — (Bearer requis) | Profil de l'utilisateur connecté |
+
+**Réponse token :**
+```json
+{ "access_token": "eyJhbGci...", "token_type": "bearer" }
+```
+
+**Utilisation dans les requêtes protégées :**
+```http
+Authorization: Bearer eyJhbGci...
+```
+
+### Routes protégées (Bearer requis)
+
+| Route | Remarque |
+|-------|----------|
+| `POST /api/v1/generate` | L'historique est automatiquement lié à l'utilisateur connecté |
+| `GET  /api/v1/history` | Retourne uniquement les lancements de l'utilisateur connecté |
+| `GET  /api/v1/history/{id}` | Accessible uniquement si l'entrée appartient à l'utilisateur |
+| `DELETE /api/v1/history/{id}` | Idem |
+| `DELETE /api/v1/history` | Vide uniquement l'historique de l'utilisateur connecté |
+| `GET  /api/v1/usage` | Compteur global (non isolé par user) |
+
+### Routes publiques (sans token)
+
+`/health`, `/api/v1/models`, `/api/v1/defaults`, `/api/v1/auth/*`, `/ui/*`
+
+---
+
+## Base de données SQLite
+
+Les données persistantes sont stockées dans `data/offria.db` (SQLite, stdlib Python).
+
+### Schéma
+
+```sql
+-- Table des utilisateurs
+CREATE TABLE IF NOT EXISTS users (
+    id          TEXT PRIMARY KEY,       -- UUID v4
+    nom         TEXT NOT NULL,
+    prenom      TEXT NOT NULL,
+    email       TEXT UNIQUE NOT NULL,
+    hashed_pwd  TEXT NOT NULL,          -- bcrypt
+    created_at  TEXT NOT NULL           -- ISO 8601
+);
+
+-- Table des lancements (historique de génération)
+CREATE TABLE IF NOT EXISTS launches (
+    id              TEXT PRIMARY KEY,   -- UUID v4
+    user_id         TEXT NOT NULL,
+    created_at      TEXT NOT NULL,
+    ao_excerpt      TEXT NOT NULL,      -- 150 premiers caractères de l'AO
+    company_nom     TEXT NOT NULL,
+    provider        TEXT NOT NULL,
+    model           TEXT NOT NULL,
+    tokens_utilises INTEGER NOT NULL,
+    langue          TEXT NOT NULL DEFAULT 'fr',
+    result_json     TEXT NOT NULL,      -- GenerationResult sérialisé en JSON
+    FOREIGN KEY (user_id) REFERENCES users(id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_launches_user_id ON launches(user_id);
+```
+
+### Accès à la base
+
+**Via Docker :**
+```bash
+docker exec -it ao_api sqlite3 /app/data/offria.db ".tables"
+docker exec -it ao_api sqlite3 /app/data/offria.db "SELECT id, prenom, email FROM users;"
+```
+
+**Via GUI :** [DB Browser for SQLite](https://sqlitebrowser.org/) — ouvrir `data/offria.db`
+
+**Via VS Code :** extension *SQLite Viewer* (qwtel.sqlite-viewer)
+
+### Volume Docker
+
+Le répertoire `data/` est monté en volume dans `docker-compose.yml` pour persister la base
+entre les redémarrages :
+
+```yaml
+volumes:
+  - ./data:/app/data
+```
+
+> Créer le dossier `data/` sur la machine hôte avant le premier `docker compose up`
+> (ou utiliser le fichier `data/.gitkeep` fourni dans le repo).
 
 ---
 
@@ -517,63 +665,124 @@ docker compose -f docker-compose.yml -f docker-compose.dev.yml up
 
 L'interface graphique React est accessible à [http://localhost:8000/ui/](http://localhost:8000/ui/).
 
+### Pages d'authentification
+
+À l'ouverture, l'application vérifie si un token valide est présent dans le `localStorage`.
+Si non, la page de connexion s'affiche.
+
 ```
-┌─────────────────────────────────────────────────────────────────────┐
-│  OffrIA          ● API active   RAG · 342 chunks   [Réindexer]     │
-├──────────────────────┬──────────────────────────────────────────────┤
-│                      │                                              │
-│  01  Document AO     │     Zone de résultats                       │
-│  ┌────────────────┐  │                                              │
-│  │  Drop zone     │  │   Anthropic · claude-opus-4-6               │
-│  │  .txt / .pdf   │  │   9 appels LLM · 8 247 tokens               │
-│  └────────────────┘  │                                              │
-│  ou coller le texte  │   ┌──────────────────────────────────────┐  │
-│                      │   │ PRÉSENTATION DE L'ENTREPRISE         │  │
-│  02  Modèle LLM      │   │ ...                                  │  │
-│  ◆ Anthropic         │   └──────────────────────────────────────┘  │
-│  ○ OpenAI            │   ┌──────────────────────────────────────┐  │
-│  ⟡ Mistral           │   │ COMPRÉHENSION DES BESOINS            │  │
-│  [claude-opus-4-6 ▼] │   │ ...                                  │  │
-│                      │   └──────────────────────────────────────┘  │
-│  03  Entreprise      │                                              │
-│  [Nom ____________]  │                                              │
-│  [Description _____] │                                              │
-│                      │                                              │
-│  04  Paramètres      │                                              │
-│  Créativité ━━●━━    │                                              │
-│  Tokens [4096]       │                                              │
-│                      │                                              │
-│  [ Générer →       ] │                                              │
-└──────────────────────┴──────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────┐
+│              OffrIA                               │
+│                                                  │
+│   Connectez-vous à votre espace                  │
+│   ┌────────────────────────────────────────┐     │
+│   │  Email                                 │     │
+│   └────────────────────────────────────────┘     │
+│   ┌────────────────────────────────────────┐     │
+│   │  Mot de passe                          │     │
+│   └────────────────────────────────────────┘     │
+│   [ Se connecter ]   Pas de compte ? S'inscrire  │
+└──────────────────────────────────────────────────┘
+```
+
+### Application principale
+
+```
+┌───────────────────────────────────────────────────────────────────────────┐
+│  OffrIA  ● API active  RAG · 342 chunks  [Réindexer]  Youssef  [Logout]  │
+├──────────────────────┬────────────────────────────────────────────────────┤
+│                      │                                                    │
+│  01  Document AO     │     Zone de résultats                             │
+│  ┌────────────────┐  │                                                    │
+│  │  Drop zone     │  │   Anthropic · claude-opus-4-6                     │
+│  │  .txt / .pdf   │  │   9 appels LLM · 8 247 tokens                     │
+│  └────────────────┘  │                                                    │
+│  ou coller le texte  │   ┌──────────────────────────────────────────┐    │
+│                      │   │ PRÉSENTATION DE L'ENTREPRISE             │    │
+│  02  Modèle LLM      │   │ ...                                      │    │
+│  ◆ Anthropic         │   └──────────────────────────────────────────┘    │
+│  ○ OpenAI            │   ┌──────────────────────────────────────────┐    │
+│  ⟡ Mistral           │   │ COMPRÉHENSION DES BESOINS                │    │
+│  [claude-opus-4-6 ▼] │   │ ...                                      │    │
+│                      │   └──────────────────────────────────────────┘    │
+│  03  Entreprise      │                                                    │
+│  [Nom ____________]  │                                                    │
+│  [Description _____] │                                                    │
+│                      │                                                    │
+│  04  Paramètres      │                                                    │
+│  Créativité ━━●━━    │                                                    │
+│  Tokens [4096]       │                                                    │
+│                      │                                                    │
+│  [ Générer →       ] │                                                    │
+└──────────────────────┴────────────────────────────────────────────────────┘
 ```
 
 **Fonctionnalités :**
+- Inscription libre (nom, prénom, email, mot de passe) + connexion JWT
+- En-tête : prénom de l'utilisateur connecté + bouton de déconnexion
 - Dépôt de fichier AO par glisser-déposer (`.txt` ou `.pdf`)
 - Sélection du provider LLM par cartes cliquables
 - Modèles disponibles chargés dynamiquement depuis l'API
 - Résultats affichés section par section avec rendu Markdown
+- Historique personnel : chaque lancement est sauvegardé et consultable
 - En-tête : statut RAG en temps réel + bouton "Réindexer" (actif seulement si rag-etl est démarré)
 - Bouton "Copier" pour récupérer la réponse complète
+- Raccourci clavier `Ctrl+Entrée` / `⌘+Entrée` pour déclencher la génération
 
 ---
 
 ## API Reference
 
-### `GET /health`
+### Routes publiques
+
+#### `GET /health`
 Healthcheck minimal.
 
-### `GET /api/v1/models`
+#### `GET /api/v1/models`
 Liste tous les modèles disponibles, tous providers confondus.
 
-### `GET /api/v1/models/providers`
+#### `GET /api/v1/models/providers`
 Liste les identifiants des providers enregistrés.
 **Réponse :** `["openai", "anthropic", "mistral"]`
 
-### `GET /api/v1/models/{provider}`
+#### `GET /api/v1/models/{provider}`
 Liste les modèles d'un provider spécifique.
 
-### `POST /api/v1/generate`
+### Authentification
+
+#### `POST /api/v1/auth/register`
+Crée un compte utilisateur et retourne un token JWT.
+
+**Corps :**
+```json
+{ "nom": "Alami", "prenom": "Youssef", "email": "y.alami@example.com", "password": "motdepasse" }
+```
+**Réponse :** `{ "access_token": "eyJ...", "token_type": "bearer" }` — HTTP 201
+
+**Erreurs :**
+- `409 Conflict` — email déjà utilisé
+- `422 Unprocessable Entity` — email invalide ou champs manquants
+
+#### `POST /api/v1/auth/login`
+Connexion et retour d'un token JWT.
+
+**Corps :** `{ "email": "...", "password": "..." }`
+**Réponse :** `{ "access_token": "eyJ...", "token_type": "bearer" }`
+**Erreur :** `401` — email ou mot de passe incorrect
+
+#### `GET /api/v1/auth/me` 🔒
+Retourne le profil de l'utilisateur authentifié.
+
+**Réponse :**
+```json
+{ "id": "uuid", "nom": "Alami", "prenom": "Youssef", "email": "...", "created_at": "2024-..." }
+```
+
+### Routes protégées (🔒 Bearer requis)
+
+#### `POST /api/v1/generate`
 **Point d'entrée principal.** Génère une réponse à un appel d'offres (9 appels LLM).
+Le lancement est automatiquement sauvegardé dans l'historique de l'utilisateur connecté.
 
 **Corps de la requête :**
 ```json
@@ -611,7 +820,21 @@ Liste les modèles d'un provider spécifique.
 }
 ```
 
-### `GET /api/v1/rag/status`
+#### `GET /api/v1/history` 🔒
+Liste les lancements de l'utilisateur connecté (résumés, sans le texte complet).
+
+**Réponse :** `[ { "id": "uuid", "created_at": "...", "company_nom": "...", "provider": "...", "model": "...", "tokens_utilises": 8247, "ao_excerpt": "..." }, ... ]`
+
+#### `GET /api/v1/history/{id}` 🔒
+Retourne une entrée complète (avec le `GenerationResult` complet).
+
+#### `DELETE /api/v1/history/{id}` 🔒
+Supprime une entrée. Retourne `404` si l'entrée n'appartient pas à l'utilisateur.
+
+#### `DELETE /api/v1/history` 🔒
+Vide tout l'historique de l'utilisateur connecté.
+
+#### `GET /api/v1/rag/status`
 Statut de la base de connaissances RAG.
 
 **Réponse :**
@@ -631,15 +854,17 @@ Statut de la base de connaissances RAG.
 }
 ```
 
-### `POST /api/v1/rag/index`
+#### `POST /api/v1/rag/index`
 Déclenche l'indexation ETL (proxie vers rag-etl).
 Retourne `503` si le service rag-etl n'est pas démarré.
 
-**Codes d'erreur `POST /api/v1/generate` :**
+**Codes d'erreur :**
 
 | Code | Cause |
 |------|-------|
+| `401` | Token manquant ou expiré |
 | `400` | Clé API manquante, provider inconnu, AO trop court |
+| `409` | Email déjà utilisé (register) |
 | `422` | Corps de requête invalide (validation Pydantic) |
 | `502` | Échec de l'appel LLM (auth, quota, timeout) |
 | `503` | Service rag-etl non disponible (pour /rag/index) |
@@ -734,6 +959,9 @@ aucune clé API n'est nécessaire pour les exécuter.
 ## Docker
 
 ```bash
+# Préparer le répertoire de données (nécessaire pour le volume SQLite)
+mkdir -p data
+
 # Build des images
 docker compose build
 
@@ -756,6 +984,17 @@ docker compose down -v
 # Développement — hot-reload Python + Vite dev server (port 5173)
 docker compose -f docker-compose.yml -f docker-compose.dev.yml up
 ```
+
+### Volumes montés
+
+| Volume | Description |
+|--------|-------------|
+| `./data:/app/data` | Base SQLite `offria.db` (users + launches) — persistée entre les redémarrages |
+| `./company_defaults.json:/app/company_defaults.json:ro` | Données entreprise par défaut (lecture seule) |
+| `qdrant_data` | Volume Docker nommé pour les vecteurs Qdrant |
+
+> **Important :** monter un répertoire (`./data`) et non un fichier évite le comportement Docker
+> qui crée un *dossier* lorsque la cible n'existe pas encore sur l'hôte.
 
 Le Dockerfile utilise un **build multi-stage** :
 - Étape `frontend-builder` : build React avec Node.js

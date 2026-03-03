@@ -88,6 +88,7 @@ services:
       RAG_ETL_URL: http://rag-etl:8001
     volumes:
       - ./company_defaults.json:/app/company_defaults.json:ro
+      - ./data:/app/data
     depends_on:
       qdrant:
         condition: service_healthy

@@ -10,6 +10,7 @@ class HistoryEntry(BaseModel):
 
     id:              str = Field(default_factory=lambda: str(uuid4()))
     created_at:      str = Field(default_factory=lambda: datetime.now().isoformat())
+    user_id:         str = ""   # Identifiant de l'utilisateur propriétaire
     ao_excerpt:      str   # Premiers 150 caractères du texte AO
     company_nom:     str
     provider:        str
@@ -24,6 +25,7 @@ class HistorySummary(BaseModel):
 
     id:              str
     created_at:      str
+    user_id:         str = ""
     ao_excerpt:      str
     company_nom:     str
     provider:        str
@@ -36,6 +38,7 @@ class HistorySummary(BaseModel):
         return cls(
             id=entry.id,
             created_at=entry.created_at,
+            user_id=entry.user_id,
             ao_excerpt=entry.ao_excerpt,
             company_nom=entry.company_nom,
             provider=entry.provider,

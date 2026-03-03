@@ -1,92 +1,124 @@
 """
 Service de persistance de l'historique des générations.
 
-Stockage : fichier JSON à la racine du projet (history.json).
+Stockage : table SQLite `launches` dans data/offria.db.
+Clé étrangère : launches.user_id → users.id
 Thread-safe via threading.Lock.
-Maximum MAX_ENTRIES entrées — les plus anciennes sont supprimées au-delà.
 """
 from __future__ import annotations
 
-import json
-import logging
+import sqlite3
+import threading
 from pathlib import Path
-from threading import Lock
 
+from app.models.generation import GenerationResult
 from app.models.history import HistoryEntry, HistorySummary
 
-logger = logging.getLogger(__name__)
-
-MAX_ENTRIES = 100
-
-# history.json stocké à la racine du projet (même dossier que company_defaults.json)
-_DEFAULT_PATH = Path(__file__).resolve().parent.parent.parent / "history.json"
+_DB_PATH = Path(__file__).parents[2] / "data" / "offria.db"
 
 
 class HistoryService:
-    def __init__(self, path: Path | None = None) -> None:
-        self._path  = path or _DEFAULT_PATH
-        self._lock  = Lock()
-        self._entries: list[HistoryEntry] = self._load()
+    def __init__(self, db_path: Path = _DB_PATH) -> None:
+        self._db_path = db_path
+        self._lock    = threading.Lock()
+        self._init_db()
 
-    # ── Persistence ────────────────────────────────────────────
+    # ── Init ────────────────────────────────────────────────────
 
-    def _load(self) -> list[HistoryEntry]:
-        if not self._path.exists():
-            return []
-        try:
-            raw = json.loads(self._path.read_text(encoding="utf-8"))
-            return [HistoryEntry(**e) for e in raw]
-        except Exception as exc:
-            logger.warning("Impossible de lire l'historique (%s) — fichier réinitialisé.", exc)
-            return []
-
-    def _save(self) -> None:
-        try:
-            self._path.write_text(
-                json.dumps(
-                    [e.model_dump() for e in self._entries],
-                    ensure_ascii=False,
-                    indent=2,
-                ),
-                encoding="utf-8",
+    def _init_db(self) -> None:
+        self._db_path.parent.mkdir(parents=True, exist_ok=True)
+        with self._connect() as conn:
+            conn.execute("""
+                CREATE TABLE IF NOT EXISTS launches (
+                    id              TEXT    PRIMARY KEY,
+                    user_id         TEXT    NOT NULL,
+                    created_at      TEXT    NOT NULL,
+                    ao_excerpt      TEXT    NOT NULL DEFAULT '',
+                    company_nom     TEXT    NOT NULL DEFAULT '',
+                    provider        TEXT    NOT NULL DEFAULT '',
+                    model           TEXT    NOT NULL DEFAULT '',
+                    tokens_utilises INTEGER NOT NULL DEFAULT 0,
+                    langue          TEXT    NOT NULL DEFAULT 'fr',
+                    result_json     TEXT    NOT NULL DEFAULT '{}',
+                    FOREIGN KEY (user_id) REFERENCES users(id)
+                )
+            """)
+            conn.execute(
+                "CREATE INDEX IF NOT EXISTS idx_launches_user_id ON launches(user_id)"
             )
-        except Exception as exc:
-            logger.error("Impossible d'écrire l'historique : %s", exc)
 
-    # ── Public API ─────────────────────────────────────────────
+    def _connect(self) -> sqlite3.Connection:
+        conn = sqlite3.connect(str(self._db_path), check_same_thread=False)
+        conn.row_factory = sqlite3.Row
+        conn.execute("PRAGMA foreign_keys = ON")
+        return conn
+
+    # ── Public API ──────────────────────────────────────────────
 
     def add(self, entry: HistoryEntry) -> None:
-        """Ajoute une entrée en tête de liste (la plus récente en premier)."""
+        """Insère un lancement en base."""
         with self._lock:
-            self._entries.insert(0, entry)
-            if len(self._entries) > MAX_ENTRIES:
-                self._entries = self._entries[:MAX_ENTRIES]
-            self._save()
+            with self._connect() as conn:
+                conn.execute(
+                    "INSERT INTO launches "
+                    "(id, user_id, created_at, ao_excerpt, company_nom, "
+                    " provider, model, tokens_utilises, langue, result_json) "
+                    "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                    (
+                        entry.id,
+                        entry.user_id,
+                        entry.created_at,
+                        entry.ao_excerpt,
+                        entry.company_nom,
+                        entry.provider,
+                        entry.model,
+                        entry.tokens_utilises,
+                        entry.langue,
+                        entry.result.model_dump_json(),
+                    ),
+                )
 
-    def list_summaries(self) -> list[HistorySummary]:
-        """Retourne la liste allégée (sans résultat complet)."""
-        return [HistorySummary.from_entry(e) for e in self._entries]
+    def list_summaries(self, user_id: str = "") -> list[HistorySummary]:
+        """Liste allégée des lancements d'un utilisateur, du plus récent au plus ancien."""
+        with self._connect() as conn:
+            rows = conn.execute(
+                "SELECT id, user_id, created_at, ao_excerpt, company_nom, "
+                "       provider, model, tokens_utilises, langue "
+                "FROM launches WHERE user_id = ? ORDER BY created_at DESC",
+                (user_id,),
+            ).fetchall()
+        return [HistorySummary(**dict(row)) for row in rows]
 
-    def get(self, entry_id: str) -> HistoryEntry | None:
-        """Retourne l'entrée complète par son id, ou None si introuvable."""
-        return next((e for e in self._entries if e.id == entry_id), None)
+    def get(self, entry_id: str, user_id: str = "") -> HistoryEntry | None:
+        """Retourne un lancement complet (avec result) pour un utilisateur donné."""
+        with self._connect() as conn:
+            row = conn.execute(
+                "SELECT * FROM launches WHERE id = ? AND user_id = ?",
+                (entry_id, user_id),
+            ).fetchone()
+        if row is None:
+            return None
+        d = dict(row)
+        result = GenerationResult.model_validate_json(d.pop("result_json"))
+        return HistoryEntry(**d, result=result)
 
-    def delete(self, entry_id: str) -> bool:
-        """Supprime une entrée. Retourne True si elle existait."""
+    def delete(self, entry_id: str, user_id: str = "") -> bool:
+        """Supprime un lancement. Retourne True s'il existait."""
         with self._lock:
-            before = len(self._entries)
-            self._entries = [e for e in self._entries if e.id != entry_id]
-            if len(self._entries) < before:
-                self._save()
-                return True
-            return False
+            with self._connect() as conn:
+                cursor = conn.execute(
+                    "DELETE FROM launches WHERE id = ? AND user_id = ?",
+                    (entry_id, user_id),
+                )
+                return cursor.rowcount > 0
 
-    def clear(self) -> None:
-        """Vide tout l'historique."""
+    def clear(self, user_id: str = "") -> None:
+        """Supprime tous les lancements d'un utilisateur."""
         with self._lock:
-            self._entries = []
-            self._save()
+            with self._connect() as conn:
+                conn.execute("DELETE FROM launches WHERE user_id = ?", (user_id,))
 
     @property
     def count(self) -> int:
-        return len(self._entries)
+        with self._connect() as conn:
+            return conn.execute("SELECT COUNT(*) FROM launches").fetchone()[0]

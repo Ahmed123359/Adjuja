@@ -5,7 +5,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.responses import RedirectResponse
 from app.api.routes import (
     generation_router, models_router, rag_router,
-    defaults_router, usage_router, history_router,
+    defaults_router, usage_router, history_router, auth_router,
 )
 from app.config.settings import get_settings
 
@@ -32,6 +32,7 @@ app.add_middleware(
 )
 
 # Enregistrement des routes
+app.include_router(auth_router,       prefix="/api/v1")
 app.include_router(generation_router, prefix="/api/v1")
 app.include_router(models_router,    prefix="/api/v1")
 app.include_router(rag_router,       prefix="/api/v1")

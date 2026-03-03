@@ -67,6 +67,19 @@ class Settings(BaseSettings):
     rag_etl_url: str = ""
     """URL interne du microservice RAG ETL (ex: http://rag-etl:8001). Vide = pas de proxy."""
 
+    # ------------------------------------------------------------------
+    # Authentification JWT
+    # ------------------------------------------------------------------
+
+    jwt_secret_key: str = "change-me-in-production"
+    """Clé secrète pour signer les tokens JWT. À surcharger via JWT_SECRET_KEY dans .env."""
+
+    jwt_algorithm: str = "HS256"
+    """Algorithme de signature JWT (HS256 par défaut)."""
+
+    jwt_expire_minutes: int = 10080
+    """Durée de vie des tokens JWT en minutes (défaut : 7 jours)."""
+
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",

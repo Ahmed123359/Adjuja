@@ -1,4 +1,4 @@
-import type { RagStatus, UsageData } from '../types';
+import type { RagStatus, UsageData, User } from '../types';
 
 type Props = {
   apiStatus:    'online' | 'offline' | 'connecting';
@@ -10,6 +10,8 @@ type Props = {
   isDark:       boolean;
   toggleTheme:  () => void;
   onGoLanding:  () => void;
+  user:         User;
+  onLogout:     () => void;
 };
 
 function UsageBar({ value, max, label }: { value: number; max: number; label: string }) {
@@ -38,7 +40,7 @@ function UsageBar({ value, max, label }: { value: number; max: number; label: st
   );
 }
 
-export default function Header({ apiStatus, ragStatus, ragLoading, onReindex, usage, onResetUsage, isDark, toggleTheme, onGoLanding }: Props) {
+export default function Header({ apiStatus, ragStatus, ragLoading, onReindex, usage, onResetUsage, isDark, toggleTheme, onGoLanding, user, onLogout }: Props) {
   const statusColor = {
     online:     'bg-emerald-500',
     offline:    'bg-red-500',
@@ -134,6 +136,20 @@ export default function Header({ apiStatus, ragStatus, ragLoading, onReindex, us
         <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-gray-50 dark:bg-white/[.02] border border-gray-200 dark:border-white/[.05]">
           <div className={`w-1.5 h-1.5 rounded-full ${statusColor}`} />
           <span className="text-[11px] text-gray-500 dark:text-slate-400 font-medium">{statusLabel}</span>
+        </div>
+
+        {/* User + logout */}
+        <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-gray-50 dark:bg-white/[.02] border border-gray-200 dark:border-white/[.05]">
+          <span className="text-[11px] text-gray-600 dark:text-slate-300 font-medium">{user.prenom}</span>
+          <button
+            onClick={onLogout}
+            title="Se déconnecter"
+            className="ml-1 text-gray-400 dark:text-slate-500 hover:text-red-500 dark:hover:text-red-400 transition-colors"
+          >
+            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+            </svg>
+          </button>
         </div>
 
         {/* Theme toggle */}

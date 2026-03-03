@@ -1,10 +1,11 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from app.models.generation import GenerationRequest, GenerationResult
 from app.models.history import HistoryEntry
+from app.models.user import UserPublic
 from app.services.generation_service import GenerationService
 from app.services.usage_service import UsageService
 from app.services.history_service import HistoryService
-from app.api.dependencies import get_generation_service, get_usage_service, get_history_service
+from app.api.dependencies import get_generation_service, get_usage_service, get_history_service, get_current_user
 from app.api.routes.defaults_routes import _load_defaults
 
 router = APIRouter(prefix="/generate", tags=["Génération"])
@@ -20,10 +21,11 @@ router = APIRouter(prefix="/generate", tags=["Génération"])
     ),
 )
 async def generate_response(
-    request:  GenerationRequest,
-    service:  GenerationService = Depends(get_generation_service),
-    usage:    UsageService      = Depends(get_usage_service),
-    history:  HistoryService    = Depends(get_history_service),
+    request:      GenerationRequest,
+    service:      GenerationService = Depends(get_generation_service),
+    usage:        UsageService      = Depends(get_usage_service),
+    history:      HistoryService    = Depends(get_history_service),
+    current_user: UserPublic        = Depends(get_current_user),
 ) -> GenerationResult:
     """
     Génère une réponse complète à un appel d'offres.
@@ -56,6 +58,10 @@ async def generate_response(
             detail=f"Limite de tokens atteinte ({limits.max_tokens_cumul:,} tokens). Réinitialisez le compteur.",
         )
 
+    # Injecter les instructions par défaut si le front n'en envoie pas
+    if not request.instructions_supplementaires and limits.instructions:
+        request = request.model_copy(update={'instructions_supplementaires': limits.instructions})
+
     try:
         result = await service.generate(request)
         if not result.succes:
@@ -68,6 +74,7 @@ async def generate_response(
 
         # Sauvegarde dans l'historique (logique métier côté back)
         history.add(HistoryEntry(
+            user_id=current_user.id,
             ao_excerpt=request.ao_texte[:150].strip(),
             company_nom=request.contexte_entreprise.nom,
             provider=result.provider_utilise,

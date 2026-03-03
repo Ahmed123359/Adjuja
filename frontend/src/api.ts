@@ -1,4 +1,27 @@
-import type { Model, CompanyData, GenerationResult, RagStatus, AppDefaults, UsageData, HistorySummary, HistoryEntry } from './types';
+import type { Model, CompanyData, GenerationResult, RagStatus, AppDefaults, UsageData, HistorySummary, HistoryEntry, User } from './types';
+
+// ── Token helpers ──────────────────────────────────────────────────────
+
+const TOKEN_KEY = 'offria_token';
+
+export function getToken(): string | null {
+  return localStorage.getItem(TOKEN_KEY);
+}
+
+export function setToken(token: string): void {
+  localStorage.setItem(TOKEN_KEY, token);
+}
+
+export function clearToken(): void {
+  localStorage.removeItem(TOKEN_KEY);
+}
+
+function authHeaders(): Record<string, string> {
+  const token = getToken();
+  return token ? { Authorization: `Bearer ${token}` } : {};
+}
+
+// ── Helpers internes ───────────────────────────────────────────────────
 
 function splitTags(s: string): string[] {
   return s ? s.split(/[,\n]/).map(t => t.trim()).filter(Boolean) : [];
@@ -20,6 +43,40 @@ function buildDescription(d: CompanyData): string {
     d.if_fiscal        && `IF : ${d.if_fiscal}`,
   ].filter(Boolean).join(' | ');
 }
+
+// ── Authentification ───────────────────────────────────────────────────
+
+export async function register(params: {
+  nom: string; prenom: string; email: string; password: string;
+}): Promise<void> {
+  const res = await fetch('/api/v1/auth/register', {
+    method:  'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body:    JSON.stringify(params),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(typeof data.detail === 'string' ? data.detail : 'Erreur inscription.');
+  setToken(data.access_token);
+}
+
+export async function login(email: string, password: string): Promise<void> {
+  const res = await fetch('/api/v1/auth/login', {
+    method:  'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body:    JSON.stringify({ email, password }),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(typeof data.detail === 'string' ? data.detail : 'Identifiants incorrects.');
+  setToken(data.access_token);
+}
+
+export async function getMe(): Promise<User> {
+  const res = await fetch('/api/v1/auth/me', { headers: authHeaders() });
+  if (!res.ok) throw new Error('Non authentifié.');
+  return res.json();
+}
+
+// ── Defaults & Models (publics) ────────────────────────────────────────
 
 export async function fetchDefaults(): Promise<AppDefaults> {
   const res = await fetch('/api/v1/defaults');
@@ -57,41 +114,38 @@ export async function reindexRag(): Promise<RagStatus> {
   return res.json();
 }
 
-// ── Historique ────────────────────────────────────────────────────────
+// ── Historique (protégé) ───────────────────────────────────────────────
 
 export async function fetchHistory(): Promise<HistorySummary[]> {
-  const res = await fetch('/api/v1/history');
+  const res = await fetch('/api/v1/history', { headers: authHeaders() });
   if (!res.ok) throw new Error('Impossible de charger l\'historique');
   return res.json();
 }
 
 export async function fetchHistoryEntry(id: string): Promise<HistoryEntry> {
-  const res = await fetch(`/api/v1/history/${id}`);
+  const res = await fetch(`/api/v1/history/${id}`, { headers: authHeaders() });
   if (!res.ok) throw new Error('Entrée introuvable');
   return res.json();
 }
 
 export async function deleteHistoryEntry(id: string): Promise<void> {
-  const res = await fetch(`/api/v1/history/${id}`, { method: 'DELETE' });
+  const res = await fetch(`/api/v1/history/${id}`, { method: 'DELETE', headers: authHeaders() });
   if (!res.ok) throw new Error('Impossible de supprimer l\'entrée');
 }
 
 export async function clearHistory(): Promise<void> {
-  const res = await fetch('/api/v1/history', { method: 'DELETE' });
+  const res = await fetch('/api/v1/history', { method: 'DELETE', headers: authHeaders() });
   if (!res.ok) throw new Error('Impossible de vider l\'historique');
 }
 
-// ── Génération ────────────────────────────────────────────────────────
+// ── Génération (protégée) ──────────────────────────────────────────────
 
 export async function generate(params: {
-  aoText:       string;
-  provider:     string;
-  model:        string;
-  company:      CompanyData;
-  temperature:  number;
-  maxTokens:    number;
-  instructions: string;
-  langue:       'fr' | 'en';
+  aoText:   string;
+  provider: string;
+  model:    string;
+  company:  CompanyData;
+  langue:   'fr' | 'en';
 }): Promise<GenerationResult> {
   const body = {
     ao_texte:  params.aoText,
@@ -105,15 +159,12 @@ export async function generate(params: {
       effectif:         params.company.effectif ? parseInt(params.company.effectif, 10) : null,
       chiffre_affaires: params.company.chiffre_affaires,
     },
-    instructions_supplementaires: params.instructions,
-    temperature: params.temperature,
-    max_tokens:  params.maxTokens,
-    langue:      params.langue,
+    langue: params.langue,
   };
 
   const res = await fetch('/api/v1/generate', {
     method:  'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', ...authHeaders() },
     body:    JSON.stringify(body),
   });
 

@@ -76,9 +76,6 @@ type Props = {
   model: string; setModel: (v: string) => void;
   models: Model[];
   company: CompanyData; setCompany: (v: CompanyData | ((prev: CompanyData) => CompanyData)) => void;
-  temperature: number; setTemp: (v: number) => void;
-  maxTokens: number; setMaxTokens: (v: number) => void;
-  instructions: string; setInstr: (v: string) => void;
   langue: 'fr' | 'en'; setLangue: (v: 'fr' | 'en') => void;
   onGenerate: () => void;
   loading: boolean;
@@ -155,8 +152,7 @@ function StyledSelect({ isDark = true, ...props }: React.SelectHTMLAttributes<HT
 export default function LeftPanel(props: Props) {
   const {
     aoText, setAoText, provider, setProvider, model, setModel, models,
-    company, setCompany, temperature, setTemp, maxTokens, setMaxTokens,
-    instructions, setInstr, langue, setLangue,
+    company, setCompany, langue, setLangue,
     onGenerate, loading, limitReached, isDark,
   } = props;
 
@@ -403,7 +399,7 @@ export default function LeftPanel(props: Props) {
           <p className={sectionLabel}>Paramètres</p>
 
           {/* Langue */}
-          <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center justify-between">
             <span className={`text-[12px] ${isDark ? 'text-slate-500' : 'text-slate-600'}`}>Langue de réponse</span>
             <div
               className="flex gap-1 p-1 rounded-lg"
@@ -423,55 +419,6 @@ export default function LeftPanel(props: Props) {
                 </button>
               ))}
             </div>
-          </div>
-
-          {/* Instructions */}
-          <div className="mb-4">
-            <p className="text-[10px] font-semibold uppercase tracking-[0.15em] text-slate-500 mb-1.5">
-              Instructions supplémentaires
-            </p>
-            <Textarea
-              isDark={isDark}
-              rows={2}
-              placeholder="Adapter au contexte marocain, insister sur ISO 9001…"
-              value={instructions}
-              onChange={e => setInstr(e.target.value)}
-            />
-          </div>
-
-          {/* Créativité */}
-          <div className="mb-4">
-            <div className="flex items-center justify-between mb-1.5">
-              <p className="text-[10px] font-semibold uppercase tracking-[0.15em] text-slate-500">
-                Créativité
-              </p>
-              <span className="text-[11px] font-mono text-indigo-400">
-                {temperature.toFixed(1)}
-              </span>
-            </div>
-            <input
-              type="range" min="0" max="1" step="0.1" value={temperature}
-              onChange={e => setTemp(parseFloat(e.target.value))}
-              className="w-full cursor-pointer"
-              style={{ accentColor: '#6366f1' }}
-            />
-            <div className="flex justify-between mt-0.5">
-              <span className={`text-[9px] ${isDark ? 'text-slate-600' : 'text-slate-400'}`}>Précis</span>
-              <span className={`text-[9px] ${isDark ? 'text-slate-600' : 'text-slate-400'}`}>Créatif</span>
-            </div>
-          </div>
-
-          {/* Tokens */}
-          <div className="flex items-center justify-between gap-3">
-            <p className="text-[10px] font-semibold uppercase tracking-[0.15em] text-slate-500">
-              Tokens
-            </p>
-            <Input
-              isDark={isDark}
-              type="number" min="256" max="16000" value={maxTokens}
-              onChange={e => setMaxTokens(parseInt(e.target.value, 10))}
-              className="w-20 text-right shrink-0"
-            />
           </div>
         </section>
 

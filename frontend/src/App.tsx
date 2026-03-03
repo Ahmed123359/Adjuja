@@ -7,10 +7,10 @@ import {
   fetchRagStatus, reindexRag, fetchUsage, resetUsage,
   fetchHistory, fetchHistoryEntry, deleteHistoryEntry, clearHistory,
 } from './api';
-import type { Model, CompanyData, GenerationResult, AppState, RagStatus, UsageData, HistorySummary } from './types';
+import type { Model, CompanyData, GenerationResult, AppState, RagStatus, UsageData, HistorySummary, User } from './types';
 import { DEFAULT_COMPANY } from './types';
 
-export default function App({ onGoLanding }: { onGoLanding: () => void }) {
+export default function App({ onGoLanding, onLogout, user }: { onGoLanding: () => void; onLogout: () => void; user: User }) {
   // Theme — dark par défaut, persisté en localStorage
   const [isDark, setIsDark] = useState(() => localStorage.getItem('theme') !== 'light');
 
@@ -27,9 +27,6 @@ export default function App({ onGoLanding }: { onGoLanding: () => void }) {
   const [provider,     setProviderRaw]  = useState('anthropic');
   const [model,        setModel]        = useState('');
   const [company,      setCompany]      = useState<CompanyData>(DEFAULT_COMPANY);
-  const [temperature,  setTemp]         = useState(0.7);
-  const [maxTokens,    setMaxTokens]    = useState(4096);
-  const [instructions, setInstr]        = useState('');
   const [langue,       setLangue]       = useState<'fr' | 'en'>('fr');
 
   // App state
@@ -63,9 +60,6 @@ export default function App({ onGoLanding }: { onGoLanding: () => void }) {
 
     fetchDefaults().then(defaults => {
       setCompany(defaults.company);
-      setInstr(defaults.instructions);
-      setTemp(defaults.temperature);
-      setMaxTokens(defaults.max_tokens);
     }).catch(() => {});
   }, [reloadHistory]);
 
@@ -84,8 +78,8 @@ export default function App({ onGoLanding }: { onGoLanding: () => void }) {
     if (aoText.trim().length < 50 || !company.nom.trim()) return;
     setAppState('loading');
     try {
-      const res = await generate({ aoText, provider, model, company, temperature, maxTokens, instructions, langue });
-      setResult(res);
+      const res = await generate({ aoText, provider, model, company, langue });
+  setResult(res);
       setAppState('result');
       fetchUsage().then(setUsage).catch(() => {});
       reloadHistory();
@@ -93,7 +87,7 @@ export default function App({ onGoLanding }: { onGoLanding: () => void }) {
       setError(e instanceof Error ? e.message : 'Erreur inconnue');
       setAppState('error');
     }
-  }, [aoText, provider, model, company, temperature, maxTokens, instructions, langue, reloadHistory]);
+  }, [aoText, provider, model, company, langue, reloadHistory]);
 
   // Charger une entrée de l'historique et l'afficher
   const handleLoadHistory = useCallback(async (id: string) => {
@@ -154,6 +148,8 @@ export default function App({ onGoLanding }: { onGoLanding: () => void }) {
         isDark={isDark}
         toggleTheme={toggleTheme}
         onGoLanding={onGoLanding}
+        user={user}
+        onLogout={onLogout}
       />
 
       <div className="flex-1 flex overflow-hidden relative z-10">
@@ -163,9 +159,6 @@ export default function App({ onGoLanding }: { onGoLanding: () => void }) {
           model={model}         setModel={setModel}
           models={models}
           company={company}     setCompany={setCompany}
-          temperature={temperature} setTemp={setTemp}
-          maxTokens={maxTokens}     setMaxTokens={setMaxTokens}
-          instructions={instructions} setInstr={setInstr}
           langue={langue}       setLangue={setLangue}
           onGenerate={handleGenerate}
           loading={appState === 'loading'}

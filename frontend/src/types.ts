@@ -77,6 +77,14 @@ export interface HistoryEntry extends HistorySummary {
   result: GenerationResult;
 }
 
+export interface User {
+  id:         string;
+  nom:        string;
+  prenom:     string;
+  email:      string;
+  created_at: string;
+}
+
 export const DEFAULT_COMPANY: CompanyData = {
   nom:'', forme_juridique:'', date_creation:'', site_web:'',
   description:'', secteurs:'', expertises:'', certifications:'',
