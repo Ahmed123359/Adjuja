@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { marked } from 'marked';
-import type { GenerationResult, CompanyData, AppState, UsageData, RagStatus } from '../types';
+import type { GenerationResult, CompanyData, AppState, UsageData, RagStatus, HistorySummary } from '../types';
 
 // ── Document HTML builder ──────────────────────────────────
 function buildDocumentHTML(result: GenerationResult, company: CompanyData, aoText: string): string {
@@ -11,33 +11,133 @@ function buildDocumentHTML(result: GenerationResult, company: CompanyData, aoTex
     company.forme_juridique,
     company.rc   ? `RC ${company.rc}`   : null,
     company.ice  ? `ICE ${company.ice}` : null,
-    [company.adresse, company.ville].filter(Boolean).join(', ') || null,
   ].filter(Boolean).join('  ·  ');
 
-  const header = `
-    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:2.5em;padding-bottom:1.2em;border-bottom:3px solid #1e3a5f;">
-      <div>
-        <div style="font-size:16pt;font-weight:800;color:#1e3a5f;letter-spacing:-.02em;">${company.nom || 'Votre Entreprise'}</div>
-        ${meta ? `<div style="font-size:8pt;color:#7a8899;margin-top:4px;">${meta}</div>` : ''}
-        ${company.site_web ? `<div style="font-size:8pt;color:#7a8899;">${company.site_web}</div>` : ''}
-      </div>
-      <div style="text-align:right;">
-        <div style="font-size:9pt;color:#94a3b8;">${now}</div>
-        <div style="font-size:7.5pt;color:#b0bec5;text-transform:uppercase;letter-spacing:.08em;margin-top:3px;">Réponse à l'appel d'offres</div>
-        <div style="font-size:8pt;color:#7a8899;max-width:220px;margin-top:4px;line-height:1.4;">${aoLine.slice(0, 80)}${aoLine.length > 80 ? '…' : ''}</div>
-      </div>
+  const location = [company.adresse, company.ville].filter(Boolean).join(', ');
+
+  const sections = result.sections?.length > 0 ? result.sections : null;
+  const totalPages = sections ? sections.length + 1 : 2;
+
+  // ── Styles partagés ──────────────────────────────────────
+  const pageCss = [
+    'background:white',
+    'padding:2.2cm 2.8cm 2cm',
+    'box-sizing:border-box',
+    'min-height:1060px',
+    'display:flex',
+    'flex-direction:column',
+    'box-shadow:0 2px 16px rgba(0,0,0,0.08)',
+    'position:relative',
+  ].join(';');
+
+  const headerCss = [
+    'display:flex',
+    'align-items:center',
+    'justify-content:space-between',
+    'padding-bottom:7px',
+    'border-bottom:1px solid #e2e8f0',
+    'margin-bottom:24px',
+    'font-size:7.5pt',
+    'color:#94a3b8',
+  ].join(';');
+
+  const footerCss = [
+    'margin-top:auto',
+    'padding-top:10px',
+    'border-top:1px solid #e2e8f0',
+    'display:flex',
+    'align-items:center',
+    'justify-content:space-between',
+    'font-size:7.5pt',
+    'color:#94a3b8',
+  ].join(';');
+
+  const sep = '<div style="height:20px;"></div>';
+
+  // ── Page de garde ─────────────────────────────────────────
+  const coverPage = `
+<div style="${pageCss}; justify-content:space-between;">
+
+  <div>
+    <div style="height:5px;background:linear-gradient(90deg,#4338ca,#6366f1,#818cf8);margin-bottom:2.2cm;"></div>
+    <div style="font-size:24pt;font-weight:800;color:#0f1929;letter-spacing:-0.02em;line-height:1.1;">${company.nom || 'Votre Entreprise'}</div>
+    ${meta   ? `<div style="font-size:8.5pt;color:#7a8899;margin-top:8px;line-height:1.8;">${meta}</div>` : ''}
+    ${location ? `<div style="font-size:8.5pt;color:#7a8899;">${location}</div>` : ''}
+    ${company.telephone ? `<div style="font-size:8.5pt;color:#7a8899;">Tél. ${company.telephone}</div>` : ''}
+    ${company.site_web  ? `<div style="font-size:8.5pt;color:#7a8899;">${company.site_web}</div>` : ''}
+  </div>
+
+  <div style="text-align:center;padding:1.5cm 1cm;">
+    <div style="width:52px;height:4px;background:#6366f1;border-radius:2px;margin:0 auto 22px;"></div>
+    <div style="font-size:8.5pt;font-weight:700;text-transform:uppercase;letter-spacing:0.2em;color:#6366f1;margin-bottom:18px;">
+      Réponse à l'appel d'offres
     </div>
-  `;
+    <div style="font-size:15pt;font-weight:700;color:#0f1929;line-height:1.55;max-width:480px;margin:0 auto;">
+      ${aoLine.slice(0, 130)}${aoLine.length > 130 ? '…' : ''}
+    </div>
+    <div style="font-size:8.5pt;color:#94a3b8;margin-top:20px;">
+      Document confidentiel · ${now}
+    </div>
+  </div>
 
-  const body = result.sections?.length > 0
-    ? result.sections.map(s => `<h2>${s.titre}</h2>\n${marked.parse(s.contenu)}`).join('\n')
-    : marked.parse(result.texte_complet);
+  <div style="border-top:1px solid #e2e8f0;padding-top:14px;display:flex;justify-content:space-between;align-items:center;font-size:8pt;color:#94a3b8;">
+    <span>${location}</span>
+    <span style="font-weight:600;color:#1e3a5f;">Page 1 / ${totalPages}</span>
+  </div>
+</div>`;
 
-  return header + body;
+  // ── Pages sections ────────────────────────────────────────
+  const sectionPages = sections
+    ? sections.map((s, i) => `
+${sep}
+<div style="${pageCss};">
+  <div style="${headerCss}">
+    <span style="font-weight:600;color:#1e3a5f;">${company.nom || ''}</span>
+    <span style="color:#6366f1;font-weight:600;">${s.titre}</span>
+    <span>Page ${i + 2} / ${totalPages}</span>
+  </div>
+  <div style="flex:1;">
+    <h2 style="font-size:13pt;font-weight:700;color:#1e3a5f;margin:0 0 16px 0;padding-bottom:8px;border-bottom:2px solid #6366f1;">${s.titre}</h2>
+    ${marked.parse(s.contenu)}
+  </div>
+  <div style="${footerCss}">
+    <span>${company.nom || ''}</span>
+    <span>Réponse à l'appel d'offres · ${now}</span>
+    <span>Page ${i + 2} / ${totalPages}</span>
+  </div>
+</div>`).join('')
+    : `
+${sep}
+<div style="${pageCss};">
+  <div style="${headerCss}">
+    <span style="font-weight:600;color:#1e3a5f;">${company.nom || ''}</span>
+    <span style="color:#6366f1;font-weight:600;">Réponse complète</span>
+    <span>Page 2 / 2</span>
+  </div>
+  <div style="flex:1;">
+    ${marked.parse(result.texte_complet)}
+  </div>
+  <div style="${footerCss}">
+    <span>${company.nom || ''}</span>
+    <span>Réponse à l'appel d'offres · ${now}</span>
+    <span>Page 2 / 2</span>
+  </div>
+</div>`;
+
+  return coverPage + sectionPages;
 }
 
 // ── Dashboard (idle state) ──────────────────────────────────
-function Dashboard({ usage, ragStatus }: { usage: UsageData | null; ragStatus: RagStatus | null }) {
+function Dashboard({
+  usage, ragStatus, history, onLoadHistory, onDeleteHistory, onClearHistory,
+}: {
+  usage:            UsageData | null;
+  ragStatus:        RagStatus | null;
+  history:          HistorySummary[];
+  onLoadHistory:    (id: string) => void;
+  onDeleteHistory:  (id: string) => void;
+  onClearHistory:   () => void;
+}) {
   const statCards = [
     {
       label:   'Réponses générées',
@@ -151,6 +251,47 @@ function Dashboard({ usage, ragStatus }: { usage: UsageData | null; ragStatus: R
           ))}
         </div>
       </div>
+
+      {/* History */}
+      {history.length > 0 && (
+        <div>
+          <div className="flex items-center justify-between mb-4">
+            <p className="sidebar-label">Historique des générations</p>
+            <button
+              onClick={onClearHistory}
+              className="text-[11px] text-gray-400 dark:text-slate-500 hover:text-red-500 dark:hover:text-red-400 transition-colors"
+            >
+              Vider
+            </button>
+          </div>
+          <div className="flex flex-col gap-2">
+            {history.map(entry => (
+              <div
+                key={entry.id}
+                className="group bg-white dark:bg-navy-800 border border-gray-200 dark:border-white/[.06] rounded-xl px-4 py-3 flex items-center gap-3 hover:border-indigo-200 dark:hover:border-indigo-500/20 transition-all cursor-pointer"
+                onClick={() => onLoadHistory(entry.id)}
+              >
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-gray-800 dark:text-slate-200 truncate">{entry.ao_excerpt}</p>
+                  <p className="text-[11px] text-gray-400 dark:text-slate-500 mt-0.5">
+                    {entry.company_nom} · {entry.provider} · {entry.tokens_utilises.toLocaleString('fr-FR')} tokens
+                    <span className="ml-2">{new Date(entry.created_at).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}</span>
+                  </p>
+                </div>
+                <button
+                  onClick={e => { e.stopPropagation(); onDeleteHistory(entry.id); }}
+                  className="opacity-0 group-hover:opacity-100 text-gray-300 dark:text-slate-600 hover:text-red-500 dark:hover:text-red-400 transition-all flex-shrink-0 p-1 rounded"
+                  title="Supprimer"
+                >
+                  <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -184,17 +325,21 @@ function Loading({ provider, model }: { provider?: string; model?: string }) {
 
 // ── Main component ─────────────────────────────────────────
 type Props = {
-  state:     AppState;
-  result:    GenerationResult | null;
-  error:     string;
-  company:   CompanyData;
-  aoText:    string;
-  onReset:   () => void;
-  usage:     UsageData | null;
-  ragStatus: RagStatus | null;
+  state:           AppState;
+  result:          GenerationResult | null;
+  error:           string;
+  company:         CompanyData;
+  aoText:          string;
+  onReset:         () => void;
+  usage:           UsageData | null;
+  ragStatus:       RagStatus | null;
+  history:         HistorySummary[];
+  onLoadHistory:   (id: string) => void;
+  onDeleteHistory: (id: string) => void;
+  onClearHistory:  () => void;
 };
 
-export default function RightPanel({ state, result, error, company, aoText, onReset, usage, ragStatus }: Props) {
+export default function RightPanel({ state, result, error, company, aoText, onReset, usage, ragStatus, history, onLoadHistory, onDeleteHistory, onClearHistory }: Props) {
   const wordRef = useRef<HTMLDivElement>(null);
   const [copied, setCopied] = useState(false);
 
@@ -214,7 +359,7 @@ export default function RightPanel({ state, result, error, company, aoText, onRe
 
   return (
     <div className="flex-1 flex flex-col overflow-hidden bg-slate-50 dark:bg-navy-900">
-      {state === 'idle'    && <Dashboard usage={usage} ragStatus={ragStatus} />}
+      {state === 'idle'    && <Dashboard usage={usage} ragStatus={ragStatus} history={history} onLoadHistory={onLoadHistory} onDeleteHistory={onDeleteHistory} onClearHistory={onClearHistory} />}
       {state === 'loading' && <Loading provider={result?.provider_utilise} model={result?.model_utilise} />}
 
       {(state === 'result' || state === 'error') && (
@@ -271,8 +416,8 @@ export default function RightPanel({ state, result, error, company, aoText, onRe
                 contentEditable
                 suppressContentEditableWarning
                 spellCheck
-                className="word-body bg-white text-black w-[794px] max-w-full min-h-[500px] shadow-document dark:shadow-dark-doc rounded-sm font-word text-[11pt] leading-relaxed focus:outline-none"
-                style={{ padding: '2.5cm 2.8cm', fontFamily: 'Calibri, Segoe UI, Arial, sans-serif' }}
+                className="word-body text-black w-[794px] max-w-full font-word focus:outline-none"
+                style={{ fontFamily: 'Calibri, Segoe UI, Arial, sans-serif', fontSize: '11pt', lineHeight: '1.65' }}
               />
             )}
           </div>

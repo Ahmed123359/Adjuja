@@ -1,4 +1,4 @@
-import type { Model, CompanyData, GenerationResult, RagStatus, AppDefaults, UsageData } from './types';
+import type { Model, CompanyData, GenerationResult, RagStatus, AppDefaults, UsageData, HistorySummary, HistoryEntry } from './types';
 
 function splitTags(s: string): string[] {
   return s ? s.split(/[,\n]/).map(t => t.trim()).filter(Boolean) : [];
@@ -56,6 +56,32 @@ export async function reindexRag(): Promise<RagStatus> {
   if (!res.ok) throw new Error('Échec de la reindexation RAG');
   return res.json();
 }
+
+// ── Historique ────────────────────────────────────────────────────────
+
+export async function fetchHistory(): Promise<HistorySummary[]> {
+  const res = await fetch('/api/v1/history');
+  if (!res.ok) throw new Error('Impossible de charger l\'historique');
+  return res.json();
+}
+
+export async function fetchHistoryEntry(id: string): Promise<HistoryEntry> {
+  const res = await fetch(`/api/v1/history/${id}`);
+  if (!res.ok) throw new Error('Entrée introuvable');
+  return res.json();
+}
+
+export async function deleteHistoryEntry(id: string): Promise<void> {
+  const res = await fetch(`/api/v1/history/${id}`, { method: 'DELETE' });
+  if (!res.ok) throw new Error('Impossible de supprimer l\'entrée');
+}
+
+export async function clearHistory(): Promise<void> {
+  const res = await fetch('/api/v1/history', { method: 'DELETE' });
+  if (!res.ok) throw new Error('Impossible de vider l\'historique');
+}
+
+// ── Génération ────────────────────────────────────────────────────────
 
 export async function generate(params: {
   aoText:       string;

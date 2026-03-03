@@ -6,10 +6,12 @@ from app.services.prompt_builder_service import PromptBuilderService
 from app.services.generation_service import GenerationService
 from app.services.rag_service import RagService
 from app.services.usage_service import UsageService
+from app.services.history_service import HistoryService
 
 # Singletons — initialisés une seule fois au démarrage
-_rag_instance:   RagService   | None = None
-_usage_instance: UsageService | None = None
+_rag_instance:     RagService     | None = None
+_usage_instance:   UsageService   | None = None
+_history_instance: HistoryService | None = None
 
 
 @lru_cache
@@ -48,6 +50,14 @@ def get_usage_service() -> UsageService:
     if _usage_instance is None:
         _usage_instance = UsageService()
     return _usage_instance
+
+
+def get_history_service() -> HistoryService:
+    """Fournit l'instance singleton du service d'historique."""
+    global _history_instance
+    if _history_instance is None:
+        _history_instance = HistoryService()
+    return _history_instance
 
 
 def get_generation_service(

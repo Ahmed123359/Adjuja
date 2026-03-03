@@ -388,12 +388,12 @@ export default function LeftPanel(props: Props) {
           {/* Tokens */}
           <div className="flex items-center justify-between gap-3">
             <p className="text-[10px] font-semibold uppercase tracking-widest text-gray-500 dark:text-slate-500">
-              Tokens / section
+              Tokens
             </p>
             <input
               type="number" min="256" max="16000" value={maxTokens}
               onChange={e => setMaxTokens(parseInt(e.target.value, 10))}
-              className={`${inputCls} w-24 text-right shrink-0`}
+              className={`${inputCls} w-20 text-right shrink-0`}
             />
           </div>
         </section>

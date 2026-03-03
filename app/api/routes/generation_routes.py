@@ -1,8 +1,10 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from app.models.generation import GenerationRequest, GenerationResult
+from app.models.history import HistoryEntry
 from app.services.generation_service import GenerationService
 from app.services.usage_service import UsageService
-from app.api.dependencies import get_generation_service, get_usage_service
+from app.services.history_service import HistoryService
+from app.api.dependencies import get_generation_service, get_usage_service, get_history_service
 from app.api.routes.defaults_routes import _load_defaults
 
 router = APIRouter(prefix="/generate", tags=["Génération"])
@@ -18,9 +20,10 @@ router = APIRouter(prefix="/generate", tags=["Génération"])
     ),
 )
 async def generate_response(
-    request: GenerationRequest,
-    service: GenerationService = Depends(get_generation_service),
-    usage: UsageService = Depends(get_usage_service),
+    request:  GenerationRequest,
+    service:  GenerationService = Depends(get_generation_service),
+    usage:    UsageService      = Depends(get_usage_service),
+    history:  HistoryService    = Depends(get_history_service),
 ) -> GenerationResult:
     """
     Génère une réponse complète à un appel d'offres.
@@ -31,7 +34,8 @@ async def generate_response(
     3. Construit un prompt optimisé avec le contexte entreprise
     4. Appelle le provider LLM choisi
     5. Incrémente le compteur d'usage
-    6. Retourne la réponse découpée en sections Markdown
+    6. Sauvegarde dans l'historique (history.json)
+    7. Retourne la réponse découpée en sections Markdown
 
     Codes d'erreur retournés :
     - ``400`` : paramètres invalides (clé API manquante, provider inconnu…)
@@ -59,7 +63,20 @@ async def generate_response(
                 status_code=status.HTTP_502_BAD_GATEWAY,
                 detail=result.erreur or "Erreur lors de la génération.",
             )
+
         usage.add(result.tokens_utilises or 0)
+
+        # Sauvegarde dans l'historique (logique métier côté back)
+        history.add(HistoryEntry(
+            ao_excerpt=request.ao_texte[:150].strip(),
+            company_nom=request.contexte_entreprise.nom,
+            provider=result.provider_utilise,
+            model=result.model_utilise,
+            tokens_utilises=result.tokens_utilises or 0,
+            langue=request.langue,
+            result=result,
+        ))
+
         return result
 
     except HTTPException:

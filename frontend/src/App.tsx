@@ -2,8 +2,12 @@ import { useState, useEffect, useCallback } from 'react';
 import Header from './components/Header';
 import LeftPanel from './components/LeftPanel';
 import RightPanel from './components/RightPanel';
-import { fetchModels, fetchDefaults, generate, fetchRagStatus, reindexRag, fetchUsage, resetUsage } from './api';
-import type { Model, CompanyData, GenerationResult, AppState, RagStatus, UsageData } from './types';
+import {
+  fetchModels, fetchDefaults, generate,
+  fetchRagStatus, reindexRag, fetchUsage, resetUsage,
+  fetchHistory, fetchHistoryEntry, deleteHistoryEntry, clearHistory,
+} from './api';
+import type { Model, CompanyData, GenerationResult, AppState, RagStatus, UsageData, HistorySummary } from './types';
 import { DEFAULT_COMPANY } from './types';
 
 export default function App() {
@@ -37,6 +41,11 @@ export default function App() {
   const [ragStatus,  setRagStatus] = useState<RagStatus | null>(null);
   const [ragLoading, setRagLoading] = useState(false);
   const [usage,      setUsage]     = useState<UsageData | null>(null);
+  const [history,    setHistory]   = useState<HistorySummary[]>([]);
+
+  const reloadHistory = useCallback(() => {
+    fetchHistory().then(setHistory).catch(() => {});
+  }, []);
 
   // Load on mount
   useEffect(() => {
@@ -50,6 +59,7 @@ export default function App() {
 
     fetchRagStatus().then(setRagStatus).catch(() => {});
     fetchUsage().then(setUsage).catch(() => {});
+    reloadHistory();
 
     fetchDefaults().then(defaults => {
       setCompany(defaults.company);
@@ -57,7 +67,7 @@ export default function App() {
       setTemp(defaults.temperature);
       setMaxTokens(defaults.max_tokens);
     }).catch(() => {});
-  }, []);
+  }, [reloadHistory]);
 
   const setProvider = useCallback((p: string) => {
     setProviderRaw(p);
@@ -78,11 +88,37 @@ export default function App() {
       setResult(res);
       setAppState('result');
       fetchUsage().then(setUsage).catch(() => {});
+      reloadHistory();
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : 'Erreur inconnue');
       setAppState('error');
     }
-  }, [aoText, provider, model, company, temperature, maxTokens, instructions, langue]);
+  }, [aoText, provider, model, company, temperature, maxTokens, instructions, langue, reloadHistory]);
+
+  // Charger une entrée de l'historique et l'afficher
+  const handleLoadHistory = useCallback(async (id: string) => {
+    try {
+      const entry = await fetchHistoryEntry(id);
+      setResult(entry.result);
+      setAppState('result');
+    } catch {}
+  }, []);
+
+  // Supprimer une entrée de l'historique
+  const handleDeleteHistory = useCallback(async (id: string) => {
+    try {
+      await deleteHistoryEntry(id);
+      reloadHistory();
+    } catch {}
+  }, [reloadHistory]);
+
+  // Vider tout l'historique
+  const handleClearHistory = useCallback(async () => {
+    try {
+      await clearHistory();
+      setHistory([]);
+    } catch {}
+  }, []);
 
   const handleReindex = useCallback(async () => {
     setRagLoading(true);
@@ -143,6 +179,10 @@ export default function App() {
           onReset={() => setAppState('idle')}
           usage={usage}
           ragStatus={ragStatus}
+          history={history}
+          onLoadHistory={handleLoadHistory}
+          onDeleteHistory={handleDeleteHistory}
+          onClearHistory={handleClearHistory}
         />
       </div>
     </div>

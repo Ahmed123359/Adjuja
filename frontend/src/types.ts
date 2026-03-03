@@ -60,6 +60,23 @@ export interface UsageData {
   max_appels:       number;
 }
 
+/** Version allégée pour la liste historique (sans résultat complet) */
+export interface HistorySummary {
+  id:              string;
+  created_at:      string;
+  ao_excerpt:      string;
+  company_nom:     string;
+  provider:        string;
+  model:           string;
+  tokens_utilises: number;
+  langue:          string;
+}
+
+/** Entrée complète avec le résultat de génération */
+export interface HistoryEntry extends HistorySummary {
+  result: GenerationResult;
+}
+
 export const DEFAULT_COMPANY: CompanyData = {
   nom:'', forme_juridique:'', date_creation:'', site_web:'',
   description:'', secteurs:'', expertises:'', certifications:'',
