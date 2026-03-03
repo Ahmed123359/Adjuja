@@ -117,3 +117,76 @@ input[type=range] { accent-color: #6366f1; }
 .word-body td { border:1px solid #d1d5db; padding:.4rem .8rem; vertical-align:top; }
 .word-body tr:nth-child(even) td { background:#f3f6fb; }
 .word-body tr:hover td { background:#eef2f9; }
+
+/* ── Landing page keyframes ─────────────────────────────────── */
+@keyframes float-slow {
+  0%, 100% { transform: translateY(0px) scale(1); }
+  50%       { transform: translateY(-40px) scale(1.04); }
+}
+@keyframes float-medium {
+  0%, 100% { transform: translateY(0px) translateX(0px); }
+  33%       { transform: translateY(-25px) translateX(15px); }
+  66%       { transform: translateY(15px) translateX(-10px); }
+}
+@keyframes fade-in-up {
+  from { opacity: 0; transform: translateY(24px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+/* ── Ambient orbs ───────────────────────────────────────────── */
+.orb {
+  position: absolute;
+  border-radius: 9999px;
+  filter: blur(80px);
+  will-change: transform;
+  pointer-events: none;
+}
+.orb-1 {
+  width: 700px; height: 700px;
+  top: -150px; left: -200px;
+  background: radial-gradient(circle, rgba(99,102,241,.16) 0%, transparent 70%);
+  animation: float-slow 14s ease-in-out infinite;
+}
+.orb-2 {
+  width: 500px; height: 500px;
+  bottom: 5%; right: -150px;
+  background: radial-gradient(circle, rgba(139,92,246,.11) 0%, transparent 70%);
+  animation: float-medium 18s ease-in-out infinite;
+  animation-delay: -5s;
+}
+.orb-3 {
+  width: 350px; height: 350px;
+  top: 45%; left: 50%; transform: translateX(-50%);
+  background: radial-gradient(circle, rgba(99,102,241,.06) 0%, transparent 70%);
+  animation: float-slow 22s ease-in-out infinite;
+  animation-delay: -9s;
+}
+
+/* ── Noise overlay ──────────────────────────────────────────── */
+.noise-overlay {
+  position: absolute; inset: 0;
+  opacity: 0.025;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+  background-size: 128px;
+  pointer-events: none;
+}
+
+/* ── Scroll-triggered animation ─────────────────────────────── */
+.animate-on-scroll {
+  opacity: 0;
+  transform: translateY(24px);
+  transition: opacity 0.6s ease, transform 0.6s ease;
+}
+.animate-on-scroll.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .orb { animation: none !important; }
+  .animate-on-scroll { opacity: 1; transform: none; transition: none !important; }
+}

@@ -9,6 +9,7 @@ type Props = {
   onResetUsage: () => void;
   isDark:       boolean;
   toggleTheme:  () => void;
+  onGoLanding:  () => void;
 };
 
 function UsageBar({ value, max, label }: { value: number; max: number; label: string }) {
@@ -37,7 +38,7 @@ function UsageBar({ value, max, label }: { value: number; max: number; label: st
   );
 }
 
-export default function Header({ apiStatus, ragStatus, ragLoading, onReindex, usage, onResetUsage, isDark, toggleTheme }: Props) {
+export default function Header({ apiStatus, ragStatus, ragLoading, onReindex, usage, onResetUsage, isDark, toggleTheme, onGoLanding }: Props) {
   const statusColor = {
     online:     'bg-emerald-500',
     offline:    'bg-red-500',
@@ -54,15 +55,28 @@ export default function Header({ apiStatus, ragStatus, ragLoading, onReindex, us
   return (
     <header className="h-14 flex-shrink-0 flex items-center justify-between px-5 border-b border-gray-200 dark:border-white/[.04] bg-white dark:bg-navy-900 z-50 relative">
 
-      {/* Logo */}
-      <div className="flex items-center gap-2.5">
-        <div className="w-7 h-7 rounded-lg flex items-center justify-center select-none flex-shrink-0"
-          style={{ background: 'linear-gradient(135deg, #4f46e5, #6366f1)' }}>
-          <span className="text-white font-display font-bold text-sm leading-none">O</span>
+      {/* Logo + back to landing */}
+      <div className="flex items-center gap-3">
+        <button
+          onClick={onGoLanding}
+          title="Retour à l'accueil"
+          className="flex items-center gap-1 text-[11px] text-gray-400 dark:text-slate-500 hover:text-gray-700 dark:hover:text-slate-300 transition-colors"
+        >
+          <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+          </svg>
+          Accueil
+        </button>
+        <div className="w-px h-4 bg-gray-200 dark:bg-white/[.06]" />
+        <div className="flex items-center gap-2.5">
+          <div className="w-7 h-7 rounded-lg flex items-center justify-center select-none flex-shrink-0"
+            style={{ background: 'linear-gradient(135deg, #4f46e5, #6366f1)' }}>
+            <span className="text-white font-display font-bold text-sm leading-none">O</span>
+          </div>
+          <span className="font-display text-[1.2rem] font-bold tracking-tight leading-none">
+            <span className="text-gray-900 dark:text-white">Offr</span><span className="text-gradient">IA</span>
+          </span>
         </div>
-        <span className="font-display text-[1.2rem] font-bold tracking-tight leading-none">
-          <span className="text-gray-900 dark:text-white">Offr</span><span className="text-gradient">IA</span>
-        </span>
       </div>
 
       {/* Right side */}

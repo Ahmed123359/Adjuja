@@ -10,7 +10,7 @@ import {
 import type { Model, CompanyData, GenerationResult, AppState, RagStatus, UsageData, HistorySummary } from './types';
 import { DEFAULT_COMPANY } from './types';
 
-export default function App() {
+export default function App({ onGoLanding }: { onGoLanding: () => void }) {
   // Theme — dark par défaut, persisté en localStorage
   const [isDark, setIsDark] = useState(() => localStorage.getItem('theme') !== 'light');
 
@@ -153,6 +153,7 @@ export default function App() {
         onResetUsage={handleResetUsage}
         isDark={isDark}
         toggleTheme={toggleTheme}
+        onGoLanding={onGoLanding}
       />
 
       <div className="flex-1 flex overflow-hidden relative z-10">
