@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 from enum import Enum
 from typing import Literal
 
@@ -116,6 +116,8 @@ class SectionReponse(BaseModel):
 
 
 class GenerationResult(BaseModel):
+    model_config = ConfigDict(protected_namespaces=())
+
     """
     Résultat renvoyé par l'API après une génération.
 
@@ -155,6 +157,8 @@ class GenerationResult(BaseModel):
 
 
 class ModeleDisponible(BaseModel):
+    model_config = ConfigDict(protected_namespaces=())
+
     """
     Descripteur d'un modèle LLM disponible dans l'application.
 

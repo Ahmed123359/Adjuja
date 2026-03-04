@@ -4,7 +4,7 @@ from unittest.mock import AsyncMock, MagicMock
 from fastapi.testclient import TestClient
 from jose import jwt
 from app.main import app
-from app.api.dependencies import get_generation_service, get_current_user
+from app.api.dependencies import get_generation_service, get_current_user, get_history_service
 from app.config.settings import get_settings
 from app.models.generation import GenerationResult
 from app.models.user import UserPublic
@@ -41,9 +41,19 @@ def mock_generation_service():
 
 
 @pytest.fixture
-def client(mock_generation_service, fake_user):
-    # Injecte le service mocké ET l'utilisateur fictif (auth requise depuis l'ajout JWT)
+def mock_history_service():
+    # On mocke history_service pour éviter les écritures SQLite en test.
+    # Sans ça, history.add() lève une FK constraint (user_id inexistant en DB).
+    service = MagicMock()
+    service.add = MagicMock()
+    return service
+
+
+@pytest.fixture
+def client(mock_generation_service, mock_history_service, fake_user):
+    # Injecte les services mockés ET l'utilisateur fictif
     app.dependency_overrides[get_generation_service] = lambda: mock_generation_service
+    app.dependency_overrides[get_history_service] = lambda: mock_history_service
     app.dependency_overrides[get_current_user] = lambda: fake_user
     with TestClient(app) as c:
         yield c
@@ -137,7 +147,7 @@ class TestRateLimiting:
     """
 
     @pytest.fixture(autouse=True)
-    def setup(self, mock_generation_service, fake_user):
+    def setup(self, mock_generation_service, mock_history_service, fake_user):
         """Configure limite basse + reset du stockage entre chaque test."""
         from app.limiter import limiter
 
@@ -146,6 +156,7 @@ class TestRateLimiting:
         limiter._storage.reset()            # Vide les compteurs en mémoire
 
         app.dependency_overrides[get_generation_service] = lambda: mock_generation_service
+        app.dependency_overrides[get_history_service] = lambda: mock_history_service
         app.dependency_overrides[get_current_user] = lambda: fake_user
 
         yield
