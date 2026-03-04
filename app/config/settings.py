@@ -110,6 +110,18 @@ class Settings(BaseSettings):
     llm_timeout_seconds: float = 60.0
     """Timeout en secondes pour chaque appel LLM individuel (défaut : 60s)."""
 
+    # ------------------------------------------------------------------
+    # Rate limiting
+    # ------------------------------------------------------------------
+
+    # Nombre maximum de requêtes autorisées sur POST /generate par utilisateur.
+    # Syntaxe : "<N>/<période>" — ex: "10/minute", "100/hour", "5/second".
+    # Dépasse la limite → HTTP 429 Too Many Requests.
+    # Valeur par défaut : 10 requêtes par minute par utilisateur.
+    # À réduire en production si les coûts LLM sont une préoccupation.
+    rate_limit_generate: str = "10/minute"
+    """Limite de requêtes sur POST /generate par user (syntaxe slowapi : '10/minute')."""
+
     @model_validator(mode="after")
     def _valider_jwt_secret(self) -> "Settings":
         """

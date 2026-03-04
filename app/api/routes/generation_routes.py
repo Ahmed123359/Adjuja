@@ -1,6 +1,6 @@
 import logging
 import time
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from app.models.generation import GenerationRequest, GenerationResult
 from app.models.history import HistoryEntry
 from app.models.user import UserPublic
@@ -9,6 +9,8 @@ from app.services.usage_service import UsageService
 from app.services.history_service import HistoryService
 from app.api.dependencies import get_generation_service, get_usage_service, get_history_service, get_current_user
 from app.api.routes.defaults_routes import _load_defaults
+from app.config.settings import get_settings
+from app.limiter import limiter
 
 router = APIRouter(prefix="/generate", tags=["Génération"])
 logger = logging.getLogger(__name__)
@@ -23,8 +25,10 @@ logger = logging.getLogger(__name__)
         "et génère une réponse structurée en utilisant le provider LLM sélectionné."
     ),
 )
+@limiter.limit(lambda: get_settings().rate_limit_generate)
 async def generate_response(
-    request:      GenerationRequest,
+    request:      Request,
+    body:         GenerationRequest,
     service:      GenerationService = Depends(get_generation_service),
     usage:        UsageService      = Depends(get_usage_service),
     history:      HistoryService    = Depends(get_history_service),
@@ -34,21 +38,22 @@ async def generate_response(
     Génère une réponse complète à un appel d'offres.
 
     Pipeline de traitement :
-    1. Vérifie les limites de tokens et d'appels
-    2. Parse le texte brut de l'AO en objet structuré
-    3. Construit un prompt optimisé avec le contexte entreprise
-    4. Appelle le provider LLM choisi
-    5. Incrémente le compteur d'usage
-    6. Sauvegarde dans l'historique (history.json)
-    7. Retourne la réponse découpée en sections Markdown
+    1. Vérifie le rate limit par utilisateur (slowapi)
+    2. Vérifie les limites de tokens et d'appels (compteurs globaux)
+    3. Parse le texte brut de l'AO en objet structuré
+    4. Construit un prompt optimisé avec le contexte entreprise
+    5. Appelle le provider LLM choisi
+    6. Incrémente le compteur d'usage
+    7. Sauvegarde dans l'historique
+    8. Retourne la réponse découpée en sections Markdown
 
     Codes d'erreur retournés :
     - ``400`` : paramètres invalides (clé API manquante, provider inconnu…)
-    - ``429`` : limite d'appels ou de tokens atteinte
+    - ``429`` : rate limit dépassé, ou limite d'appels/tokens atteinte
     - ``502`` : échec de l'appel au provider LLM (auth, quota, timeout…)
     - ``500`` : erreur interne inattendue
     """
-    # Vérification des limites avant génération
+    # Vérification des limites globales avant génération
     limits = _load_defaults()
     if limits.max_appels > 0 and usage.total_appels >= limits.max_appels:
         raise HTTPException(
@@ -62,22 +67,22 @@ async def generate_response(
         )
 
     # Injecter les instructions par défaut si le front n'en envoie pas
-    if not request.instructions_supplementaires and limits.instructions:
-        request = request.model_copy(update={'instructions_supplementaires': limits.instructions})
+    if not body.instructions_supplementaires and limits.instructions:
+        body = body.model_copy(update={'instructions_supplementaires': limits.instructions})
 
     logger.info(
         "Génération démarrée — user=%s provider=%s model=%s langue=%s",
-        current_user.id, request.provider.value, request.model, request.langue,
+        current_user.id, body.provider.value, body.model, body.langue,
     )
     debut = time.monotonic()
 
     try:
-        result = await service.generate(request)
+        result = await service.generate(body)
         if not result.succes:
             # Erreur remontée par le service (ex: clé API invalide, quota LLM)
             logger.error(
                 "Génération échouée — user=%s provider=%s erreur=%s",
-                current_user.id, request.provider.value, result.erreur,
+                current_user.id, body.provider.value, result.erreur,
             )
             raise HTTPException(
                 status_code=status.HTTP_502_BAD_GATEWAY,
@@ -92,15 +97,15 @@ async def generate_response(
 
         usage.add(result.tokens_utilises or 0)
 
-        # Sauvegarde dans l'historique (logique métier côté back)
+        # Sauvegarde dans l'historique
         history.add(HistoryEntry(
             user_id=current_user.id,
-            ao_excerpt=request.ao_texte[:150].strip(),
-            company_nom=request.contexte_entreprise.nom,
+            ao_excerpt=body.ao_texte[:150].strip(),
+            company_nom=body.contexte_entreprise.nom,
             provider=result.provider_utilise,
             model=result.model_utilise,
             tokens_utilises=result.tokens_utilises or 0,
-            langue=request.langue,
+            langue=body.langue,
             result=result,
         ))
 

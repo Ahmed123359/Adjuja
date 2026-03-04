@@ -5,11 +5,15 @@ from fastapi import FastAPI, Response, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import RedirectResponse
+from slowapi import _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
+from slowapi.middleware import SlowAPIMiddleware
 from app.api.routes import (
     generation_router, models_router, rag_router,
     defaults_router, usage_router, history_router, auth_router,
 )
 from app.config.settings import get_settings
+from app.limiter import limiter
 
 settings = get_settings()
 
@@ -38,7 +42,7 @@ logger.info("Démarrage de l'application OffrIA (env=%s)", settings.app_env)
 # ────────────────────────────────────────────────────────────────────────────
 
 app = FastAPI(
-    title="Générateur de Réponses AO",
+    title="Générateur de réponses AO",
     description=(
         "API de génération automatique de réponses aux appels d'offres. "
         "Supporte plusieurs providers LLM : OpenAI, Anthropic (Claude), Mistral."
@@ -47,6 +51,14 @@ app = FastAPI(
     docs_url="/docs",
     redoc_url="/redoc",
 )
+
+# Rate limiting — limite le nombre de requêtes par utilisateur sur POST /generate.
+# Le limiter stocke les compteurs en mémoire (dict Python).
+# SlowAPIMiddleware intercepte chaque requête pour incrémenter les compteurs.
+# _rate_limit_exceeded_handler renvoie HTTP 429 avec un message clair si la limite est dépassée.
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+app.add_middleware(SlowAPIMiddleware)
 
 # CORS — contrôle des origines cross-origin autorisées.
 #

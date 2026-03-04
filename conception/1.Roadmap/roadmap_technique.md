@@ -69,7 +69,7 @@ Décisions d'architecture, de sécurité et d'expérience produit.
 - [ ] `[SCALE]` **Usage par utilisateur** — Le compteur est global.
   Ajouter un suivi par `user_id` pour limiter la consommation individuelle.
 
-- [ ] `[SCALE]` **Rate limiting** — Ajouter `slowapi` sur `POST /generate`
+- [x] `[SCALE]` **Rate limiting** — Ajouter `slowapi` sur `POST /generate`
   (route coûteuse : 9 appels LLM). Pas nécessaire à 5-10 users.
 
 ---
