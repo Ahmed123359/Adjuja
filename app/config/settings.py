@@ -49,7 +49,7 @@ class Settings(BaseSettings):
     app_env: str = "development"
     """Environnement d'exécution : 'development' ou 'production'."""
 
-    app_host: str = "0.0.0.0"
+    app_host: str = "0.0.0.0"  # nosec B104
     """Adresse d'écoute du serveur Uvicorn."""
 
     app_port: int = 8000
