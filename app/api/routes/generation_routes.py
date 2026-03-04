@@ -119,7 +119,7 @@ async def generate_response(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=str(e),
         )
-    except Exception as e:
+    except Exception:
         # exc_info=True inclut la stacktrace complète dans les logs pour diagnostic
         logger.error("Erreur interne inattendue — user=%s", current_user.id, exc_info=True)
         raise HTTPException(
