@@ -1,4 +1,4 @@
-name: Tests
+name: CI
 
 # Déclenché à chaque push sur n'importe quelle branche,
 # et à chaque Pull Request vers main.
@@ -9,33 +9,67 @@ on:
     branches: [main]
 
 jobs:
+  lint:
+    name: "Lint (ruff)"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pip"
+
+      - name: Installer ruff
+        run: pip install ruff
+
+      # Vérifie le style et les erreurs (imports inutilisés, variables non utilisées…)
+      - name: Vérifier le style du code
+        run: ruff check app/ tests/
+
+  security:
+    name: "Sécurité (bandit)"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pip"
+
+      - name: Installer bandit
+        run: pip install bandit
+
+      # Détecte les failles de sécurité courantes : injections SQL, exec(), secrets hardcodés…
+      # -ll = niveau medium+high seulement (ignore les low severity pour réduire le bruit)
+      - name: Scanner le code pour les failles de sécurité
+        run: bandit -r app/ -ll --exclude app/providers/
+
   test:
+    name: "Tests + couverture"
     runs-on: ubuntu-latest
 
     env:
-      # JWT_SECRET_KEY doit faire ≥ 32 caractères (validé au démarrage de l'app).
-      # Cette valeur n'est utilisée que par la CI — jamais en production.
       JWT_SECRET_KEY: "ci-github-actions-test-secret-key-not-for-prod"
       APP_ENV: development
-
-      # Les clés API LLM sont vides : les tests mockent tous les providers.
-      # Aucun appel réel n'est effectué vers OpenAI / Anthropic / Mistral.
       OPENAI_API_KEY: ""
       ANTHROPIC_API_KEY: ""
       MISTRAL_API_KEY: ""
 
     steps:
-      - name: Récupérer le code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Installer Python 3.12
-        uses: actions/setup-python@v5
+      - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-          cache: "pip"   # met les dépendances en cache → relance plus rapide
+          cache: "pip"
 
       - name: Installer les dépendances
         run: pip install -r requirements.txt
 
-      - name: Lancer les tests
-        run: pytest tests/ -v
+      # --cov=app       : mesure la couverture sur le dossier app/
+      # --cov-report=term-missing : affiche les lignes non couvertes dans les logs
+      # --cov-fail-under=60 : fait échouer la CI si la couverture est < 60%
+      - name: Lancer les tests avec couverture
+        run: pytest tests/ -v --cov=app --cov-report=term-missing --cov-fail-under=60
