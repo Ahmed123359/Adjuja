@@ -1,0 +1,41 @@
+name: Tests
+
+# Déclenché à chaque push sur n'importe quelle branche,
+# et à chaque Pull Request vers main.
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    env:
+      # JWT_SECRET_KEY doit faire ≥ 32 caractères (validé au démarrage de l'app).
+      # Cette valeur n'est utilisée que par la CI — jamais en production.
+      JWT_SECRET_KEY: "ci-github-actions-test-secret-key-not-for-prod"
+      APP_ENV: development
+
+      # Les clés API LLM sont vides : les tests mockent tous les providers.
+      # Aucun appel réel n'est effectué vers OpenAI / Anthropic / Mistral.
+      OPENAI_API_KEY: ""
+      ANTHROPIC_API_KEY: ""
+      MISTRAL_API_KEY: ""
+
+    steps:
+      - name: Récupérer le code
+        uses: actions/checkout@v4
+
+      - name: Installer Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pip"   # met les dépendances en cache → relance plus rapide
+
+      - name: Installer les dépendances
+        run: pip install -r requirements.txt
+
+      - name: Lancer les tests
+        run: pytest tests/ -v
