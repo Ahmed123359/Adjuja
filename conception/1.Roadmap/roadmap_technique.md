@@ -6,6 +6,7 @@ Décisions d'architecture, de sécurité et d'expérience produit.
 > `[PROD]` = obligatoire avant tout déploiement, même pour 5-10 utilisateurs
 > `[SCALE]` = utile à partir de ~50+ utilisateurs simultanés ou en multi-réplica
 > `[UX]` = amélioration produit, pas lié à la charge
+> `[QUALITE]` = amélioration de la qualité des réponses générées
 
 ---
 
@@ -91,6 +92,70 @@ Décisions d'architecture, de sécurité et d'expérience produit.
 - [ ] `[UX]` **Réinitialisation de mot de passe** — Flux "mot de passe oublié" par email
   (nécessite un service SMTP : SendGrid, Resend, ou SMTP local).
 
-- [ ] `[UX]` **Export de l'historique** — Télécharger les réponses en PDF ou DOCX.
+- [x] `[UX]` **Export de l'historique** — Télécharger les réponses en PDF ou DOCX.
 
 - [ ] `[UX]` **Recherche dans l'historique** — Filtrer par date, provider, nom d'entreprise.
+
+---
+
+## Qualité de génération IA
+
+- [ ] `[QUALITE]` **Parser AO par LLM** — Remplacer le parser regex par un appel LLM léger
+  pour extraire titre, acheteur, critères et budget. Plus robuste sur les AO mal formatés,
+  en tableaux, ou en anglais. Impact direct sur la pertinence des réponses.
+
+- [x] `[QUALITE]` **Brief stratégique enrichi** *(priorité 1)* — Ajouter dans le brief une instruction
+  pour lire et pondérer les sections selon les critères d'évaluation de l'AO.
+  Exemple : "Prix 60% / Qualité 40%" → section financière plus développée, argumentation
+  sur le ROI amplifiée. Résultat : réponses mieux alignées sur les critères du jury.
+
+- [x] `[QUALITE]` **Affichage du brief stratégique** — Brief retourné dans `GenerationResult`
+  et affiché dans un onglet "Brief stratégique" à côté de l'onglet "Document".
+  Permet à l'utilisateur de comprendre la stratégie choisie et de valider l'angle.
+
+- [ ] `[QUALITE]` **Gestion des échecs partiels** — Si 1 section sur 8 timeout ou échoue,
+  générer les 7 autres et afficher une note sur la section manquante plutôt que d'échouer
+  complètement. Améliore la résilience sur les modèles lents (Mistral, GPT-4o).
+
+- [ ] `[QUALITE]` **Retry automatique** — Backoff exponentiel (1s, 2s, 4s) sur timeout
+  avant d'échouer définitivement. Évite à l'utilisateur de relancer manuellement.
+
+- [ ] `[QUALITE]` **RAG activé** — Configurer la base documentaire Qdrant avec des documents
+  de référence de l'entreprise (anciens mémoires, fiches projet) pour injecter des
+  exemples concrets dans les sections pertinentes. Fort impact sur la crédibilité des réponses.
+
+- [ ] `[QUALITE]` **Détection automatique de la langue** — Détecter la langue de l'AO
+  (FR / EN / AR…) depuis le texte extrait et pré-remplir le sélecteur de langue.
+  Évite les réponses générées dans la mauvaise langue si l'utilisateur oublie de changer.
+
+- [ ] `[QUALITE]` **Validation post-OCR** — Après transcription GPT-4o, vérifier que le texte
+  extrait dépasse un seuil minimal de caractères et ne contient pas de refus ("I'm sorry…").
+  Lever une erreur claire côté API plutôt que de passer un texte vide au générateur.
+
+- [ ] `[QUALITE]` **Cohérence inter-sections** — Passe finale : un appel LLM relit l'ensemble
+  des 8 sections générées et détecte contradictions, répétitions ou incohérences de chiffres.
+  Retourne une liste d'alertes optionnelle affichée dans l'onglet "Brief".
+
+- [ ] `[QUALITE]` **Sections personnalisables** — Permettre d'activer / désactiver / réordonner
+  les sections depuis l'interface. Certains AO n'attendent pas 8 sections standard ;
+  l'utilisateur devrait pouvoir adapter la structure avant de lancer la génération.
+
+- [ ] `[QUALITE]` **Prompt templates éditables** — Exposer les instructions de chaque section
+  dans l'interface (zone de texte repliable). L'utilisateur peut affiner le prompt
+  d'une section sans modifier le code. Stocker les templates personnalisés en DB par user.
+
+- [ ] `[QUALITE]` **Résumé exécutif** — Générer une 9ᵉ section "Note de synthèse" (1 page max)
+  résumant la proposition de valeur, les atouts différenciants et les chiffres clés.
+  Idéale pour les décideurs qui lisent en diagonale.
+
+- [ ] `[QUALITE]` **Multi-turn brief** — Après la phase 1 (brief stratégique), permettre à
+  l'utilisateur d'affiner l'angle via un mini-chat (1-2 échanges) avant de lancer
+  la génération des sections. Évite les regenerations complètes coûteuses.
+
+- [ ] `[QUALITE]` **Score de qualité auto-évalué** — Demander au LLM d'évaluer chaque section
+  générée sur 3 critères (pertinence, précision, différenciation) avec un score /5.
+  Afficher un badge coloré par section pour guider les révisions manuelles.
+
+- [ ] `[QUALITE]` **Longueur adaptative** — Calculer le nombre de mots cible par section
+  en fonction de la longueur et de la complexité de l'AO (nb de critères, budget, durée).
+  Les petits AO génèrent des sections trop longues actuellement.

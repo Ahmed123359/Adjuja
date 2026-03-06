@@ -27,13 +27,14 @@ export interface CompanyData {
 }
 
 export interface GenerationResult {
-  succes:            boolean;
-  provider_utilise:  string;
-  model_utilise:     string;
-  texte_complet:     string;
-  sections:          { titre: string; contenu: string; ordre: number }[];
-  tokens_utilises:   number;
-  erreur:            string | null;
+  succes:              boolean;
+  provider_utilise:    string;
+  model_utilise:       string;
+  texte_complet:       string;
+  sections:            { titre: string; contenu: string; ordre: number }[];
+  tokens_utilises:     number;
+  erreur:              string | null;
+  brief_strategique?:  string;
 }
 
 export type AppState = 'idle' | 'loading' | 'result' | 'error';

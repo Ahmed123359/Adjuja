@@ -154,6 +154,10 @@ class GenerationResult(BaseModel):
         default=None,
         description="Message d'erreur détaillé si succes=False, None sinon",
     )
+    brief_strategique: str = Field(
+        default="",
+        description="Brief stratégique interne généré en phase 1 (enjeux, différenciants, pondération)",
+    )
 
 
 class ModeleDisponible(BaseModel):

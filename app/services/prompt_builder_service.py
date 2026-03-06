@@ -118,8 +118,10 @@ SECTIONS: list[SectionConfig] = [
 - Mentionner les conditions de paiement, les garanties et les engagements contractuels
 - Si le budget estimé de l'AO est connu, y aligner l'offre explicitement
 - Si le budget n'est pas connu, éviter les chiffres précis et valoriser la transparence tarifaire
-- Ajouter un tableau ROI/TCO si pertinent : | Indicateur | Sans OffrIA | Avec notre solution |
-- Ton : transparent et orienté valeur, pas uniquement compétitivité prix
+- Ajouter un tableau ROI/TCO si pertinent : | Indicateur | Sans notre solution | Avec notre solution |
+- NE PAS chercher à paraître moins cher ni à compenser un critère prix élevé par du volume de texte
+- Le prix est fixé par l'entreprise : cette section doit justifier la valeur, pas négocier le tarif
+- Ton : transparent et orienté valeur, démontrant que le coût est maîtrisé et le ROI mesurable
 """,
     ),
     SectionConfig(
@@ -210,12 +212,13 @@ class PromptBuilderService:
             brief_instruction = """---
 ## STRATEGIC BRIEF TO PRODUCE
 
-Write an internal strategic brief (max 300 words) structured EXACTLY as follows:
+Write an internal strategic brief (max 350 words) structured EXACTLY as follows:
 
 **KEY STAKES**: the 3 main issues identified in the tender (buyer's real needs)
 **DIFFERENTIATORS**: the 3 company strengths most relevant to THIS tender
 **KEY MESSAGES**: the 2-3 messages to reinforce throughout all sections
 **TONE & ANGLE**: the positioning and tone to adopt throughout the response
+**SECTION WEIGHTING**: based on the evaluation criteria and their weights, identify where the buyer is most sensitive and reinforce the value argumentation in the technical sections accordingly. IMPORTANT: a high price weight does NOT mean developing the financial section more — the price itself is set by the company's management, not by this response. Instead, reinforce ROI justification and risk reduction arguments throughout ALL sections. Always prioritize methodology, references, and team sections as they demonstrate execution capability. If no criteria are specified, prioritize methodology and references.
 
 Be concise, precise and actionable. This brief will be the compass for the entire response.
 Write the brief **in English**."""
@@ -223,12 +226,13 @@ Write the brief **in English**."""
             brief_instruction = """---
 ## BRIEF STRATÉGIQUE À PRODUIRE
 
-Rédige un brief stratégique interne (300 mots maximum) structuré EXACTEMENT ainsi :
+Rédige un brief stratégique interne (350 mots maximum) structuré EXACTEMENT ainsi :
 
 **ENJEUX CLÉS** : les 3 enjeux principaux identifiés dans l'AO (besoins réels de l'acheteur)
 **DIFFÉRENCIANTS** : les 3 points forts de l'entreprise les plus pertinents pour CET AO
 **MESSAGES PORTEURS** : les 2-3 messages à répéter et renforcer dans toutes les sections
 **TON ET ANGLE** : le positionnement et le ton à adopter dans toute la réponse
+**PONDÉRATION DES SECTIONS** : selon les critères d'évaluation et leurs poids, identifie où l'acheteur est le plus sensible et renforce l'argumentation de valeur dans les sections techniques en conséquence. IMPORTANT : un poids élevé sur le Prix ne signifie PAS développer davantage la section financière — le prix est fixé par la direction de l'entreprise, pas par cette réponse. En revanche, renforce l'argumentation ROI et la réduction de risque dans TOUTES les sections. Priorise toujours la méthodologie, les références et les moyens humains car ils démontrent la capacité d'exécution. Si aucun critère n'est précisé, prioriser la méthodologie et les références.
 
 Sois concis, précis et actionnable. Ce brief sera la boussole de toute la rédaction."""
 

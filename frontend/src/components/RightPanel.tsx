@@ -342,9 +342,11 @@ type Props = {
 export default function RightPanel({ state, result, error, company, aoText, onReset, usage, ragStatus, history, onLoadHistory, onDeleteHistory, onClearHistory }: Props) {
   const wordRef = useRef<HTMLDivElement>(null);
   const [copied, setCopied] = useState(false);
+  const [tab, setTab] = useState<'document' | 'brief'>('document');
 
   useEffect(() => {
     if (state === 'result' && result && wordRef.current) {
+      setTab('document');
       wordRef.current.innerHTML = buildDocumentHTML(result, company, aoText);
     }
   }, [state, result, company, aoText]);
@@ -357,6 +359,58 @@ export default function RightPanel({ state, result, error, company, aoText, onRe
     });
   }
 
+  function downloadWord() {
+    if (!result) return;
+    const docStyles = `
+      body { font-family: Calibri, 'Segoe UI', Arial, sans-serif; font-size: 11pt; line-height: 1.65; color: #1a1a1a; }
+      h1 { font-size: 1.35rem; font-weight: 700; color: #1e3a5f; }
+      h2 { font-size: 1.1rem; font-weight: 700; color: #1e3a5f; border-bottom: 2px solid #1e3a5f; padding-bottom: .3rem; margin: 1.8rem 0 .6rem; }
+      h3 { font-size: 1rem; font-weight: 600; color: #2c5282; margin: 1.2rem 0 .4rem; }
+      p  { margin: 0 0 .75rem; line-height: 1.7; }
+      ul, ol { padding-left: 1.4rem; margin: .4rem 0 .75rem; }
+      li { margin-bottom: .3rem; line-height: 1.6; }
+      strong { font-weight: 700; }
+      table { width: 100%; border-collapse: collapse; margin: .9rem 0; font-size: .875rem; }
+      th { background: #1e3a5f; color: white; padding: .45rem .8rem; text-align: left; font-weight: 600; }
+      td { border: 1px solid #d1d5db; padding: .4rem .8rem; vertical-align: top; }
+      tr:nth-child(even) td { background: #f3f6fb; }
+    `;
+    const html = buildDocumentHTML(result, company, aoText);
+    const fullHtml = `<!DOCTYPE html><html><head><meta charset="utf-8"><style>${docStyles}</style></head><body>${html}</body></html>`;
+    const blob = new Blob([fullHtml], { type: 'application/msword' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${(company.nom || 'reponse').replace(/\s+/g, '_')}_ao.doc`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  function printPDF() {
+    if (!result) return;
+    const docStyles = `
+      body { font-family: Calibri, 'Segoe UI', Arial, sans-serif; font-size: 11pt; line-height: 1.65; color: #1a1a1a; margin: 0; background: white; }
+      h2 { font-size: 1.1rem; font-weight: 700; color: #1e3a5f; border-bottom: 2px solid #1e3a5f; padding-bottom: .3rem; margin: 1.8rem 0 .6rem; }
+      h3 { font-size: 1rem; font-weight: 600; color: #2c5282; margin: 1.2rem 0 .4rem; }
+      p  { margin: 0 0 .75rem; line-height: 1.7; }
+      ul, ol { padding-left: 1.4rem; margin: .4rem 0 .75rem; }
+      li { margin-bottom: .3rem; }
+      strong { font-weight: 700; }
+      table { width: 100%; border-collapse: collapse; margin: .9rem 0; }
+      th { background: #1e3a5f; color: white; padding: .45rem .8rem; text-align: left; }
+      td { border: 1px solid #d1d5db; padding: .4rem .8rem; }
+      tr:nth-child(even) td { background: #f3f6fb; }
+      @page { margin: 2cm 2.5cm; }
+    `;
+    const html = buildDocumentHTML(result, company, aoText);
+    const w = window.open('', '_blank');
+    if (!w) return;
+    w.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>${company.nom || 'Réponse AO'}</title><style>${docStyles}</style></head><body>${html}</body></html>`);
+    w.document.close();
+    w.focus();
+    setTimeout(() => { w.print(); w.close(); }, 400);
+  }
+
 return (
     <div className="flex-1 flex flex-col overflow-hidden bg-slate-50 dark:bg-navy-900">
       {state === 'idle'    && <Dashboard usage={usage} ragStatus={ragStatus} history={history} onLoadHistory={onLoadHistory} onDeleteHistory={onDeleteHistory} onClearHistory={onClearHistory} />}
@@ -367,30 +421,60 @@ return (
 
           {/* Toolbar */}
           <div className="flex-shrink-0 flex items-center justify-between px-5 py-2.5 bg-white dark:bg-navy-900 border-b border-gray-200 dark:border-white/[.04]">
-            <div className="flex items-center gap-2 flex-wrap">
+            {/* Onglets */}
+            <div className="flex items-center gap-1">
+              <button
+                onClick={() => setTab('document')}
+                className={`text-xs px-3 py-1.5 rounded-lg border transition-all ${
+                  tab === 'document'
+                    ? 'bg-indigo-50 dark:bg-indigo-500/[.10] border-indigo-200 dark:border-indigo-500/30 text-indigo-600 dark:text-indigo-400 font-medium'
+                    : 'border-transparent text-gray-400 dark:text-slate-500 hover:text-gray-600 dark:hover:text-slate-300'
+                }`}>
+                Document
+              </button>
+              {result?.brief_strategique && (
+                <button
+                  onClick={() => setTab('brief')}
+                  className={`text-xs px-3 py-1.5 rounded-lg border transition-all ${
+                    tab === 'brief'
+                      ? 'bg-indigo-50 dark:bg-indigo-500/[.10] border-indigo-200 dark:border-indigo-500/30 text-indigo-600 dark:text-indigo-400 font-medium'
+                      : 'border-transparent text-gray-400 dark:text-slate-500 hover:text-gray-600 dark:hover:text-slate-300'
+                  }`}>
+                  Brief stratégique
+                </button>
+              )}
               {result && (
-                <>
+                <div className="flex items-center gap-2 ml-3">
                   <span className="text-[11px] font-mono px-2 py-0.5 rounded-full bg-gray-100 dark:bg-white/[.04] border border-gray-200 dark:border-white/[.08] text-gray-500 dark:text-slate-400">
                     {result.provider_utilise}
-                  </span>
-                  <span className="text-[11px] font-mono px-2 py-0.5 rounded-full bg-indigo-50 dark:bg-indigo-500/[.10] border border-indigo-200 dark:border-indigo-500/30 text-indigo-600 dark:text-indigo-400">
-                    {result.model_utilise}
                   </span>
                   <span className="text-[11px] font-mono px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-500/[.08] border border-emerald-200 dark:border-emerald-500/20 text-emerald-600 dark:text-emerald-400">
                     {result.tokens_utilises.toLocaleString('fr-FR')} tokens
                   </span>
-                </>
+                </div>
               )}
             </div>
             <div className="flex items-center gap-2">
-<button onClick={copyText}
-                className={`text-xs px-3 py-1.5 rounded-lg border transition-all ${
-                  copied
-                    ? 'bg-indigo-50 dark:bg-indigo-500/[.10] border-indigo-200 dark:border-indigo-500/30 text-indigo-600 dark:text-indigo-400'
-                    : 'border-gray-200 dark:border-white/[.08] text-gray-500 dark:text-slate-400 hover:border-indigo-200 dark:hover:border-indigo-500/30 hover:text-indigo-600 dark:hover:text-indigo-400 bg-white dark:bg-white/[.02]'
-                }`}>
-                {copied ? '✓ Copié' : 'Copier'}
-              </button>
+              {tab === 'document' && (
+                <>
+                  <button onClick={downloadWord}
+                    className="text-xs px-3 py-1.5 rounded-lg border border-gray-200 dark:border-white/[.08] text-gray-500 dark:text-slate-400 hover:border-indigo-200 dark:hover:border-indigo-500/30 hover:text-indigo-600 dark:hover:text-indigo-400 bg-white dark:bg-white/[.02] transition-all">
+                    ↓ Word
+                  </button>
+                  <button onClick={printPDF}
+                    className="text-xs px-3 py-1.5 rounded-lg border border-gray-200 dark:border-white/[.08] text-gray-500 dark:text-slate-400 hover:border-indigo-200 dark:hover:border-indigo-500/30 hover:text-indigo-600 dark:hover:text-indigo-400 bg-white dark:bg-white/[.02] transition-all">
+                    ↓ PDF
+                  </button>
+                  <button onClick={copyText}
+                    className={`text-xs px-3 py-1.5 rounded-lg border transition-all ${
+                      copied
+                        ? 'bg-indigo-50 dark:bg-indigo-500/[.10] border-indigo-200 dark:border-indigo-500/30 text-indigo-600 dark:text-indigo-400'
+                        : 'border-gray-200 dark:border-white/[.08] text-gray-500 dark:text-slate-400 hover:border-indigo-200 dark:hover:border-indigo-500/30 hover:text-indigo-600 dark:hover:text-indigo-400 bg-white dark:bg-white/[.02]'
+                    }`}>
+                    {copied ? '✓ Copié' : 'Copier'}
+                  </button>
+                </>
+              )}
               <button onClick={onReset}
                 className="text-xs px-3 py-1.5 rounded-lg border border-gray-200 dark:border-white/[.08] text-gray-500 dark:text-slate-400 hover:border-gray-300 dark:hover:border-white/[.14] hover:text-gray-700 dark:hover:text-slate-200 bg-white dark:bg-white/[.02] transition-all">
                 ← Retour
@@ -398,7 +482,7 @@ return (
             </div>
           </div>
 
-          {/* Document area */}
+          {/* Contenu principal */}
           <div className="flex-1 overflow-y-auto bg-slate-100 dark:bg-[#080f1c] p-8 flex justify-center items-start">
             {state === 'error' ? (
               <div className="max-w-lg w-full bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-500/20 rounded-2xl p-8 text-center">
@@ -411,14 +495,30 @@ return (
                 <p className="text-gray-500 dark:text-red-400/80 text-sm whitespace-pre-wrap">{error}</p>
               </div>
             ) : (
-              <div
-                ref={wordRef}
-                contentEditable
-                suppressContentEditableWarning
-                spellCheck
-                className="word-body text-black w-[794px] max-w-full font-word focus:outline-none"
-                style={{ fontFamily: 'Calibri, Segoe UI, Arial, sans-serif', fontSize: '11pt', lineHeight: '1.65' }}
-              />
+              <>
+                {/* Brief — toujours monté pour éviter les problèmes de ref, masqué si onglet document */}
+                {result?.brief_strategique && (
+                  <div className={`max-w-2xl w-full bg-white dark:bg-navy-800 rounded-2xl border border-gray-200 dark:border-white/[.06] p-8 ${tab !== 'brief' ? 'hidden' : ''}`}>
+                    <div className="flex items-center gap-2 mb-5">
+                      <div className="w-2 h-2 rounded-full bg-indigo-500" />
+                      <h2 className="text-sm font-semibold text-gray-700 dark:text-slate-200 uppercase tracking-widest">Brief stratégique</h2>
+                    </div>
+                    <div
+                      className="word-body text-gray-800 dark:text-slate-200 prose dark:prose-invert max-w-none"
+                      dangerouslySetInnerHTML={{ __html: marked.parse(result.brief_strategique) as string }}
+                    />
+                  </div>
+                )}
+                {/* Document — toujours monté pour que wordRef reste valide */}
+                <div
+                  ref={wordRef}
+                  contentEditable
+                  suppressContentEditableWarning
+                  spellCheck
+                  className={`word-body text-black w-[794px] max-w-full font-word focus:outline-none ${tab !== 'document' ? 'hidden' : ''}`}
+                  style={{ fontFamily: 'Calibri, Segoe UI, Arial, sans-serif', fontSize: '11pt', lineHeight: '1.65' }}
+                />
+              </>
             )}
           </div>
         </div>

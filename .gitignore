@@ -13,3 +13,6 @@ frontend/dist/
 # Divers
 .DS_Store
 *.log
+data/
+documents/
+

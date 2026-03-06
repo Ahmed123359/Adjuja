@@ -2,22 +2,7 @@ import React, { useState, useRef, useCallback } from 'react';
 import type { ReactNode } from 'react';
 import * as XLSX from 'xlsx';
 import type { Model, CompanyData } from '../types';
-
-// ── Helpers ───────────────────────────────────────────────
-async function extractPdfText(file: File): Promise<string> {
-  const pdfjsLib = await import('pdfjs-dist');
-  pdfjsLib.GlobalWorkerOptions.workerSrc =
-    'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js';
-  const pdf   = await pdfjsLib.getDocument({ data: await file.arrayBuffer() }).promise;
-  const pages = await Promise.all(
-    Array.from({ length: pdf.numPages }, async (_, i) => {
-      const page = await pdf.getPage(i + 1);
-      const c    = await page.getTextContent();
-      return c.items.map((it) => ('str' in it ? it.str : '')).join(' ');
-    })
-  );
-  return pages.join('\n\n').trim();
-}
+import { extractPdfText } from '../api';
 
 const COMPANY_FIELDS = [
   'nom','forme_juridique','date_creation','site_web',
@@ -174,14 +159,26 @@ export default function LeftPanel(props: Props) {
   }, [setCompany]);
 
   async function handleAoFile(file: File) {
-    setFileMsg(`Lecture de ${file.name}…`);
-    try {
-      const text = file.name.toLowerCase().endsWith('.pdf')
-        ? await extractPdfText(file) : await file.text();
-      setAoText(text);
-      setFileMsg(`✓ ${file.name}`);
-    } catch (e: unknown) {
-      setFileMsg(`Erreur : ${e instanceof Error ? e.message : String(e)}`);
+    if (file.name.toLowerCase().endsWith('.pdf')) {
+      setFileMsg(`Analyse du PDF…`);
+      try {
+        const result = await extractPdfText(file);
+        setAoText(result.text);
+        const label = result.is_scanned
+          ? `✓ ${file.name} — ${result.pages}p (OCR via GPT-4o)`
+          : `✓ ${file.name} — ${result.pages}p`;
+        setFileMsg(label);
+      } catch (e: unknown) {
+        setFileMsg(`Erreur : ${e instanceof Error ? e.message : String(e)}`);
+      }
+    } else {
+      setFileMsg(`Lecture de ${file.name}…`);
+      try {
+        setAoText(await file.text());
+        setFileMsg(`✓ ${file.name}`);
+      } catch (e: unknown) {
+        setFileMsg(`Erreur : ${e instanceof Error ? e.message : String(e)}`);
+      }
     }
   }
 

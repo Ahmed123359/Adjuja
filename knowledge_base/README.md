@@ -17,10 +17,15 @@ au démarrage et utilisés pour enrichir la génération de réponses AO via RAG
 
 - `.txt` — texte brut
 - `.md`  — Markdown
-- `.pdf` — PDF (texte extractible)
+- `.pdf` — PDF (texte embarqué uniquement pour le RAG)
 - `.docx` — Word
 
-> **Note** : les PDF scannés (images) ne sont pas supportés. Utilisez des PDF avec texte intégré.
+> **PDF scannés dans la knowledge_base** : l'indexation RAG nécessite du texte extractible.
+> Les PDF scannés sans couche texte ne seront pas indexés par le service ETL.
+> Pour les intégrer, convertissez-les d'abord en texte (`.txt` / `.md`) avant de les déposer ici.
+>
+> **PDF scannés comme AO** : pour importer un AO scanné dans l'interface, utilisez le bouton
+> d'import PDF — l'OCR via GPT-4o extrait automatiquement le texte.
 
 ## Fonctionnement
 
