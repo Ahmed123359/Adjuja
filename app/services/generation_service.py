@@ -6,7 +6,7 @@ from app.providers.provider_factory import ProviderFactory
 from app.services.ao_parser_service import AOParserService
 from app.services.prompt_builder_service import PromptBuilderService
 from app.services.rag_service import RagService
-from app.models.appel_offre import AppelOffre, Section, Critere, TypeMarche
+from app.models.appel_offre import AppelOffre, Critere, TypeMarche
 from app.models.generation import GenerationRequest, GenerationResult, SectionReponse
 from app.config.settings import Settings
 
