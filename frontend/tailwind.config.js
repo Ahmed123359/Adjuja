@@ -1,42 +1,56 @@
 /** @type {import('tailwindcss').Config} */
 export default {
   content: ['./index.html', './src/**/*.{ts,tsx}'],
-  darkMode: 'class',
   theme: {
     extend: {
-      colors: {
-        navy: {
-          950: '#07101c',
-          900: '#0b1220',
-          800: '#0f1929',
-          700: '#152035',
-          600: '#1a2a42',
-          500: '#1e3055',
-        },
-        indigo: {
-          DEFAULT: '#6366f1',
-          light:   '#818cf8',
-          subtle:  'rgba(99,102,241,0.08)',
-          border:  'rgba(99,102,241,0.25)',
-        },
-      },
-      boxShadow: {
-        'card':       '0 1px 3px rgba(0,0,0,.12), 0 4px 16px rgba(0,0,0,.08)',
-        'card-lg':    '0 4px 24px rgba(0,0,0,.16), 0 16px 48px rgba(0,0,0,.12)',
-        'indigo-sm':  '0 0 12px rgba(99,102,241,0.2)',
-        'indigo':     '0 0 24px rgba(99,102,241,0.25)',
-        'indigo-glow':'0 4px 24px rgba(99,102,241,0.35)',
-        'document':   '0 4px 24px rgba(0,0,0,.12)',
-        'dark-doc':   '0 8px 48px rgba(0,0,0,.6)',
-      },
       fontFamily: {
-        sans:    ['Inter', 'system-ui', 'sans-serif'],
-        display: ['Space Grotesk', 'system-ui', 'sans-serif'],
-        word:    ['Calibri', 'Segoe UI', 'Arial', 'sans-serif'],
+        sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
       },
-      backgroundImage: {
-        'indigo-gradient': 'linear-gradient(135deg, #4f46e5 0%, #6366f1 50%, #818cf8 100%)',
-        'navy-gradient':   'radial-gradient(ellipse at 60% 0%, rgba(99,102,241,0.06) 0%, transparent 65%)',
+      colors: {
+        border:     "hsl(var(--border))",
+        input:      "hsl(var(--input))",
+        ring:       "hsl(var(--ring))",
+        background: "hsl(var(--background))",
+        foreground: "hsl(var(--foreground))",
+        primary: {
+          DEFAULT:    "hsl(var(--primary))",
+          foreground: "hsl(var(--primary-foreground))",
+        },
+        muted: {
+          DEFAULT:    "hsl(var(--muted))",
+          foreground: "hsl(var(--muted-foreground))",
+        },
+        accent: {
+          DEFAULT:    "hsl(var(--accent))",
+          foreground: "hsl(var(--accent-foreground))",
+        },
+        card: {
+          DEFAULT:    "hsl(var(--card))",
+          foreground: "hsl(var(--card-foreground))",
+        },
+        destructive: {
+          DEFAULT:    "hsl(var(--destructive))",
+          foreground: "hsl(var(--destructive-foreground))",
+        },
+      },
+      borderRadius: {
+        lg: "var(--radius)",
+        md: "calc(var(--radius) - 2px)",
+        sm: "calc(var(--radius) - 4px)",
+      },
+      keyframes: {
+        "fade-in": {
+          from: { opacity: "0", transform: "translateY(8px)" },
+          to:   { opacity: "1", transform: "translateY(0)" },
+        },
+        "slide-in": {
+          from: { opacity: "0", transform: "translateX(-8px)" },
+          to:   { opacity: "1", transform: "translateX(0)" },
+        },
+      },
+      animation: {
+        "fade-in":  "fade-in 0.4s ease-out",
+        "slide-in": "slide-in 0.3s ease-out",
       },
     },
   },

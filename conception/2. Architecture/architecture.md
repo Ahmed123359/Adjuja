@@ -1,5 +1,22 @@
 # OffrIA — Architecture technique
 
+## Sommaire
+
+1. [Vue d'ensemble](#vue-densemble)
+2. [Structure des dossiers](#structure-des-dossiers)
+3. [Backend — Patterns d'architecture](#backend--patterns-darchitecture)
+4. [Flux de génération — Parse + Phase 1 + Phase 2](#flux-de-génération--parse--phase-1--phase-2)
+5. [Flux d'extraction PDF](#flux-dextraction-pdf)
+6. [Authentification](#authentification)
+7. [Base de données SQLite](#base-de-données-sqlite)
+8. [Sécurité](#sécurité)
+9. [Configuration (.env)](#configuration-env)
+10. [API — Référence des routes](#api--référence-des-routes)
+11. [Infrastructure Docker](#infrastructure-docker)
+12. [Tests](#tests)
+
+---
+
 ## Vue d'ensemble
 
 OffrIA est une application web full-stack permettant de générer des réponses à des appels d'offres via des LLMs. Elle est structurée en deux parties découplées : un backend FastAPI et un frontend React, communiquant via une API REST.

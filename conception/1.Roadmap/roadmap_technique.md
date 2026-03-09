@@ -100,7 +100,7 @@ Décisions d'architecture, de sécurité et d'expérience produit.
 
 ## Qualité de génération IA
 
-- [ ] `[QUALITE]` **Parser AO par LLM** — Remplacer le parser regex par un appel LLM léger
+- [x] `[QUALITE]` **Parser AO par LLM** — Remplacer le parser regex par un appel LLM léger
   pour extraire titre, acheteur, critères et budget. Plus robuste sur les AO mal formatés,
   en tableaux, ou en anglais. Impact direct sur la pertinence des réponses.
 
