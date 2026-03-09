@@ -16,3 +16,7 @@ frontend/dist/
 data/
 documents/
 
+# R&D — sorties du scraper (ZIPs téléchargés, debug, rapports)
+rd/scrapper/output/
+rd/ocr/output/
+

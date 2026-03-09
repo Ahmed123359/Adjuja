@@ -605,12 +605,14 @@ N'inclus PAS le titre « ## {titre} »."""
         else:
             lignes.append("**Expertises :** non renseignées")
 
-        if ctx.secteurs:
-            sec = ctx.secteurs if isinstance(ctx.secteurs, str) else ", ".join(ctx.secteurs)
+        secteurs = getattr(ctx, "secteurs", None)
+        if secteurs:
+            sec = secteurs if isinstance(secteurs, str) else ", ".join(secteurs)
             lignes.append(f"**Secteurs :** {sec}")
 
-        if ctx.certifications:
-            cert = ctx.certifications if isinstance(ctx.certifications, str) else ", ".join(ctx.certifications)
+        certifications = getattr(ctx, "certifications", None)
+        if certifications:
+            cert = certifications if isinstance(certifications, str) else ", ".join(certifications)
             lignes.append(f"**Certifications :** {cert}")
         else:
             lignes.append("**Certifications :** non renseignées — ne JAMAIS en mentionner")
