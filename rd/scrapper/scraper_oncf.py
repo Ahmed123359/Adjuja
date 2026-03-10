@@ -26,7 +26,9 @@ Notes techniques :
 import asyncio
 import json
 import re
+import sqlite3
 from dataclasses import asdict, dataclass
+from datetime import datetime
 from pathlib import Path
 from typing import Optional
 
@@ -47,7 +49,7 @@ FAKE_EMAIL  = "jean.dupont@exemple.ma"
 ACHETEUR = "OFFICE NATIONAL DES CHEMINS DE FER"
 
 # Nombre maximum d'AOs à traiter. Mettre 1 pour tester, 20 pour la prod.
-MAX_AOS = 20
+MAX_AOS = 1
 
 # False = le navigateur Chromium s'ouvre visuellement (recommandé pour debug).
 # True  = mode fantôme, plus rapide mais sans interface.
@@ -61,6 +63,9 @@ SLOW_MO = 300
 OUTPUT_DIR = Path("rd/scrapper/output/oncf")   # ZIPs téléchargés
 DEBUG_DIR  = OUTPUT_DIR / "debug"               # Screenshots + HTML de debug
 
+# Base de données SQLite locale (R&D uniquement — sera remplacée par PostgreSQL en prod).
+DB_PATH = Path("rd/scrapper/ao_catalog.db")
+
 # URL de la recherche avancée sur marchespublics.gov.ma
 SEARCH_URL = (
     "https://www.marchespublics.gov.ma"
@@ -70,17 +75,137 @@ BASE_URL = "https://www.marchespublics.gov.ma"
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
+# BASE DE DONNÉES (R&D)
+# ═══════════════════════════════════════════════════════════════════════════════
+
+def init_db() -> sqlite3.Connection:
+    """
+    Crée (ou ouvre) la base SQLite locale et initialise la table appels_offre.
+
+    Si la table existe déjà (ancien schéma), on ajoute les nouvelles colonnes
+    via ALTER TABLE de façon silencieuse (les colonnes déjà présentes sont ignorées).
+
+    Retourne une connexion sqlite3 ouverte (à fermer après usage).
+    """
+    DB_PATH.parent.mkdir(parents=True, exist_ok=True)
+    conn = sqlite3.connect(str(DB_PATH))
+    conn.row_factory = sqlite3.Row
+
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS appels_offre (
+            id               INTEGER PRIMARY KEY AUTOINCREMENT,
+            ref_consultation TEXT    UNIQUE NOT NULL,
+            reference        TEXT,
+            titre            TEXT,
+            objet            TEXT,
+            acheteur         TEXT,
+            acheteur_detail  TEXT,
+            type_annonce     TEXT,
+            procedure        TEXT,
+            categorie        TEXT,
+            contact_nom      TEXT,
+            contact_email    TEXT,
+            contact_tel      TEXT,
+            date_limite      TEXT,
+            url_detail       TEXT,
+            zip_path         TEXT,
+            scraped_at       TEXT    NOT NULL,
+            statut           TEXT    NOT NULL DEFAULT 'disponible'
+        )
+    """)
+
+    # Migration silencieuse : ajouter les colonnes absentes si la table existait déjà
+    new_columns = [
+        ("reference",       "TEXT"),
+        ("objet",           "TEXT"),
+        ("acheteur_detail", "TEXT"),
+        ("type_annonce",    "TEXT"),
+        ("procedure",       "TEXT"),
+        ("categorie",       "TEXT"),
+        ("contact_nom",     "TEXT"),
+        ("contact_email",   "TEXT"),
+        ("contact_tel",     "TEXT"),
+    ]
+    existing = {row[1] for row in conn.execute("PRAGMA table_info(appels_offre)")}
+    for col_name, col_type in new_columns:
+        if col_name not in existing:
+            conn.execute(f"ALTER TABLE appels_offre ADD COLUMN {col_name} {col_type}")
+
+    conn.commit()
+    return conn
+
+
+def upsert_ao(conn: sqlite3.Connection, result: "AOResult") -> None:
+    """
+    Insère un AO en base, ou met à jour la ligne existante si la ref est déjà connue.
+    Les champs enrichis (reference, objet, etc.) sont best-effort : NULL si non extraits.
+    """
+    conn.execute("""
+        INSERT INTO appels_offre
+            (ref_consultation, reference, titre, objet, acheteur, acheteur_detail,
+             type_annonce, procedure, categorie, contact_nom, contact_email, contact_tel,
+             date_limite, url_detail, zip_path, scraped_at, statut)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ON CONFLICT(ref_consultation) DO UPDATE SET
+            reference       = excluded.reference,
+            titre           = excluded.titre,
+            objet           = excluded.objet,
+            acheteur_detail = excluded.acheteur_detail,
+            type_annonce    = excluded.type_annonce,
+            procedure       = excluded.procedure,
+            categorie       = excluded.categorie,
+            contact_nom     = excluded.contact_nom,
+            contact_email   = excluded.contact_email,
+            contact_tel     = excluded.contact_tel,
+            date_limite     = excluded.date_limite,
+            zip_path        = excluded.zip_path,
+            scraped_at      = excluded.scraped_at,
+            statut          = excluded.statut
+    """, (
+        result.ref_consultation,
+        result.reference,
+        result.titre,
+        result.objet,
+        ACHETEUR,
+        result.acheteur_detail,
+        result.type_annonce,
+        result.procedure,
+        result.categorie,
+        result.contact_nom,
+        result.contact_email,
+        result.contact_tel,
+        result.date_limite,
+        result.url_detail,
+        result.fichier_path,
+        datetime.now().isoformat(timespec="seconds"),
+        "disponible" if result.fichier_path else "erreur_scraping",
+    ))
+    conn.commit()
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
 # MODÈLE DE DONNÉES
 # ═══════════════════════════════════════════════════════════════════════════════
 
 @dataclass
 class AOResult:
     """Résultat du scraping pour un appel d'offres."""
-    ref_consultation: str          # ex : "981730"
-    titre:            str          # ex : "[25S038] Réalisation des travaux..."
-    url_detail:       str          # URL de la fiche de détail
+    ref_consultation: str           # ex : "981730"
+    titre:            str           # ex : "[25S038] Réalisation des travaux..."
+    url_detail:       str           # URL de la fiche de détail
     fichier_path:     Optional[str] = None   # chemin local du ZIP téléchargé
     erreur:           Optional[str] = None   # message d'erreur si échec
+    # Champs enrichis extraits de la page de détail (best-effort, peuvent être None)
+    reference:        Optional[str] = None   # ex : "25S038"
+    objet:            Optional[str] = None   # description complète
+    acheteur_detail:  Optional[str] = None   # ex : "M3 / ONCF - OFFICE NATIONAL..."
+    type_annonce:     Optional[str] = None   # ex : "Annonce de consultation"
+    procedure:        Optional[str] = None   # ex : "Appel d'offres ouvert | Au rabais"
+    categorie:        Optional[str] = None   # ex : "Services"
+    contact_nom:      Optional[str] = None   # ex : "NABIL BEN MESSAOUD"
+    contact_email:    Optional[str] = None   # ex : "h38710@oncf.ma"
+    contact_tel:      Optional[str] = None   # ex : "05 37 77 47 47"
+    date_limite:      Optional[str] = None   # ex : "22/04/2026 09:00"
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -135,7 +260,7 @@ async def safe_fill(page: Page, selector: str, value: str) -> bool:
         return False
 
 
-def save_debug(page_content: str, screenshot_bytes: None, name: str) -> None:
+def save_debug(page_content: str, name: str) -> None:
     """Sauvegarde une page HTML dans le dossier debug (pour investigation)."""
     (DEBUG_DIR / f"{name}.html").write_text(page_content, encoding="utf-8")
 
@@ -324,6 +449,42 @@ async def download_dossier(page: Page, ao: dict, idx: int) -> AOResult:
         await page.goto(ao["url"], wait_until="domcontentloaded", timeout=30_000)
         await asyncio.sleep(2)
 
+        # ── A' : extraire les métadonnées enrichies (best-effort) ─────────────
+        # Tous les champs ont un ID stable dans la page de détail PRADO.
+        # Si un ID est absent du DOM, inner_text() retourne "" → on stocke None.
+        def _txt(s: str) -> Optional[str]:
+            """Retourne s ou None si vide."""
+            return s.strip() or None
+
+        async def _get(suffix: str) -> Optional[str]:
+            # Le préfixe du composant PRADO varie selon la page (ctl5, idEntrepriseConsultationSummary…)
+            # → on cible les spans dont l'ID se TERMINE par le suffixe stable.
+            loc = page.locator(f'[id$="_{suffix}"]')
+            if await loc.count() == 0:
+                return None
+            return _txt(await loc.first.inner_text())
+
+        result.reference       = await _get("reference")
+        result.objet           = await _get("objet")
+        result.acheteur_detail = await _get("entiteAchat")
+        result.type_annonce    = await _get("annonce")
+        result.categorie       = await _get("categoriePrincipale")
+        result.contact_nom     = await _get("contactAdministratif")
+        result.contact_email   = await _get("email")
+        result.contact_tel     = await _get("telephone")
+        result.date_limite     = await _get("dateHeureLimiteRemisePlis")
+
+        # Procédure = typeProcedure + modePassation (facultatif)
+        type_proc = await _get("typeProcedure")
+        mode_pass = await _get("modePassation")
+        if type_proc and mode_pass:
+            result.procedure = f"{type_proc} {mode_pass}".strip()
+        else:
+            result.procedure = type_proc or mode_pass
+
+        if result.reference or result.objet:
+            print(f"      📋 Réf: {result.reference} | Date limite: {result.date_limite} | Procédure: {result.procedure}")
+
         # ── B : cliquer sur "Dossier de consultation" ─────────────────────────
         # Ce lien a un ID stable identifié dans le HTML : linkDownloadDce.
         # Il navigue vers EntrepriseDemandeTelechargementDce (page formulaire).
@@ -452,6 +613,10 @@ async def main() -> None:
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
     DEBUG_DIR.mkdir(parents=True, exist_ok=True)
 
+    # Ouvrir (ou créer) la base de données locale
+    conn = init_db()
+    print(f"🗄️  Base de données : {DB_PATH.resolve()}")
+
     async with async_playwright() as p:
         # Lancer Chromium.
         # headless=False → navigateur visible (recommandé pour surveiller le scraping)
@@ -480,6 +645,9 @@ async def main() -> None:
                 r = await download_dossier(page, ao, idx)
                 results.append(r)
 
+                # Enregistrer en base (succès ou échec)
+                upsert_ao(conn, r)
+
                 status = "✅ OK" if r.fichier_path else f"⚠️  {r.erreur}"
                 print(f"      {status}")
 
@@ -490,6 +658,8 @@ async def main() -> None:
             # Fermer proprement même en cas d'erreur
             await ctx.close()
             await browser.close()
+
+    conn.close()
 
     # ── Résumé final ──────────────────────────────────────────────────────────
     ok  = [r for r in results if r.fichier_path]
@@ -502,6 +672,22 @@ async def main() -> None:
         for r in nok:
             print(f"     - [{r.ref_consultation}] {r.erreur}")
     print(f"{'═'*60}")
+
+    # ── Aperçu de la base de données ──────────────────────────────────────────
+    conn2 = sqlite3.connect(str(DB_PATH))
+    rows  = conn2.execute(
+        "SELECT ref_consultation, titre, statut, zip_path, scraped_at "
+        "FROM appels_offre ORDER BY scraped_at DESC LIMIT 10"
+    ).fetchall()
+    conn2.close()
+
+    print(f"\n  🗄️  Contenu de {DB_PATH} ({len(rows)} ligne(s) affichée(s)) :")
+    print(f"  {'REF':<12} {'STATUT':<15} {'TITRE':<55} ZIP")
+    print(f"  {'-'*12} {'-'*15} {'-'*55} {'-'*20}")
+    for row in rows:
+        ref, titre, statut, zip_path, scraped_at = row
+        zip_name = Path(zip_path).name[:20] if zip_path else "—"
+        print(f"  {ref:<12} {statut:<15} {scraped_at[:16]:<18} {(titre or '')[:45]:<45} {zip_name}")
 
     # ── Sauvegarde du rapport JSON ─────────────────────────────────────────────
     # Le rapport liste tous les AOs avec leur statut, titre, URL et chemin local.

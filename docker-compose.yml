@@ -101,9 +101,42 @@ services:
     networks:
       - ao_network
 
+  # ─────────────────────────────────────────────────────────────
+  # Worker — Scraper silencieux marchespublics.gov.ma
+  #
+  # NE démarre PAS automatiquement avec `docker compose up`.
+  # Démarrage manuel uniquement :
+  #   docker compose --profile worker up worker
+  #
+  # Pour déclencher un scrape immédiat :
+  #   docker compose --profile worker restart worker
+  #
+  # Logs en temps réel :
+  #   docker compose --profile worker logs -f worker
+  # ─────────────────────────────────────────────────────────────
+  worker:
+    profiles:
+      - worker                    # Ne démarre qu'avec --profile worker
+    build:
+      context: ./worker
+      dockerfile: Dockerfile
+    container_name: ao_worker
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      WORKER_HEADLESS: "true"
+      WORKER_DB_PATH: /app/data/ao_catalog.db
+      WORKER_OUTPUT_DIR: /app/output
+    volumes:
+      - ./data:/app/data           # Base SQLite partagée avec le service api
+      - ./worker/output:/app/output # ZIPs téléchargés — visible dans worker/output/
+    networks:
+      - ao_network
+
 networks:
   ao_network:
     driver: bridge
 
 volumes:
-  qdrant_data:    # Persistance des vecteurs Qdrant
+  qdrant_data:     # Persistance des vecteurs Qdrant

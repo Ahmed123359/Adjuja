@@ -1,0 +1,12 @@
+# Worker de scraping — dépendances Python
+# Versions alignées avec le Python 3.12 de l'image Docker
+
+# Scraping
+playwright==1.51.0
+
+# Planification
+APScheduler==3.10.4
+
+# Configuration (variables d'environnement)
+pydantic-settings==2.7.0
+pydantic==2.10.6
