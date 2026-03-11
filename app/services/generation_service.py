@@ -128,7 +128,7 @@ class GenerationService:
 
         # Étape 4 : Sections en parallèle (avec contexte RAG optionnel)
         sections_config = self._prompt_builder.get_sections()
-        ao_context = f"{ao_parse.titre} {ao_parse.description_globale[:200]}"
+        ao_context = f"{ao_parse.titre} {ao_parse.description_globale}"
 
         async def _gen_section(cfg):
             rag_context = ""
@@ -268,7 +268,7 @@ class GenerationService:
 
         except Exception as e:
             logger.warning("LLM parse échoué (%s) — fallback regex", e)
-            return self._parser.parse(request.ao_texte)
+            return self._parser.parse(request.ao_texte, max_chars=self._settings.ao_max_chars)
 
     def _json_to_appel_offre(self, data: dict, texte_brut: str) -> AppelOffre:
         """Construit un AppelOffre depuis le dict JSON extrait par le LLM."""
@@ -294,7 +294,7 @@ class GenerationService:
             reference=str(data.get("reference", "") or ""),
             acheteur=str(data.get("acheteur", "") or ""),
             type_marche=type_marche,
-            description_globale=texte_brut[:2000],
+            description_globale=texte_brut[:self._settings.ao_max_chars],
             sections=[],
             criteres=criteres,
             budget_estime=budget,

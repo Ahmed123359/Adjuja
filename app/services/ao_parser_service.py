@@ -23,12 +23,14 @@ class AOParserService:
         r"(?i)^(\d+[\.\)]\s+.+)$",        # 1. Titre ou 1) Titre
     ]
 
-    def parse(self, texte_brut: str) -> AppelOffre:
+    def parse(self, texte_brut: str, max_chars: int = 100000) -> AppelOffre:
         """
         Parse le texte brut d'un AO et retourne un objet AppelOffre structuré.
 
         Args:
             texte_brut: Le texte complet de l'appel d'offres
+            max_chars:  Limite de caractères pour description_globale (défaut : 100 000).
+                        Contrôlé via AO_MAX_CHARS dans .env.
 
         Returns:
             AppelOffre structuré
@@ -40,7 +42,7 @@ class AOParserService:
             reference=self._extraire_reference(texte_nettoye),
             acheteur=self._extraire_acheteur(texte_nettoye),
             type_marche=self._detecter_type(texte_nettoye),
-            description_globale=texte_nettoye[:2000],
+            description_globale=texte_nettoye[:max_chars],
             sections=self._extraire_sections(texte_nettoye),
             criteres=self._extraire_criteres(texte_nettoye),
             budget_estime=self._extraire_budget(texte_nettoye),

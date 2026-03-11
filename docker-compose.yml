@@ -2,7 +2,8 @@ services:
 
   # ─────────────────────────────────────────────────────────────
   # Qdrant — base de données vectorielle (démarrage automatique)
-  # Stockage persistant dans le volume qdrant_data
+  # Stockage persistant en bind mount → ./data/qdrant/
+  # Survit à `docker compose down -v`, sauvegardable comme un dossier normal.
   # ─────────────────────────────────────────────────────────────
   qdrant:
     image: qdrant/qdrant:v1.12.1
@@ -12,7 +13,7 @@ services:
       - "6333:6333"   # HTTP REST API
       - "6334:6334"   # gRPC
     volumes:
-      - qdrant_data:/qdrant/storage
+      - ./data/qdrant:/qdrant/storage
     healthcheck:
       test: ["CMD-SHELL", "bash -c '</dev/tcp/localhost/6333' 2>/dev/null && exit 0 || exit 1"]
       interval: 5s
@@ -138,5 +139,3 @@ networks:
   ao_network:
     driver: bridge
 
-volumes:
-  qdrant_data:     # Persistance des vecteurs Qdrant

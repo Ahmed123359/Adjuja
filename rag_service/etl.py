@@ -40,11 +40,11 @@ logger = logging.getLogger(__name__)
 # ── Constantes ────────────────────────────────────────────────────────────
 
 DOCUMENT_TYPES: dict[str, str] = {
-    "references":     "Références et réalisations",
-    "methodologies":  "Méthodologies et approches",
-    "certifications": "Certifications et qualifications",
     "company":        "Présentation entreprise",
+    "references":     "Références et réalisations",
     "templates":      "Modèles de réponses AO",
+    "resources":      "Moyens humains et matériels",
+    "certifications": "Certifications et qualifications",
 }
 
 SUPPORTED_EXT = {".txt", ".md", ".pdf", ".docx"}

@@ -7,11 +7,11 @@ au démarrage et utilisés pour enrichir la génération de réponses AO via RAG
 
 | Dossier           | Contenu recommandé |
 |-------------------|--------------------|
-| `references/`     | Références de projets passés (fiches clients, retours d'expérience, attestations) |
-| `methodologies/`  | Documents de méthodes : approches techniques, processus qualité, frameworks |
+| `company/`        | Documents légaux et institutionnels fixes (PV gérance, statuts, plaquette) |
+| `references/`     | Attestations de référence clients, fiches projets réalisés |
+| `templates/`      | Offres techniques passées : notes méthodologiques, plannings, évaluations |
+| `resources/`      | Moyens humains et matériels : listes équipe, CVs, notes sur les moyens |
 | `certifications/` | Certificats ISO, qualifications, accréditations, labels |
-| `company/`        | Plaquettes commerciales, présentation entreprise, profil corporate |
-| `templates/`      | Réponses AO gagnantes (anonymisées), modèles de sections |
 
 ## Formats supportés
 
@@ -46,19 +46,18 @@ ou utilisez le bouton **Reindexer** dans l'interface.
 
 ```
 knowledge_base/
-├── references/
-│   ├── projet_smart_city_casablanca_2023.txt
-│   ├── refonte_si_banque_populaire.pdf
-│   └── fiche_reference_ocp_2022.docx
-├── methodologies/
-│   ├── methode_conduite_changement.md
-│   └── approche_agile_projets_publics.pdf
-├── certifications/
-│   └── iso_9001_2015.pdf
 ├── company/
-│   ├── plaquette_commerciale.pdf
-│   └── presentation_entreprise.md
-└── templates/
-    ├── reponse_ao_type_si.md
-    └── offre_type_conseil.txt
+│   ├── pv_gerance.pdf
+│   └── statuts_societe.pdf
+├── references/
+│   ├── attestation_reference_client_a.pdf
+│   └── attestation_reference_client_b.pdf
+├── templates/
+│   ├── note_methodologique_formation.pdf
+│   └── note_methodologique_evaluation.pdf
+├── resources/
+│   ├── liste_equipe.pdf
+│   └── note_sur_les_moyens.pdf
+└── certifications/
+    └── iso_9001.pdf
 ```

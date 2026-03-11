@@ -4,7 +4,7 @@ Améliorations identifiées pour atteindre un niveau production, par ordre de pr
 
 | # | Problème | Impact | Statut |
 |---|----------|--------|--------|
-| 1 | **Tests unitaires** — zéro couverture sur le worker | Critique | [ ] |
+| 1 | **Tests unitaires** — zéro couverture sur le worker | Critique | [X] |
 | 2 | **Pagination** — seule la première page de résultats est scrapée | Élevé | [ ] |
 | 3 | **`max_aos` et déduplication** — si tous les AOs de la page sont déjà connus, les nouvelles AOs sur la page suivante ne sont jamais découvertes | Élevé | [ ] |
 | 4 | **Retry sur erreur transitoire** — un téléchargement qui échoue (timeout réseau) reste en `erreur_scraping` jusqu'au prochain cycle complet | Moyen | [ ] |

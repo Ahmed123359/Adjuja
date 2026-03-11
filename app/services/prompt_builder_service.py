@@ -577,7 +577,7 @@ N'inclus PAS le titre « ## {titre} »."""
         else:
             lignes.append("**Date limite :** non précisée — utiliser des durées relatives")
         lignes.append(f"**Type de marché :** {ao.type_marche.value}")
-        lignes.append(f"\n**Description complète :**\n{ao.description_globale[:2000]}")
+        lignes.append(f"\n**Description complète :**\n{ao.description_globale}")
         if ao.sections:
             lignes.append("\n**Sections identifiées dans le cahier des charges :**")
             for s in ao.sections[:6]:

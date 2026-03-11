@@ -98,15 +98,24 @@ reponse_ao_generation/
 ├── data/                         # Base de données SQLite (gitignorée)
 │   └── offria.db                 # Tables : users, history, usage
 │
-├── knowledge_base/               # Documents internes pour le RAG
-│   ├── references/
-│   ├── methodologies/
-│   ├── certifications/
-│   ├── company/
-│   └── templates/
+├── knowledge_base/               # Documents internes pour le RAG (indexés dans Qdrant)
+│   ├── references/               # Attestations clients (PDFs)
+│   ├── certifications/           # Certifications et qualifications
+│   ├── company/                  # Présentation entreprise (MD + PDFs)
+│   ├── resources/                # CVs équipe, listes matériels (PDFs)
+│   └── templates/                # Notes méthodologiques et logistiques (PDFs)
+│
+├── rag_service/                  # Microservice ETL — indexation Qdrant
+│   ├── etl.py                    # Pipeline : extraction → chunking → embedding → Qdrant
+│   └── ROADMAP.md                # Roadmap qualité RAG pipeline
 │
 ├── rd/                           # R&D — notebooks d'expérimentation
-│   └── ocr_extraction.ipynb     # Validation approche extraction PDF
+│   ├── ocr/
+│   │   └── ocr_extraction.ipynb     # Validation approche extraction PDF
+│   ├── rag/
+│   │   └── rag_evaluation.ipynb     # Évaluation pipeline RAG (retrieval quality)
+│   └── analyse_ao/
+│       └── ao_char_analysis.ipynb   # Mesure taille réelle des AOs (chars, tokens)
 │
 ├── conception/                   # Documentation produit et technique
 │   ├── 1.Roadmap/
@@ -189,7 +198,11 @@ GenerationService.generate(request)
                         │
                         ├─► _gen_section(section_1)
                         │       ├─► RAG retrieve (optionnel)
-                        │       └─► LLM (1 appel)
+                        │       │       ├─► _build_query_for_section() — LLM cheap (1 appel)
+                        │       │       │       AO complet + section_title → query 10-20 mots
+                        │       │       ├─► Qdrant top-20 (embedding + recherche vectorielle)
+                        │       │       └─► _rerank() — LLM cheap (1 appel) → top-K chunks
+                        │       └─► LLM (1 appel) — prompt + AO + brief + RAG context
                         ├─► _gen_section(section_2)
                         │   ...
                         └─► _gen_section(section_8)
@@ -197,7 +210,9 @@ GenerationService.generate(request)
                         └─► Assemblage → GenerationResult
 ```
 
-**Total appels LLM par génération complète : 10** (1 parse cheap + 1 brief + 8 sections)
+**Total appels LLM par génération complète :**
+- **Sans RAG : 10** (1 parse cheap + 1 brief + 8 sections)
+- **Avec RAG : 26** (+ 8 query gen cheap + 8 rerank cheap — tous en parallèle)
 
 | Provider | Modèle utilisé pour le parse |
 |---|---|
@@ -320,6 +335,8 @@ CREATE TABLE usage (
 | `ALLOWED_EMAILS` | `[]` | Whitelist emails inscription |
 | `APP_ENV` | development | `development` \| `production` |
 | `QDRANT_URL` | — | URL Qdrant (vide = RAG désactivé) |
+| `RAG_ETL_URL` | — | URL microservice ETL (proxy /index) |
+| `AO_MAX_CHARS` | 100000 | Limite chars texte AO injectés dans le prompt (~25k tokens, couvre 99%+ des AOs) |
 | `RATE_LIMIT_GENERATE` | 10/minute | Limite POST /generate par user |
 | `LLM_TIMEOUT_SECONDS` | 60 | Timeout par appel LLM |
 

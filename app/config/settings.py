@@ -99,6 +99,15 @@ class Settings(BaseSettings):
     """Durée de vie des tokens JWT en minutes (défaut : 7 jours)."""
 
     # ------------------------------------------------------------------
+    # Limites de contexte AO
+    # ------------------------------------------------------------------
+
+    ao_max_chars: int = 100000
+    """Nombre maximum de caractères du texte AO injectés dans le prompt de génération.
+    100 000 chars ≈ 25 000 tokens — couvre 99%+ des AOs réels (max observé ~101k chars).
+    Réduire pour limiter les coûts (ex: 30000 ≈ 7500 tokens ≈ ~38% de couverture)."""
+
+    # ------------------------------------------------------------------
     # Timeouts LLM
     # ------------------------------------------------------------------
 
