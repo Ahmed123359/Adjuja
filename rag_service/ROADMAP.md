@@ -10,9 +10,7 @@ Améliorations du pipeline RAG : alimentation de la knowledge base, indexation E
 | 4 | ETL | Enrichissement payload — ajouter titre de section et numéro de page dans chaque chunk | Élevé | [ ] |
 | 5 | ETL | Modèle d'embedding — passer de `text-embedding-3-small` à `text-embedding-3-large` | Élevé | [ ] |
 | 6 | Retrieval | Reranker — top-20 Qdrant → LLM cheap → top-K pertinents | Très élevé | [x] |
-| 7 | Retrieval | Query structurée — remplacer texte brut tronqué par champs parsés (titre + acheteur + critères) | Élevé | [ ] |
-| 8 | Retrieval | Query différenciée par section — template de query spécifique par section | Élevé | [ ] |
-| 9 | Retrieval | Query générée par LLM — 1 appel Haiku/Mistral par section pour produire une query de recherche ciblée à partir du texte AO complet | Très élevé | [x] |
+| 7 | Retrieval | Query générée par LLM — 1 appel gpt-4o-mini par section pour produire une query de recherche ciblée à partir du texte AO complet | Très élevé | [x] |
 
 ---
 
@@ -96,54 +94,14 @@ Améliorations du pipeline RAG : alimentation de la knowledge base, indexation E
 
 Flux : Qdrant top-20 → `gpt-4o-mini` sélectionne les top-K pertinents → injecté dans le prompt de section.
 
-**Limite clé :** si le bon chunk n'est pas dans le top-20 Qdrant, le reranker ne peut pas le rattraper → dépend de la qualité de la query (#7) et de l'embedding (#5).
+**Limite clé :** si le bon chunk n'est pas dans le top-20 Qdrant, le reranker ne peut pas le rattraper → dépend de la qualité de la query et de l'embedding (#5).
 
 ---
 
-### #7 — Retrieval : Query structurée
+### #7 — Retrieval : Query générée par LLM
+**Statut :** [x] FAIT — implémenté dans `app/services/rag_service.py`, méthode `_build_query_for_section`.
 
-**Problème actuel :** `generation_service.py` ligne 131 :
-```python
-ao_context = f"{ao_parse.titre} {ao_parse.description_globale[:200]}"
-```
-Les champs parsés (`acheteur`, `criteres`, `type_marche`) ne sont pas utilisés dans la query RAG.
-
-**Solution :**
-```python
-criteres_str = " ".join(c.nom for c in ao_parse.criteres)
-ao_context = f"{ao_parse.titre} {ao_parse.acheteur} {ao_parse.type_marche.value} {criteres_str}"
-```
-
-**Bénéfice :** la query reflète les vrais enjeux de l'AO plutôt que les 200 premiers chars du texte brut.
-
----
-
-### #8 — Retrieval : Query différenciée par section
-
-**Problème actuel :** toutes les sections utilisent la même query `"{section_title} {ao_context}"`.
-
-**Solution :** template de query par section dans `app/services/rag_service.py` :
-```python
-_SECTION_QUERY_TEMPLATE: dict[str, str] = {
-    "Présentation de notre entreprise":       "présentation cabinet expertise domaine {ao_context}",
-    "Moyens humains et techniques mobilisés": "profils équipe CVs compétences experts {ao_context}",
-    "Références similaires":                  "références missions similaires attestations clients {ao_context}",
-    "Notre approche méthodologique":          "méthodologie phases démarche outils {ao_context}",
-    "Planning prévisionnel":                  "planning jalons livrables calendrier {ao_context}",
-    "Conclusion et engagements":              "engagements valeur ajoutée différenciation {ao_context}",
-}
-```
-
-**Bénéfice :** Qdrant reçoit des requêtes orientées sur ce que chaque section cherche → meilleure précision des top-20 candidats avant reranking.
-
----
-
-### #9 — Retrieval : Query générée par LLM
-
-**Problème avec #7 et #8 :** même avec des champs parsés ou des templates, la query reste générique.
-Les mots-clés vraiment utiles (domaine exact, contraintes terrain, livrables spécifiques) sont **au milieu du texte de l'AO**, pas dans l'en-tête.
-
-**Solution :** 1 appel LLM léger (Haiku ou Mistral) par section qui lit l'AO complet et génère une query de recherche optimisée.
+**Solution :** 1 appel `gpt-4o-mini` par section qui lit l'AO complet et génère une query de recherche optimisée.
 
 **Flux :**
 ```
@@ -167,9 +125,7 @@ dans une base documentaire les extraits les plus pertinents
 pour rédiger cette section. Retourne UNIQUEMENT la query, sans explication.
 ```
 
-**Implémentation :** dans `app/services/rag_service.py`, méthode `_build_query_for_section(section_title, ao_text)`.
-
-**Coût :** ~8 appels Haiku × $0.0003 = **~$0.002 par génération** — négligeable.
+**Coût :** ~8 appels gpt-4o-mini × ~$0.0003 = **~$0.002 par génération** — négligeable.
 
 **Risques :**
 
@@ -177,5 +133,5 @@ pour rédiger cette section. Retourne UNIQUEMENT la query, sans explication.
 |--------|-------------|----------|
 | +8 appels LLM en parallèle | Certain | Latence absorbée par le parallélisme des sections |
 | LLM génère une query hors sujet | Faible | Prompt simple + température 0 → très stable |
-| Modèle Haiku indisponible | Faible | Fallback sur template statique (#8) |
-| Surcoût si beaucoup de générations | Faible | ~$0.002/génération → négligeable même à 1000 génération/mois |
+| LLM indisponible | Faible | Fallback silencieux sur `"{section_title} {ao_text[:300]}"` |
+| Surcoût si beaucoup de générations | Faible | ~$0.002/génération → négligeable même à 1000 générations/mois |

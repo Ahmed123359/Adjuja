@@ -1,6 +1,7 @@
 import asyncio
 import json
 import logging
+from pathlib import Path
 from app.providers.base import AbstractLLMProvider
 from app.providers.provider_factory import ProviderFactory
 from app.services.ao_parser_service import AOParserService
@@ -10,12 +11,19 @@ from app.models.appel_offre import AppelOffre, Critere, TypeMarche
 from app.models.generation import GenerationRequest, GenerationResult, SectionReponse
 from app.config.settings import Settings
 
+# Sections dont le contenu est injecté directement depuis un fichier statique,
+# sans appel LLM ni RAG. La clé est le titre de section exact.
+_KB_DIR = Path(__file__).parents[2] / "knowledge_base"
+_STATIC_SECTIONS: dict[str, Path] = {
+    "Présentation de notre entreprise": _KB_DIR / "company" / "presentation_abi_consulting.md",
+}
+
 logger = logging.getLogger(__name__)
 
 # Limites de tokens par appel
 _BRIEF_MAX_TOKENS   = 600    # Brief stratégique : court et ciblé
-_SECTION_MAX_TOKENS = 1000   # Chaque section : contenu riche
 _PARSE_MAX_TOKENS   = 500    # Extraction JSON : réponse courte et structurée
+# Sections : utilise request.max_tokens (configurable par l'utilisateur, défaut dans company_defaults.json)
 
 # Modèles cheap par provider pour le parsing (évite de consommer des tokens sur le modèle principal)
 _CHEAP_MODELS: dict[str, str] = {
@@ -131,6 +139,11 @@ class GenerationService:
         ao_context = f"{ao_parse.titre} {ao_parse.description_globale}"
 
         async def _gen_section(cfg):
+            # Section statique — contenu fixe depuis un fichier, sans LLM ni RAG
+            static_path = _STATIC_SECTIONS.get(cfg.titre)
+            if static_path and static_path.exists():
+                return (static_path.read_text(encoding="utf-8").strip(), 0)
+
             rag_context = ""
             if self._rag and self._rag.is_ready:
                 rag_context = await self._rag.retrieve_for_section(cfg.titre, ao_context)
@@ -141,7 +154,7 @@ class GenerationService:
             # Timeout individuel par section : si une section bloque, elle ne retarde pas
             # les autres (les coroutines tournent en parallèle), mais elle échoue proprement.
             return await asyncio.wait_for(
-                provider.generate_text(sys_p, usr_p, _SECTION_MAX_TOKENS, request.temperature),
+                provider.generate_text(sys_p, usr_p, request.max_tokens, request.temperature),
                 timeout=self._settings.llm_timeout_seconds,
             )
 

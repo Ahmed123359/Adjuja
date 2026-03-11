@@ -15,6 +15,7 @@ frontend/dist/
 *.log
 data/
 documents/
+knowledge_base/
 
 # R&D — sorties du scraper (ZIPs téléchargés, debug, rapports, base de données locale)
 rd/scrapper/output/

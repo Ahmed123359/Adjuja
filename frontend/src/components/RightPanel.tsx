@@ -2,6 +2,15 @@ import { useEffect, useRef, useState } from 'react';
 import { marked } from 'marked';
 import type { GenerationResult, CompanyData, AppState, UsageData, RagStatus, HistorySummary, User } from '../types';
 
+// ── Helpers ─────────────────────────────────────────────────
+function toRoman(n: number): string {
+  const vals = [10, 9, 5, 4, 1];
+  const syms = ['X', 'IX', 'V', 'IV', 'I'];
+  let r = '';
+  for (let i = 0; i < vals.length; i++) { while (n >= vals[i]) { r += syms[i]; n -= vals[i]; } }
+  return r;
+}
+
 // ── Document HTML builder ───────────────────────────────────
 function buildDocumentHTML(result: GenerationResult, company: CompanyData, aoText: string): string {
   const now    = new Date().toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' });
@@ -15,71 +24,118 @@ function buildDocumentHTML(result: GenerationResult, company: CompanyData, aoTex
 
   const location = [company.adresse, company.ville].filter(Boolean).join(', ');
   const sections   = result.sections?.length > 0 ? result.sections : null;
-  const totalPages = sections ? sections.length + 1 : 2;
+  const totalPages = sections ? sections.length + 2 : 2; // cover + TOC + sections
 
-  const pageCss = 'background:white;padding:2.2cm 2.8cm 2cm;box-sizing:border-box;min-height:1060px;display:flex;flex-direction:column;box-shadow:0 2px 16px rgba(0,0,0,0.08);position:relative;';
-  const headerCss = 'display:flex;align-items:center;justify-content:space-between;padding-bottom:7px;border-bottom:1px solid #e2e8f0;margin-bottom:24px;font-size:7.5pt;color:#94a3b8;';
-  const footerCss = 'margin-top:auto;padding-top:10px;border-top:1px solid #e2e8f0;display:flex;align-items:center;justify-content:space-between;font-size:7.5pt;color:#94a3b8;';
-  const sep = '<div style="height:20px;"></div>';
+  // ABI Consulting palette
+  const BLUE  = '#1B3F6B';
+  const TEAL  = '#17A589';
+  const LBLUE = '#D5E8F5';
+  const BODY  = '#1a1a2e';
 
+  const pageCss  = `background:white;padding:2.2cm 2.8cm 2cm;box-sizing:border-box;min-height:1060px;display:flex;flex-direction:column;position:relative;overflow:hidden;box-shadow:0 2px 16px rgba(0,0,0,0.08);`;
+  const hdrCss   = `display:flex;align-items:center;justify-content:space-between;padding-bottom:8px;border-bottom:2px solid ${LBLUE};margin-bottom:22px;`;
+  const ftrCss   = `margin-top:auto;padding-top:10px;border-top:1px solid ${LBLUE};display:flex;align-items:center;justify-content:space-between;font-size:7.5pt;color:#9CA3AF;`;
+  const sep      = '<div style="height:20px;"></div>';
+
+  // ABI logo mark (CSS-only circle)
+  const abiMark = `<div style="display:inline-flex;align-items:center;gap:5px;">
+    <div style="width:26px;height:26px;border-radius:50%;border:2px solid ${BLUE};display:flex;align-items:center;justify-content:center;font-size:5.5pt;font-weight:900;color:${BLUE};">/BI</div>
+    <div style="line-height:1.1;"><div style="font-size:8pt;font-weight:800;color:${BLUE};letter-spacing:0.05em;">ABI</div><div style="font-size:6pt;color:#6B7280;letter-spacing:0.05em;">CONSULTING</div></div>
+  </div>`;
+
+  // Wave decorations (CSS shapes)
+  const wavesTR = `
+    <div style="position:absolute;top:-60px;right:-60px;width:260px;height:200px;border-radius:0 0 0 120%;background:${LBLUE};opacity:0.55;z-index:0;"></div>
+    <div style="position:absolute;top:-30px;right:-30px;width:175px;height:135px;border-radius:0 0 0 120%;background:${LBLUE};opacity:0.4;z-index:0;"></div>`;
+  const wavesBL = `
+    <div style="position:absolute;bottom:-60px;left:-60px;width:260px;height:200px;border-radius:0 120% 0 0;background:${LBLUE};opacity:0.55;z-index:0;"></div>
+    <div style="position:absolute;bottom:-30px;left:-30px;width:175px;height:135px;border-radius:0 120% 0 0;background:${LBLUE};opacity:0.4;z-index:0;"></div>`;
+
+  // ── PAGE 1 : Couverture ──
   const coverPage = `
 <div style="${pageCss}justify-content:space-between;">
-  <div>
-    <div style="height:5px;background:linear-gradient(90deg,#4338ca,#6366f1,#818cf8);margin-bottom:2.2cm;"></div>
-    <div style="font-size:24pt;font-weight:800;color:#0f1929;letter-spacing:-0.02em;line-height:1.1;">${company.nom || 'Votre Entreprise'}</div>
-    ${meta     ? `<div style="font-size:8.5pt;color:#7a8899;margin-top:8px;line-height:1.8;">${meta}</div>` : ''}
-    ${location ? `<div style="font-size:8.5pt;color:#7a8899;">${location}</div>` : ''}
-    ${company.telephone ? `<div style="font-size:8.5pt;color:#7a8899;">Tél. ${company.telephone}</div>` : ''}
-    ${company.site_web  ? `<div style="font-size:8.5pt;color:#7a8899;">${company.site_web}</div>` : ''}
+  ${wavesTR}${wavesBL}
+  <div style="position:relative;z-index:1;">${abiMark}</div>
+  <div style="text-align:center;flex:1;display:flex;flex-direction:column;justify-content:center;position:relative;z-index:1;padding:0.8cm 0;">
+    <div style="font-size:22pt;font-weight:800;color:${BLUE};margin-bottom:0.5cm;line-height:1.2;">Réponse à l'Appel d'Offres</div>
+    <div style="height:5px;background:${LBLUE};margin:0 auto 0.5cm;width:65%;border-radius:3px;"></div>
+    <div style="font-size:12pt;font-weight:700;color:${BODY};line-height:1.55;max-width:480px;margin:0 auto 0.4cm;">${aoLine.slice(0,130)}${aoLine.length > 130 ? '…' : ''}</div>
+    <div style="height:5px;background:${LBLUE};margin:0.5cm auto 0;width:65%;border-radius:3px;"></div>
   </div>
-  <div style="text-align:center;padding:1.5cm 1cm;">
-    <div style="width:52px;height:4px;background:#6366f1;border-radius:2px;margin:0 auto 22px;"></div>
-    <div style="font-size:8.5pt;font-weight:700;text-transform:uppercase;letter-spacing:0.2em;color:#6366f1;margin-bottom:18px;">Réponse à l'appel d'offres</div>
-    <div style="font-size:15pt;font-weight:700;color:#0f1929;line-height:1.55;max-width:480px;margin:0 auto;">${aoLine.slice(0,130)}${aoLine.length > 130 ? '…' : ''}</div>
-    <div style="font-size:8.5pt;color:#94a3b8;margin-top:20px;">Document confidentiel · ${now}</div>
-  </div>
-  <div style="border-top:1px solid #e2e8f0;padding-top:14px;display:flex;justify-content:space-between;align-items:center;font-size:8pt;color:#94a3b8;">
-    <span>${location}</span>
-    <span style="font-weight:600;color:#1e3a5f;">Page 1 / ${totalPages}</span>
+  <div style="display:flex;justify-content:space-between;align-items:flex-end;position:relative;z-index:1;border-top:1px solid ${LBLUE};padding-top:14px;">
+    <div>
+      <div style="font-size:7.5pt;font-weight:700;color:${BLUE};text-transform:uppercase;letter-spacing:0.08em;margin-bottom:5px;">Réalisé par :</div>
+      <div style="font-size:10pt;font-weight:700;color:${BODY};">${company.nom || 'ABI Consulting'}</div>
+      ${meta     ? `<div style="font-size:7.5pt;color:#6B7280;margin-top:3px;">${meta}</div>` : ''}
+      ${location ? `<div style="font-size:7.5pt;color:#6B7280;">${location}</div>` : ''}
+    </div>
+    <div style="text-align:right;">
+      <div style="font-size:7.5pt;color:#9CA3AF;">${now}</div>
+      <div style="font-size:7pt;color:#9CA3AF;margin-top:3px;">Document confidentiel</div>
+    </div>
   </div>
 </div>`;
 
+  // ── PAGE 2 : Sommaire ──
+  const tocPage = sections ? `
+${sep}
+<div style="${pageCss}">
+  <div style="${hdrCss}">
+    <span style="font-size:8pt;color:#6B7280;font-style:italic;">${aoLine.slice(0,90)}${aoLine.length > 90 ? '…' : ''}</span>
+    ${abiMark}
+  </div>
+  <div style="flex:1;">
+    <div style="font-size:20pt;font-weight:800;color:${TEAL};margin-bottom:0.6cm;">Sommaire</div>
+    ${sections.map((s, i) => `
+    <div style="display:flex;align-items:baseline;margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid #F0F7FF;">
+      <div style="font-size:8.5pt;font-weight:700;color:${BLUE};min-width:24px;">${toRoman(i+1)}.</div>
+      <div style="font-size:10.5pt;font-weight:600;color:${BODY};flex:1;padding:0 8px;text-transform:uppercase;letter-spacing:0.02em;">${s.titre}</div>
+      <div style="font-size:8.5pt;color:#9CA3AF;min-width:24px;text-align:right;">${i+3}</div>
+    </div>`).join('')}
+  </div>
+  <div style="${ftrCss}">
+    <span style="color:${BLUE};font-weight:600;">${company.nom || 'ABI Consulting'}</span>
+    <span style="color:${TEAL};">Réponse à l'appel d'offres · ${now}</span>
+    <span style="font-weight:600;">Page 2 / ${totalPages}</span>
+  </div>
+</div>` : '';
+
+  // ── PAGES 3+ : Sections ──
   const sectionPages = sections
     ? sections.map((s, i) => `
 ${sep}
 <div style="${pageCss}">
-  <div style="${headerCss}">
-    <span style="font-weight:600;color:#1e3a5f;">${company.nom || ''}</span>
-    <span style="color:#6366f1;font-weight:600;">${s.titre}</span>
-    <span>Page ${i + 2} / ${totalPages}</span>
+  <div style="${hdrCss}">
+    <span style="font-size:8pt;color:#6B7280;font-style:italic;">${aoLine.slice(0,90)}${aoLine.length > 90 ? '…' : ''}</span>
+    ${abiMark}
   </div>
   <div style="flex:1;">
-    <h2 style="font-size:13pt;font-weight:700;color:#1e3a5f;margin:0 0 16px 0;padding-bottom:8px;border-bottom:2px solid #6366f1;">${s.titre}</h2>
-    ${marked.parse(s.contenu)}
+    <div style="font-size:14pt;font-weight:800;color:${BLUE};margin-bottom:6px;">${toRoman(i+1)}. ${s.titre.toUpperCase()}</div>
+    <div style="height:3px;background:${TEAL};width:55px;border-radius:2px;margin-bottom:18px;"></div>
+    <div class="section-content">${marked.parse(s.contenu)}</div>
   </div>
-  <div style="${footerCss}">
-    <span>${company.nom || ''}</span>
-    <span>Réponse à l'appel d'offres · ${now}</span>
-    <span>Page ${i + 2} / ${totalPages}</span>
+  <div style="${ftrCss}">
+    <span style="color:${BLUE};font-weight:600;">${company.nom || 'ABI Consulting'}</span>
+    <span style="color:${TEAL};">Réponse à l'appel d'offres · ${now}</span>
+    <span style="font-weight:600;">Page ${i+3} / ${totalPages}</span>
   </div>
 </div>`).join('')
     : `
 ${sep}
 <div style="${pageCss}">
-  <div style="${headerCss}">
-    <span style="font-weight:600;color:#1e3a5f;">${company.nom || ''}</span>
-    <span style="color:#6366f1;font-weight:600;">Réponse complète</span>
-    <span>Page 2 / 2</span>
+  <div style="${hdrCss}">
+    <span style="font-size:8pt;color:#6B7280;font-style:italic;">${aoLine.slice(0,90)}</span>
+    ${abiMark}
   </div>
-  <div style="flex:1;">${marked.parse(result.texte_complet)}</div>
-  <div style="${footerCss}">
-    <span>${company.nom || ''}</span>
-    <span>Réponse à l'appel d'offres · ${now}</span>
-    <span>Page 2 / 2</span>
+  <div style="flex:1;" class="section-content">${marked.parse(result.texte_complet)}</div>
+  <div style="${ftrCss}">
+    <span style="color:${BLUE};font-weight:600;">${company.nom || 'ABI Consulting'}</span>
+    <span style="color:${TEAL};">Réponse à l'appel d'offres · ${now}</span>
+    <span style="font-weight:600;">Page 2 / 2</span>
   </div>
 </div>`;
 
-  return coverPage + sectionPages;
+  return coverPage + tocPage + sectionPages;
 }
 
 // ── Top bar ─────────────────────────────────────────────────
@@ -468,18 +524,19 @@ export default function RightPanel({
   function downloadWord() {
     if (!result) return;
     const docStyles = `
-      body { font-family: Calibri, 'Segoe UI', Arial, sans-serif; font-size: 11pt; line-height: 1.65; color: #1a1a1a; }
-      h1 { font-size: 1.35rem; font-weight: 700; color: #1e3a5f; }
-      h2 { font-size: 1.1rem; font-weight: 700; color: #1e3a5f; border-bottom: 2px solid #1e3a5f; padding-bottom: .3rem; margin: 1.8rem 0 .6rem; }
-      h3 { font-size: 1rem; font-weight: 600; color: #2c5282; margin: 1.2rem 0 .4rem; }
-      p  { margin: 0 0 .75rem; line-height: 1.7; }
-      ul, ol { padding-left: 1.4rem; margin: .4rem 0 .75rem; }
-      li { margin-bottom: .3rem; line-height: 1.6; }
-      strong { font-weight: 700; }
-      table { width: 100%; border-collapse: collapse; margin: .9rem 0; font-size: .875rem; }
-      th { background: #1e3a5f; color: white; padding: .45rem .8rem; text-align: left; font-weight: 600; }
-      td { border: 1px solid #d1d5db; padding: .4rem .8rem; vertical-align: top; }
-      tr:nth-child(even) td { background: #f3f6fb; }
+      body { font-family: Calibri, 'Segoe UI', Arial, sans-serif; font-size: 11pt; line-height: 1.65; color: #1a1a2e; }
+      .section-content h2 { font-size: 1.05rem; font-weight: 700; color: #1B3F6B; border-bottom: 2px solid #17A589; padding-bottom: .3rem; margin: 1.4rem 0 .6rem; }
+      .section-content h3 { font-size: 1rem; font-weight: 700; color: #17A589; font-style: italic; margin: 1rem 0 .4rem; }
+      .section-content h4 { font-size: .95rem; font-weight: 700; color: #2471A3; font-style: italic; margin: .8rem 0 .3rem; }
+      .section-content p  { margin: 0 0 .75rem; line-height: 1.7; text-align: justify; }
+      .section-content ul, .section-content ol { padding-left: 1.4rem; margin: .4rem 0 .75rem; }
+      .section-content li { margin-bottom: .3rem; line-height: 1.6; }
+      .section-content strong { font-weight: 700; color: #1B3F6B; }
+      .section-content table { width: 100%; border-collapse: collapse; margin: .9rem 0; font-size: .875rem; }
+      .section-content th { background: #1B3F6B; color: white; padding: .45rem .8rem; text-align: left; font-weight: 600; }
+      .section-content td { border: 1px solid #d1d5db; padding: .4rem .8rem; vertical-align: top; }
+      .section-content tr:nth-child(even) td { background: #F0F7FF; }
+      .section-content hr { border: none; border-top: 1px solid #D5E8F5; margin: 1rem 0; }
     `;
     const html = buildDocumentHTML(result, company, aoText);
     const fullHtml = `<!DOCTYPE html><html><head><meta charset="utf-8"><style>${docStyles}</style></head><body>${html}</body></html>`;
@@ -493,17 +550,19 @@ export default function RightPanel({
   function printPDF() {
     if (!result) return;
     const docStyles = `
-      body { font-family: Calibri, 'Segoe UI', Arial, sans-serif; font-size: 11pt; line-height: 1.65; color: #1a1a1a; margin: 0; background: white; }
-      h2 { font-size: 1.1rem; font-weight: 700; color: #1e3a5f; border-bottom: 2px solid #1e3a5f; padding-bottom: .3rem; margin: 1.8rem 0 .6rem; }
-      h3 { font-size: 1rem; font-weight: 600; color: #2c5282; margin: 1.2rem 0 .4rem; }
-      p  { margin: 0 0 .75rem; line-height: 1.7; }
-      ul, ol { padding-left: 1.4rem; margin: .4rem 0 .75rem; }
-      li { margin-bottom: .3rem; }
-      strong { font-weight: 700; }
-      table { width: 100%; border-collapse: collapse; margin: .9rem 0; }
-      th { background: #1e3a5f; color: white; padding: .45rem .8rem; text-align: left; }
-      td { border: 1px solid #d1d5db; padding: .4rem .8rem; }
-      tr:nth-child(even) td { background: #f3f6fb; }
+      body { font-family: Calibri, 'Segoe UI', Arial, sans-serif; font-size: 11pt; line-height: 1.65; color: #1a1a2e; margin: 0; background: white; }
+      .section-content h2 { font-size: 1.05rem; font-weight: 700; color: #1B3F6B; border-bottom: 2px solid #17A589; padding-bottom: .3rem; margin: 1.4rem 0 .6rem; }
+      .section-content h3 { font-size: 1rem; font-weight: 700; color: #17A589; font-style: italic; margin: 1rem 0 .4rem; }
+      .section-content h4 { font-size: .95rem; font-weight: 700; color: #2471A3; font-style: italic; margin: .8rem 0 .3rem; }
+      .section-content p  { margin: 0 0 .75rem; line-height: 1.7; text-align: justify; }
+      .section-content ul, .section-content ol { padding-left: 1.4rem; margin: .4rem 0 .75rem; }
+      .section-content li { margin-bottom: .3rem; line-height: 1.6; }
+      .section-content strong { font-weight: 700; color: #1B3F6B; }
+      .section-content table { width: 100%; border-collapse: collapse; margin: .9rem 0; }
+      .section-content th { background: #1B3F6B; color: white; padding: .45rem .8rem; text-align: left; }
+      .section-content td { border: 1px solid #d1d5db; padding: .4rem .8rem; }
+      .section-content tr:nth-child(even) td { background: #F0F7FF; }
+      .section-content hr { border: none; border-top: 1px solid #D5E8F5; margin: 1rem 0; }
       @page { margin: 2cm 2.5cm; }
     `;
     const html = buildDocumentHTML(result, company, aoText);
