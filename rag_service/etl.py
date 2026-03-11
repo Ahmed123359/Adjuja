@@ -19,7 +19,10 @@ from __future__ import annotations
 import logging
 import re
 import uuid
+from concurrent.futures import ThreadPoolExecutor, TimeoutError as FuturesTimeoutError
 from pathlib import Path
+
+_FILE_TIMEOUT_SECONDS = 30  # timeout max par fichier (lecture + embedding)
 
 from qdrant_client import QdrantClient
 from qdrant_client.models import (
@@ -179,6 +182,7 @@ class ETLPipeline:
         for doc_type in DOCUMENT_TYPES:
             folder = kb_path / doc_type
             if not folder.is_dir():
+                logger.info("[SCAN] Dossier absent, ignoré : %s/", doc_type)
                 continue
             for path in sorted(folder.iterdir()):
                 if path.suffix.lower() not in SUPPORTED_EXT:
@@ -188,13 +192,17 @@ class ETLPipeline:
                 rel_path = f"{doc_type}/{path.name}"
                 current_files[rel_path] = path
 
+        logger.info("[SCAN] %d fichier(s) trouvé(s) dans knowledge_base/", len(current_files))
+        for rel_path in current_files:
+            logger.info("  - %s", rel_path)
+
         # ── 2. Suppression des entrées orphelines (fichiers supprimés) ───
         for rel_path in list(self._manifest.all_entries().keys()):
             if rel_path not in current_files:
                 self._delete_from_qdrant(rel_path)
                 self._manifest.remove(rel_path)
                 report["deleted"] += 1
-                logger.info("Orphelin supprimé : %s", rel_path)
+                logger.info("[DELETE] Orphelin supprimé : %s", rel_path)
 
         # ── 3. Indexation des fichiers nouveaux ou modifiés ──────────────
         for rel_path, path in current_files.items():
@@ -202,21 +210,36 @@ class ETLPipeline:
             try:
                 file_hash = self._manifest.file_hash(path)
             except Exception as exc:
+                logger.error("[ERROR] Impossible de lire %s : %s", rel_path, exc)
                 report["errors"].append(f"{rel_path}: impossible de lire ({exc})")
                 continue
 
             if self._manifest.is_indexed(rel_path, file_hash):
                 report["skipped"] += 1
+                logger.info("[SKIP]  %s (déjà indexé, inchangé)", rel_path)
                 continue
 
+            logger.info("[INDEX] %s — chargement...", rel_path)
             try:
-                n_chunks = self._process_file(rel_path, path, doc_type, file_hash)
+                with ThreadPoolExecutor(max_workers=1) as executor:
+                    future = executor.submit(self._process_file, rel_path, path, doc_type, file_hash)
+                    n_chunks = future.result(timeout=_FILE_TIMEOUT_SECONDS)
                 report["indexed"] += 1
-                logger.info("Indexé : %s (%d chunks)", rel_path, n_chunks)
+                if n_chunks == 0:
+                    logger.warning("[VIDE]  %s — texte vide, non indexé (PDF scanné ?)", rel_path)
+                else:
+                    logger.info("[OK]    %s — %d chunk(s) indexé(s)", rel_path, n_chunks)
+            except FuturesTimeoutError:
+                logger.error("[TIMEOUT] %s — dépasse %ds, fichier ignoré", rel_path, _FILE_TIMEOUT_SECONDS)
+                report["errors"].append(f"{rel_path}: timeout ({_FILE_TIMEOUT_SECONDS}s)")
             except Exception as exc:
-                logger.error("Erreur indexation %s : %s", rel_path, exc, exc_info=True)
+                logger.error("[ERROR] %s : %s", rel_path, exc, exc_info=True)
                 report["errors"].append(f"{rel_path}: {exc}")
 
+        logger.info(
+            "[DONE] indexed=%d skipped=%d deleted=%d errors=%d",
+            report["indexed"], report["skipped"], report["deleted"], len(report["errors"]),
+        )
         return report
 
     # ── Méthodes internes ────────────────────────────────────────────────────

@@ -12,7 +12,7 @@ function toRoman(n: number): string {
 }
 
 // ── Document HTML builder ───────────────────────────────────
-function buildDocumentHTML(result: GenerationResult, company: CompanyData, aoText: string): string {
+function buildDocumentHTML(result: GenerationResult, company: CompanyData, aoText: string, logoBase64: string = ''): string {
   const now    = new Date().toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' });
   const aoLine = aoText.split('\n').find(l => l.trim().length > 10)?.trim() ?? "Appel d'offres";
 
@@ -37,11 +37,9 @@ function buildDocumentHTML(result: GenerationResult, company: CompanyData, aoTex
   const ftrCss   = `margin-top:auto;padding-top:10px;border-top:1px solid ${LBLUE};display:flex;align-items:center;justify-content:space-between;font-size:7.5pt;color:#9CA3AF;`;
   const sep      = '<div style="height:20px;"></div>';
 
-  // ABI logo mark (CSS-only circle)
-  const abiMark = `<div style="display:inline-flex;align-items:center;gap:5px;">
-    <div style="width:26px;height:26px;border-radius:50%;border:2px solid ${BLUE};display:flex;align-items:center;justify-content:center;font-size:5.5pt;font-weight:900;color:${BLUE};">/BI</div>
-    <div style="line-height:1.1;"><div style="font-size:8pt;font-weight:800;color:${BLUE};letter-spacing:0.05em;">ABI</div><div style="font-size:6pt;color:#6B7280;letter-spacing:0.05em;">CONSULTING</div></div>
-  </div>`;
+  // ABI logo mark (real logo image, embedded as base64 when available)
+  const logoSrc = logoBase64 || '/logo_abi.png';
+  const abiMark = `<img src="${logoSrc}" style="height:36px;width:auto;display:block;">`;
 
   // Wave decorations (CSS shapes)
   const wavesTR = `
@@ -504,14 +502,29 @@ export default function RightPanel({
   const [copied, setCopied] = useState(false);
   const [tab, setTab] = useState<'document' | 'brief'>('document');
   const [docFile, setDocFile] = useState<'reponse' | 'equipe' | 'references'>('reponse');
+  const [logoBase64, setLogoBase64] = useState<string>('');
+
+  // Load logo once at mount
+  useEffect(() => {
+    const img = new Image();
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      canvas.width = img.naturalWidth;
+      canvas.height = img.naturalHeight;
+      const ctx = canvas.getContext('2d')!;
+      ctx.drawImage(img, 0, 0);
+      setLogoBase64(canvas.toDataURL('image/png'));
+    };
+    img.src = '/logo_abi.png';
+  }, []);
 
   useEffect(() => {
     if (state === 'result' && result && wordRef.current) {
       setTab('document');
       setDocFile('reponse');
-      wordRef.current.innerHTML = buildDocumentHTML(result, company, aoText);
+      wordRef.current.innerHTML = buildDocumentHTML(result, company, aoText, logoBase64);
     }
-  }, [state, result, company, aoText]);
+  }, [state, result, company, aoText, logoBase64]);
 
   function copyText() {
     const text = wordRef.current?.innerText ?? result?.texte_complet ?? '';
@@ -538,7 +551,7 @@ export default function RightPanel({
       .section-content tr:nth-child(even) td { background: #F0F7FF; }
       .section-content hr { border: none; border-top: 1px solid #D5E8F5; margin: 1rem 0; }
     `;
-    const html = buildDocumentHTML(result, company, aoText);
+    const html = buildDocumentHTML(result, company, aoText, logoBase64);
     const fullHtml = `<!DOCTYPE html><html><head><meta charset="utf-8"><style>${docStyles}</style></head><body>${html}</body></html>`;
     const blob = new Blob([fullHtml], { type: 'application/msword' });
     const url  = URL.createObjectURL(blob);
@@ -565,7 +578,7 @@ export default function RightPanel({
       .section-content hr { border: none; border-top: 1px solid #D5E8F5; margin: 1rem 0; }
       @page { margin: 2cm 2.5cm; }
     `;
-    const html = buildDocumentHTML(result, company, aoText);
+    const html = buildDocumentHTML(result, company, aoText, logoBase64);
     const w = window.open('', '_blank');
     if (!w) return;
     w.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>${company.nom || 'Réponse AO'}</title><style>${docStyles}</style></head><body>${html}</body></html>`);

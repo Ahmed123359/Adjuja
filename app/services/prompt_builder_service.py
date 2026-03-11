@@ -2,6 +2,14 @@ from dataclasses import dataclass
 from app.models.appel_offre import AppelOffre
 from app.models.generation import GenerationRequest
 
+# DEV — Filtre de sections pour itérer rapidement sur une section spécifique.
+# None  = toutes les sections (comportement normal / production)
+# Liste = uniquement les sections dont le titre est dans la liste
+# Exemples :
+#   _DEV_SECTIONS: list[str] | None = ["Notre approche méthodologique"]
+#   _DEV_SECTIONS: list[str] | None = ["Références similaires", "Moyens humains et techniques mobilisés"]
+_DEV_SECTIONS: list[str] | None = ["Notre approche méthodologique"]
+
 
 @dataclass
 class SectionConfig:
@@ -357,6 +365,8 @@ class PromptBuilderService:
         return section.titre_en if langue == "en" else section.titre
 
     def get_sections(self) -> list[SectionConfig]:
+        if _DEV_SECTIONS is not None:
+            return [s for s in SECTIONS if s.titre in _DEV_SECTIONS]
         return SECTIONS
 
     # ── Prompts principaux ─────────────────────────────────────────────────
