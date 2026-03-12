@@ -21,7 +21,7 @@
   },
   "instructions": "Adapter la réponse au contexte marocain (réglementation, références locales). Mettre en avant l'expertise terrain et la connaissance du tissu économique et institutionnel marocain. Utiliser un ton professionnel et institutionnel. Valoriser les approches méthodologiques éprouvées (ValueLinks, MSA, CEFE, NUCLEUS, MyCoop, GERME, GETAHEAD).",
   "temperature":       0.7,
-  "max_tokens":        1000,
+  "max_tokens":        2500,
   "max_tokens_cumul":  100000,
   "max_appels":        50
 }

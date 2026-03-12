@@ -98,25 +98,82 @@ Interdit :
         role="directeur technique senior présentant une méthodologie concrète, séquencée et adaptée à ce marché",
         focus="Convaincre que la mission sera exécutée avec rigueur en montrant une démarche opérationnelle réaliste, calée sur les contraintes de CET AO.",
         min_mots=380,
-        max_mots=520,
+        max_mots=550,
         instructions="""
-RÈGLE ABSOLUE : La méthodologie doit être cohérente avec le périmètre, les délais et les exigences spécifiques de l'AO. Ne pas inventer de phases ou durées non justifiables par le CDC.
+RÈGLES ABSOLUES ANTI-HALLUCINATION :
+- Ne jamais inventer de durées, de dates ou de nombre d'entretiens non mentionnés dans l'AO
+- Ne citer aucun outil, framework ou méthode (ex : ValueLinks, MSA, CEFE, théorie du changement) qui ne soit pas présent dans le profil entreprise ou dans l'AO
+- Ne pas générer de tableau de phases si l'AO ne liste pas de jalons ou livrables explicites
+- Si l'AO nomme un cadre d'évaluation (ex : critères OCDE/CAD, chaîne de résultats, logframe) : le reprendre mot pour mot et expliquer comment tu l'appliques
 
-Structure :
-1. Principe directeur (1 phrase) : le fil conducteur méthodologique choisi pour CET AO — pourquoi cette approche est la plus adaptée à ce contexte précis
-2. Phases de la mission (tableau Markdown OBLIGATOIRE) :
-| Phase | Durée indicative | Activités clés | Livrables |
-|---|---|---|---|
-Si les délais ne sont pas précisés : utiliser des durées relatives (J+0 à J+30, J+30 à J+60…)
-3. Points différenciants (2-3 points) : ce qui distingue l'approche — directement liés aux contraintes identifiées dans l'AO, pas génériques
-4. Gestion des risques (1-2 points) : risques spécifiques à ce marché identifiés dans le CDC et mécanismes de mitigation
-5. Contrôle qualité (1 point) : jalons de validation, reporting, mécanismes de suivi
+ÉTAPE PRÉALABLE OBLIGATOIRE — extraire de l'AO avant de rédiger :
+1. Les cadres méthodologiques nommés (critères d'évaluation, référentiels, normes) → les adresser explicitement
+2. Les livrables et jalons listés → si présents, structurer la méthodologie autour d'eux
+3. Les contraintes terrain (zones géographiques, publics cibles, langues, délais) → les intégrer dans la démarche
+4. Les outils ou méthodes demandés → y répondre point par point
 
-Interdit :
-- Méthodologies génériques non ancrées dans l'AO
-- Outils ou frameworks non cohérents avec les expertises déclarées dans le profil
-- Durées précises sans base dans l'AO
-- "Notre approche sur mesure" et assimilés sans les détailler
+STRUCTURE ADAPTATIVE (choisir selon ce que contient l'AO) :
+
+Si l'AO contient des livrables/jalons explicites :
+→ Décrire les phases de la mission en s'appuyant sur ces jalons (tableau uniquement si ≥ 3 jalons distincts)
+
+Si l'AO nomme des critères ou un cadre d'évaluation :
+→ Organiser la méthodologie autour de ces critères (ex : pertinence → efficacité → efficience → impact → durabilité)
+
+Si l'AO est une mission d'étude/conseil sans structure imposée :
+→ Description narrative des étapes, sans tableau générique
+
+ÉLÉMENTS À NE PAS OUBLIER SI L'AO LES IMPLIQUE :
+Ces dimensions peuvent apparaître dans le texte si et seulement si l'AO les mentionne ou les implique directement :
+cadrage, collecte de données, exécution terrain, qualité, risques, pilotage.
+Ne pas en faire des sous-titres ou des blocs séparés — les intégrer naturellement dans la narration.
+
+STYLE :
+- Verbes d'action concrets (analyser, collecter, valider, restituer, piloter…)
+- Ton opérationnel et rassurant — pas académique, pas marketing
+- Chaque phrase doit être directement exploitable dans un document d'offre
+- Si une information manque : formuler une hypothèse prudente signalée explicitement ("sous réserve de confirmation…", "à préciser en phase de cadrage…") plutôt que d'inventer
+
+ÉLÉMENT VISUEL (optionnel, au jugement) :
+Si un visuel améliore significativement la clarté ou l'impact, en choisir un parmi :
+- Tableau (comparaison, phases, ressources)
+- Matrice (risques × probabilité, critères × méthodes)
+- Frise textuelle (séquence d'étapes avec `→` ou numérotation)
+- Synthèse structurée en colonnes
+N'ajouter un visuel QUE s'il apporte une vraie valeur — pas pour décorer.
+Toujours accompagner le visuel d'une phrase d'explication.
+Ne jamais inventer de données pour produire un tableau ou une matrice.
+Si les informations disponibles sont insuffisantes : rester en texte structuré.
+
+HIÉRARCHIE DES SOURCES :
+En cas de divergence entre l'AO et les documents internes, l'AO prévaut toujours.
+Les documents internes servent à enrichir, préciser ou crédibiliser la réponse — jamais à contredire une exigence de l'AO.
+
+RÈGLE D'INFÉRENCE :
+Un élément peut être inclus même s'il n'est pas explicitement nommé dans l'AO s'il découle directement et de manière opérationnelle du besoin exprimé.
+Éviter toute inférence faible, spéculative ou marketing.
+
+UTILISATION DU CONTEXTE RAG :
+Si des documents internes sont fournis en contexte : les reformuler et synthétiser sans les déformer.
+Ne pas citer les documents par leur nom — intégrer leur contenu naturellement dans la rédaction.
+
+SORTIE :
+Livrer uniquement la section finale rédigée, sans afficher l'analyse intermédiaire.
+Ne pas commencer par "J'ai analysé l'AO…", "Cette section aborde…" ou tout méta-commentaire.
+
+PRINCIPES (pas de structure imposée) :
+La section doit être construite librement en fonction de ce que l'AO demande réellement.
+Ne pas systématiquement inclure "différenciation", "risques" et "qualité" comme blocs séparés —
+ces éléments doivent apparaître naturellement dans le texte si et seulement si l'AO les mentionne ou les implique.
+La différenciation doit transparaître dans la manière dont la démarche est décrite, pas dans un paragraphe dédié.
+
+Interdit absolu :
+- Tableau de phases avec colonnes génériques (Phase / Durée / Activités / Livrables) si non justifié par l'AO
+- Durées inventées (J+15, J+60...) sans base dans l'AO
+- Outils ou méthodes non présents dans le profil ou l'AO
+- "Notre approche sur mesure", "approche rigoureuse et contextualisée" et toute formule d'introduction générique
+- Répéter les livrables déjà listés dans le planning prévisionnel
+- Sous-titres H2/H3 pour chaque étape de la mission (ex: "## Phase 1 : Cadrage", "### Étape 2")
 """,
     ),
     SectionConfig(
@@ -569,7 +626,7 @@ N'inclus PAS le titre « ## {titre} »."""
 
         return system, user
 
-    # ── Blocs de contexte ──────────────────────────────────────────────────
+    # ── Blocs de contexte ────────────────────────────────���─────────────��───
 
     def _bloc_ao(self, ao: AppelOffre) -> str:
         """Données AO — champs manquants signalés explicitement."""

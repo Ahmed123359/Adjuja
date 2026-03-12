@@ -37,6 +37,7 @@ pytest --cov=app        # avec couverture
 - Toujours proposer un plan avant de modifier un service existant
 - Mettre à jour `conception/1.Roadmap/roadmap_technique.md` quand un item est terminé (`[ ]` → `[x]`)
 - Mettre à jour `conception/2. Architecture/architecture.md` si l'architecture change
+- **Mettre à jour `SUIVI.md` à chaque fin de session** : cocher les tâches terminées, ajouter les nouvelles décisions techniques, noter les variables DEV à remettre en prod
 
 ## Sécurité
 - JWT_SECRET_KEY doit être ≥ 32 chars et différente de "change-me" en prod

@@ -115,19 +115,8 @@ def _chunk_text(text: str, size: int, overlap: int) -> list[str]:
     text = text.strip()
     if not text:
         return []
-    chunks: list[str] = []
-    start = 0
-    while start < len(text):
-        end = min(start + size, len(text))
-        if end < len(text):
-            cut = text.rfind(" ", start, end)
-            if cut > start:
-                end = cut
-        chunk = text[start:end].strip()
-        if len(chunk) > 50:
-            chunks.append(chunk)
-        start = end - overlap
-    return chunks
+    step = size - overlap
+    return [text[i:i+size] for i in range(0, len(text), step) if len(text[i:i+size]) > 50]
 
 
 # ── Pipeline ETL ──────────────────────────────────────────────────────────
@@ -188,6 +177,8 @@ class ETLPipeline:
                 if path.suffix.lower() not in SUPPORTED_EXT:
                     continue
                 if path.name.startswith("."):
+                    continue
+                if path.name.lower() == "readme.md":
                     continue
                 rel_path = f"{doc_type}/{path.name}"
                 current_files[rel_path] = path
