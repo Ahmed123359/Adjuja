@@ -1,5 +1,4 @@
 import { useState, useEffect, useCallback } from 'react';
-import Header from './components/Header';
 import LeftPanel from './components/LeftPanel';
 import RightPanel from './components/RightPanel';
 import {
@@ -10,24 +9,24 @@ import {
 import type { Model, CompanyData, GenerationResult, AppState, RagStatus, UsageData, HistorySummary, User } from './types';
 import { DEFAULT_COMPANY } from './types';
 
+const CHEAP_KEYWORDS = ['haiku', 'mini', 'small', 'flash'];
+
+function cheapestModel(models: Model[], provider: string): Model | undefined {
+  const list = models.filter(m => m.provider === provider);
+  return (
+    list.find(m => CHEAP_KEYWORDS.some(k => m.model_id.toLowerCase().includes(k))) ??
+    list.find(m => m.defaut) ??
+    list[0]
+  );
+}
+
 export default function App({ onGoLanding, onLogout, user }: { onGoLanding: () => void; onLogout: () => void; user: User }) {
-  // Theme — dark par défaut, persisté en localStorage
-  const [isDark, setIsDark] = useState(() => localStorage.getItem('theme') !== 'light');
-
-  useEffect(() => {
-    const el = document.documentElement;
-    if (isDark) { el.classList.add('dark'); } else { el.classList.remove('dark'); }
-    localStorage.setItem('theme', isDark ? 'dark' : 'light');
-  }, [isDark]);
-
-  const toggleTheme = useCallback(() => setIsDark(d => !d), []);
-
   // Form
-  const [aoText,       setAoText]       = useState('');
-  const [provider,     setProviderRaw]  = useState('anthropic');
-  const [model,        setModel]        = useState('');
-  const [company,      setCompany]      = useState<CompanyData>(DEFAULT_COMPANY);
-  const [langue,       setLangue]       = useState<'fr' | 'en'>('fr');
+  const [aoText,   setAoText]      = useState('');
+  const [provider, setProviderRaw] = useState('anthropic');
+  const [model,    setModel]       = useState('');
+  const [company,  setCompany]     = useState<CompanyData>(DEFAULT_COMPANY);
+  const [langue,   setLangue]      = useState<'fr' | 'en'>('fr');
 
   // App state
   const [appState,   setAppState]  = useState<AppState>('idle');
@@ -44,13 +43,12 @@ export default function App({ onGoLanding, onLogout, user }: { onGoLanding: () =
     fetchHistory().then(setHistory).catch(() => {});
   }, []);
 
-  // Load on mount
   useEffect(() => {
     fetch('/health').then(r => setApiStatus(r.ok ? 'online' : 'offline')).catch(() => setApiStatus('offline'));
 
     fetchModels().then(data => {
       setModels(data);
-      const def = data.find(m => m.provider === 'anthropic' && m.defaut);
+      const def = cheapestModel(data, 'anthropic');
       if (def) setModel(def.model_id);
     }).catch(() => {});
 
@@ -65,7 +63,7 @@ export default function App({ onGoLanding, onLogout, user }: { onGoLanding: () =
 
   const setProvider = useCallback((p: string) => {
     setProviderRaw(p);
-    const def = models.find(m => m.provider === p && m.defaut);
+    const def = cheapestModel(models, p);
     if (def) setModel(def.model_id);
   }, [models]);
 
@@ -79,7 +77,7 @@ export default function App({ onGoLanding, onLogout, user }: { onGoLanding: () =
     setAppState('loading');
     try {
       const res = await generate({ aoText, provider, model, company, langue });
-  setResult(res);
+      setResult(res);
       setAppState('result');
       fetchUsage().then(setUsage).catch(() => {});
       reloadHistory();
@@ -89,7 +87,6 @@ export default function App({ onGoLanding, onLogout, user }: { onGoLanding: () =
     }
   }, [aoText, provider, model, company, langue, reloadHistory]);
 
-  // Charger une entrée de l'historique et l'afficher
   const handleLoadHistory = useCallback(async (id: string) => {
     try {
       const entry = await fetchHistoryEntry(id);
@@ -98,7 +95,6 @@ export default function App({ onGoLanding, onLogout, user }: { onGoLanding: () =
     } catch {}
   }, []);
 
-  // Supprimer une entrée de l'historique
   const handleDeleteHistory = useCallback(async (id: string) => {
     try {
       await deleteHistoryEntry(id);
@@ -106,7 +102,6 @@ export default function App({ onGoLanding, onLogout, user }: { onGoLanding: () =
     } catch {}
   }, [reloadHistory]);
 
-  // Vider tout l'historique
   const handleClearHistory = useCallback(async () => {
     try {
       await clearHistory();
@@ -134,52 +129,39 @@ export default function App({ onGoLanding, onLogout, user }: { onGoLanding: () =
   }, [handleGenerate]);
 
   return (
-    <div className="h-screen flex flex-col bg-slate-100 dark:bg-navy-900 overflow-hidden">
-      {/* Subtle radial gradient for depth (dark mode only) */}
-      <div className="pointer-events-none fixed inset-0 overflow-hidden dark:bg-navy-gradient" />
-
-      <Header
-        apiStatus={apiStatus}
+    <div className="flex min-h-screen w-full bg-background">
+      <LeftPanel
+        aoText={aoText}       setAoText={setAoText}
+        provider={provider}   setProvider={setProvider}
+        model={model}         setModel={setModel}
+        models={models}
+        company={company}     setCompany={setCompany}
+        langue={langue}       setLangue={setLangue}
+        onGenerate={handleGenerate}
+        loading={appState === 'loading'}
+        limitReached={isLimitReached}
+        onGoLanding={onGoLanding}
+      />
+      <RightPanel
+        state={appState}
+        result={result}
+        error={error}
+        company={company}
+        aoText={aoText}
+        onReset={() => setAppState('idle')}
+        usage={usage}
         ragStatus={ragStatus}
+        history={history}
+        onLoadHistory={handleLoadHistory}
+        onDeleteHistory={handleDeleteHistory}
+        onClearHistory={handleClearHistory}
+        apiStatus={apiStatus}
         ragLoading={ragLoading}
         onReindex={handleReindex}
-        usage={usage}
         onResetUsage={handleResetUsage}
-        isDark={isDark}
-        toggleTheme={toggleTheme}
-        onGoLanding={onGoLanding}
         user={user}
         onLogout={onLogout}
       />
-
-      <div className="flex-1 flex overflow-hidden relative z-10">
-        <LeftPanel
-          aoText={aoText}       setAoText={setAoText}
-          provider={provider}   setProvider={setProvider}
-          model={model}         setModel={setModel}
-          models={models}
-          company={company}     setCompany={setCompany}
-          langue={langue}       setLangue={setLangue}
-          onGenerate={handleGenerate}
-          loading={appState === 'loading'}
-          limitReached={isLimitReached}
-          isDark={isDark}
-        />
-        <RightPanel
-          state={appState}
-          result={result}
-          error={error}
-          company={company}
-          aoText={aoText}
-          onReset={() => setAppState('idle')}
-          usage={usage}
-          ragStatus={ragStatus}
-          history={history}
-          onLoadHistory={handleLoadHistory}
-          onDeleteHistory={handleDeleteHistory}
-          onClearHistory={handleClearHistory}
-        />
-      </div>
     </div>
   );
 }

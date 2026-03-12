@@ -720,13 +720,13 @@ Si non, la page de connexion s'affiche.
 **Fonctionnalités :**
 - Inscription libre (nom, prénom, email, mot de passe) + connexion JWT
 - En-tête : prénom de l'utilisateur connecté + bouton de déconnexion
-- Dépôt de fichier AO par glisser-déposer (`.txt` ou `.pdf`)
+- Dépôt de fichier AO par glisser-déposer (`.txt` / `.pdf`) — PDF scannés supportés via OCR GPT-4o
 - Sélection du provider LLM par cartes cliquables
 - Modèles disponibles chargés dynamiquement depuis l'API
-- Résultats affichés section par section avec rendu Markdown
+- Résultats en deux onglets : **Document** (8 sections) + **Brief stratégique**
+- Export Word (`.doc`) et impression PDF
 - Historique personnel : chaque lancement est sauvegardé et consultable
-- En-tête : statut RAG en temps réel + bouton "Réindexer" (actif seulement si rag-etl est démarré)
-- Bouton "Copier" pour récupérer la réponse complète
+- En-tête : statut RAG en temps réel + bouton "Réindexer"
 - Raccourci clavier `Ctrl+Entrée` / `⌘+Entrée` pour déclencher la génération
 
 ---
@@ -779,6 +779,40 @@ Retourne le profil de l'utilisateur authentifié.
 ```
 
 ### Routes protégées (🔒 Bearer requis)
+
+#### `POST /api/v1/brief` 🔒
+Génère **uniquement le brief stratégique** (phase 1, 1 appel LLM) sans déclencher les 8 sections.
+Utile pour valider l'angle stratégique avant une génération complète.
+
+**Corps :** identique à `/generate`
+
+**Réponse :**
+```json
+{
+  "brief_strategique": "# Analyse stratégique\n...",
+  "provider_utilise":  "anthropic",
+  "model_utilise":     "claude-opus-4-6",
+  "tokens_utilises":   420
+}
+```
+
+#### `POST /api/v1/pdf/extract` 🔒
+Extrait le texte d'un PDF d'appel d'offres (multipart/form-data).
+
+- **PDF avec texte embarqué** : extraction directe via pymupdf (rapide, 0 token LLM)
+- **PDF scanné** : rendu pages en PNG + transcription GPT-4o vision
+
+**Corps :** `file` (PDF, max 20 MB)
+
+**Réponse :**
+```json
+{
+  "text":       "ARTICLE 10: OFFRE TECHNIQUE...",
+  "method":     "pymupdf",
+  "pages":      5,
+  "is_scanned": false
+}
+```
 
 #### `POST /api/v1/generate`
 **Point d'entrée principal.** Génère une réponse à un appel d'offres (9 appels LLM).

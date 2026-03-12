@@ -13,3 +13,19 @@ frontend/dist/
 # Divers
 .DS_Store
 *.log
+data/
+documents/
+knowledge_base/
+
+# R&D — sorties du scraper (ZIPs téléchargés, debug, rapports, base de données locale)
+rd/scrapper/output/
+rd/scrapper/*.db
+rd/ocr/output/
+
+# Worker — sorties (ZIPs, debug, BDD locale)
+worker/output/
+worker/.venv/
+
+# Lovable — dossier généré automatiquement
+lovable/
+

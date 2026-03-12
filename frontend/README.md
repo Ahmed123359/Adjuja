@@ -13,7 +13,6 @@ Interface web de l'application **OffrIA**, un générateur de réponses à appel
 | Vite | 5.4 | Build tool & dev server |
 | Tailwind CSS | 3.4 | Styles utilitaires |
 | marked | 9.1 | Rendu Markdown → HTML |
-| pdfjs-dist | 3.11 | Extraction de texte PDF |
 | xlsx | 0.18 | Import/export Excel (profil entreprise) |
 | PostCSS + Autoprefixer | — | Pipeline CSS |
 
@@ -34,10 +33,13 @@ frontend/
     ├── types.ts             # Interfaces TypeScript du domaine
     ├── api.ts               # Couche fetch vers le backend FastAPI
     ├── App.tsx              # Root : state global, routing d'états
+    ├── pages/
+    │   ├── LoginPage.tsx    # Formulaire de connexion
+    │   └── RegisterPage.tsx # Formulaire d'inscription
     └── components/
-        ├── Header.tsx       # Barre supérieure (logo, usage, RAG, thème)
+        ├── Header.tsx       # Barre supérieure (logo, usage, RAG, thème, user)
         ├── LeftPanel.tsx    # Sidebar formulaire (AO, LLM, profil, params)
-        └── RightPanel.tsx   # Zone principale (dashboard, loading, résultat)
+        └── RightPanel.tsx   # Zone principale (dashboard, loading, résultat, brief)
 ```
 
 ---
@@ -126,7 +128,7 @@ Géré via `darkMode: 'class'` dans Tailwind. La classe `.dark` est appliquée s
 |---|---|
 | `idle` | **Dashboard** : titre, 3 stat-cards (appels, tokens, RAG), CTA gradient indigo, guide 4 étapes |
 | `loading` | Spinner à anneaux concentriques indigo + étapes en cours |
-| `result` | Toolbar (provider / modèle / tokens) + document A4 éditable (`contentEditable`) |
+| `result` | Toolbar + onglets **Document** / **Brief stratégique** + export Word/PDF |
 | `error` | Carte d'erreur avec icône |
 
 ---
@@ -135,15 +137,23 @@ Géré via `darkMode: 'class'` dans Tailwind. La classe `.dark` est appliquée s
 
 Toutes les requêtes ciblent le backend FastAPI proxifié via Vite.
 
-| Fonction | Méthode | Endpoint |
-|---|---|---|
-| `fetchModels()` | GET | `/api/v1/models` |
-| `fetchDefaults()` | GET | `/api/v1/defaults` |
-| `fetchRagStatus()` | GET | `/api/v1/rag/status` |
-| `reindexRag()` | POST | `/api/v1/rag/index` |
-| `fetchUsage()` | GET | `/api/v1/usage` |
-| `resetUsage()` | POST | `/api/v1/usage/reset` |
-| `generate(params)` | POST | `/api/v1/generate` |
+| Fonction | Méthode | Endpoint | Auth |
+|---|---|---|---|
+| `register(params)` | POST | `/api/v1/auth/register` | — |
+| `login(email, pwd)` | POST | `/api/v1/auth/login` | — |
+| `getMe()` | GET | `/api/v1/auth/me` | ✓ |
+| `fetchModels()` | GET | `/api/v1/models` | — |
+| `fetchDefaults()` | GET | `/api/v1/defaults` | — |
+| `fetchRagStatus()` | GET | `/api/v1/rag/status` | — |
+| `reindexRag()` | POST | `/api/v1/rag/index` | — |
+| `fetchUsage()` | GET | `/api/v1/usage` | ✓ |
+| `resetUsage()` | POST | `/api/v1/usage/reset` | ✓ |
+| `extractPdfText(file)` | POST | `/api/v1/pdf/extract` | ✓ |
+| `generate(params)` | POST | `/api/v1/generate` | ✓ |
+| `fetchHistory()` | GET | `/api/v1/history` | ✓ |
+| `fetchHistoryEntry(id)` | GET | `/api/v1/history/{id}` | ✓ |
+| `deleteHistoryEntry(id)` | DELETE | `/api/v1/history/{id}` | ✓ |
+| `clearHistory()` | DELETE | `/api/v1/history` | ✓ |
 
 ---
 
@@ -152,11 +162,15 @@ Toutes les requêtes ciblent le backend FastAPI proxifié via Vite.
 ```typescript
 CompanyData      // Profil entreprise (18 champs)
 Model            // { provider, model_id, description, defaut }
-GenerationResult // { texte_complet, sections[], tokens_utilises, ... }
+GenerationResult // { texte_complet, sections[], tokens_utilises, brief_strategique, ... }
 RagStatus        // { ready, chunk_count, doc_count, etl_available }
 UsageData        // { total_tokens, total_appels, max_tokens_cumul, max_appels }
 AppState         // 'idle' | 'loading' | 'result' | 'error'
 AppDefaults      // Valeurs par défaut chargées au démarrage
+User             // { id, nom, prenom, email, created_at }
+HistorySummary   // Entrée d'historique sans le résultat complet
+HistoryEntry     // Entrée d'historique avec GenerationResult
+PdfExtractResult // { text, method, pages, is_scanned }
 ```
 
 ---

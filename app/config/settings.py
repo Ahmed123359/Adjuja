@@ -49,7 +49,7 @@ class Settings(BaseSettings):
     app_env: str = "development"
     """Environnement d'exécution : 'development' ou 'production'."""
 
-    app_host: str = "0.0.0.0"
+    app_host: str = "0.0.0.0"  # nosec B104
     """Adresse d'écoute du serveur Uvicorn."""
 
     app_port: int = 8000
@@ -99,6 +99,15 @@ class Settings(BaseSettings):
     """Durée de vie des tokens JWT en minutes (défaut : 7 jours)."""
 
     # ------------------------------------------------------------------
+    # Limites de contexte AO
+    # ------------------------------------------------------------------
+
+    ao_max_chars: int = 100000
+    """Nombre maximum de caractères du texte AO injectés dans le prompt de génération.
+    100 000 chars ≈ 25 000 tokens — couvre 99%+ des AOs réels (max observé ~101k chars).
+    Réduire pour limiter les coûts (ex: 30000 ≈ 7500 tokens ≈ ~38% de couverture)."""
+
+    # ------------------------------------------------------------------
     # Timeouts LLM
     # ------------------------------------------------------------------
 
@@ -109,6 +118,18 @@ class Settings(BaseSettings):
     # donc le timeout total ressenti par l'utilisateur est ~60s, pas 8×60s).
     llm_timeout_seconds: float = 60.0
     """Timeout en secondes pour chaque appel LLM individuel (défaut : 60s)."""
+
+    # ------------------------------------------------------------------
+    # Rate limiting
+    # ------------------------------------------------------------------
+
+    # Nombre maximum de requêtes autorisées sur POST /generate par utilisateur.
+    # Syntaxe : "<N>/<période>" — ex: "10/minute", "100/hour", "5/second".
+    # Dépasse la limite → HTTP 429 Too Many Requests.
+    # Valeur par défaut : 10 requêtes par minute par utilisateur.
+    # À réduire en production si les coûts LLM sont une préoccupation.
+    rate_limit_generate: str = "10/minute"
+    """Limite de requêtes sur POST /generate par user (syntaxe slowapi : '10/minute')."""
 
     @model_validator(mode="after")
     def _valider_jwt_secret(self) -> "Settings":

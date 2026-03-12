@@ -161,6 +161,32 @@ export async function clearHistory(): Promise<void> {
   if (!res.ok) throw new Error('Impossible de vider l\'historique');
 }
 
+// ── PDF extract (protégé) ──────────────────────────────────────────────
+
+export interface PdfExtractResult {
+  text:       string;
+  method:     'pymupdf' | 'gpt4o_vision';
+  pages:      number;
+  is_scanned: boolean;
+}
+
+export async function extractPdfText(file: File): Promise<PdfExtractResult> {
+  const form = new FormData();
+  form.append('file', file);
+
+  const res = await fetch('/api/v1/pdf/extract', {
+    method:  'POST',
+    headers: authHeaders(),
+    body:    form,
+  });
+
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(typeof data.detail === 'string' ? data.detail : 'Impossible d\'extraire le PDF.');
+  }
+  return data;
+}
+
 // ── Génération (protégée) ──────────────────────────────────────────────
 
 export async function generate(params: {

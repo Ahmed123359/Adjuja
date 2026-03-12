@@ -2,7 +2,8 @@ services:
 
   # ─────────────────────────────────────────────────────────────
   # Qdrant — base de données vectorielle (démarrage automatique)
-  # Stockage persistant dans le volume qdrant_data
+  # Stockage persistant en bind mount → ./data/qdrant/
+  # Survit à `docker compose down -v`, sauvegardable comme un dossier normal.
   # ─────────────────────────────────────────────────────────────
   qdrant:
     image: qdrant/qdrant:v1.12.1
@@ -12,7 +13,7 @@ services:
       - "6333:6333"   # HTTP REST API
       - "6334:6334"   # gRPC
     volumes:
-      - qdrant_data:/qdrant/storage
+      - ./data/qdrant:/qdrant/storage
     healthcheck:
       test: ["CMD-SHELL", "bash -c '</dev/tcp/localhost/6333' 2>/dev/null && exit 0 || exit 1"]
       interval: 5s
@@ -101,9 +102,40 @@ services:
     networks:
       - ao_network
 
+  # ─────────────────────────────────────────────────────────────
+  # Worker — Scraper silencieux marchespublics.gov.ma
+  #
+  # NE démarre PAS automatiquement avec `docker compose up`.
+  # Démarrage manuel uniquement :
+  #   docker compose --profile worker up worker
+  #
+  # Pour déclencher un scrape immédiat :
+  #   docker compose --profile worker restart worker
+  #
+  # Logs en temps réel :
+  #   docker compose --profile worker logs -f worker
+  # ─────────────────────────────────────────────────────────────
+  worker:
+    profiles:
+      - worker                    # Ne démarre qu'avec --profile worker
+    build:
+      context: ./worker
+      dockerfile: Dockerfile
+    container_name: ao_worker
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      WORKER_HEADLESS: "true"
+      WORKER_DB_PATH: /app/data/ao_catalog.db
+      WORKER_OUTPUT_DIR: /app/output
+    volumes:
+      - ./data:/app/data           # Base SQLite partagée avec le service api
+      - ./worker/output:/app/output # ZIPs téléchargés — visible dans worker/output/
+    networks:
+      - ao_network
+
 networks:
   ao_network:
     driver: bridge
 
-volumes:
-  qdrant_data:    # Persistance des vecteurs Qdrant
