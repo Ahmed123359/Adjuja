@@ -32,14 +32,36 @@ function buildDocumentHTML(result: GenerationResult, company: CompanyData, aoTex
   const LBLUE = '#D5E8F5';
   const BODY  = '#1a1a2e';
 
-  const pageCss  = `background:white;padding:2.2cm 2.8cm 2cm;box-sizing:border-box;min-height:1060px;display:flex;flex-direction:column;position:relative;overflow:hidden;box-shadow:0 2px 16px rgba(0,0,0,0.08);`;
-  const hdrCss   = `display:flex;align-items:center;justify-content:space-between;padding-bottom:8px;border-bottom:2px solid ${LBLUE};margin-bottom:22px;`;
-  const ftrCss   = `margin-top:auto;padding-top:10px;border-top:1px solid ${LBLUE};display:flex;align-items:center;justify-content:space-between;font-size:7.5pt;color:#9CA3AF;`;
-  const sep      = '<div style="height:20px;"></div>';
+  // Cover : hauteur fixe A4 simulée. Content pages : hauteur naturelle (pas de min-height)
+  const coverCss   = `background:white;padding:2.2cm 2.8cm 2cm;box-sizing:border-box;min-height:1060px;display:flex;flex-direction:column;position:relative;overflow:hidden;box-shadow:0 2px 16px rgba(0,0,0,0.08);`;
+  const pageCss    = `background:white;padding:1.8cm 2.8cm 1.6cm;box-sizing:border-box;position:relative;box-shadow:0 2px 16px rgba(0,0,0,0.08);`;
+  const hdrCss     = `display:flex;align-items:center;justify-content:space-between;padding-bottom:8px;border-bottom:2px solid ${LBLUE};margin-bottom:22px;`;
+  const ftrCss     = `margin-top:28px;padding-top:10px;border-top:1px solid ${LBLUE};display:flex;align-items:center;justify-content:space-between;font-size:7.5pt;color:#9CA3AF;`;
+  const sep        = '<div style="height:20px;"></div>';
 
-  // ABI logo mark (real logo image, embedded as base64 when available)
-  const logoSrc = logoBase64 || '/logo_abi.png';
-  const abiMark = `<img src="${logoSrc}" style="height:36px;width:auto;display:block;">`;
+  // Styles embarqués — appliqués en preview ET en export
+  const embeddedStyles = `<style>
+    .section-content { font-family: Calibri, 'Segoe UI', Arial, sans-serif; font-size: 10.5pt; line-height: 1.75; color: #1a1a2e; }
+    .section-content p  { margin: 0 0 0.8rem; text-align: justify; }
+    .section-content h2 { font-size: 10.5pt; font-weight: 700; color: ${BLUE}; border-left: 3px solid ${TEAL}; padding-left: 8px; margin: 1.3rem 0 0.5rem; }
+    .section-content h3 { font-size: 10pt; font-weight: 700; color: ${TEAL}; margin: 1rem 0 0.4rem; }
+    .section-content h4 { font-size: 10pt; font-weight: 700; color: #2471A3; font-style: italic; margin: 0.8rem 0 0.3rem; }
+    .section-content ul, .section-content ol { padding-left: 1.4rem; margin: 0.3rem 0 0.8rem; }
+    .section-content li { margin-bottom: 0.35rem; line-height: 1.65; }
+    .section-content strong { font-weight: 700; color: ${BODY}; }
+    .section-content em { font-style: italic; color: #444; }
+    .section-content table { width: 100%; border-collapse: collapse; margin: 0.9rem 0; font-size: 9.5pt; }
+    .section-content th { background: ${BLUE}; color: white; padding: 7px 10px; text-align: left; font-weight: 600; font-size: 9pt; letter-spacing: 0.01em; }
+    .section-content td { border: 1px solid #d1d5db; padding: 6px 10px; vertical-align: top; }
+    .section-content tr:nth-child(even) td { background: #F0F7FF; }
+    .section-content hr { border: none; border-top: 1px solid ${LBLUE}; margin: 1rem 0; }
+    .section-content blockquote { border-left: 3px solid ${TEAL}; padding-left: 12px; color: #555; font-style: italic; margin: 0.8rem 0; }
+  </style>`;
+
+  // Logo : uniquement base64 (jamais de chemin relatif qui pointe vers le backend)
+  const abiMark = logoBase64
+    ? `<img src="${logoBase64}" style="height:36px;width:auto;display:block;">`
+    : `<span style="font-family:Calibri,Arial,sans-serif;font-size:11pt;font-weight:800;color:${BLUE};letter-spacing:-0.02em;">ABI <span style="color:${TEAL};">Consulting</span></span>`;
 
   // Wave decorations (CSS shapes)
   const wavesTR = `
@@ -51,7 +73,7 @@ function buildDocumentHTML(result: GenerationResult, company: CompanyData, aoTex
 
   // ── PAGE 1 : Couverture ──
   const coverPage = `
-<div style="${pageCss}justify-content:space-between;">
+<div style="${coverCss}justify-content:space-between;">
   ${wavesTR}${wavesBL}
   <div style="position:relative;z-index:1;">${abiMark}</div>
   <div style="text-align:center;flex:1;display:flex;flex-direction:column;justify-content:center;position:relative;z-index:1;padding:0.8cm 0;">
@@ -133,7 +155,7 @@ ${sep}
   </div>
 </div>`;
 
-  return coverPage + tocPage + sectionPages;
+  return embeddedStyles + coverPage + tocPage + sectionPages;
 }
 
 // ── Top bar ─────────────────────────────────────────────────
@@ -536,23 +558,8 @@ export default function RightPanel({
 
   function downloadWord() {
     if (!result) return;
-    const docStyles = `
-      body { font-family: Calibri, 'Segoe UI', Arial, sans-serif; font-size: 11pt; line-height: 1.65; color: #1a1a2e; }
-      .section-content h2 { font-size: 1.05rem; font-weight: 700; color: #1B3F6B; border-bottom: 2px solid #17A589; padding-bottom: .3rem; margin: 1.4rem 0 .6rem; }
-      .section-content h3 { font-size: 1rem; font-weight: 700; color: #17A589; font-style: italic; margin: 1rem 0 .4rem; }
-      .section-content h4 { font-size: .95rem; font-weight: 700; color: #2471A3; font-style: italic; margin: .8rem 0 .3rem; }
-      .section-content p  { margin: 0 0 .75rem; line-height: 1.7; text-align: justify; }
-      .section-content ul, .section-content ol { padding-left: 1.4rem; margin: .4rem 0 .75rem; }
-      .section-content li { margin-bottom: .3rem; line-height: 1.6; }
-      .section-content strong { font-weight: 700; color: #1B3F6B; }
-      .section-content table { width: 100%; border-collapse: collapse; margin: .9rem 0; font-size: .875rem; }
-      .section-content th { background: #1B3F6B; color: white; padding: .45rem .8rem; text-align: left; font-weight: 600; }
-      .section-content td { border: 1px solid #d1d5db; padding: .4rem .8rem; vertical-align: top; }
-      .section-content tr:nth-child(even) td { background: #F0F7FF; }
-      .section-content hr { border: none; border-top: 1px solid #D5E8F5; margin: 1rem 0; }
-    `;
     const html = buildDocumentHTML(result, company, aoText, logoBase64);
-    const fullHtml = `<!DOCTYPE html><html><head><meta charset="utf-8"><style>${docStyles}</style></head><body>${html}</body></html>`;
+    const fullHtml = `<!DOCTYPE html><html><head><meta charset="utf-8"><style>body{font-family:Calibri,'Segoe UI',Arial,sans-serif;font-size:11pt;line-height:1.65;color:#1a1a2e;background:#f0f2f5;}</style></head><body>${html}</body></html>`;
     const blob = new Blob([fullHtml], { type: 'application/msword' });
     const url  = URL.createObjectURL(blob);
     const a    = document.createElement('a');
@@ -562,26 +569,10 @@ export default function RightPanel({
 
   function printPDF() {
     if (!result) return;
-    const docStyles = `
-      body { font-family: Calibri, 'Segoe UI', Arial, sans-serif; font-size: 11pt; line-height: 1.65; color: #1a1a2e; margin: 0; background: white; }
-      .section-content h2 { font-size: 1.05rem; font-weight: 700; color: #1B3F6B; border-bottom: 2px solid #17A589; padding-bottom: .3rem; margin: 1.4rem 0 .6rem; }
-      .section-content h3 { font-size: 1rem; font-weight: 700; color: #17A589; font-style: italic; margin: 1rem 0 .4rem; }
-      .section-content h4 { font-size: .95rem; font-weight: 700; color: #2471A3; font-style: italic; margin: .8rem 0 .3rem; }
-      .section-content p  { margin: 0 0 .75rem; line-height: 1.7; text-align: justify; }
-      .section-content ul, .section-content ol { padding-left: 1.4rem; margin: .4rem 0 .75rem; }
-      .section-content li { margin-bottom: .3rem; line-height: 1.6; }
-      .section-content strong { font-weight: 700; color: #1B3F6B; }
-      .section-content table { width: 100%; border-collapse: collapse; margin: .9rem 0; }
-      .section-content th { background: #1B3F6B; color: white; padding: .45rem .8rem; text-align: left; }
-      .section-content td { border: 1px solid #d1d5db; padding: .4rem .8rem; }
-      .section-content tr:nth-child(even) td { background: #F0F7FF; }
-      .section-content hr { border: none; border-top: 1px solid #D5E8F5; margin: 1rem 0; }
-      @page { margin: 2cm 2.5cm; }
-    `;
     const html = buildDocumentHTML(result, company, aoText, logoBase64);
     const w = window.open('', '_blank');
     if (!w) return;
-    w.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>${company.nom || 'Réponse AO'}</title><style>${docStyles}</style></head><body>${html}</body></html>`);
+    w.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>${company.nom || 'Réponse AO'}</title><style>body{font-family:Calibri,'Segoe UI',Arial,sans-serif;font-size:11pt;line-height:1.65;color:#1a1a2e;margin:0;background:white;}@page{margin:2cm 2.5cm;}</style></head><body>${html}</body></html>`);
     w.document.close(); w.focus();
     setTimeout(() => { w.print(); w.close(); }, 400);
   }

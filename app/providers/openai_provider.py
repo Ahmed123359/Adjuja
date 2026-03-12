@@ -33,6 +33,8 @@ class OpenAIProvider(AbstractLLMProvider):
     def get_available_models(self) -> list[ModeleDisponible]:
         return OPENAI_MODELS
 
+    _O1_MODELS = {"o1", "o1-mini", "o1-preview", "o3", "o3-mini"}
+
     async def generate_text(
         self,
         system_prompt: str,
@@ -41,15 +43,27 @@ class OpenAIProvider(AbstractLLMProvider):
         temperature: float,
     ) -> tuple[str, int]:
         """Appel brut à l'API OpenAI Chat Completions. Lève une exception en cas d'erreur."""
-        response = self._client.chat.completions.create(
-            model=self._model_name,
-            max_tokens=max_tokens,
-            temperature=temperature,
-            messages=[
-                {"role": "system", "content": system_prompt},
-                {"role": "user",   "content": user_prompt},
-            ],
-        )
+        is_o1 = self._model_name in self._O1_MODELS
+
+        # Les modèles o1 ne supportent pas max_tokens ni temperature ni system message
+        if is_o1:
+            response = self._client.chat.completions.create(
+                model=self._model_name,
+                max_completion_tokens=max_tokens,
+                messages=[
+                    {"role": "user", "content": f"{system_prompt}\n\n{user_prompt}"},
+                ],
+            )
+        else:
+            response = self._client.chat.completions.create(
+                model=self._model_name,
+                max_tokens=max_tokens,
+                temperature=temperature,
+                messages=[
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user",   "content": user_prompt},
+                ],
+            )
         texte = response.choices[0].message.content or ""
         tokens = response.usage.total_tokens if response.usage else 0
         return texte, tokens

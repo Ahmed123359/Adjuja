@@ -8,7 +8,7 @@ from app.models.generation import GenerationRequest
 # Exemples :
 #   _DEV_SECTIONS: list[str] | None = ["Notre approche méthodologique"]
 #   _DEV_SECTIONS: list[str] | None = ["Références similaires", "Moyens humains et techniques mobilisés"]
-_DEV_SECTIONS: list[str] | None = ["Notre approche méthodologique"]
+_DEV_SECTIONS: list[str] | None = None
 
 
 @dataclass
@@ -626,7 +626,7 @@ N'inclus PAS le titre « ## {titre} »."""
 
         return system, user
 
-    # ── Blocs de contexte ────────────────────────────────���─────────────��───
+    # ── Blocs de contexte ──────��─────────────────────────���─────────────��───
 
     def _bloc_ao(self, ao: AppelOffre) -> str:
         """Données AO — champs manquants signalés explicitement."""
