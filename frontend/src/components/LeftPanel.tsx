@@ -25,6 +25,7 @@ type Props = {
   loading: boolean;
   limitReached: boolean;
   onGoLanding: () => void;
+  onClose?: () => void;
 };
 
 // Lucide-compatible SVG paths
@@ -105,7 +106,7 @@ export default function LeftPanel(props: Props) {
   const {
     aoText, setAoText, provider, setProvider, model, setModel, models,
     company, setCompany, langue, setLangue,
-    onGenerate, loading, limitReached, onGoLanding,
+    onGenerate, loading, limitReached, onGoLanding, onClose,
   } = props;
 
   const [dragging, setDragging] = useState(false);
@@ -183,13 +184,28 @@ export default function LeftPanel(props: Props) {
             Offr<span className="text-primary">IA</span>
           </span>
         </div>
-        <button
-          onClick={onGoLanding}
-          title="Retour à l'accueil"
-          className="text-[11px] text-muted-foreground hover:text-foreground transition-colors"
-        >
-          ← Accueil
-        </button>
+        <div className="flex items-center gap-2">
+          {!onClose && (
+            <button
+              onClick={onGoLanding}
+              title="Retour à l'accueil"
+              className="text-[11px] text-muted-foreground hover:text-foreground transition-colors"
+            >
+              ← Accueil
+            </button>
+          )}
+          {onClose && (
+            <button
+              onClick={onClose}
+              title="Fermer"
+              className="p-1 rounded-lg text-muted-foreground hover:text-foreground transition-colors"
+            >
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          )}
+        </div>
       </div>
 
       {/* ── Scrollable content ───────────────────────────── */}

@@ -213,8 +213,8 @@ function TopBar({
           ) : null}
         </div>
 
-        {/* Right: RAG + status + user */}
-        <div className="flex items-center gap-3">
+        {/* Right: RAG + status + user (cachés sur mobile) */}
+        <div className="hidden md:flex items-center gap-3">
           {ragStatus !== null && (
             <button
               onClick={onReindex}
@@ -323,7 +323,7 @@ function Dashboard({
         </div>
 
         {/* Stat cards */}
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           {statCards.map(({ label, value, sub, icon }) => (
             <div key={label} className="border border-border rounded-xl bg-card p-5 shadow-card hover:shadow-card-hover transition-shadow animate-fade-in">
               <div className="flex items-center justify-between mb-3">
@@ -381,7 +381,7 @@ function Dashboard({
           <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
             Comment ça fonctionne
           </h3>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {steps.map(({ n, title, desc }) => (
               <div
                 key={n}
