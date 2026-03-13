@@ -4,9 +4,10 @@ import { login } from '../api';
 type Props = {
   onSuccess:    () => void;
   onGoRegister: () => void;
+  onGoBack:     () => void;
 };
 
-export default function LoginPage({ onSuccess, onGoRegister }: Props) {
+export default function LoginPage({ onSuccess, onGoRegister, onGoBack }: Props) {
   const [email,    setEmail]    = useState('');
   const [password, setPassword] = useState('');
   const [error,    setError]    = useState('');
@@ -61,6 +62,14 @@ export default function LoginPage({ onSuccess, onGoRegister }: Props) {
       </div>
 
       <div className="relative z-10 w-full max-w-sm">
+        {/* Retour */}
+        <button onClick={onGoBack} className="flex items-center gap-1.5 text-slate-500 hover:text-slate-300 text-sm mb-6 transition-colors">
+          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+          </svg>
+          Retour
+        </button>
+
         {/* Logo */}
         <div className="flex items-center justify-center gap-2.5 mb-8">
           <div className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0"

@@ -30,7 +30,7 @@ function Root() {
   function handleLogout() {
     clearToken();
     setUser(null);
-    setPage('login');
+    setPage('landing');
   }
 
   if (page === 'loading') {
@@ -45,7 +45,7 @@ function Root() {
   }
 
   if (page === 'login') {
-    return <LoginPage onSuccess={handleAuthSuccess} onGoRegister={() => setPage('register')} />;
+    return <LoginPage onSuccess={handleAuthSuccess} onGoRegister={() => setPage('register')} onGoBack={() => setPage('landing')} />;
   }
 
   if (page === 'register') {
