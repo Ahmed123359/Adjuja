@@ -67,7 +67,7 @@ const CollapsibleSection = ({
 const inputClasses =
   "w-full px-3 py-2 text-sm border border-border rounded-lg bg-background text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/40 transition-all";
 
-const DashboardSidebar = () => {
+const DashboardSidebar = ({ onClose }: { onClose?: () => void }) => {
   const [selectedModel, setSelectedModel] = useState<string>("claude");
   const [language, setLanguage] = useState<string>("FR");
 

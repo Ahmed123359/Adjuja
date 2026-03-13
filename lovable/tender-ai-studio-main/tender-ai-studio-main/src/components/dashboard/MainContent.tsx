@@ -105,11 +105,11 @@ const historyItems = [
 
 const MainContent = () => {
   return (
-    <div className="flex-1 h-screen overflow-y-auto">
+    <div className="flex-1 h-screen overflow-y-auto min-w-0">
       {/* Top Bar */}
-      <header className="sticky top-0 z-10 bg-background/80 backdrop-blur-md border-b border-border px-8 py-3">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4 text-xs text-muted-foreground">
+      <header className="sticky top-0 z-10 bg-background/80 backdrop-blur-md border-b border-border px-4 md:px-8 py-3">
+        <div className="flex items-center justify-between flex-wrap gap-2">
+          <div className="flex items-center gap-2 md:gap-4 text-xs text-muted-foreground flex-wrap">
             <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-card border border-border font-mono">
               <Coins className="h-3 w-3" />
               tokens <strong className="text-foreground">0 / 100 000</strong>
@@ -119,7 +119,7 @@ const MainContent = () => {
               appels <strong className="text-foreground">0 / 50</strong>
             </span>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="hidden md:flex items-center gap-3">
             <button className="text-xs px-3 py-1.5 rounded-md border border-border bg-card text-muted-foreground hover:text-foreground hover:border-primary/30 transition-all flex items-center gap-1.5">
               <Database className="h-3 w-3" />
               RAG
@@ -139,7 +139,7 @@ const MainContent = () => {
       </header>
 
       {/* Main Content */}
-      <div className="max-w-4xl mx-auto px-8 py-10 space-y-10">
+      <div className="max-w-4xl mx-auto px-4 md:px-8 py-6 md:py-10 space-y-8 md:space-y-10">
         {/* Hero */}
         <motion.div
           initial={{ opacity: 0, y: 16 }}
@@ -156,7 +156,7 @@ const MainContent = () => {
         </motion.div>
 
         {/* Stats */}
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <StatCard
             icon={FileText}
             label="Réponses générées"
@@ -197,7 +197,7 @@ const MainContent = () => {
               Déposez votre appel d'offres dans le panneau gauche, sélectionnez votre LLM et cliquez sur{" "}
               <strong className="text-primary-foreground">Générer la réponse</strong>.
             </p>
-            <div className="flex items-center gap-6 text-xs text-primary-foreground/70">
+            <div className="flex flex-wrap items-center gap-4 md:gap-6 text-xs text-primary-foreground/70">
               <span className="flex items-center gap-1.5">
                 <Zap className="h-3.5 w-3.5" />
                 9 sections générées en parallèle
@@ -219,7 +219,7 @@ const MainContent = () => {
           <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
             Comment ça fonctionne
           </h3>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <StepCard
               step={1}
               title="Déposez votre AO"
