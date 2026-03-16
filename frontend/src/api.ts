@@ -187,6 +187,52 @@ export async function extractPdfText(file: File): Promise<PdfExtractResult> {
   return data;
 }
 
+// ── Signature PDF (protégée) ───────────────────────────────
+
+export async function signPdf(
+  pdf: File,
+  signature?: File | null,
+  cachet?: File | null,
+  lieu?: string,
+  date?: string,
+): Promise<Blob> {
+  const form = new FormData();
+  form.append('pdf', pdf);
+  if (signature) form.append('signature', signature);
+  if (cachet)    form.append('cachet', cachet);
+  if (lieu)      form.append('fait_a_lieu', lieu);
+  if (date)      form.append('fait_a_date', date);
+
+  const res = await fetch('/api/v1/sign/pdf', {
+    method:  'POST',
+    headers: authHeaders(),
+    body:    form,
+  });
+
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    throw new Error(typeof data.detail === 'string' ? data.detail : 'Erreur lors de la signature.');
+  }
+  return res.blob();
+}
+
+export async function extractBordereauExcel(pdf: File): Promise<Blob> {
+  const form = new FormData();
+  form.append('pdf', pdf);
+
+  const res = await fetch('/api/v1/bordereau/excel', {
+    method:  'POST',
+    headers: authHeaders(),
+    body:    form,
+  });
+
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    throw new Error(typeof data.detail === 'string' ? data.detail : 'Erreur lors de l\'extraction du bordereau.');
+  }
+  return res.blob();
+}
+
 // ── Génération (protégée) ──────────────────────────────────────────────
 
 export async function generate(params: {

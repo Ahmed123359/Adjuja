@@ -23,7 +23,22 @@ RUN pip install --upgrade pip && \
     pip install --no-cache-dir --prefix=/install -r requirements.txt
 
 # ─────────────────────────────────────────────
-# Étape 3 : image finale — légère, sans outils de build
+# Étape 3a : dev — API seule, sans frontend (servi séparément)
+# ─────────────────────────────────────────────
+FROM python:3.12-slim AS api-dev
+
+RUN addgroup --system appgroup && adduser --system --ingroup appgroup appuser
+WORKDIR /app
+COPY --from=builder /install /usr/local
+COPY app/ ./app/
+COPY company_defaults.json ./
+RUN chown -R appuser:appgroup /app
+USER appuser
+EXPOSE 8000
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+
+# ─────────────────────────────────────────────
+# Étape 3b : image finale prod — légère, sans outils de build
 # ─────────────────────────────────────────────
 FROM python:3.12-slim AS final
 

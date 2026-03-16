@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { marked } from 'marked';
 import type { GenerationResult, CompanyData, AppState, UsageData, RagStatus, HistorySummary, User } from '../types';
+import DocumentsTab from './DocumentsTab';
+import OffreFinanciereTab from './OffreFinanciereTab';
 
 // ── Helpers ─────────────────────────────────────────────────
 function toRoman(n: number): string {
@@ -161,6 +163,7 @@ ${sep}
 // ── Top bar ─────────────────────────────────────────────────
 function TopBar({
   usage, ragStatus, ragLoading, onReindex, onResetUsage, apiStatus, user, onLogout,
+  mainTab, onTabChange,
 }: {
   usage: UsageData | null;
   ragStatus: RagStatus | null;
@@ -170,16 +173,67 @@ function TopBar({
   apiStatus: 'online' | 'offline' | 'connecting';
   user: User;
   onLogout: () => void;
+  mainTab: 'offres' | 'documents' | 'bordereau';
+  onTabChange: (tab: 'offres' | 'documents' | 'bordereau') => void;
 }) {
   const statusColor = { online: 'bg-emerald-500', offline: 'bg-red-500', connecting: 'bg-amber-400 animate-pulse' }[apiStatus];
   const statusLabel = { online: 'Connecté', offline: 'Hors ligne', connecting: 'Connexion…' }[apiStatus];
 
   return (
-    <header className="sticky top-0 z-10 bg-background/80 backdrop-blur-md border-b border-border px-6 py-3 flex-shrink-0">
-      <div className="flex items-center justify-between">
+    <header className="sticky top-0 z-10 bg-background/80 backdrop-blur-md border-b border-border px-4 md:px-6 py-3 flex-shrink-0">
+      <div className="flex items-center justify-between gap-2 flex-wrap">
 
-        {/* Left: usage */}
-        <div className="flex items-center gap-3 text-xs text-muted-foreground">
+        {/* Left: tabs + usage */}
+        <div className="flex items-center gap-3 flex-wrap">
+
+          {/* Tabs */}
+          <div className="flex items-center gap-1 p-1 rounded-lg bg-muted">
+            <button
+              onClick={() => onTabChange('offres')}
+              className={`px-3 py-1.5 text-sm font-medium rounded-md transition-all flex items-center gap-1.5 ${
+                mainTab === 'offres'
+                  ? 'bg-card text-foreground shadow-sm'
+                  : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+              <span className="hidden sm:inline">Appels d'offres</span>
+              <span className="sm:hidden">AO</span>
+            </button>
+            <button
+              onClick={() => onTabChange('documents')}
+              className={`px-3 py-1.5 text-sm font-medium rounded-md transition-all flex items-center gap-1.5 ${
+                mainTab === 'documents'
+                  ? 'bg-card text-foreground shadow-sm'
+                  : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+              </svg>
+              <span className="hidden sm:inline">Documents & Signatures</span>
+              <span className="sm:hidden">Docs</span>
+            </button>
+            <button
+              onClick={() => onTabChange('bordereau')}
+              className={`px-3 py-1.5 text-sm font-medium rounded-md transition-all flex items-center gap-1.5 ${
+                mainTab === 'bordereau'
+                  ? 'bg-card text-foreground shadow-sm'
+                  : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2" />
+              </svg>
+              <span className="hidden sm:inline">Offre financière</span>
+              <span className="sm:hidden">Offre</span>
+            </button>
+          </div>
+
+          {/* Usage tokens + appels */}
+          <div className="flex items-center gap-2 text-xs text-muted-foreground">
           {usage !== null ? (
             <>
               <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-card border border-border font-mono">
@@ -211,7 +265,8 @@ function TopBar({
               </span>
             </>
           ) : null}
-        </div>
+          </div>
+        </div>{/* fin Left: tabs + usage */}
 
         {/* Right: RAG + status + user (cachés sur mobile) */}
         <div className="hidden md:flex items-center gap-3">
@@ -525,6 +580,7 @@ export default function RightPanel({
   const [tab, setTab] = useState<'document' | 'brief'>('document');
   const [docFile, setDocFile] = useState<'reponse' | 'equipe' | 'references'>('reponse');
   const [logoBase64, setLogoBase64] = useState<string>('');
+  const [mainTab, setMainTab] = useState<'offres' | 'documents' | 'bordereau'>('offres');
 
   // Load logo once at mount
   useEffect(() => {
@@ -589,9 +645,30 @@ export default function RightPanel({
         apiStatus={apiStatus}
         user={user}
         onLogout={onLogout}
+        mainTab={mainTab}
+        onTabChange={setMainTab}
       />
 
-      {/* Content */}
+      {/* Documents & Signatures tab */}
+      {mainTab === 'documents' && (
+        <div className="flex-1 overflow-y-auto">
+          <div className="max-w-4xl mx-auto px-4 md:px-8 py-6 md:py-10">
+            <DocumentsTab />
+          </div>
+        </div>
+      )}
+
+      {/* Offre financière tab */}
+      {mainTab === 'bordereau' && (
+        <div className="flex-1 overflow-y-auto">
+          <div className="max-w-4xl mx-auto px-4 md:px-8 py-6 md:py-10">
+            <OffreFinanciereTab />
+          </div>
+        </div>
+      )}
+
+      {/* Appels d'offres tab */}
+      {mainTab === 'offres' && (
       <div className="flex-1 flex flex-col overflow-hidden">
         {state === 'idle' && (
           <Dashboard
@@ -761,6 +838,7 @@ export default function RightPanel({
           </div>
         )}
       </div>
+      )}{/* fin mainTab === 'offres' */}
     </div>
   );
 }

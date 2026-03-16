@@ -3,6 +3,10 @@
 services:
 
   api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: api-dev            # Saute le stage frontend-builder inutile en dev
     volumes:
       - ./app:/app/app           # Hot-reload : monte le code source Python en live
     command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
@@ -11,14 +15,16 @@ services:
       APP_DEBUG: "true"
 
   frontend:
-    image: node:20-alpine
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      target: dev
     working_dir: /app
     volumes:
       - ./frontend:/app
       - /app/node_modules        # Volume anonyme pour isoler node_modules du host
     ports:
       - "5173:5173"
-    command: sh -c "npm install && npm run dev -- --host 0.0.0.0"
     environment:
       - VITE_API_TARGET=http://api:8000
     depends_on:

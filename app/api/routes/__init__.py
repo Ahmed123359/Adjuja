@@ -7,6 +7,8 @@ from app.api.routes.history_routes import router as history_router
 from app.api.routes.auth_routes import router as auth_router
 from app.api.routes.pdf_routes import router as pdf_router
 from app.api.routes.brief_routes import router as brief_router
+from app.api.routes.signing_routes import router as signing_router
+from app.api.routes.bordereau_routes import router as bordereau_router
 
 __all__ = [
     "generation_router",
@@ -18,4 +20,6 @@ __all__ = [
     "auth_router",
     "pdf_router",
     "brief_router",
+    "signing_router",
+    "bordereau_router",
 ]

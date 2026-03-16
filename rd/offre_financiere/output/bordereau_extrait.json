@@ -1,0 +1,80 @@
+[
+  {
+    "titre": "ARTICLE 34. BORDEREAU DU PRIX-DETAIL ESTIMATIF",
+    "colonnes": [
+      "N° du prix",
+      "Désignations",
+      "Unité de compte",
+      "Quantité (1)",
+      "Prix unitaire en DH hors TVA (2)",
+      "Prix total Hors TVA (en chiffres) 3=1x2"
+    ],
+    "lignes": [
+      {
+        "valeurs": [
+          "1",
+          "Etape 1 : Atelier de démarrage",
+          "FORFAIT",
+          "1",
+          null,
+          null
+        ]
+      },
+      {
+        "valeurs": [
+          "2",
+          "Etape 2 : diagnostic et première visite des pépinières",
+          "FORFAIT",
+          "1",
+          null,
+          null
+        ]
+      },
+      {
+        "valeurs": [
+          "3",
+          "Etape 3 : Deuxième visite des pépinières",
+          "FORFAIT",
+          "1",
+          null,
+          null
+        ]
+      },
+      {
+        "valeurs": [
+          "4",
+          "Etape 4 : Ateliers de mise à niveau des pépinières",
+          "FORFAIT",
+          "1",
+          null,
+          null
+        ]
+      },
+      {
+        "valeurs": [
+          "5",
+          "Etape 5 : Atelier de clôture",
+          "FORFAIT",
+          "1",
+          null,
+          null
+        ]
+      }
+    ],
+    "totaux": [
+      {
+        "label": "Montant Total Hors TVA",
+        "valeur": null
+      },
+      {
+        "label": "Taux de la TVA (20%)",
+        "valeur": "20%"
+      },
+      {
+        "label": "Montant Total TTC",
+        "valeur": null
+      }
+    ],
+    "_page": 17
+  }
+]

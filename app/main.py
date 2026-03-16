@@ -11,6 +11,7 @@ from slowapi.middleware import SlowAPIMiddleware
 from app.api.routes import (
     generation_router, models_router, rag_router,
     defaults_router, usage_router, history_router, auth_router, pdf_router, brief_router,
+    signing_router, bordereau_router,
 )
 from app.config.settings import get_settings
 from app.limiter import limiter
@@ -96,6 +97,8 @@ app.include_router(usage_router,     prefix="/api/v1")
 app.include_router(history_router,   prefix="/api/v1")
 app.include_router(pdf_router,       prefix="/api/v1")
 app.include_router(brief_router,     prefix="/api/v1")
+app.include_router(signing_router,   prefix="/api/v1")
+app.include_router(bordereau_router, prefix="/api/v1")
 
 
 @app.get("/", include_in_schema=False)
