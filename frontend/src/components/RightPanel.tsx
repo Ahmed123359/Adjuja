@@ -3,6 +3,7 @@ import { marked } from 'marked';
 import type { GenerationResult, CompanyData, AppState, UsageData, RagStatus, HistorySummary, User } from '../types';
 import DocumentsTab from './DocumentsTab';
 import OffreFinanciereTab from './OffreFinanciereTab';
+import ActeEngagementTab from './ActeEngagementTab';
 
 // ── Helpers ─────────────────────────────────────────────────
 function toRoman(n: number): string {
@@ -173,8 +174,8 @@ function TopBar({
   apiStatus: 'online' | 'offline' | 'connecting';
   user: User;
   onLogout: () => void;
-  mainTab: 'offres' | 'documents' | 'bordereau';
-  onTabChange: (tab: 'offres' | 'documents' | 'bordereau') => void;
+  mainTab: 'offres' | 'documents' | 'bordereau' | 'acte-engagement';
+  onTabChange: (tab: 'offres' | 'documents' | 'bordereau' | 'acte-engagement') => void;
 }) {
   const statusColor = { online: 'bg-emerald-500', offline: 'bg-red-500', connecting: 'bg-amber-400 animate-pulse' }[apiStatus];
   const statusLabel = { online: 'Connecté', offline: 'Hors ligne', connecting: 'Connexion…' }[apiStatus];
@@ -229,6 +230,20 @@ function TopBar({
               </svg>
               <span className="hidden sm:inline">Offre financière</span>
               <span className="sm:hidden">Offre</span>
+            </button>
+            <button
+              onClick={() => onTabChange('acte-engagement')}
+              className={`px-3 py-1.5 text-sm font-medium rounded-md transition-all flex items-center gap-1.5 ${
+                mainTab === 'acte-engagement'
+                  ? 'bg-card text-foreground shadow-sm'
+                  : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+              </svg>
+              <span className="hidden sm:inline">Acte d'engagement</span>
+              <span className="sm:hidden">Acte</span>
             </button>
           </div>
 
@@ -580,7 +595,7 @@ export default function RightPanel({
   const [tab, setTab] = useState<'document' | 'brief'>('document');
   const [docFile, setDocFile] = useState<'reponse' | 'equipe' | 'references'>('reponse');
   const [logoBase64, setLogoBase64] = useState<string>('');
-  const [mainTab, setMainTab] = useState<'offres' | 'documents' | 'bordereau'>('offres');
+  const [mainTab, setMainTab] = useState<'offres' | 'documents' | 'bordereau' | 'acte-engagement'>('offres');
 
   // Load logo once at mount
   useEffect(() => {
@@ -663,6 +678,15 @@ export default function RightPanel({
         <div className="flex-1 overflow-y-auto">
           <div className="max-w-4xl mx-auto px-4 md:px-8 py-6 md:py-10">
             <OffreFinanciereTab />
+          </div>
+        </div>
+      )}
+
+      {/* Acte d'engagement tab */}
+      {mainTab === 'acte-engagement' && (
+        <div className="flex-1 overflow-y-auto">
+          <div className="max-w-4xl mx-auto px-4 md:px-8 py-6 md:py-10">
+            <ActeEngagementTab />
           </div>
         </div>
       )}

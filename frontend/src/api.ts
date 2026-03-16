@@ -1,4 +1,4 @@
-import type { Model, CompanyData, GenerationResult, RagStatus, AppDefaults, UsageData, HistorySummary, HistoryEntry, User } from './types';
+import type { Model, CompanyData, GenerationResult, RagStatus, AppDefaults, UsageData, HistorySummary, HistoryEntry, User, ActeEngagementData } from './types';
 
 // ── Token helpers ──────────────────────────────────────────────────────
 
@@ -46,16 +46,11 @@ function buildDescription(d: CompanyData): string {
 
 // ── Authentification ───────────────────────────────────────────────────
 
-// Règles de mot de passe telles que définies côté backend.
-// Récupérées via l'API pour éviter toute duplication : modifier les constantes
-// Python dans user.py suffit pour mettre à jour le formulaire d'inscription.
 export type PasswordRules = { min_length: number; require_digit: boolean };
 
 export async function getPasswordRules(): Promise<PasswordRules> {
   const res = await fetch('/api/v1/auth/password-rules');
   if (!res.ok) {
-    // En cas d'échec réseau, on revient sur des valeurs conservatrices
-    // pour ne pas bloquer l'affichage du formulaire.
     return { min_length: 8, require_digit: true };
   }
   return res.json();
@@ -71,9 +66,6 @@ export async function register(params: {
   });
   const data = await res.json();
   if (!res.ok) {
-    // Pydantic retourne detail comme tableau en cas d'erreur 422 (validation)
-    // ex: [{ loc: ["body","password"], msg: "Le mot de passe doit contenir au moins 8 caractères." }]
-    // Pour les autres erreurs (409 email déjà pris...), detail est une string.
     if (Array.isArray(data.detail)) {
       throw new Error(data.detail.map((e: { msg: string }) => e.msg).join(' '));
     }
@@ -187,7 +179,7 @@ export async function extractPdfText(file: File): Promise<PdfExtractResult> {
   return data;
 }
 
-// ── Signature PDF (protégée) ───────────────────────────────
+// ── Signature PDF (protégée) ───────────────────────────────────────────
 
 export async function signPdf(
   pdf: File,
@@ -229,6 +221,53 @@ export async function extractBordereauExcel(pdf: File): Promise<Blob> {
   if (!res.ok) {
     const data = await res.json().catch(() => ({}));
     throw new Error(typeof data.detail === 'string' ? data.detail : 'Erreur lors de l\'extraction du bordereau.');
+  }
+  return res.blob();
+}
+
+// ── Acte d'Engagement (protégé) ────────────────────────────────────────
+
+export async function fillActeEngagement(
+  pdf: File,
+  data: ActeEngagementData,
+  signature?: File | null,
+  cachet?: File | null,
+): Promise<Blob> {
+  const form = new FormData();
+  form.append('pdf', pdf);
+  if (signature) form.append('signature', signature);
+  if (cachet)    form.append('cachet', cachet);
+
+  form.append('type_soumissionnaire', data.type_soumissionnaire);
+  form.append('signataire_nom',       data.signataire_nom);
+  form.append('adresse_domicile',     data.adresse_domicile);
+  form.append('telephone',            data.telephone);
+  form.append('fax',                  data.fax);
+  form.append('email',                data.email);
+  form.append('rib',                  data.rib);
+  form.append('cnss',                 data.cnss);
+  form.append('rc_localite',          data.rc_localite);
+  form.append('rc_numero',            data.rc_numero);
+  form.append('taxe_pro',             data.taxe_pro);
+  form.append('ice',                  data.ice);
+  form.append('raison_sociale',       data.raison_sociale);
+  form.append('forme_juridique',      data.forme_juridique);
+  form.append('capital_social',       data.capital_social);
+  form.append('adresse_siege',        data.adresse_siege);
+  form.append('membres_groupement',   data.membres_groupement);
+  form.append('fait_a_lieu',          data.fait_a_lieu);
+  const dateFr = data.fait_a_date ? data.fait_a_date.split('-').reverse().join('/') : '';
+  form.append('fait_a_date', dateFr);
+
+  const res = await fetch('/api/v1/acte-engagement/fill', {
+    method:  'POST',
+    headers: authHeaders(),
+    body:    form,
+  });
+
+  if (!res.ok) {
+    const d = await res.json().catch(() => ({}));
+    throw new Error(typeof d.detail === 'string' ? d.detail : 'Erreur lors du remplissage.');
   }
   return res.blob();
 }

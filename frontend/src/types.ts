@@ -86,6 +86,38 @@ export interface User {
   created_at: string;
 }
 
+export interface ActeEngagementData {
+  type_soumissionnaire: 'physique' | 'morale' | 'groupement';
+  signataire_nom:       string;
+  adresse_domicile:     string;
+  telephone:            string;
+  fax:                  string;
+  email:                string;
+  rib:                  string;
+  cnss:                 string;
+  rc_localite:          string;
+  rc_numero:            string;
+  taxe_pro:             string;
+  ice:                  string;
+  raison_sociale:       string;
+  forme_juridique:      string;
+  capital_social:       string;
+  adresse_siege:        string;
+  membres_groupement:   string;
+  fait_a_lieu:          string;
+  fait_a_date:          string;
+}
+
+export const DEFAULT_ACTE_ENGAGEMENT: ActeEngagementData = {
+  type_soumissionnaire: 'morale',
+  signataire_nom: '', adresse_domicile: '',
+  telephone: '', fax: '', email: '', rib: '',
+  cnss: '', rc_localite: '', rc_numero: '', taxe_pro: '', ice: '',
+  raison_sociale: '', forme_juridique: '', capital_social: '', adresse_siege: '',
+  membres_groupement: '',
+  fait_a_lieu: '', fait_a_date: '',
+};
+
 export const DEFAULT_COMPANY: CompanyData = {
   nom:'', forme_juridique:'', date_creation:'', site_web:'',
   description:'', secteurs:'', expertises:'', certifications:'',
