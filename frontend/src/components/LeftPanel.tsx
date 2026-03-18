@@ -1,6 +1,6 @@
 import React, { useState, useRef, useCallback } from 'react';
 import * as XLSX from 'xlsx';
-import type { Model, CompanyData } from '../types';
+import type { CompanyData } from '../types';
 import { extractPdfText } from '../api';
 
 // ── Constants ───────────────────────────────────────────────
@@ -16,9 +16,6 @@ const inputCls = "w-full px-3 py-2 text-sm border border-border rounded-lg bg-ba
 // ── Types ───────────────────────────────────────────────────
 type Props = {
   aoText: string; setAoText: (v: string) => void;
-  provider: string; setProvider: (v: string) => void;
-  model: string; setModel: (v: string) => void;
-  models: Model[];
   company: CompanyData; setCompany: (v: CompanyData | ((prev: CompanyData) => CompanyData)) => void;
   langue: 'fr' | 'en'; setLangue: (v: 'fr' | 'en') => void;
   onGenerate: () => void;
@@ -26,48 +23,6 @@ type Props = {
   limitReached: boolean;
   onGoLanding: () => void;
   onClose?: () => void;
-};
-
-// Lucide-compatible SVG paths
-const PROVIDER_META: Record<string, { name: string; selectedColor: string; icon: (cls: string) => React.ReactNode }> = {
-  openai: {
-    name: 'GPT-4',
-    selectedColor: 'text-emerald-600',
-    icon: cls => (
-      // Bot icon (lucide)
-      <svg className={`h-4 w-4 ${cls}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-        <path d="M12 8V4H8"/>
-        <rect width="16" height="12" x="4" y="8" rx="2"/>
-        <path d="M2 14h2"/>
-        <path d="M20 14h2"/>
-        <path d="M15 13v2"/>
-        <path d="M9 13v2"/>
-      </svg>
-    ),
-  },
-  anthropic: {
-    name: 'Claude',
-    selectedColor: 'text-amber-600',
-    icon: cls => (
-      // Brain icon (lucide)
-      <svg className={`h-4 w-4 ${cls}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-        <path d="M9.5 2A2.5 2.5 0 0 1 12 4.5v15a2.5 2.5 0 0 1-4.96-.44 2.5 2.5 0 0 1-2.96-3.08 3 3 0 0 1-.34-5.58 2.5 2.5 0 0 1 1.32-4.24 2.5 2.5 0 0 1 1.98-3A2.5 2.5 0 0 1 9.5 2Z"/>
-        <path d="M14.5 2A2.5 2.5 0 0 0 12 4.5v15a2.5 2.5 0 0 0 4.96-.44 2.5 2.5 0 0 0 2.96-3.08 3 3 0 0 0 .34-5.58 2.5 2.5 0 0 0-1.32-4.24 2.5 2.5 0 0 0-1.98-3A2.5 2.5 0 0 0 14.5 2Z"/>
-      </svg>
-    ),
-  },
-  mistral: {
-    name: 'Mistral',
-    selectedColor: 'text-sky-600',
-    icon: cls => (
-      // Wind icon (lucide)
-      <svg className={`h-4 w-4 ${cls}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-        <path d="M17.7 7.7a2.5 2.5 0 1 1 1.8 4.3H2"/>
-        <path d="M9.6 4.6A2 2 0 1 1 11 8H2"/>
-        <path d="M12.6 19.4A2 2 0 1 0 14 16H2"/>
-      </svg>
-    ),
-  },
 };
 
 // ── CollapsibleSection ──────────────────────────────────────
@@ -104,7 +59,7 @@ function CollapsibleSection({
 // ── Main component ──────────────────────────────────────────
 export default function LeftPanel(props: Props) {
   const {
-    aoText, setAoText, provider, setProvider, model, setModel, models,
+    aoText, setAoText,
     company, setCompany, langue, setLangue,
     onGenerate, loading, limitReached, onGoLanding, onClose,
   } = props;
@@ -115,9 +70,6 @@ export default function LeftPanel(props: Props) {
 
   const fileRef  = useRef<HTMLInputElement>(null);
   const excelRef = useRef<HTMLInputElement>(null);
-
-  const providers      = [...new Set(models.map(m => m.provider))];
-  const filteredModels = models.filter(m => m.provider === provider);
 
   const updateField = useCallback((f: keyof CompanyData, v: string) => {
     setCompany((prev: CompanyData) => ({ ...prev, [f]: v }));
@@ -185,15 +137,6 @@ export default function LeftPanel(props: Props) {
           </span>
         </div>
         <div className="flex items-center gap-2">
-          {!onClose && (
-            <button
-              onClick={onGoLanding}
-              title="Retour à l'accueil"
-              className="text-[11px] text-muted-foreground hover:text-foreground transition-colors"
-            >
-              ← Accueil
-            </button>
-          )}
           {onClose && (
             <button
               onClick={onClose}
@@ -256,54 +199,6 @@ export default function LeftPanel(props: Props) {
             }`}>{fileMsg}</p>
           )}
 
-        </div>
-
-        {/* Modèle IA */}
-        <div className="space-y-2">
-          <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground px-1">
-            Modèle IA
-          </p>
-          <div className="border border-border rounded-xl bg-card overflow-hidden">
-            <CollapsibleSection
-              title={`${PROVIDER_META[provider]?.name ?? provider} — ${model}`}
-              defaultOpen={false}
-            >
-              <div className="grid grid-cols-3 gap-2">
-                {(providers.length > 0 ? providers : ['anthropic', 'openai', 'mistral']).map(p => {
-                  const meta      = PROVIDER_META[p] ?? { name: p, icon: null };
-                  const isSelected = p === provider;
-                  return (
-                    <button
-                      key={p}
-                      onClick={() => setProvider(p)}
-                      className={`relative flex flex-col items-center gap-1.5 py-3 px-2 rounded-xl text-xs font-medium transition-all border ${
-                        isSelected
-                          ? 'border-primary bg-accent text-foreground shadow-sm ring-1 ring-primary/20'
-                          : 'border-border bg-card text-muted-foreground hover:border-primary/30 hover:bg-accent/50'
-                      }`}
-                    >
-                      {isSelected && (
-                        <div className="absolute top-1.5 right-1.5 h-1.5 w-1.5 rounded-full bg-primary" />
-                      )}
-                      {meta.icon(isSelected ? meta.selectedColor : 'text-muted-foreground')}
-                      <span>{meta.name}</span>
-                    </button>
-                  );
-                })}
-              </div>
-              <select
-                className={inputCls}
-                value={model}
-                onChange={e => setModel(e.target.value)}
-              >
-                {filteredModels.map(m => (
-                  <option key={m.model_id} value={m.model_id}>
-                    {m.model_id}{m.description ? ` — ${m.description}` : ''}
-                  </option>
-                ))}
-              </select>
-            </CollapsibleSection>
-          </div>
         </div>
 
         {/* Profil entreprise */}

@@ -164,7 +164,7 @@ ${sep}
 // ── Top bar ─────────────────────────────────────────────────
 function TopBar({
   usage, ragStatus, ragLoading, onReindex, onResetUsage, apiStatus, user, onLogout,
-  mainTab, onTabChange,
+  mainTab, onTabChange, onGoSettings,
 }: {
   usage: UsageData | null;
   ragStatus: RagStatus | null;
@@ -176,6 +176,7 @@ function TopBar({
   onLogout: () => void;
   mainTab: 'offres' | 'outils';
   onTabChange: (tab: 'offres' | 'outils') => void;
+  onGoSettings: () => void;
 }) {
   const statusColor = { online: 'bg-emerald-500', offline: 'bg-red-500', connecting: 'bg-amber-400 animate-pulse' }[apiStatus];
   const statusLabel = { online: 'Connecté', offline: 'Hors ligne', connecting: 'Connexion…' }[apiStatus];
@@ -184,17 +185,17 @@ function TopBar({
     <header className="sticky top-0 z-10 bg-background/80 backdrop-blur-md border-b border-border px-4 md:px-6 flex-shrink-0">
 
       {/* Row 1 : info (tokens · appels · RAG · user) */}
-      <div className="flex items-center justify-between gap-2 py-2 border-b border-border/50">
+      <div className="flex items-center justify-between gap-2 py-2 border-b border-border/50 overflow-x-auto">
 
         {/* Usage tokens + appels */}
-        <div className="flex items-center gap-2 text-xs text-muted-foreground flex-wrap">
+        <div className="flex items-center gap-2 text-xs text-muted-foreground flex-shrink-0">
           {usage !== null ? (
             <>
               <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-card border border-border font-mono">
                 <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <circle cx="12" cy="12" r="10"/><path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6l4 2"/>
                 </svg>
-                tokens{' '}
+                <span className="hidden sm:inline">tokens </span>
                 <strong className="text-foreground">
                   {usage.total_tokens.toLocaleString('fr-FR')} / {usage.max_tokens_cumul > 0 ? usage.max_tokens_cumul.toLocaleString('fr-FR') : '∞'}
                 </strong>
@@ -212,7 +213,7 @@ function TopBar({
                 <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
                 </svg>
-                appels{' '}
+                <span className="hidden sm:inline">appels </span>
                 <strong className="text-foreground">
                   {usage.total_appels} / {usage.max_appels > 0 ? usage.max_appels : '∞'}
                 </strong>
@@ -250,9 +251,19 @@ function TopBar({
             </div>
             <span className="text-xs font-medium text-foreground hidden sm:inline">{user.prenom} {user.nom}</span>
             <button
+              onClick={onGoSettings}
+              title="Réglages"
+              className="ml-1 text-muted-foreground hover:text-foreground transition-colors"
+            >
+              <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+              </svg>
+            </button>
+            <button
               onClick={onLogout}
               title="Se déconnecter"
-              className="ml-1 text-muted-foreground hover:text-destructive transition-colors"
+              className="text-muted-foreground hover:text-destructive transition-colors"
             >
               <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
@@ -544,7 +555,7 @@ const OUTILS_NAV: { id: Outil; label: string; desc: string; icon: string }[] = [
 ];
 
 // Panneau gauche Outils — rendu dans App.tsx au même niveau que LeftPanel
-export function OutilsLeftPanel({ section, onSectionChange, onGoHome }: { section: Outil; onSectionChange: (s: Outil) => void; onGoHome: () => void }) {
+export function OutilsLeftPanel({ section, onSectionChange }: { section: Outil; onSectionChange: (s: Outil) => void }) {
   const active = OUTILS_NAV.find(o => o.id === section)!;
 
   return (
@@ -565,22 +576,6 @@ export function OutilsLeftPanel({ section, onSectionChange, onGoHome }: { sectio
       {/* Contenu scrollable */}
       <div className="flex-1 overflow-y-auto px-3 py-4 space-y-5">
         <div className="space-y-2">
-          {/* Accueil */}
-          <button
-            onClick={onGoHome}
-            className="w-full flex items-center gap-3 px-4 py-3 rounded-xl border border-border bg-card text-left hover:bg-muted/50 hover:border-primary/20 transition-all group mb-1"
-          >
-            <div className="h-8 w-8 rounded-lg bg-muted flex items-center justify-center flex-shrink-0">
-              <svg className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-              </svg>
-            </div>
-            <div className="flex flex-col gap-0.5">
-              <span className="text-sm font-medium text-foreground group-hover:text-primary transition-colors">Accueil</span>
-              <span className="text-[11px] text-muted-foreground">Retour à la génération</span>
-            </div>
-          </button>
-
           <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground px-1">
             Outils disponibles
           </p>
@@ -666,6 +661,7 @@ type Props = {
   onResetUsage:    () => void;
   user:            User;
   onLogout:        () => void;
+  onGoSettings:    () => void;
   mainTab:         'offres' | 'outils';
   onMainTabChange: (tab: 'offres' | 'outils') => void;
   outilSection:    Outil;
@@ -674,7 +670,7 @@ type Props = {
 export default function RightPanel({
   state, result, error, company, aoText, onReset,
   usage, ragStatus, history, onLoadHistory, onDeleteHistory, onClearHistory,
-  apiStatus, ragLoading, onReindex, onResetUsage, user, onLogout,
+  apiStatus, ragLoading, onReindex, onResetUsage, user, onLogout, onGoSettings,
   mainTab, onMainTabChange, outilSection,
 }: Props) {
   const wordRef = useRef<HTMLDivElement>(null);
@@ -746,6 +742,7 @@ export default function RightPanel({
         apiStatus={apiStatus}
         user={user}
         onLogout={onLogout}
+        onGoSettings={onGoSettings}
         mainTab={mainTab}
         onTabChange={onMainTabChange}
       />

@@ -55,7 +55,6 @@ function AppRouter() {
           <LoginPage
             onSuccess={handleAuthSuccess}
             onGoRegister={() => navigate('/register')}
-            onGoBack={() => navigate('/')}
           />
         )}
       />

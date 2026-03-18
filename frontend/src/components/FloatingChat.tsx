@@ -71,7 +71,7 @@ export default function FloatingChat({ provider, model }: Props) {
   };
 
   return (
-    <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end gap-4">
+    <div className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-50 flex flex-col items-end gap-4">
 
       {/* ── Fenêtre de chat ───────────────────────────────────────── */}
       <AnimatePresence>
@@ -82,8 +82,8 @@ export default function FloatingChat({ provider, model }: Props) {
             initial="hidden"
             animate="visible"
             exit="exit"
-            className="w-[380px] overflow-hidden rounded-2xl border border-border/40 bg-background/95 shadow-2xl backdrop-blur-xl ring-1 ring-white/10 flex flex-col"
-            style={{ maxHeight: '520px' }}
+            className="w-[calc(100vw-2rem)] sm:w-[380px] overflow-hidden rounded-2xl border border-border/40 bg-background/95 shadow-2xl backdrop-blur-xl ring-1 ring-white/10 flex flex-col"
+            style={{ maxHeight: '75vh' }}
           >
 
             {/* En-tête */}
@@ -121,7 +121,7 @@ export default function FloatingChat({ provider, model }: Props) {
             </div>
 
             {/* Zone messages */}
-            <div className="flex-1 overflow-y-auto p-4 space-y-4 min-h-0" style={{ height: '320px' }}>
+            <div className="flex-1 overflow-y-auto p-4 space-y-4 min-h-0" style={{ minHeight: '160px' }}>
 
               {/* Message de bienvenue */}
               {messages.length === 0 && !loading && (

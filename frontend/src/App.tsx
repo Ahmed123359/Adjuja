@@ -1,8 +1,10 @@
 import { useState, useEffect, useCallback } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import LeftPanel from './components/LeftPanel';
 import RightPanel, { OutilsLeftPanel } from './components/RightPanel';
 import type { Outil } from './components/RightPanel';
 import FloatingChat from './components/FloatingChat';
+import SettingsPage from './pages/SettingsPage';
 import { useIsMobile } from './hooks/useIsMobile';
 import {
   fetchModels, fetchDefaults, generate,
@@ -24,8 +26,12 @@ function cheapestModel(models: Model[], provider: string): Model | undefined {
 }
 
 export default function App({ onGoLanding, onLogout, user }: { onGoLanding: () => void; onLogout: () => void; user: User }) {
+  const navigate = useNavigate();
+  const location = useLocation();
   const isMobile = useIsMobile();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  const isSettings = location.pathname === '/app/settings';
 
   // Form
   const [aoText,   setAoText]      = useState('');
@@ -138,6 +144,18 @@ export default function App({ onGoLanding, onLogout, user }: { onGoLanding: () =
     return () => window.removeEventListener('keydown', handler);
   }, [handleGenerate]);
 
+  if (isSettings) {
+    return (
+      <div className="flex flex-col min-h-screen w-full bg-background">
+        <SettingsPage
+          provider={provider} setProvider={setProvider}
+          model={model}       setModel={setModel}
+          models={models}
+        />
+      </div>
+    );
+  }
+
   return (
     <div className="flex min-h-screen w-full bg-background">
 
@@ -151,7 +169,7 @@ export default function App({ onGoLanding, onLogout, user }: { onGoLanding: () =
 
       {/* Panneau gauche Outils */}
       {mainTab === 'outils' && !isMobile && (
-        <OutilsLeftPanel section={outilSection} onSectionChange={setOutilSection} onGoHome={() => setMainTab('offres')} />
+        <OutilsLeftPanel section={outilSection} onSectionChange={setOutilSection} />
       )}
 
       {/* Left panel — masqué sur la page Outils */}
@@ -161,9 +179,6 @@ export default function App({ onGoLanding, onLogout, user }: { onGoLanding: () =
       }>
         <LeftPanel
           aoText={aoText}       setAoText={setAoText}
-          provider={provider}   setProvider={setProvider}
-          model={model}         setModel={setModel}
-          models={models}
           company={company}     setCompany={setCompany}
           langue={langue}       setLangue={setLangue}
           onGenerate={handleGenerate}
@@ -229,6 +244,7 @@ export default function App({ onGoLanding, onLogout, user }: { onGoLanding: () =
           onResetUsage={handleResetUsage}
           user={user}
           onLogout={onLogout}
+          onGoSettings={() => navigate('/app/settings')}
           mainTab={mainTab}
           onMainTabChange={setMainTab}
           outilSection={outilSection}
