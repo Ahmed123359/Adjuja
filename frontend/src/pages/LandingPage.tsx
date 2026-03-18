@@ -121,8 +121,8 @@ const PLANS = [
     tagline: 'Pour tester et convaincre en interne',
     highlighted: false,
     badge: null as string | null,
-    features: ['50 AOs générés / mois', '3 providers LLM (GPT-4o, Claude, Mistral)', 'Parsing automatique', 'Export Word (.docx)', '1 utilisateur', 'Support e-mail (48h)'],
-    cta: "Démarrer l'essai gratuit",
+    features: ['50 AOs générés / mois', '3 providers LLM (GPT-4o, Claude, Mistral)', 'Parsing automatique', 'Export Word (.docx)', 'Signatures instantanées illimitées', '1 utilisateur', 'Support e-mail (48h)'],
+    cta: "S'abonner — 27€/mois",
     note: '14 jours gratuits, sans carte bancaire',
   },
   {
@@ -132,7 +132,7 @@ const PLANS = [
     tagline: 'Pour les équipes commerciales actives',
     highlighted: true,
     badge: 'Recommandé' as string | null,
-    features: ['Génération illimitée', 'Base de connaissances RAG', '5 utilisateurs', 'API REST (ERP / CRM)', 'Historique complet des générations', 'Support prioritaire (4h)'],
+    features: ['Génération illimitée', 'Base de connaissances RAG', 'Signatures instantanées illimitées', '5 utilisateurs', 'API REST (ERP / CRM)', 'Historique complet des générations', 'Support prioritaire (4h)'],
     cta: "Contacter l'équipe",
     note: 'Le plus choisi par nos clients PME / ETI',
   },
@@ -143,7 +143,7 @@ const PLANS = [
     tagline: 'Pour les grands groupes et cabinets',
     highlighted: false,
     badge: null as string | null,
-    features: ['On-premise ou cloud dédié', 'Utilisateurs illimités', 'SSO / Active Directory', 'Fine-tuning sur vos AOs remportés', 'SLA 99,9 % garanti', 'Accompagnement dédié'],
+    features: ['On-premise ou cloud dédié', 'Utilisateurs illimités', 'Signatures instantanées illimitées', 'SSO / Active Directory', 'Fine-tuning sur vos AOs remportés', 'SLA 99,9 % garanti', 'Accompagnement dédié'],
     cta: "Contacter l'équipe",
     note: 'Déploiement en 5 jours ouvrés',
   },
@@ -268,7 +268,7 @@ export default function LandingPage({ onEnterApp }: { onEnterApp: OnEnterApp }) 
 
         {/* ══ 1 — HERO ══════════════════════════════════════════ */}
         <section className="flex flex-col items-center justify-center px-6 text-center"
-          style={{ height: '100vh', paddingTop: '3.5rem', boxSizing: 'border-box' }}>
+          style={{ height: 'clamp(600px, 100vh, 900px)', paddingTop: '3.5rem', boxSizing: 'border-box' }}>
 
           <div
             className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full border mb-6"
@@ -329,7 +329,7 @@ export default function LandingPage({ onEnterApp }: { onEnterApp: OnEnterApp }) 
 
         {/* ══ 2 — VUE APPLICATION ═══════════════════════════════ */}
         <section className="flex flex-col items-center justify-center px-6 py-8"
-          style={{ height: '100vh', paddingTop: '3.5rem', boxSizing: 'border-box' }}>
+          style={{ height: 'clamp(600px, 100vh, 900px)', paddingTop: '3.5rem', boxSizing: 'border-box' }}>
           <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-indigo-400 mb-4">Aperçu</p>
           <h2 className="font-display font-bold text-center mb-6"
             style={{ fontSize: 'clamp(1.5rem, 3vw, 2.2rem)' }}>
@@ -354,7 +354,7 @@ export default function LandingPage({ onEnterApp }: { onEnterApp: OnEnterApp }) 
         {/* ══ 3 — FONCTIONNALITÉS ═══════════════════════════════ */}
         <section id="features" ref={featuresRef}
           className="flex flex-col items-center justify-center px-6 py-16 md:py-0"
-          style={{ minHeight: '100vh', paddingTop: '3.5rem', boxSizing: 'border-box' }}>
+          style={{ minHeight: 'clamp(600px, 100vh, 900px)', paddingTop: '3.5rem', boxSizing: 'border-box' }}>
           <div className="w-full max-w-6xl">
             <SectionLabel text="Fonctionnalités" />
             <h2 className="font-display font-bold text-center mb-2 animate-on-scroll"
@@ -389,7 +389,7 @@ export default function LandingPage({ onEnterApp }: { onEnterApp: OnEnterApp }) 
         {/* ══ 4 — COMMENT ÇA MARCHE ════════════════════════════ */}
         <section id="how-it-works" ref={howRef}
           className="flex flex-col items-center justify-center px-6 py-16 md:py-0"
-          style={{ minHeight: '100vh', paddingTop: '3.5rem', boxSizing: 'border-box', background: 'rgba(8,14,26,0.6)' }}>
+          style={{ minHeight: 'clamp(600px, 100vh, 900px)', paddingTop: '3.5rem', boxSizing: 'border-box', background: 'rgba(8,14,26,0.6)' }}>
           <div className="w-full max-w-5xl text-center">
             <SectionLabel text="Comment ça marche" />
             <h2 className="font-display font-bold mb-10 animate-on-scroll"
@@ -435,7 +435,7 @@ export default function LandingPage({ onEnterApp }: { onEnterApp: OnEnterApp }) 
         {/* ══ 5 — TARIFS ════════════════════════════════════════ */}
         <section id="pricing" ref={pricingRef}
           className="flex flex-col items-center justify-center px-6 py-16 md:py-0"
-          style={{ minHeight: '100vh', paddingTop: '3.5rem', boxSizing: 'border-box' }}>
+          style={{ minHeight: 'clamp(600px, 100vh, 900px)', paddingTop: '3.5rem', boxSizing: 'border-box' }}>
           <div className="w-full max-w-5xl">
             <SectionLabel text="Tarifs" />
             <h2 className="font-display font-bold text-center mb-1 animate-on-scroll"
@@ -494,7 +494,7 @@ export default function LandingPage({ onEnterApp }: { onEnterApp: OnEnterApp }) 
                     className="w-full py-2 rounded-xl text-sm font-semibold transition-all hover:scale-[1.02] active:scale-[0.98]"
                     style={highlighted
                       ? { background: 'linear-gradient(135deg,#4338ca,#6366f1)', color: '#fff', boxShadow: '0 4px 20px rgba(99,102,241,0.4)' }
-                      : { background: 'rgba(255,255,255,0.05)', color: '#94a3b8', border: '1px solid rgba(255,255,255,0.08)' }
+                      : { background: 'rgba(99,102,241,0.12)', color: '#a5b4fc', border: '1px solid rgba(99,102,241,0.3)' }
                     }>
                     {cta}
                   </button>
