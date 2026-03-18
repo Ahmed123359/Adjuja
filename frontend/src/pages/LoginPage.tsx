@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { login, loginWithGoogle } from '../api';
 
 declare const google: {
@@ -15,6 +16,8 @@ export default function LoginPage({ onSuccess, onGoRegister }: Props) {
   const [password, setPassword] = useState('');
   const [error,    setError]    = useState('');
   const [loading,  setLoading]  = useState(false);
+  const [searchParams] = useSearchParams();
+  const justVerified = searchParams.get('verified') === 'true';
 
   const googleBtnRef = useRef<HTMLDivElement>(null);
 
@@ -116,6 +119,13 @@ export default function LoginPage({ onSuccess, onGoRegister }: Props) {
         >
           <h1 className="font-display font-bold text-white text-xl mb-1 text-center">Connexion</h1>
           <p className="text-slate-500 text-sm text-center mb-6">Accédez à votre espace OffrIA</p>
+
+          {justVerified && (
+            <div className="mb-4 px-4 py-3 rounded-lg text-sm text-emerald-300"
+              style={{ background: 'rgba(16,185,129,0.1)', border: '1px solid rgba(16,185,129,0.25)' }}>
+              ✓ Email vérifié ! Connectez-vous pour accéder à vos 3 générations gratuites.
+            </div>
+          )}
 
           {error && (
             <div className="mb-4 px-4 py-3 rounded-lg text-sm text-red-300"

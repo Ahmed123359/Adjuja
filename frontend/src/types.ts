@@ -79,11 +79,14 @@ export interface HistoryEntry extends HistorySummary {
 }
 
 export interface User {
-  id:         string;
-  nom:        string;
-  prenom:     string;
-  email:      string;
-  created_at: string;
+  id:               string;
+  nom:              string;
+  prenom:           string;
+  email:            string;
+  created_at:       string;
+  email_verified:   boolean;
+  generations_used: number;
+  max_generations:  number;  // 0 = illimité
 }
 
 export interface ActeEngagementData {

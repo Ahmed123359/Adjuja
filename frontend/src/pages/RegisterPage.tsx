@@ -11,15 +11,14 @@ type Props = {
 };
 
 export default function RegisterPage({ onSuccess, onGoLogin }: Props) {
-  const [nom,      setNom]      = useState('');
-  const [prenom,   setPrenom]   = useState('');
-  const [email,    setEmail]    = useState('');
-  const [password, setPassword] = useState('');
-  const [error,    setError]    = useState('');
-  const [loading,  setLoading]  = useState(false);
+  const [nom,       setNom]       = useState('');
+  const [prenom,    setPrenom]    = useState('');
+  const [email,     setEmail]     = useState('');
+  const [password,  setPassword]  = useState('');
+  const [error,     setError]     = useState('');
+  const [loading,   setLoading]   = useState(false);
+  const [emailSent, setEmailSent] = useState(false);
 
-  // Règles chargées depuis le backend au montage du composant.
-  // Valeurs par défaut identiques aux constantes Python pendant le chargement.
   const [rules, setRules] = useState<PasswordRules>({ min_length: 8, require_digit: true });
   useEffect(() => { getPasswordRules().then(setRules); }, []);
 
@@ -61,8 +60,12 @@ export default function RegisterPage({ onSuccess, onGoLogin }: Props) {
     setError('');
     setLoading(true);
     try {
-      await register({ nom, prenom, email, password });
-      onSuccess();
+      const isAdmin = await register({ nom, prenom, email, password });
+      if (isAdmin) {
+        onSuccess();  // admin → connexion directe
+      } else {
+        setEmailSent(true);  // freemium → vérification email
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erreur lors de l\'inscription.');
     } finally {
@@ -94,6 +97,49 @@ export default function RegisterPage({ onSuccess, onGoLogin }: Props) {
     transition: 'opacity 0.2s',
     opacity: loading ? 0.7 : 1,
   };
+
+  if (emailSent) {
+    return (
+      <div className="min-h-screen flex items-center justify-center px-4" style={{ background: '#050914' }}>
+        <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
+          <div className="orb orb-1" /><div className="orb orb-2" /><div className="noise-overlay" />
+        </div>
+        <div className="relative z-10 w-full max-w-sm text-center">
+          <div className="flex items-center justify-center gap-2.5 mb-8">
+            <div className="w-8 h-8 rounded-xl flex items-center justify-center"
+              style={{ background: 'linear-gradient(135deg,#4338ca,#6366f1)' }}>
+              <span className="font-display font-bold text-base text-white">O</span>
+            </div>
+            <span className="font-display text-xl font-bold tracking-tight text-white">
+              Offr<span className="text-gradient">IA</span>
+            </span>
+          </div>
+          <div className="rounded-2xl p-8 border border-white/[.08]"
+            style={{ background: 'rgba(10,16,28,0.85)', backdropFilter: 'blur(20px)' }}>
+            <div className="w-14 h-14 rounded-full flex items-center justify-center mx-auto mb-4"
+              style={{ background: 'rgba(99,102,241,0.15)', border: '1px solid rgba(99,102,241,0.3)' }}>
+              <svg className="w-7 h-7 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+              </svg>
+            </div>
+            <h2 className="font-display font-bold text-white text-lg mb-2">Vérifiez votre email</h2>
+            <p className="text-slate-400 text-sm mb-1">
+              Un lien de confirmation a été envoyé à
+            </p>
+            <p className="text-indigo-300 font-medium text-sm mb-4">{email}</p>
+            <p className="text-slate-500 text-xs mb-6">
+              Cliquez sur le lien dans l'email pour activer votre compte et accéder à vos <strong className="text-slate-300">3 générations gratuites</strong>.
+            </p>
+            <button onClick={onGoLogin}
+              className="w-full py-2.5 rounded-xl text-sm font-semibold text-indigo-300 transition-colors hover:text-indigo-200"
+              style={{ background: 'rgba(99,102,241,0.1)', border: '1px solid rgba(99,102,241,0.25)' }}>
+              Aller à la connexion
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center px-4" style={{ background: '#050914' }}>
@@ -171,7 +217,6 @@ export default function RegisterPage({ onSuccess, onGoLogin }: Props) {
               <label className="block text-xs text-slate-400 mb-1.5 font-medium">
                 Mot de passe{' '}
                 <span className="text-slate-600">
-                  {/* Le hint est construit dynamiquement depuis les règles du backend */}
                   (min. {rules.min_length} caractères{rules.require_digit ? ', 1 chiffre' : ''})
                 </span>
               </label>

@@ -115,24 +115,56 @@ const STEPS = [
 
 const PLANS = [
   {
+    name: 'Gratuit',
+    price: '0€',
+    period: '/ mois',
+    tagline: 'Pour découvrir OffrIA sans engagement',
+    highlighted: false,
+    badge: null as string | null,
+    features: [
+      { text: '3 AOs générés (à vie)', tag: null },
+      { text: '3 providers LLM (GPT-4o, Claude, Mistral)', tag: null },
+      { text: 'Export Word (.docx)', tag: null },
+      { text: 'Signatures instantanées illimitées', tag: null },
+      { text: '1 utilisateur', tag: null },
+    ],
+    cta: 'Essayer gratuitement',
+    note: 'Sans CB · Compte en 30 secondes',
+  },
+  {
     name: 'Starter',
-    price: '27€',
+    price: '79€',
     period: '/ mois HT',
     tagline: 'Pour tester et convaincre en interne',
     highlighted: false,
     badge: null as string | null,
-    features: ['50 AOs générés / mois', '3 providers LLM (GPT-4o, Claude, Mistral)', 'Parsing automatique', 'Export Word (.docx)', 'Signatures instantanées illimitées', '1 utilisateur', 'Support e-mail (48h)'],
-    cta: "S'abonner — 27€/mois",
-    note: '14 jours gratuits, sans carte bancaire',
+    features: [
+      { text: '50 AOs générés / mois', tag: null },
+      { text: '3 providers LLM (GPT-4o, Claude, Mistral)', tag: null },
+      { text: 'Export Word (.docx)', tag: null },
+      { text: 'Signatures instantanées illimitées', tag: null },
+      { text: '1 utilisateur', tag: null },
+      { text: 'Support e-mail (48h)', tag: null },
+    ],
+    cta: "S'abonner — 79€/mois",
+    note: 'Sans engagement · résiliable à tout moment',
   },
   {
     name: 'Pro',
-    price: '74€',
+    price: '249€',
     period: '/ mois HT',
     tagline: 'Pour les équipes commerciales actives',
     highlighted: true,
     badge: 'Recommandé' as string | null,
-    features: ['Génération illimitée', 'Base de connaissances RAG', 'Signatures instantanées illimitées', '5 utilisateurs', 'API REST (ERP / CRM)', 'Historique complet des générations', 'Support prioritaire (4h)'],
+    features: [
+      { text: 'Génération illimitée', tag: null },
+      { text: 'Digestion jusqu\'à 50 documents†', tag: null },
+      { text: 'Chat avec vos documents', tag: 'Nouveau' },
+      { text: 'Signatures instantanées illimitées', tag: null },
+      { text: '5 utilisateurs', tag: null },
+      { text: 'Historique complet des générations', tag: null },
+      { text: 'Support prioritaire (4h)', tag: null },
+    ],
     cta: "Contacter l'équipe",
     note: 'Le plus choisi par nos clients PME / ETI',
   },
@@ -143,7 +175,16 @@ const PLANS = [
     tagline: 'Pour les grands groupes et cabinets',
     highlighted: false,
     badge: null as string | null,
-    features: ['On-premise ou cloud dédié', 'Utilisateurs illimités', 'Signatures instantanées illimitées', 'SSO / Active Directory', 'Fine-tuning sur vos AOs remportés', 'SLA 99,9 % garanti', 'Accompagnement dédié'],
+    features: [
+      { text: 'Génération illimitée', tag: null },
+      { text: 'Digestion jusqu\'à 200 documents†', tag: null },
+      { text: 'Chat avec vos documents', tag: 'Nouveau' },
+      { text: 'Signatures instantanées illimitées', tag: null },
+      { text: 'Utilisateurs illimités', tag: null },
+      { text: 'SSO / Active Directory', tag: null },
+      { text: 'SLA 99,9 % garanti', tag: null },
+      { text: 'Accompagnement dédié', tag: null },
+    ],
     cta: "Contacter l'équipe",
     note: 'Déploiement en 5 jours ouvrés',
   },
@@ -159,7 +200,7 @@ function SectionLabel({ text }: { text: string }) {
 }
 
 // ── Main component ─────────────────────────────────────────
-export default function LandingPage({ onEnterApp }: { onEnterApp: OnEnterApp }) {
+export default function LandingPage({ onEnterApp, onGoRegister }: { onEnterApp: OnEnterApp; onGoRegister: () => void }) {
   const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
 
   // Landing is always dark
@@ -479,13 +520,19 @@ export default function LandingPage({ onEnterApp }: { onEnterApp: OnEnterApp }) 
                   <ul className="space-y-1.5 mb-4">
                     {features.map((f, j) => (
                       <li key={j} className="flex items-center gap-2 text-xs text-slate-400">
-                        <span className="text-indigo-400 flex-shrink-0"><IconCheck /></span>{f}
+                        <span className="text-indigo-400 flex-shrink-0"><IconCheck /></span>
+                        <span>{typeof f === 'string' ? f : f.text}</span>
+                        {typeof f !== 'string' && f.tag && (
+                          <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 flex-shrink-0">{f.tag}</span>
+                        )}
                       </li>
                     ))}
                   </ul>
                   <button
                     onClick={() => {
-                      if (name === 'Starter') {
+                      if (name === 'Gratuit') {
+                        onGoRegister();
+                      } else if (name === 'Starter') {
                         window.open('https://buy.stripe.com/eVq28qcic8UD3Eb8wDdQQ00', '_blank');
                       } else {
                         (window as any).Calendly?.initPopupWidget({ url: 'https://calendly.com/charif-eljazouli' });
@@ -503,7 +550,10 @@ export default function LandingPage({ onEnterApp }: { onEnterApp: OnEnterApp }) 
               ))}
             </div>
 
-            <p className="text-center text-slate-700 text-xs mt-6 animate-on-scroll" data-stagger="5">
+            <p className="text-center text-slate-600 text-[11px] mt-4 animate-on-scroll" data-stagger="5">
+              † 1 document = fichier PDF jusqu'à 20 pages A4
+            </p>
+            <p className="text-center text-slate-700 text-xs mt-2 animate-on-scroll" data-stagger="5">
               Tous les prix sont HT · TVA applicable · Déploiement on-premise sur devis
             </p>
           </div>

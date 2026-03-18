@@ -21,6 +21,7 @@ type Props = {
   onGenerate: () => void;
   loading: boolean;
   limitReached: boolean;
+  onShowPricing: () => void;
   onGoLanding: () => void;
   onClose?: () => void;
 };
@@ -58,11 +59,8 @@ function CollapsibleSection({
 
 // ── Main component ──────────────────────────────────────────
 export default function LeftPanel(props: Props) {
-  const {
-    aoText, setAoText,
-    company, setCompany, langue, setLangue,
-    onGenerate, loading, limitReached, onGoLanding, onClose,
-  } = props;
+  const { aoText, setAoText, company, setCompany, langue, setLangue,
+    onGenerate, loading, limitReached, onShowPricing, onGoLanding, onClose } = props;
 
   const [dragging, setDragging] = useState(false);
   const [fileMsg,  setFileMsg]  = useState('');
@@ -317,13 +315,16 @@ export default function LeftPanel(props: Props) {
       {/* ── Generate Button ───────────────────────────────── */}
       <div className="px-3 py-3 border-t border-border">
         <button
-          onClick={onGenerate}
-          disabled={!canGenerate || loading || limitReached}
+          onClick={limitReached ? onShowPricing : onGenerate}
+          disabled={!canGenerate || loading}
           className={`w-full text-primary-foreground font-semibold py-3 px-4 rounded-xl flex items-center justify-center gap-2 transition-all shadow-md ${
-            canGenerate && !loading && !limitReached
-              ? 'gradient-cta hover:opacity-90 cursor-pointer'
-              : 'bg-muted text-muted-foreground cursor-not-allowed shadow-none'
+            limitReached
+              ? 'cursor-pointer'
+              : canGenerate && !loading
+                ? 'gradient-cta hover:opacity-90 cursor-pointer'
+                : 'bg-muted text-muted-foreground cursor-not-allowed shadow-none'
           }`}
+          style={limitReached ? { background: 'linear-gradient(135deg,#4338ca,#6366f1)' } : undefined}
         >
           {loading ? (
             <>
@@ -331,7 +332,7 @@ export default function LeftPanel(props: Props) {
               Génération en cours…
             </>
           ) : limitReached ? (
-            'Limite atteinte'
+            'Voir les offres →'
           ) : (
             <>
               <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>

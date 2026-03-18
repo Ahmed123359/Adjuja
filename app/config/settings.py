@@ -98,6 +98,15 @@ class Settings(BaseSettings):
     google_client_id: str = ""
     """Client ID Google OAuth (depuis Google Cloud Console). Vide = Google auth désactivée."""
 
+    resend_api_key: str = ""
+    """Clé API Resend pour l'envoi d'emails. Vide = vérification email désactivée (dev)."""
+
+    app_frontend_url: str = "http://localhost:5173"
+    """URL publique du frontend. Utilisée pour les redirections après vérification email."""
+
+    admin_emails: list[str] = []
+    """Emails admins : inscription sans limite de générations ni vérification email requise."""
+
     jwt_expire_minutes: int = 10080
     """Durée de vie des tokens JWT en minutes (défaut : 7 jours)."""
 

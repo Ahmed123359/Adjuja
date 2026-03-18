@@ -36,11 +36,14 @@ class UserCreate(BaseModel):
 
 
 class UserPublic(BaseModel):
-    id:         str
-    nom:        str
-    prenom:     str
-    email:      str
-    created_at: str
+    id:               str
+    nom:              str
+    prenom:           str
+    email:            str
+    created_at:       str
+    email_verified:   bool = True
+    generations_used: int  = 0
+    max_generations:  int  = 0   # 0 = illimité
 
 
 class Token(BaseModel):

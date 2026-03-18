@@ -4,10 +4,11 @@ import LeftPanel from './components/LeftPanel';
 import RightPanel, { OutilsLeftPanel } from './components/RightPanel';
 import type { Outil } from './components/RightPanel';
 import FloatingChat from './components/FloatingChat';
+import PricingModal from './components/PricingModal';
 import SettingsPage from './pages/SettingsPage';
 import { useIsMobile } from './hooks/useIsMobile';
 import {
-  fetchModels, fetchDefaults, generate,
+  fetchModels, fetchDefaults, generate, getMe,
   fetchRagStatus, reindexRag, fetchUsage, resetUsage,
   fetchHistory, fetchHistoryEntry, deleteHistoryEntry, clearHistory,
 } from './api';
@@ -25,11 +26,12 @@ function cheapestModel(models: Model[], provider: string): Model | undefined {
   );
 }
 
-export default function App({ onGoLanding, onLogout, user }: { onGoLanding: () => void; onLogout: () => void; user: User }) {
+export default function App({ onGoLanding, onLogout, user: initialUser }: { onGoLanding: () => void; onLogout: () => void; user: User }) {
   const navigate = useNavigate();
   const location = useLocation();
   const isMobile = useIsMobile();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [user, setUser] = useState(initialUser);
 
   const isSettings = location.pathname === '/app/settings';
 
@@ -52,8 +54,9 @@ export default function App({ onGoLanding, onLogout, user }: { onGoLanding: () =
   const [apiStatus,  setApiStatus] = useState<'online' | 'offline' | 'connecting'>('connecting');
   const [ragStatus,  setRagStatus] = useState<RagStatus | null>(null);
   const [ragLoading, setRagLoading] = useState(false);
-  const [usage,      setUsage]     = useState<UsageData | null>(null);
-  const [history,    setHistory]   = useState<HistorySummary[]>([]);
+  const [usage,       setUsage]      = useState<UsageData | null>(null);
+  const [history,     setHistory]    = useState<HistorySummary[]>([]);
+  const [showPricing, setShowPricing] = useState(false);
 
   const reloadHistory = useCallback(() => {
     fetchHistory().then(setHistory).catch(() => {});
@@ -83,10 +86,18 @@ export default function App({ onGoLanding, onLogout, user }: { onGoLanding: () =
     if (def) setModel(def.model_id);
   }, [models]);
 
-  const isLimitReached = usage !== null && (
-    (usage.max_appels > 0 && usage.total_appels >= usage.max_appels) ||
-    (usage.max_tokens_cumul > 0 && usage.total_tokens >= usage.max_tokens_cumul)
+  const isLimitReached = (
+    (usage !== null && (
+      (usage.max_appels > 0 && usage.total_appels >= usage.max_appels) ||
+      (usage.max_tokens_cumul > 0 && usage.total_tokens >= usage.max_tokens_cumul)
+    )) ||
+    (user.max_generations > 0 && user.generations_used >= user.max_generations)
   );
+
+  // Ouvre le modal automatiquement dès que la limite est atteinte
+  useEffect(() => {
+    if (isLimitReached) setShowPricing(true);
+  }, [isLimitReached]);
 
   const handleGenerate = useCallback(async () => {
     if (aoText.trim().length < 50 || !company.nom.trim()) return;
@@ -100,6 +111,9 @@ export default function App({ onGoLanding, onLogout, user }: { onGoLanding: () =
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : 'Erreur inconnue');
       setAppState('error');
+    } finally {
+      // Rafraîchit l'user pour avoir le generations_used à jour
+      getMe().then(setUser).catch(() => {});
     }
   }, [aoText, provider, model, company, langue, reloadHistory]);
 
@@ -194,6 +208,7 @@ export default function App({ onGoLanding, onLogout, user }: { onGoLanding: () =
           onGenerate={handleGenerate}
           loading={appState === 'loading'}
           limitReached={isLimitReached}
+          onShowPricing={() => setShowPricing(true)}
           onGoLanding={onGoLanding}
           onClose={isMobile ? () => setSidebarOpen(false) : undefined}
         />
@@ -262,6 +277,8 @@ export default function App({ onGoLanding, onLogout, user }: { onGoLanding: () =
       </div>
       {/* Chatbot flottant — visible sur toutes les pages */}
       <FloatingChat provider={provider} model={model} />
+      {/* Modal pricing — s'ouvre quand la limite freemium est atteinte */}
+      {showPricing && <PricingModal onClose={() => setShowPricing(false)} />}
     </div>
   );
 }

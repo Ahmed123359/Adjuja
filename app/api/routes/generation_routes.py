@@ -7,7 +7,8 @@ from app.models.user import UserPublic
 from app.services.generation_service import GenerationService
 from app.services.usage_service import UsageService
 from app.services.history_service import HistoryService
-from app.api.dependencies import get_generation_service, get_usage_service, get_history_service, get_current_user
+from app.services.user_service import UserService
+from app.api.dependencies import get_generation_service, get_usage_service, get_history_service, get_current_user, get_user_service
 from app.api.routes.defaults_routes import _load_defaults
 from app.config.settings import get_settings
 from app.limiter import limiter
@@ -32,6 +33,7 @@ async def generate_response(
     service:      GenerationService = Depends(get_generation_service),
     usage:        UsageService      = Depends(get_usage_service),
     history:      HistoryService    = Depends(get_history_service),
+    user_service: UserService       = Depends(get_user_service),
     current_user: UserPublic        = Depends(get_current_user),
 ) -> GenerationResult:
     """
@@ -53,6 +55,16 @@ async def generate_response(
     - ``502`` : échec de l'appel au provider LLM (auth, quota, timeout…)
     - ``500`` : erreur interne inattendue
     """
+    # Vérification limite freemium par utilisateur
+    if current_user.max_generations > 0 and current_user.generations_used >= current_user.max_generations:
+        raise HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail=(
+                f"Vous avez utilisé vos {current_user.max_generations} générations gratuites. "
+                "Passez au plan Starter pour continuer."
+            ),
+        )
+
     # Vérification des limites globales avant génération
     limits = _load_defaults()
     if limits.max_appels > 0 and usage.total_appels >= limits.max_appels:
@@ -96,6 +108,7 @@ async def generate_response(
         )
 
         usage.add(result.tokens_utilises or 0)
+        user_service.increment_generations(current_user.id)
 
         # Sauvegarde dans l'historique
         history.add(HistoryEntry(

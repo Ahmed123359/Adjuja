@@ -56,9 +56,10 @@ export async function getPasswordRules(): Promise<PasswordRules> {
   return res.json();
 }
 
+/** Retourne true si admin (connecté directement), false si email envoyé */
 export async function register(params: {
   nom: string; prenom: string; email: string; password: string;
-}): Promise<void> {
+}): Promise<boolean> {
   const res = await fetch('/api/v1/auth/register', {
     method:  'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -71,7 +72,11 @@ export async function register(params: {
     }
     throw new Error(typeof data.detail === 'string' ? data.detail : 'Erreur inscription.');
   }
-  setToken(data.access_token);
+  if (data.access_token) {
+    setToken(data.access_token);
+    return true;   // admin → connexion directe
+  }
+  return false;    // freemium → vérification email requise
 }
 
 export async function login(email: string, password: string): Promise<void> {

@@ -47,7 +47,7 @@ function AppRouter() {
     <Routes>
       <Route
         path="/"
-        element={<LandingPage onEnterApp={() => navigate(user ? '/app' : '/login')} />}
+        element={<LandingPage onEnterApp={() => navigate(user ? '/app' : '/login')} onGoRegister={() => navigate('/register')} />}
       />
       <Route
         path="/login"
