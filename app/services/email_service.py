@@ -4,7 +4,7 @@ import httpx
 logger = logging.getLogger(__name__)
 
 _RESEND_URL = "https://api.resend.com/emails"
-_FROM       = "OffrIA <noreply@offria.fr>"
+_FROM       = "OffrIA <noreply@offria.cloud>"
 
 
 async def send_verification_email(
@@ -19,7 +19,8 @@ async def send_verification_email(
     api_base_url : URL racine de l'API (ex: https://offria.fr ou http://localhost:8000)
     Si resend_api_key est vide, logue simplement le lien (mode dev).
     """
-    verify_url = f"{api_base_url.rstrip('/')}/api/v1/auth/verify-email?token={token}"
+    base = api_base_url.rstrip('/').replace('http://', 'https://')
+    verify_url = f"{base}/api/v1/auth/verify-email?token={token}"
 
     if not resend_api_key:
         logger.info("DEV — lien de vérification email : %s", verify_url)
