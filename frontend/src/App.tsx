@@ -167,12 +167,22 @@ export default function App({ onGoLanding, onLogout, user }: { onGoLanding: () =
         />
       )}
 
-      {/* Panneau gauche Outils */}
+      {/* Panneau gauche Outils — desktop uniquement */}
       {mainTab === 'outils' && !isMobile && (
         <OutilsLeftPanel section={outilSection} onSectionChange={setOutilSection} />
       )}
 
-      {/* Left panel — masqué sur la page Outils */}
+      {/* Panneau gauche Outils — mobile slide-in */}
+      {mainTab === 'outils' && isMobile && (
+        <div className={`fixed inset-y-0 left-0 z-50 transition-transform duration-300 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+          <OutilsLeftPanel
+            section={outilSection}
+            onSectionChange={s => { setOutilSection(s); setSidebarOpen(false); }}
+          />
+        </div>
+      )}
+
+      {/* Left panel Offres — masqué sur la page Outils */}
       {mainTab === 'offres' && <div className={isMobile
         ? `fixed inset-y-0 left-0 z-50 transition-transform duration-300 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`
         : ''

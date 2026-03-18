@@ -237,8 +237,8 @@ export default function DocumentsTab() {
               </span>
             </span>
           </p>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div className="relative">
+          <div className="grid grid-cols-1 gap-3">
+            <div className="relative min-w-0">
               <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none">
                 <svg className="h-4 w-4 text-muted-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
@@ -253,7 +253,7 @@ export default function DocumentsTab() {
                 className="w-full pl-9 pr-3 py-2.5 text-sm bg-background border border-border rounded-lg text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/50 transition-all"
               />
             </div>
-            <div className="relative">
+            <div className="relative min-w-0">
               <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none">
                 <svg className="h-4 w-4 text-muted-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />

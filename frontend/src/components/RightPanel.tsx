@@ -381,13 +381,13 @@ function Dashboard({
         {/* Stat cards */}
         <div className="grid grid-cols-3 gap-3">
           {statCards.map(({ label, value, sub, icon }) => (
-            <div key={label} className="border border-border rounded-xl bg-card p-4 shadow-card hover:shadow-card-hover transition-shadow animate-fade-in">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground leading-tight">{label}</span>
-                <div className="h-7 w-7 rounded-lg bg-accent flex items-center justify-center flex-shrink-0">{icon}</div>
+            <div key={label} className="border border-border rounded-xl bg-card p-3 shadow-card hover:shadow-card-hover transition-shadow animate-fade-in min-w-0">
+              <div className="flex items-start justify-between gap-1 mb-2">
+                <span className="text-[9px] font-semibold uppercase tracking-wider text-muted-foreground leading-tight line-clamp-2">{label}</span>
+                <div className="h-6 w-6 rounded-lg bg-accent flex items-center justify-center flex-shrink-0">{icon}</div>
               </div>
-              <p className="text-2xl font-bold text-foreground tracking-tight">{value}</p>
-              <p className="text-[11px] text-muted-foreground mt-0.5">{sub}</p>
+              <p className="text-xl font-bold text-foreground tracking-tight truncate">{value}</p>
+              <p className="text-[10px] text-muted-foreground mt-0.5 truncate">{sub}</p>
             </div>
           ))}
         </div>
