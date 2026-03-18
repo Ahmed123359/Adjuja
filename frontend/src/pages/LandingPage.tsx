@@ -115,23 +115,6 @@ const STEPS = [
 
 const PLANS = [
   {
-    name: 'Gratuit',
-    price: '0€',
-    period: '/ mois',
-    tagline: 'Pour découvrir OffrIA sans engagement',
-    highlighted: false,
-    badge: null as string | null,
-    features: [
-      { text: '3 AOs générés (à vie)', tag: null },
-      { text: '3 providers LLM (GPT-4o, Claude, Mistral)', tag: null },
-      { text: 'Export Word (.docx)', tag: null },
-      { text: 'Signatures instantanées illimitées', tag: null },
-      { text: '1 utilisateur', tag: null },
-    ],
-    cta: 'Essayer gratuitement',
-    note: 'Sans CB · Compte en 30 secondes',
-  },
-  {
     name: 'Starter',
     price: '79€',
     period: '/ mois HT',
@@ -530,9 +513,7 @@ export default function LandingPage({ onEnterApp, onGoRegister }: { onEnterApp: 
                   </ul>
                   <button
                     onClick={() => {
-                      if (name === 'Gratuit') {
-                        onGoRegister();
-                      } else if (name === 'Starter') {
+                      if (name === 'Starter') {
                         window.open('https://buy.stripe.com/eVq28qcic8UD3Eb8wDdQQ00', '_blank');
                       } else {
                         (window as any).Calendly?.initPopupWidget({ url: 'https://calendly.com/charif-eljazouli' });
@@ -555,6 +536,12 @@ export default function LandingPage({ onEnterApp, onGoRegister }: { onEnterApp: 
             </p>
             <p className="text-center text-slate-700 text-xs mt-2 animate-on-scroll" data-stagger="5">
               Tous les prix sont HT · TVA applicable · Déploiement on-premise sur devis
+            </p>
+            <p className="text-center text-slate-600 text-xs mt-4 animate-on-scroll" data-stagger="5">
+              Pas encore convaincu ?{' '}
+              <button onClick={onGoRegister} className="text-indigo-400 hover:text-indigo-300 transition-colors underline underline-offset-2">
+                Essayez gratuitement — 1 AO sans CB →
+              </button>
             </p>
           </div>
         </section>
