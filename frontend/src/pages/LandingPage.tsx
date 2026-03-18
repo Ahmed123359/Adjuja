@@ -1,4 +1,4 @@
-import { useRef, useEffect } from 'react';
+import React, { useRef, useEffect } from 'react';
 import { useScrollAnimation } from '../hooks/useScrollAnimation';
 
 type OnEnterApp = () => void;
@@ -116,7 +116,7 @@ const STEPS = [
 const PLANS = [
   {
     name: 'Starter',
-    price: '290',
+    price: '27€',
     period: '/ mois HT',
     tagline: 'Pour tester et convaincre en interne',
     highlighted: false,
@@ -127,13 +127,13 @@ const PLANS = [
   },
   {
     name: 'Pro',
-    price: '790',
+    price: '74€',
     period: '/ mois HT',
     tagline: 'Pour les équipes commerciales actives',
     highlighted: true,
     badge: 'Recommandé' as string | null,
     features: ['Génération illimitée', 'Base de connaissances RAG', '5 utilisateurs', 'API REST (ERP / CRM)', 'Historique complet des générations', 'Support prioritaire (4h)'],
-    cta: 'Commencer avec Pro',
+    cta: "Contacter l'équipe",
     note: 'Le plus choisi par nos clients PME / ETI',
   },
   {
@@ -160,6 +160,8 @@ function SectionLabel({ text }: { text: string }) {
 
 // ── Main component ─────────────────────────────────────────
 export default function LandingPage({ onEnterApp }: { onEnterApp: OnEnterApp }) {
+  const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
+
   // Landing is always dark
   useEffect(() => {
     document.documentElement.classList.add('dark');
@@ -210,7 +212,7 @@ export default function LandingPage({ onEnterApp }: { onEnterApp: OnEnterApp }) 
             </span>
           </div>
 
-          {/* Nav links */}
+          {/* Nav links — desktop */}
           <div className="hidden md:flex items-center gap-7">
             {[
               ['features', 'Fonctionnalités'],
@@ -224,13 +226,42 @@ export default function LandingPage({ onEnterApp }: { onEnterApp: OnEnterApp }) 
             ))}
           </div>
 
-          {/* CTA */}
-          <button onClick={onEnterApp}
-            className="px-4 py-2 rounded-lg text-sm font-semibold text-white transition-all hover:scale-[1.03] active:scale-[0.97]"
-            style={btnGradient}>
-            Accéder à l'app →
-          </button>
+          <div className="flex items-center gap-3">
+            {/* CTA */}
+            <button onClick={onEnterApp}
+              className="px-4 py-2 rounded-lg text-sm font-semibold text-white transition-all hover:scale-[1.03] active:scale-[0.97]"
+              style={btnGradient}>
+              Accéder →
+            </button>
+            {/* Hamburger — mobile */}
+            <button
+              className="md:hidden p-2 text-slate-400 hover:text-white transition-colors"
+              onClick={() => setMobileMenuOpen(o => !o)}
+            >
+              {mobileMenuOpen
+                ? <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+                : <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" /></svg>
+              }
+            </button>
+          </div>
         </div>
+
+        {/* Mobile menu */}
+        {mobileMenuOpen && (
+          <div className="md:hidden border-t border-white/[.05] py-3 flex flex-col gap-1">
+            {[
+              ['features', 'Fonctionnalités'],
+              ['how-it-works', 'Comment ça marche'],
+              ['pricing', 'Tarifs'],
+            ].map(([id, label]) => (
+              <button key={id}
+                onClick={() => { scrollTo(id); setMobileMenuOpen(false); }}
+                className="text-sm text-slate-400 hover:text-white transition-colors text-left px-6 py-2">
+                {label}
+              </button>
+            ))}
+          </div>
+        )}
       </nav>
 
       <main className="relative z-10">
@@ -322,8 +353,8 @@ export default function LandingPage({ onEnterApp }: { onEnterApp: OnEnterApp }) 
 
         {/* ══ 3 — FONCTIONNALITÉS ═══════════════════════════════ */}
         <section id="features" ref={featuresRef}
-          className="flex flex-col items-center justify-center px-6"
-          style={{ height: '100vh', paddingTop: '3.5rem', boxSizing: 'border-box' }}>
+          className="flex flex-col items-center justify-center px-6 py-16 md:py-0"
+          style={{ minHeight: '100vh', paddingTop: '3.5rem', boxSizing: 'border-box' }}>
           <div className="w-full max-w-6xl">
             <SectionLabel text="Fonctionnalités" />
             <h2 className="font-display font-bold text-center mb-2 animate-on-scroll"
@@ -331,22 +362,24 @@ export default function LandingPage({ onEnterApp }: { onEnterApp: OnEnterApp }) 
               Tout ce dont vous avez besoin
               <br /><span className="text-gradient">pour répondre vite et bien</span>
             </h2>
-            <p className="text-slate-500 text-center max-w-xl mx-auto mb-8 text-sm animate-on-scroll" data-stagger="1">
+            <p className="text-slate-500 text-center max-w-xl mx-auto mb-6 text-sm animate-on-scroll" data-stagger="1">
               Une IA entraînée sur le langage des marchés publics, pas un chatbot généraliste.
             </p>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
               {FEATURES.map(({ icon, title, desc }, i) => (
                 <div key={i}
-                  className="animate-on-scroll rounded-xl p-4 border border-white/[.06] hover:border-indigo-500/30 transition-all duration-200"
+                  className="animate-on-scroll rounded-xl p-4 border border-white/[.06] hover:border-indigo-500/30 transition-all duration-200 flex gap-3 sm:flex-col sm:gap-0"
                   data-stagger={i + 2}
                   style={{ background: 'rgba(11,18,32,0.7)', backdropFilter: 'blur(8px)' }}
                 >
-                  <div className="w-8 h-8 rounded-lg flex items-center justify-center mb-3 text-indigo-400"
+                  <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 sm:mb-3 text-indigo-400"
                     style={{ background: 'rgba(99,102,241,0.12)', border: '1px solid rgba(99,102,241,0.2)' }}>
                     {icon}
                   </div>
-                  <h3 className="font-display font-semibold text-white mb-1 text-sm">{title}</h3>
-                  <p className="text-slate-500 text-xs leading-relaxed">{desc}</p>
+                  <div>
+                    <h3 className="font-display font-semibold text-white mb-1 text-sm">{title}</h3>
+                    <p className="text-slate-500 text-xs leading-relaxed">{desc}</p>
+                  </div>
                 </div>
               ))}
             </div>
@@ -355,35 +388,37 @@ export default function LandingPage({ onEnterApp }: { onEnterApp: OnEnterApp }) 
 
         {/* ══ 4 — COMMENT ÇA MARCHE ════════════════════════════ */}
         <section id="how-it-works" ref={howRef}
-          className="flex flex-col items-center justify-center px-6"
-          style={{ height: '100vh', paddingTop: '3.5rem', boxSizing: 'border-box', background: 'rgba(8,14,26,0.6)' }}>
+          className="flex flex-col items-center justify-center px-6 py-16 md:py-0"
+          style={{ minHeight: '100vh', paddingTop: '3.5rem', boxSizing: 'border-box', background: 'rgba(8,14,26,0.6)' }}>
           <div className="w-full max-w-5xl text-center">
             <SectionLabel text="Comment ça marche" />
-            <h2 className="font-display font-bold mb-12 animate-on-scroll"
+            <h2 className="font-display font-bold mb-10 animate-on-scroll"
               style={{ fontSize: 'clamp(1.5rem, 3vw, 2.2rem)' }}>
               De l'AO brut à la réponse<br />
               <span className="text-gradient">en 3 étapes</span>
             </h2>
 
-            <div className="relative flex flex-col md:flex-row gap-8 md:gap-4 mb-12">
-              <div className="hidden md:block absolute top-8 left-[20%] right-[20%] h-px"
+            <div className="relative flex flex-col md:flex-row gap-6 md:gap-4 mb-10">
+              <div className="hidden md:block absolute top-7 left-[20%] right-[20%] h-px"
                 style={{ background: 'linear-gradient(90deg, transparent, rgba(99,102,241,0.25) 30%, rgba(99,102,241,0.25) 70%, transparent)' }} />
               {STEPS.map(({ n, title, desc, note }, i) => (
-                <div key={i} className="flex-1 flex flex-col items-center text-center px-4 animate-on-scroll" data-stagger={i + 1}>
-                  <div className="w-14 h-14 rounded-full flex items-center justify-center mb-4 relative z-10 flex-shrink-0"
+                <div key={i} className="flex-1 flex md:flex-col items-start md:items-center text-left md:text-center gap-4 md:gap-0 px-0 md:px-4 animate-on-scroll" data-stagger={i + 1}>
+                  <div className="w-12 h-12 md:w-14 md:h-14 rounded-full flex items-center justify-center flex-shrink-0 md:mb-4 relative z-10"
                     style={{
                       background: i === 1 ? 'linear-gradient(135deg,#4338ca,#6366f1)' : 'rgba(99,102,241,0.1)',
                       border: i === 1 ? 'none' : '1px solid rgba(99,102,241,0.3)',
                       boxShadow: i === 1 ? '0 0 36px rgba(99,102,241,0.55)' : 'none',
                     }}>
-                    <span className="font-display font-bold text-base" style={{ color: i === 1 ? '#fff' : '#818cf8' }}>{n}</span>
+                    <span className="font-display font-bold text-sm" style={{ color: i === 1 ? '#fff' : '#818cf8' }}>{n}</span>
                   </div>
-                  <h3 className="font-display font-semibold text-white mb-2 text-sm">{title}</h3>
-                  <p className="text-slate-500 text-sm leading-relaxed mb-2">{desc}</p>
-                  <span className="text-[11px] px-2.5 py-1 rounded-full text-slate-600"
-                    style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.06)' }}>
-                    {note}
-                  </span>
+                  <div>
+                    <h3 className="font-display font-semibold text-white mb-1 text-sm">{title}</h3>
+                    <p className="text-slate-500 text-sm leading-relaxed mb-2">{desc}</p>
+                    <span className="text-[11px] px-2.5 py-1 rounded-full text-slate-600"
+                      style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.06)' }}>
+                      {note}
+                    </span>
+                  </div>
                 </div>
               ))}
             </div>
@@ -399,19 +434,19 @@ export default function LandingPage({ onEnterApp }: { onEnterApp: OnEnterApp }) 
 
         {/* ══ 5 — TARIFS ════════════════════════════════════════ */}
         <section id="pricing" ref={pricingRef}
-          className="flex flex-col items-center justify-center px-6"
-          style={{ height: '100vh', paddingTop: '3.5rem', boxSizing: 'border-box' }}>
+          className="flex flex-col items-center justify-center px-6 py-16 md:py-0"
+          style={{ minHeight: '100vh', paddingTop: '3.5rem', boxSizing: 'border-box' }}>
           <div className="w-full max-w-5xl">
             <SectionLabel text="Tarifs" />
             <h2 className="font-display font-bold text-center mb-1 animate-on-scroll"
               style={{ fontSize: 'clamp(1.5rem, 3vw, 2.2rem)' }}>
               Choisissez votre plan
             </h2>
-            <p className="text-slate-500 text-center mb-8 text-sm animate-on-scroll" data-stagger="1">
+            <p className="text-slate-500 text-center mb-6 text-sm animate-on-scroll" data-stagger="1">
               Sans engagement · Annulez à tout moment · Facture sous 48h
             </p>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-5 items-center">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-center">
               {PLANS.map(({ name, price, period, tagline, highlighted, badge, features, cta, note }, i) => (
                 <div key={i}
                   className="animate-on-scroll rounded-2xl p-5 border relative"
@@ -419,7 +454,7 @@ export default function LandingPage({ onEnterApp }: { onEnterApp: OnEnterApp }) 
                   style={{
                     background: highlighted ? 'rgba(12,21,38,0.95)' : 'rgba(8,14,26,0.6)',
                     borderColor: highlighted ? 'rgba(99,102,241,0.5)' : 'rgba(255,255,255,0.06)',
-                    transform: highlighted ? 'scale(1.04)' : 'none',
+                    transform: highlighted ? 'scale(1.02)' : 'none',
                     boxShadow: highlighted ? '0 0 48px rgba(99,102,241,0.2), 0 0 0 1px rgba(99,102,241,0.15)' : 'none',
                     zIndex: highlighted ? 1 : 0,
                   }}>
@@ -429,22 +464,33 @@ export default function LandingPage({ onEnterApp }: { onEnterApp: OnEnterApp }) 
                         style={{ background: 'linear-gradient(135deg,#4338ca,#6366f1)' }}>{badge}</span>
                     </div>
                   )}
-                  <p className="font-display font-semibold text-white mb-0.5 text-sm">{name}</p>
-                  <p className="text-slate-500 text-xs mb-3">{tagline}</p>
-                  <div className="mb-4">
-                    {period
-                      ? <span className="font-display font-bold text-3xl text-white">{price}<span className="text-slate-500 text-xs font-normal ml-1">{period}</span></span>
-                      : <span className="font-display font-bold text-xl text-white">{price}</span>
-                    }
+                  <div className="flex items-start justify-between gap-4 mb-3">
+                    <div>
+                      <p className="font-display font-semibold text-white text-sm">{name}</p>
+                      <p className="text-slate-500 text-xs">{tagline}</p>
+                    </div>
+                    <div className="text-right flex-shrink-0">
+                      {period
+                        ? <span className="font-display font-bold text-2xl text-white">{price}<span className="text-slate-500 text-xs font-normal ml-1">{period}</span></span>
+                        : <span className="font-display font-bold text-lg text-white">{price}</span>
+                      }
+                    </div>
                   </div>
-                  <ul className="space-y-1.5 mb-5">
+                  <ul className="space-y-1.5 mb-4">
                     {features.map((f, j) => (
                       <li key={j} className="flex items-center gap-2 text-xs text-slate-400">
                         <span className="text-indigo-400 flex-shrink-0"><IconCheck /></span>{f}
                       </li>
                     ))}
                   </ul>
-                  <button onClick={onEnterApp}
+                  <button
+                    onClick={() => {
+                      if (name === 'Starter') {
+                        window.open('https://buy.stripe.com/eVq28qcic8UD3Eb8wDdQQ00', '_blank');
+                      } else {
+                        (window as any).Calendly?.initPopupWidget({ url: 'https://calendly.com/charif-eljazouli' });
+                      }
+                    }}
                     className="w-full py-2 rounded-xl text-sm font-semibold transition-all hover:scale-[1.02] active:scale-[0.98]"
                     style={highlighted
                       ? { background: 'linear-gradient(135deg,#4338ca,#6366f1)', color: '#fff', boxShadow: '0 4px 20px rgba(99,102,241,0.4)' }

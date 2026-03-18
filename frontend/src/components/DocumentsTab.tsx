@@ -94,21 +94,21 @@ export default function DocumentsTab() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
 
       {/* ── Hero ──────────────────────────────────────────────── */}
       <div className="space-y-1 animate-fade-in">
-        <h1 className="text-3xl font-bold text-foreground tracking-tight">
+        <h1 className="text-2xl font-bold text-foreground tracking-tight">
           Documents & Signatures
         </h1>
-        <p className="text-base text-muted-foreground max-w-xl">
+        <p className="text-sm text-muted-foreground max-w-xl">
           Déposez vos documents PDF, signez-les automatiquement avec votre
           signature et cachet, puis téléchargez les versions signées.
         </p>
       </div>
 
       {/* ── Comment ça marche ─────────────────────────────────── */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+      <div className="grid grid-cols-3 gap-2">
         {[
           {
             n: '01',
@@ -126,8 +126,8 @@ export default function DocumentsTab() {
             desc: 'Cliquez sur "Signer" pour chaque document ou signez tout d\'un coup',
           },
         ].map(({ n, title, desc }) => (
-          <div key={n} className="flex items-start gap-3 p-4 rounded-xl border border-border bg-card hover:shadow-card-hover hover:border-primary/20 transition-all group">
-            <div className="h-8 w-8 min-w-[2rem] rounded-lg gradient-primary flex items-center justify-center text-primary-foreground text-sm font-bold">
+          <div key={n} className="flex flex-col gap-1.5 p-3 rounded-xl border border-border bg-card hover:shadow-card-hover hover:border-primary/20 transition-all group">
+            <div className="h-7 w-7 rounded-lg gradient-primary flex items-center justify-center text-primary-foreground text-xs font-bold">
               {n}
             </div>
             <div>
@@ -139,7 +139,7 @@ export default function DocumentsTab() {
       </div>
 
       {/* ── Configuration signature & cachet ──────────────────── */}
-      <div className="border border-border rounded-xl bg-card p-5 space-y-4">
+      <div className="border border-border rounded-xl bg-card p-4 space-y-3">
         <div className="flex items-center justify-between">
           <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
             Signature & Cachet
@@ -387,7 +387,7 @@ export default function DocumentsTab() {
       )}
 
       {/* ── Stats — en dernière ligne ──────────────────────────── */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <div className="grid grid-cols-2 gap-3">
         {[
           {
             label: 'Documents',
@@ -410,13 +410,13 @@ export default function DocumentsTab() {
             ),
           },
         ].map(({ label, value, sub, icon }) => (
-          <div key={label} className="border border-border rounded-xl bg-card p-5 shadow-card hover:shadow-card-hover transition-shadow">
-            <div className="flex items-center justify-between mb-3">
+          <div key={label} className="border border-border rounded-xl bg-card p-4 shadow-card hover:shadow-card-hover transition-shadow">
+            <div className="flex items-center justify-between mb-2">
               <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{label}</span>
-              <div className="h-8 w-8 rounded-lg bg-accent flex items-center justify-center">{icon}</div>
+              <div className="h-7 w-7 rounded-lg bg-accent flex items-center justify-center">{icon}</div>
             </div>
-            <p className="text-3xl font-bold text-foreground tracking-tight">{value}</p>
-            <p className="text-xs text-muted-foreground mt-1">{sub}</p>
+            <p className="text-2xl font-bold text-foreground tracking-tight">{value}</p>
+            <p className="text-xs text-muted-foreground mt-0.5">{sub}</p>
           </div>
         ))}
       </div>

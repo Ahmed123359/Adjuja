@@ -191,29 +191,33 @@ function TopBar({
         <div className="flex items-center gap-2 text-xs text-muted-foreground flex-shrink-0">
           {usage !== null ? (
             <>
-              <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-card border border-border font-mono">
-                <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <circle cx="12" cy="12" r="10"/><path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6l4 2"/>
-                </svg>
-                <span className="hidden sm:inline">tokens </span>
-                <strong className="text-foreground">
+              <span className="flex items-center justify-between gap-1.5 px-2.5 py-1 rounded-md bg-card border border-border font-mono min-w-[160px]">
+                <span className="flex items-center gap-1.5">
+                  <svg className="h-3 w-3 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <circle cx="12" cy="12" r="10"/><path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6l4 2"/>
+                  </svg>
+                  <span className="hidden sm:inline text-muted-foreground">tokens</span>
+                </span>
+                <strong className="text-foreground mx-1">
                   {usage.total_tokens.toLocaleString('fr-FR')} / {usage.max_tokens_cumul > 0 ? usage.max_tokens_cumul.toLocaleString('fr-FR') : '∞'}
                 </strong>
                 <button
                   onClick={onResetUsage}
                   title="Remettre à zéro"
-                  className="ml-1 text-muted-foreground hover:text-primary transition-colors"
+                  className="text-muted-foreground hover:text-primary transition-colors flex-shrink-0"
                 >
                   <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                   </svg>
                 </button>
               </span>
-              <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-card border border-border font-mono">
-                <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
-                </svg>
-                <span className="hidden sm:inline">appels </span>
+              <span className="flex items-center justify-between gap-1.5 px-2.5 py-1 rounded-md bg-card border border-border font-mono min-w-[160px]">
+                <span className="flex items-center gap-1.5">
+                  <svg className="h-3 w-3 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                  </svg>
+                  <span className="hidden sm:inline text-muted-foreground">appels</span>
+                </span>
                 <strong className="text-foreground">
                   {usage.total_appels} / {usage.max_appels > 0 ? usage.max_appels : '∞'}
                 </strong>
@@ -229,7 +233,7 @@ function TopBar({
               onClick={onReindex}
               disabled={ragLoading || !ragStatus.etl_available}
               title={ragStatus.etl_available ? `RAG ${ragStatus.ready ? `actif · ${ragStatus.chunk_count} chunks` : 'vide'} — Réindexer` : 'Service ETL non disponible'}
-              className="text-xs px-2.5 py-1 rounded-md border border-border bg-card text-muted-foreground hover:text-foreground hover:border-primary/30 transition-all flex items-center gap-1.5 disabled:opacity-40"
+              className="text-xs px-2.5 py-1 rounded-md border border-border bg-card text-muted-foreground hover:text-foreground hover:border-primary/30 transition-all flex items-center justify-between gap-1.5 disabled:opacity-40 min-w-[80px]"
             >
               <svg className={`h-3 w-3 ${ragLoading ? 'animate-spin' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
@@ -238,9 +242,9 @@ function TopBar({
             </button>
           )}
 
-          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-card border border-border">
-            <div className={`h-2 w-2 rounded-full ${statusColor}`} />
-            <span className="text-xs font-medium text-foreground hidden sm:inline">{statusLabel}</span>
+          <div className="flex items-center justify-between gap-1.5 px-2.5 py-1 rounded-md bg-card border border-border min-w-[110px]">
+            <div className={`h-2 w-2 rounded-full flex-shrink-0 ${statusColor}`} />
+            <span className="text-xs font-medium text-foreground flex-1 text-center hidden sm:block">{statusLabel}</span>
           </div>
 
           <div className="flex items-center gap-2 px-2.5 py-1 rounded-md bg-card border border-border">
@@ -362,64 +366,66 @@ function Dashboard({
 
   return (
     <div className="flex-1 overflow-y-auto">
-      <div className="max-w-4xl mx-auto px-8 py-10 space-y-10">
+      <div className="max-w-4xl mx-auto px-6 py-4 space-y-4">
 
         {/* Hero */}
-        <div className="space-y-2 animate-fade-in">
-          <h1 className="text-3xl font-bold text-foreground tracking-tight">
+        <div className="space-y-1 animate-fade-in">
+          <h1 className="text-2xl font-bold text-foreground tracking-tight">
             Prêt à remporter votre prochain marché ?
           </h1>
-          <p className="text-base text-muted-foreground max-w-xl">
+          <p className="text-sm text-muted-foreground max-w-xl">
             Remplissez le formulaire à gauche et générez une réponse professionnelle en quelques secondes.
           </p>
         </div>
 
         {/* Stat cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div className="grid grid-cols-3 gap-3">
           {statCards.map(({ label, value, sub, icon }) => (
-            <div key={label} className="border border-border rounded-xl bg-card p-5 shadow-card hover:shadow-card-hover transition-shadow animate-fade-in">
-              <div className="flex items-center justify-between mb-3">
-                <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{label}</span>
-                <div className="h-8 w-8 rounded-lg bg-accent flex items-center justify-center">{icon}</div>
+            <div key={label} className="border border-border rounded-xl bg-card p-4 shadow-card hover:shadow-card-hover transition-shadow animate-fade-in">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground leading-tight">{label}</span>
+                <div className="h-7 w-7 rounded-lg bg-accent flex items-center justify-center flex-shrink-0">{icon}</div>
               </div>
-              <p className="text-3xl font-bold text-foreground tracking-tight">{value}</p>
-              <p className="text-xs text-muted-foreground mt-1">{sub}</p>
+              <p className="text-2xl font-bold text-foreground tracking-tight">{value}</p>
+              <p className="text-[11px] text-muted-foreground mt-0.5">{sub}</p>
             </div>
           ))}
         </div>
 
         {/* CTA card */}
-        <div className="gradient-cta rounded-2xl p-8 shadow-elevated relative overflow-hidden animate-fade-in">
+        <div className="gradient-cta rounded-2xl p-5 shadow-elevated relative overflow-hidden animate-fade-in">
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_20%,hsl(280_60%_65%_/_0.3),transparent_60%)]" />
-          <div className="relative z-10">
-            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary-foreground/15 text-primary-foreground text-xs font-semibold uppercase tracking-wider mb-4">
-              <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M5 3l14 9-14 9V3z" />
-              </svg>
-              Démarrer
-            </span>
-            <h2 className="text-2xl font-bold text-primary-foreground mb-2">
-              Commencer une réponse AO
-            </h2>
-            <p className="text-sm text-primary-foreground/80 max-w-lg mb-5">
-              Déposez votre appel d'offres dans le panneau gauche, sélectionnez votre LLM et cliquez sur{' '}
-              <strong className="text-primary-foreground">Générer la réponse</strong>.
-            </p>
-            <div className="flex items-center gap-6 text-xs text-primary-foreground/70">
+          <div className="relative z-10 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div>
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-primary-foreground/15 text-primary-foreground text-[10px] font-semibold uppercase tracking-wider mb-2">
+                <svg className="h-2.5 w-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 3l14 9-14 9V3z" />
+                </svg>
+                Démarrer
+              </span>
+              <h2 className="text-lg font-bold text-primary-foreground mb-1">
+                Commencer une réponse AO
+              </h2>
+              <p className="text-sm text-primary-foreground/80 max-w-lg">
+                Déposez votre AO à gauche, puis cliquez sur{' '}
+                <strong className="text-primary-foreground">Générer la réponse</strong>.
+              </p>
+            </div>
+            <div className="flex flex-col gap-1.5 text-xs text-primary-foreground/70 flex-shrink-0">
               <span className="flex items-center gap-1.5">
-                <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
                 </svg>
-                9 sections générées en parallèle
+                9 sections en parallèle
               </span>
               <span className="flex items-center gap-1.5">
-                <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                 </svg>
                 Format Word éditable
               </span>
               <span className="flex items-center gap-1.5">
-                <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M13 9l3 3m0 0l-3 3m3-3H8m13 0a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
                 ⌘ Entrée pour lancer
@@ -429,17 +435,17 @@ function Dashboard({
         </div>
 
         {/* How it works */}
-        <div className="space-y-4">
+        <div className="space-y-2">
           <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
             Comment ça fonctionne
           </h3>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
             {steps.map(({ n, title, desc }) => (
               <div
                 key={n}
-                className="flex items-start gap-3 p-4 rounded-xl border border-border bg-card hover:shadow-card-hover hover:border-primary/20 transition-all group"
+                className="flex flex-col gap-1.5 p-3 rounded-xl border border-border bg-card hover:shadow-card-hover hover:border-primary/20 transition-all group"
               >
-                <div className="h-8 w-8 min-w-[2rem] rounded-lg gradient-primary flex items-center justify-center text-primary-foreground text-sm font-bold">
+                <div className="h-7 w-7 rounded-lg gradient-primary flex items-center justify-center text-primary-foreground text-xs font-bold">
                   {n}
                 </div>
                 <div>
@@ -632,7 +638,7 @@ export function OutilsLeftPanel({ section, onSectionChange }: { section: Outil; 
 function OutilsContent({ section }: { section: Outil }) {
   return (
     <div className="flex-1 overflow-y-auto">
-      <div className="max-w-4xl mx-auto px-6 py-8">
+      <div className="max-w-4xl mx-auto px-6 py-4">
         {section === 'signatures' && <DocumentsTab />}
         {section === 'bordereau'  && <OffreFinanciereTab />}
         {section === 'acte'       && <ActeEngagementTab />}

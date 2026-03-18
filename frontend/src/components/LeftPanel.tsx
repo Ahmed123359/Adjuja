@@ -37,7 +37,7 @@ function CollapsibleSection({
     <div className="rounded-lg overflow-hidden">
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center justify-between w-full px-3 py-2.5 text-[13px] font-medium text-foreground hover:bg-muted/60 rounded-lg transition-colors"
+        className="flex items-center justify-between w-full px-3 py-2 text-[13px] font-medium text-foreground hover:bg-muted/60 rounded-lg transition-colors"
       >
         <span>{title}</span>
         <svg
@@ -127,7 +127,7 @@ export default function LeftPanel(props: Props) {
     <aside className="w-[320px] min-w-[320px] h-screen border-r border-border bg-card flex flex-col overflow-hidden">
 
       {/* ── Logo ─────────────────────────────────────────── */}
-      <div className="px-5 py-4 border-b border-border flex items-center justify-between">
+      <div className="px-4 py-3 border-b border-border flex items-center justify-between">
         <div className="flex items-center gap-2.5">
           <div className="h-8 w-8 rounded-lg gradient-primary flex items-center justify-center flex-shrink-0">
             <span className="text-primary-foreground font-bold text-sm">O</span>
@@ -152,7 +152,7 @@ export default function LeftPanel(props: Props) {
       </div>
 
       {/* ── Scrollable content ───────────────────────────── */}
-      <div className="flex-1 overflow-y-auto px-3 py-4 space-y-5">
+      <div className="flex-1 overflow-y-auto px-3 py-3 space-y-4">
 
         {/* Appel d'offres */}
         <div className="space-y-2">
@@ -169,7 +169,7 @@ export default function LeftPanel(props: Props) {
               const f = e.dataTransfer.files[0]; if (f) handleAoFile(f);
             }}
             onClick={() => fileRef.current?.click()}
-            className={`border-2 border-dashed rounded-xl p-5 text-center cursor-pointer transition-all group ${
+            className={`border-2 border-dashed rounded-xl p-3 cursor-pointer transition-all group flex items-center gap-3 ${
               dragging
                 ? 'border-primary/60 bg-accent/40'
                 : 'border-border hover:border-primary/40 hover:bg-accent/30'
@@ -179,16 +179,18 @@ export default function LeftPanel(props: Props) {
               ref={fileRef} type="file" accept=".txt,.pdf,.doc,.docx" className="hidden"
               onChange={e => { const f = e.target.files?.[0]; if (f) handleAoFile(f); e.target.value = ''; }}
             />
-            <div className="h-10 w-10 rounded-full bg-accent mx-auto mb-2.5 flex items-center justify-center group-hover:bg-primary/10 transition-colors">
+            <div className="h-9 w-9 rounded-full bg-accent flex-shrink-0 flex items-center justify-center group-hover:bg-primary/10 transition-colors">
               <svg className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
               </svg>
             </div>
-            <p className="text-sm text-foreground font-medium">
-              Déposez un fichier ou{' '}
-              <span className="text-primary">parcourir</span>
-            </p>
-            <p className="text-xs text-muted-foreground mt-1">.txt · .pdf · .doc</p>
+            <div>
+              <p className="text-sm text-foreground font-medium">
+                Déposez ou{' '}
+                <span className="text-primary">parcourir</span>
+              </p>
+              <p className="text-xs text-muted-foreground">.txt · .pdf · .doc</p>
+            </div>
           </div>
 
           {fileMsg && (
@@ -283,7 +285,7 @@ export default function LeftPanel(props: Props) {
           <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground px-1">
             Paramètres
           </p>
-          <div className="border border-border rounded-xl bg-card px-4 py-3">
+          <div className="border border-border rounded-xl bg-card px-3 py-2.5">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <svg className="h-4 w-4 text-muted-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -313,7 +315,7 @@ export default function LeftPanel(props: Props) {
       </div>
 
       {/* ── Generate Button ───────────────────────────────── */}
-      <div className="px-3 py-4 border-t border-border">
+      <div className="px-3 py-3 border-t border-border">
         <button
           onClick={onGenerate}
           disabled={!canGenerate || loading || limitReached}

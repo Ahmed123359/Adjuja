@@ -86,27 +86,27 @@ export default function ActeEngagementTab() {
   };
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-4">
 
       {/* ── Hero ──────────────────────────────────────────────── */}
-      <div className="space-y-2 animate-fade-in">
-        <h1 className="text-3xl font-bold text-foreground tracking-tight">
+      <div className="space-y-1 animate-fade-in">
+        <h1 className="text-2xl font-bold text-foreground tracking-tight">
           Acte d'engagement
         </h1>
-        <p className="text-base text-muted-foreground max-w-xl">
+        <p className="text-sm text-muted-foreground max-w-xl">
           Déposez le modèle PDF, remplissez les informations et téléchargez le document prêt à signer.
         </p>
       </div>
 
       {/* ── Étapes ────────────────────────────────────────────── */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+      <div className="grid grid-cols-3 gap-2">
         {[
           { n: '01', title: 'Déposez le PDF modèle',      desc: 'Le document vierge fourni par le maître d\'ouvrage' },
           { n: '02', title: 'Remplissez les informations', desc: 'Identité, type de soumissionnaire, lieu et date' },
           { n: '03', title: 'Téléchargez le PDF rempli',   desc: 'Le document complété avec signature et cachet apposés' },
         ].map(({ n, title, desc }) => (
-          <div key={n} className="flex items-start gap-3 p-4 rounded-xl border border-border bg-card hover:shadow-card-hover hover:border-primary/20 transition-all group">
-            <div className="h-8 w-8 min-w-[2rem] rounded-lg gradient-primary flex items-center justify-center text-primary-foreground text-sm font-bold">
+          <div key={n} className="flex flex-col gap-1.5 p-3 rounded-xl border border-border bg-card hover:shadow-card-hover hover:border-primary/20 transition-all group">
+            <div className="h-7 w-7 rounded-lg gradient-primary flex items-center justify-center text-primary-foreground text-xs font-bold">
               {n}
             </div>
             <div>
@@ -127,7 +127,7 @@ export default function ActeEngagementTab() {
           if (f?.type === 'application/pdf') { setPdf(f); setDone(false); }
         }}
         onClick={() => pdfRef.current?.click()}
-        className={`border-2 border-dashed rounded-2xl p-10 text-center transition-all cursor-pointer ${
+        className={`border-2 border-dashed rounded-xl p-4 flex items-center gap-4 transition-all cursor-pointer ${
           isDragging
             ? 'border-primary bg-accent/50 scale-[1.01]'
             : pdf
@@ -135,37 +135,38 @@ export default function ActeEngagementTab() {
               : 'border-border hover:border-primary/40 hover:bg-accent/20'
         }`}
       >
-        <div className={`h-14 w-14 rounded-2xl mx-auto mb-4 flex items-center justify-center ${pdf ? 'bg-emerald-500/10' : 'bg-accent'}`}>
+        <div className={`h-10 w-10 rounded-xl flex-shrink-0 flex items-center justify-center ${pdf ? 'bg-emerald-500/10' : 'bg-accent'}`}>
           {pdf ? (
-            <svg className="h-6 w-6 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <svg className="h-5 w-5 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
             </svg>
           ) : (
-            <svg className="h-6 w-6 text-accent-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+            <svg className="h-5 w-5 text-accent-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
             </svg>
           )}
         </div>
-        {pdf ? (
-          <>
-            <p className="text-base font-semibold text-foreground">{pdf.name}</p>
-            <p className="text-sm text-muted-foreground mt-1">Cliquer pour changer de fichier</p>
-          </>
-        ) : (
-          <>
-            <p className="text-base font-semibold text-foreground">Glissez le PDF modèle ici</p>
-            <p className="text-sm text-muted-foreground mt-1">
-              ou <span className="text-primary font-medium hover:underline">parcourez vos fichiers</span>
-            </p>
-            <p className="text-xs text-muted-foreground mt-2">.pdf uniquement</p>
-          </>
-        )}
+        <div className="flex-1 min-w-0">
+          {pdf ? (
+            <>
+              <p className="text-sm font-semibold text-foreground truncate">{pdf.name}</p>
+              <p className="text-xs text-muted-foreground mt-0.5">Cliquer pour changer de fichier</p>
+            </>
+          ) : (
+            <>
+              <p className="text-sm font-semibold text-foreground">Glissez le PDF modèle ici</p>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                ou <span className="text-primary font-medium">parcourez vos fichiers</span> · .pdf uniquement
+              </p>
+            </>
+          )}
+        </div>
         <input ref={pdfRef} type="file" accept=".pdf" className="hidden"
           onChange={e => { const f = e.target.files?.[0]; if (f) { setPdf(f); setDone(false); } }} />
       </div>
 
       {/* ── Type de soumissionnaire ───────────────────────────── */}
-      <div className="border border-border rounded-xl bg-card p-5 space-y-3">
+      <div className="border border-border rounded-xl bg-card p-4 space-y-3">
         <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
           Type de soumissionnaire
         </h3>
@@ -188,7 +189,7 @@ export default function ActeEngagementTab() {
 
       {/* ── Champs selon le type ──────────────────────────────── */}
       {data.type_soumissionnaire === 'physique' && (
-        <div className="border border-border rounded-xl bg-card p-5 space-y-4">
+        <div className="border border-border rounded-xl bg-card p-4 space-y-3">
           <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Informations — Personne physique</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="md:col-span-2">
@@ -209,7 +210,7 @@ export default function ActeEngagementTab() {
       )}
 
       {data.type_soumissionnaire === 'morale' && (
-        <div className="border border-border rounded-xl bg-card p-5 space-y-4">
+        <div className="border border-border rounded-xl bg-card p-4 space-y-3">
           <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Informations — Personne morale</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="md:col-span-2">
@@ -236,7 +237,7 @@ export default function ActeEngagementTab() {
       )}
 
       {data.type_soumissionnaire === 'groupement' && (
-        <div className="border border-border rounded-xl bg-card p-5 space-y-4">
+        <div className="border border-border rounded-xl bg-card p-4 space-y-3">
           <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Informations — Groupement</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="md:col-span-2">
@@ -260,7 +261,7 @@ export default function ActeEngagementTab() {
       )}
 
       {/* ── Signature, Cachet & Lieu/Date (section fusionnée) ─── */}
-      <div className="border border-border rounded-xl bg-card p-5 space-y-4">
+      <div className="border border-border rounded-xl bg-card p-4 space-y-3">
         {/* En-tête */}
         <div className="flex items-center justify-between">
           <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
@@ -357,7 +358,7 @@ export default function ActeEngagementTab() {
 
       {/* ── Erreur ────────────────────────────────────────────── */}
       {error && (
-        <div className="flex items-start gap-3 p-4 rounded-xl border border-destructive/20 bg-destructive/5">
+        <div className="flex items-start gap-3 p-3 rounded-xl border border-destructive/20 bg-destructive/5">
           <svg className="h-4 w-4 text-destructive mt-0.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
           </svg>
@@ -366,11 +367,11 @@ export default function ActeEngagementTab() {
       )}
 
       {/* ── CTA ───────────────────────────────────────────────── */}
-      <div className="gradient-cta rounded-2xl p-8 shadow-elevated relative overflow-hidden">
+      <div className="gradient-cta rounded-2xl p-5 shadow-elevated relative overflow-hidden">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_20%,hsl(280_60%_65%_/_0.3),transparent_60%)]" />
         <div className="relative z-10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div>
-            <h2 className="text-xl font-bold text-primary-foreground mb-1">
+            <h2 className="text-lg font-bold text-primary-foreground mb-1">
               Remplir & télécharger le PDF
             </h2>
             <p className="text-sm text-primary-foreground/80 max-w-md">
@@ -382,7 +383,7 @@ export default function ActeEngagementTab() {
           <button
             onClick={handleSubmit}
             disabled={loading || !pdf}
-            className={`inline-flex items-center gap-2 px-6 py-3 rounded-xl border font-semibold text-sm transition-colors whitespace-nowrap disabled:opacity-50 ${
+            className={`inline-flex items-center gap-2 px-5 py-2.5 rounded-xl border font-semibold text-sm transition-colors whitespace-nowrap disabled:opacity-50 ${
               done
                 ? 'bg-emerald-500/20 border-emerald-300/30 text-primary-foreground'
                 : 'bg-primary-foreground/15 border-primary-foreground/20 text-primary-foreground hover:bg-primary-foreground/25'
