@@ -99,6 +99,30 @@ class UserService:
             created_at=row["created_at"],
         )
 
+    def get_or_create_google_user(self, email: str, prenom: str, nom: str) -> UserPublic:
+        """Retrouve un utilisateur par email (Google ou classique) ou en crée un nouveau."""
+        existing = self.get_by_email(email)
+        if existing:
+            return existing
+
+        user_id    = str(uuid.uuid4())
+        created_at = datetime.now(timezone.utc).isoformat()
+        with self._lock:
+            with self._connect() as conn:
+                try:
+                    conn.execute(
+                        "INSERT INTO users (id, nom, prenom, email, hashed_pwd, created_at) "
+                        "VALUES (?, ?, ?, ?, ?, ?)",
+                        (user_id, nom, prenom, email, "__google_oauth__", created_at),
+                    )
+                except sqlite3.IntegrityError:
+                    # Race condition : un autre thread a créé le compte entre le get et l'insert
+                    existing = self.get_by_email(email)
+                    if existing:
+                        return existing
+                    raise
+        return UserPublic(id=user_id, nom=nom, prenom=prenom, email=email, created_at=created_at)
+
     def get_by_id(self, user_id: str) -> UserPublic | None:
         with self._connect() as conn:
             row = conn.execute(

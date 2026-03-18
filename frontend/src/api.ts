@@ -1,4 +1,4 @@
-import type { Model, CompanyData, GenerationResult, RagStatus, AppDefaults, UsageData, HistorySummary, HistoryEntry, User, ActeEngagementData } from './types';
+import type { Model, CompanyData, GenerationResult, RagStatus, AppDefaults, UsageData, HistorySummary, HistoryEntry, User, ActeEngagementData, ChatMessage, ChatApiResponse } from './types';
 
 // ── Token helpers ──────────────────────────────────────────────────────
 
@@ -82,6 +82,17 @@ export async function login(email: string, password: string): Promise<void> {
   });
   const data = await res.json();
   if (!res.ok) throw new Error(typeof data.detail === 'string' ? data.detail : 'Identifiants incorrects.');
+  setToken(data.access_token);
+}
+
+export async function loginWithGoogle(credential: string): Promise<void> {
+  const res = await fetch('/api/v1/auth/google', {
+    method:  'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body:    JSON.stringify({ credential }),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(typeof data.detail === 'string' ? data.detail : 'Erreur Google OAuth.');
   setToken(data.access_token);
 }
 
@@ -314,5 +325,25 @@ export async function generate(params: {
     throw new Error(typeof data.detail === 'string' ? data.detail : 'Erreur lors de la génération.');
   }
 
+  return data;
+}
+
+// ── Chat RAG (protégé) ─────────────────────────────────────────────────────
+
+export async function sendChatMessage(
+  messages: ChatMessage[],
+  provider: string,
+  model:    string,
+): Promise<ChatApiResponse> {
+  const res = await fetch('/api/v1/chat', {
+    method:  'POST',
+    headers: { 'Content-Type': 'application/json', ...authHeaders() },
+    body:    JSON.stringify({ messages, provider, model }),
+  });
+
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(typeof data.detail === 'string' ? data.detail : 'Erreur lors de la réponse du chat.');
+  }
   return data;
 }

@@ -126,3 +126,19 @@ export const DEFAULT_COMPANY: CompanyData = {
   rc:'', ice:'', cnss:'', if_fiscal:'',
   references:'',
 };
+
+// ── Chat RAG ────────────────────────────────────────────────────────────────
+
+export interface ChatMessage {
+  role:     'user' | 'assistant';
+  content:  string;
+  sources?: string[];  // titres des documents RAG utilisés (côté assistant)
+}
+
+export interface ChatApiResponse {
+  answer:           string;
+  sources:          string[];
+  tokens_used:      number;
+  provider_utilise: string;
+  model_utilise:    string;
+}

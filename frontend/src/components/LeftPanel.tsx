@@ -256,16 +256,6 @@ export default function LeftPanel(props: Props) {
             }`}>{fileMsg}</p>
           )}
 
-          <textarea
-            className={`${inputCls} resize-none`}
-            rows={4}
-            placeholder="Objet : Marché de prestations informatiques…"
-            value={aoText}
-            onChange={e => setAoText(e.target.value)}
-          />
-          {aoText.length > 0 && aoText.length < 50 && (
-            <p className="text-[10px] text-amber-500 px-1">{aoText.length}/50 caractères minimum</p>
-          )}
         </div>
 
         {/* Modèle IA */}
@@ -273,40 +263,47 @@ export default function LeftPanel(props: Props) {
           <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground px-1">
             Modèle IA
           </p>
-          <div className="grid grid-cols-3 gap-2">
-            {(providers.length > 0 ? providers : ['anthropic', 'openai', 'mistral']).map(p => {
-              const meta      = PROVIDER_META[p] ?? { name: p, icon: null };
-              const isSelected = p === provider;
-              return (
-                <button
-                  key={p}
-                  onClick={() => setProvider(p)}
-                  className={`relative flex flex-col items-center gap-1.5 py-3 px-2 rounded-xl text-xs font-medium transition-all border ${
-                    isSelected
-                      ? 'border-primary bg-accent text-foreground shadow-sm ring-1 ring-primary/20'
-                      : 'border-border bg-card text-muted-foreground hover:border-primary/30 hover:bg-accent/50'
-                  }`}
-                >
-                  {isSelected && (
-                    <div className="absolute top-1.5 right-1.5 h-1.5 w-1.5 rounded-full bg-primary" />
-                  )}
-                  {meta.icon(isSelected ? meta.selectedColor : 'text-muted-foreground')}
-                  <span>{meta.name}</span>
-                </button>
-              );
-            })}
+          <div className="border border-border rounded-xl bg-card overflow-hidden">
+            <CollapsibleSection
+              title={`${PROVIDER_META[provider]?.name ?? provider} — ${model}`}
+              defaultOpen={false}
+            >
+              <div className="grid grid-cols-3 gap-2">
+                {(providers.length > 0 ? providers : ['anthropic', 'openai', 'mistral']).map(p => {
+                  const meta      = PROVIDER_META[p] ?? { name: p, icon: null };
+                  const isSelected = p === provider;
+                  return (
+                    <button
+                      key={p}
+                      onClick={() => setProvider(p)}
+                      className={`relative flex flex-col items-center gap-1.5 py-3 px-2 rounded-xl text-xs font-medium transition-all border ${
+                        isSelected
+                          ? 'border-primary bg-accent text-foreground shadow-sm ring-1 ring-primary/20'
+                          : 'border-border bg-card text-muted-foreground hover:border-primary/30 hover:bg-accent/50'
+                      }`}
+                    >
+                      {isSelected && (
+                        <div className="absolute top-1.5 right-1.5 h-1.5 w-1.5 rounded-full bg-primary" />
+                      )}
+                      {meta.icon(isSelected ? meta.selectedColor : 'text-muted-foreground')}
+                      <span>{meta.name}</span>
+                    </button>
+                  );
+                })}
+              </div>
+              <select
+                className={inputCls}
+                value={model}
+                onChange={e => setModel(e.target.value)}
+              >
+                {filteredModels.map(m => (
+                  <option key={m.model_id} value={m.model_id}>
+                    {m.model_id}{m.description ? ` — ${m.description}` : ''}
+                  </option>
+                ))}
+              </select>
+            </CollapsibleSection>
           </div>
-          <select
-            className={inputCls}
-            value={model}
-            onChange={e => setModel(e.target.value)}
-          >
-            {filteredModels.map(m => (
-              <option key={m.model_id} value={m.model_id}>
-                {m.model_id}{m.description ? ` — ${m.description}` : ''}
-              </option>
-            ))}
-          </select>
         </div>
 
         {/* Profil entreprise */}

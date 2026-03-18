@@ -2,6 +2,8 @@ import logging
 from datetime import datetime, timedelta, timezone
 
 from fastapi import APIRouter, Depends, HTTPException, status
+from google.auth.transport import requests as google_requests
+from google.oauth2 import id_token as google_id_token
 from jose import jwt
 from pydantic import BaseModel
 
@@ -106,6 +108,48 @@ def login(
         )
 
     logger.info("Connexion réussie — user_id=%s email=%s", user.id, user.email)
+    return Token(access_token=_make_token(user.id, settings))
+
+
+class GoogleTokenRequest(BaseModel):
+    credential: str  # JWT renvoyé par Google Identity Services
+
+
+@router.post(
+    "/google",
+    response_model=Token,
+    summary="Connexion via Google OAuth",
+)
+def login_google(
+    data: GoogleTokenRequest,
+    users: UserService = Depends(get_user_service),
+    settings: Settings = Depends(get_settings),
+) -> Token:
+    if not settings.google_client_id:
+        raise HTTPException(status_code=status.HTTP_501_NOT_IMPLEMENTED, detail="Google auth non configurée.")
+
+    try:
+        id_info = google_id_token.verify_oauth2_token(
+            data.credential,
+            google_requests.Request(),
+            settings.google_client_id,
+        )
+    except Exception:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token Google invalide.")
+
+    email  = id_info.get("email", "")
+    prenom = id_info.get("given_name", "")
+    nom    = id_info.get("family_name", "") or prenom
+
+    if not email:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Email manquant dans le token Google.")
+
+    if settings.allowed_emails and email.lower() not in [e.lower() for e in settings.allowed_emails]:
+        logger.warning("Connexion Google refusée (hors liste blanche) — email=%s", email)
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Accès sur invitation uniquement.")
+
+    user = users.get_or_create_google_user(email=email, prenom=prenom, nom=nom)
+    logger.info("Connexion Google réussie — user_id=%s email=%s", user.id, email)
     return Token(access_token=_make_token(user.id, settings))
 
 

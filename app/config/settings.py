@@ -95,6 +95,9 @@ class Settings(BaseSettings):
     jwt_algorithm: str = "HS256"
     """Algorithme de signature JWT (HS256 par défaut)."""
 
+    google_client_id: str = ""
+    """Client ID Google OAuth (depuis Google Cloud Console). Vide = Google auth désactivée."""
+
     jwt_expire_minutes: int = 10080
     """Durée de vie des tokens JWT en minutes (défaut : 7 jours)."""
 

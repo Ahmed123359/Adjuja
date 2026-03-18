@@ -1,5 +1,9 @@
-import { useState, useEffect } from 'react';
-import { register, getPasswordRules, type PasswordRules } from '../api';
+import { useState, useEffect, useRef } from 'react';
+import { register, getPasswordRules, loginWithGoogle, type PasswordRules } from '../api';
+
+declare const google: {
+  accounts: { id: { initialize: (cfg: object) => void; renderButton: (el: HTMLElement, cfg: object) => void } };
+};
 
 type Props = {
   onSuccess: () => void;
@@ -18,6 +22,39 @@ export default function RegisterPage({ onSuccess, onGoLogin }: Props) {
   // Valeurs par défaut identiques aux constantes Python pendant le chargement.
   const [rules, setRules] = useState<PasswordRules>({ min_length: 8, require_digit: true });
   useEffect(() => { getPasswordRules().then(setRules); }, []);
+
+  const googleBtnRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (typeof google !== 'undefined' && googleBtnRef.current) {
+        clearInterval(interval);
+        google.accounts.id.initialize({
+          client_id: '283835865463-t0o734rbl4behuh80g3upc228eq572ur.apps.googleusercontent.com',
+          callback: async (response: { credential: string }) => {
+            setError('');
+            setLoading(true);
+            try {
+              await loginWithGoogle(response.credential);
+              onSuccess();
+            } catch (err) {
+              setError(err instanceof Error ? err.message : 'Erreur Google.');
+            } finally {
+              setLoading(false);
+            }
+          },
+        });
+        google.accounts.id.renderButton(googleBtnRef.current, {
+          theme: 'filled_black',
+          size: 'large',
+          width: googleBtnRef.current.offsetWidth || 320,
+          text: 'continue_with',
+          shape: 'rectangular',
+        });
+      }
+    }, 100);
+    return () => clearInterval(interval);
+  }, []);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -153,6 +190,16 @@ export default function RegisterPage({ onSuccess, onGoLogin }: Props) {
               {loading ? 'Création…' : 'Créer mon compte'}
             </button>
           </form>
+
+          {/* Séparateur */}
+          <div className="flex items-center gap-3 my-4">
+            <div className="flex-1 h-px bg-white/10" />
+            <span className="text-xs text-slate-600">ou</span>
+            <div className="flex-1 h-px bg-white/10" />
+          </div>
+
+          {/* Bouton Google — rendu par le SDK GSI */}
+          <div ref={googleBtnRef} style={{ width: '100%', minHeight: 44 }} />
 
           <p className="text-center text-sm text-slate-500 mt-5">
             Déjà un compte ?{' '}

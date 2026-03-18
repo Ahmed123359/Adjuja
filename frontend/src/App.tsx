@@ -1,6 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import LeftPanel from './components/LeftPanel';
-import RightPanel from './components/RightPanel';
+import RightPanel, { OutilsLeftPanel } from './components/RightPanel';
+import type { Outil } from './components/RightPanel';
+import FloatingChat from './components/FloatingChat';
 import { useIsMobile } from './hooks/useIsMobile';
 import {
   fetchModels, fetchDefaults, generate,
@@ -31,6 +33,10 @@ export default function App({ onGoLanding, onLogout, user }: { onGoLanding: () =
   const [model,    setModel]       = useState('');
   const [company,  setCompany]     = useState<CompanyData>(DEFAULT_COMPANY);
   const [langue,   setLangue]      = useState<'fr' | 'en'>('fr');
+
+  // Navigation principale
+  const [mainTab, setMainTab] = useState<'offres' | 'outils'>('offres');
+  const [outilSection, setOutilSection] = useState<Outil>('signatures');
 
   // App state
   const [appState,   setAppState]  = useState<AppState>('idle');
@@ -143,8 +149,13 @@ export default function App({ onGoLanding, onLogout, user }: { onGoLanding: () =
         />
       )}
 
-      {/* Left panel — sidebar (fixé en overlay sur mobile) */}
-      <div className={isMobile
+      {/* Panneau gauche Outils */}
+      {mainTab === 'outils' && !isMobile && (
+        <OutilsLeftPanel section={outilSection} onSectionChange={setOutilSection} onGoHome={() => setMainTab('offres')} />
+      )}
+
+      {/* Left panel — masqué sur la page Outils */}
+      {mainTab === 'offres' && <div className={isMobile
         ? `fixed inset-y-0 left-0 z-50 transition-transform duration-300 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`
         : ''
       }>
@@ -161,7 +172,7 @@ export default function App({ onGoLanding, onLogout, user }: { onGoLanding: () =
           onGoLanding={onGoLanding}
           onClose={isMobile ? () => setSidebarOpen(false) : undefined}
         />
-      </div>
+      </div>}
 
       {/* Right panel — full width sur mobile, avec header mobile en haut */}
       <div className={isMobile ? 'w-full flex flex-col' : 'flex-1'}>
@@ -218,8 +229,13 @@ export default function App({ onGoLanding, onLogout, user }: { onGoLanding: () =
           onResetUsage={handleResetUsage}
           user={user}
           onLogout={onLogout}
+          mainTab={mainTab}
+          onMainTabChange={setMainTab}
+          outilSection={outilSection}
         />
       </div>
+      {/* Chatbot flottant — visible sur toutes les pages */}
+      <FloatingChat provider={provider} model={model} />
     </div>
   );
 }

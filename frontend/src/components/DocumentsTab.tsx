@@ -94,10 +94,10 @@ export default function DocumentsTab() {
   }
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
 
       {/* ── Hero ──────────────────────────────────────────────── */}
-      <div className="space-y-2 animate-fade-in">
+      <div className="space-y-1 animate-fade-in">
         <h1 className="text-3xl font-bold text-foreground tracking-tight">
           Documents & Signatures
         </h1>
@@ -107,37 +107,33 @@ export default function DocumentsTab() {
         </p>
       </div>
 
-      {/* ── Stats ─────────────────────────────────────────────── */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      {/* ── Comment ça marche ─────────────────────────────────── */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         {[
           {
-            label: 'Documents',
-            value: String(documents.length),
-            sub:   'fichiers déposés',
-            icon: (
-              <svg className="h-4 w-4 text-accent-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-              </svg>
-            ),
+            n: '01',
+            title: 'Configurez signature & cachet',
+            desc: 'Importez vos images ou utilisez les tampons par défaut',
           },
           {
-            label: 'Signés',
-            value: `${signedCount}/${documents.length || 0}`,
-            sub:   'documents signés',
-            icon: (
-              <svg className="h-4 w-4 text-accent-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-              </svg>
-            ),
+            n: '02',
+            title: 'Déposez vos PDFs',
+            desc: 'Plusieurs documents acceptés en une seule fois',
           },
-        ].map(({ label, value, sub, icon }) => (
-          <div key={label} className="border border-border rounded-xl bg-card p-5 shadow-card hover:shadow-card-hover transition-shadow animate-fade-in">
-            <div className="flex items-center justify-between mb-3">
-              <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{label}</span>
-              <div className="h-8 w-8 rounded-lg bg-accent flex items-center justify-center">{icon}</div>
+          {
+            n: '03',
+            title: 'Signez & téléchargez',
+            desc: 'Cliquez sur "Signer" pour chaque document ou signez tout d\'un coup',
+          },
+        ].map(({ n, title, desc }) => (
+          <div key={n} className="flex items-start gap-3 p-4 rounded-xl border border-border bg-card hover:shadow-card-hover hover:border-primary/20 transition-all group">
+            <div className="h-8 w-8 min-w-[2rem] rounded-lg gradient-primary flex items-center justify-center text-primary-foreground text-sm font-bold">
+              {n}
             </div>
-            <p className="text-3xl font-bold text-foreground tracking-tight">{value}</p>
-            <p className="text-xs text-muted-foreground mt-1">{sub}</p>
+            <div>
+              <p className="text-sm font-semibold text-foreground group-hover:text-primary transition-colors">{title}</p>
+              <p className="text-xs text-muted-foreground mt-0.5">{desc}</p>
+            </div>
           </div>
         ))}
       </div>
@@ -148,8 +144,11 @@ export default function DocumentsTab() {
           <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
             Signature & Cachet
           </h3>
-          <span className="text-xs text-muted-foreground px-2 py-0.5 rounded-full bg-accent border border-border">
-            Optionnels — des défauts sont utilisés si non renseignés
+          <span className="relative group/tooltip">
+            <span className="inline-flex h-4 w-4 rounded-full bg-muted border border-border items-center justify-center text-[10px] font-bold text-muted-foreground cursor-default select-none">?</span>
+            <span className="absolute bottom-full right-0 mb-2 w-max max-w-[220px] rounded-lg bg-foreground px-3 py-2 text-[11px] text-background leading-snug shadow-lg opacity-0 pointer-events-none group-hover/tooltip:opacity-100 transition-opacity z-50">
+              Optionnels — des tampons par défaut sont utilisés si non renseignés
+            </span>
           </span>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -170,13 +169,21 @@ export default function DocumentsTab() {
                 <svg className="h-4 w-4 text-accent-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
               )}
             </div>
-            <div className="min-w-0">
-              <p className="text-sm font-medium text-foreground truncate">
-                {signature ? signature.name : 'Signature personnalisée'}
-              </p>
-              <p className="text-xs text-muted-foreground">
-                {signature ? 'Cliquer pour changer' : 'Par défaut : tampon "Signé électroniquement"'}
-              </p>
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-1.5">
+                <p className="text-sm font-medium text-foreground truncate">
+                  {signature ? signature.name : 'Signature personnalisée'}
+                </p>
+                {!signature && (
+                  <span className="relative group/tooltip flex-shrink-0">
+                    <span className="inline-flex h-4 w-4 rounded-full bg-muted border border-border items-center justify-center text-[10px] font-bold text-muted-foreground cursor-default select-none">?</span>
+                    <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-max max-w-[210px] rounded-lg bg-foreground px-3 py-2 text-[11px] text-background leading-snug shadow-lg opacity-0 pointer-events-none group-hover/tooltip:opacity-100 transition-opacity z-50">
+                      Par défaut : tampon "Signé électroniquement" apposé en bas à droite
+                    </span>
+                  </span>
+                )}
+              </div>
+              {signature && <p className="text-xs text-muted-foreground">Cliquer pour changer</p>}
             </div>
             <input ref={sigInputRef} type="file" accept="image/*" className="hidden"
               onChange={e => setSignature(e.target.files?.[0] ?? null)} />
@@ -198,13 +205,21 @@ export default function DocumentsTab() {
                 <svg className="h-4 w-4 text-accent-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>
               )}
             </div>
-            <div className="min-w-0">
-              <p className="text-sm font-medium text-foreground truncate">
-                {cachet ? cachet.name : 'Cachet personnalisé'}
-              </p>
-              <p className="text-xs text-muted-foreground">
-                {cachet ? 'Cliquer pour changer' : 'Par défaut : tampon circulaire "CACHET"'}
-              </p>
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-1.5">
+                <p className="text-sm font-medium text-foreground truncate">
+                  {cachet ? cachet.name : 'Cachet personnalisé'}
+                </p>
+                {!cachet && (
+                  <span className="relative group/tooltip flex-shrink-0">
+                    <span className="inline-flex h-4 w-4 rounded-full bg-muted border border-border items-center justify-center text-[10px] font-bold text-muted-foreground cursor-default select-none">?</span>
+                    <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-max max-w-[210px] rounded-lg bg-foreground px-3 py-2 text-[11px] text-background leading-snug shadow-lg opacity-0 pointer-events-none group-hover/tooltip:opacity-100 transition-opacity z-50">
+                      Par défaut : tampon circulaire "CACHET" apposé en bas à gauche
+                    </span>
+                  </span>
+                )}
+              </div>
+              {cachet && <p className="text-xs text-muted-foreground">Cliquer pour changer</p>}
             </div>
             <input ref={cacInputRef} type="file" accept="image/*" className="hidden"
               onChange={e => setCachet(e.target.files?.[0] ?? null)} />
@@ -213,12 +228,16 @@ export default function DocumentsTab() {
 
         {/* ── Lieu & Date ──────────────────────────────────────── */}
         <div>
-          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">
-            Lieu & Date <span className="normal-case font-normal text-muted-foreground/70">(remplit automatiquement "Fait à ___, le ___" dans le document)</span>
+          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2 flex items-center gap-1.5">
+            Lieu & Date
+            <span className="relative group/tooltip">
+              <span className="inline-flex h-4 w-4 rounded-full bg-muted border border-border items-center justify-center text-[10px] font-bold text-muted-foreground cursor-default select-none">?</span>
+              <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-max max-w-[220px] rounded-lg bg-foreground px-3 py-2 text-[11px] text-background leading-snug shadow-lg opacity-0 pointer-events-none group-hover/tooltip:opacity-100 transition-opacity z-50">
+                Remplit automatiquement "Fait à ___, le ___" dans le document signé
+              </span>
+            </span>
           </p>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-
-            {/* Lieu */}
             <div className="relative">
               <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none">
                 <svg className="h-4 w-4 text-muted-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
@@ -234,8 +253,6 @@ export default function DocumentsTab() {
                 className="w-full pl-9 pr-3 py-2.5 text-sm bg-background border border-border rounded-lg text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/50 transition-all"
               />
             </div>
-
-            {/* Date — calendrier natif */}
             <div className="relative">
               <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none">
                 <svg className="h-4 w-4 text-muted-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
@@ -250,8 +267,6 @@ export default function DocumentsTab() {
               />
             </div>
           </div>
-
-          {/* Aperçu */}
           {(lieu || date) && (
             <p className="mt-2 text-xs text-muted-foreground">
               Aperçu :{' '}
@@ -263,26 +278,28 @@ export default function DocumentsTab() {
         </div>
       </div>
 
-      {/* ── Upload zone PDFs ──────────────────────────────────── */}
+      {/* ── Upload zone PDFs — compact ─────────────────────────── */}
       <div
         onDragOver={e => { e.preventDefault(); setIsDragging(true); }}
         onDragLeave={() => setIsDragging(false)}
         onDrop={e => { e.preventDefault(); setIsDragging(false); addFiles(e.dataTransfer.files); }}
         onClick={() => pdfInputRef.current?.click()}
-        className={`border-2 border-dashed rounded-2xl p-10 text-center transition-all cursor-pointer ${
-          isDragging ? 'border-primary bg-accent/50 scale-[1.01]' : 'border-border hover:border-primary/40 hover:bg-accent/20'
+        className={`border-2 border-dashed rounded-xl px-6 py-4 flex items-center gap-4 cursor-pointer transition-all ${
+          isDragging ? 'border-primary bg-accent/50' : 'border-border hover:border-primary/40 hover:bg-accent/20'
         }`}
       >
-        <div className="h-14 w-14 rounded-2xl bg-accent mx-auto mb-4 flex items-center justify-center">
-          <svg className="h-6 w-6 text-accent-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+        <div className="h-10 w-10 rounded-xl bg-accent flex items-center justify-center flex-shrink-0">
+          <svg className="h-5 w-5 text-accent-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
           </svg>
         </div>
-        <p className="text-base font-semibold text-foreground">Glissez vos documents PDF ici</p>
-        <p className="text-sm text-muted-foreground mt-1">
-          ou <span className="text-primary font-medium hover:underline">parcourez vos fichiers</span>
-        </p>
-        <p className="text-xs text-muted-foreground mt-2">.pdf uniquement · plusieurs fichiers acceptés</p>
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-semibold text-foreground">Glissez vos documents PDF ici</p>
+          <p className="text-xs text-muted-foreground">
+            ou <span className="text-primary font-medium">parcourez vos fichiers</span>
+            {' '}· .pdf · plusieurs fichiers acceptés
+          </p>
+        </div>
         <input ref={pdfInputRef} type="file" accept=".pdf" multiple className="hidden"
           onChange={e => addFiles(e.target.files)} />
       </div>
@@ -368,6 +385,41 @@ export default function DocumentsTab() {
           </div>
         </div>
       )}
+
+      {/* ── Stats — en dernière ligne ──────────────────────────── */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        {[
+          {
+            label: 'Documents',
+            value: String(documents.length),
+            sub:   'fichiers déposés',
+            icon: (
+              <svg className="h-4 w-4 text-accent-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+            ),
+          },
+          {
+            label: 'Signés',
+            value: `${signedCount}/${documents.length || 0}`,
+            sub:   'documents signés',
+            icon: (
+              <svg className="h-4 w-4 text-accent-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+              </svg>
+            ),
+          },
+        ].map(({ label, value, sub, icon }) => (
+          <div key={label} className="border border-border rounded-xl bg-card p-5 shadow-card hover:shadow-card-hover transition-shadow">
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{label}</span>
+              <div className="h-8 w-8 rounded-lg bg-accent flex items-center justify-center">{icon}</div>
+            </div>
+            <p className="text-3xl font-bold text-foreground tracking-tight">{value}</p>
+            <p className="text-xs text-muted-foreground mt-1">{sub}</p>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }

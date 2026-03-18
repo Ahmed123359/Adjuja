@@ -174,84 +174,23 @@ function TopBar({
   apiStatus: 'online' | 'offline' | 'connecting';
   user: User;
   onLogout: () => void;
-  mainTab: 'offres' | 'documents' | 'bordereau' | 'acte-engagement';
-  onTabChange: (tab: 'offres' | 'documents' | 'bordereau' | 'acte-engagement') => void;
+  mainTab: 'offres' | 'outils';
+  onTabChange: (tab: 'offres' | 'outils') => void;
 }) {
   const statusColor = { online: 'bg-emerald-500', offline: 'bg-red-500', connecting: 'bg-amber-400 animate-pulse' }[apiStatus];
   const statusLabel = { online: 'Connecté', offline: 'Hors ligne', connecting: 'Connexion…' }[apiStatus];
 
   return (
-    <header className="sticky top-0 z-10 bg-background/80 backdrop-blur-md border-b border-border px-4 md:px-6 py-3 flex-shrink-0">
-      <div className="flex items-center justify-between gap-2 flex-wrap">
+    <header className="sticky top-0 z-10 bg-background/80 backdrop-blur-md border-b border-border px-4 md:px-6 flex-shrink-0">
 
-        {/* Left: tabs + usage */}
-        <div className="flex items-center gap-3 flex-wrap">
+      {/* Row 1 : info (tokens · appels · RAG · user) */}
+      <div className="flex items-center justify-between gap-2 py-2 border-b border-border/50">
 
-          {/* Tabs */}
-          <div className="flex items-center gap-1 p-1 rounded-lg bg-muted">
-            <button
-              onClick={() => onTabChange('offres')}
-              className={`px-3 py-1.5 text-sm font-medium rounded-md transition-all flex items-center gap-1.5 ${
-                mainTab === 'offres'
-                  ? 'bg-card text-foreground shadow-sm'
-                  : 'text-muted-foreground hover:text-foreground'
-              }`}
-            >
-              <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-              </svg>
-              <span className="hidden sm:inline">Appels d'offres</span>
-              <span className="sm:hidden">AO</span>
-            </button>
-            <button
-              onClick={() => onTabChange('documents')}
-              className={`px-3 py-1.5 text-sm font-medium rounded-md transition-all flex items-center gap-1.5 ${
-                mainTab === 'documents'
-                  ? 'bg-card text-foreground shadow-sm'
-                  : 'text-muted-foreground hover:text-foreground'
-              }`}
-            >
-              <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-              </svg>
-              <span className="hidden sm:inline">Documents & Signatures</span>
-              <span className="sm:hidden">Docs</span>
-            </button>
-            <button
-              onClick={() => onTabChange('bordereau')}
-              className={`px-3 py-1.5 text-sm font-medium rounded-md transition-all flex items-center gap-1.5 ${
-                mainTab === 'bordereau'
-                  ? 'bg-card text-foreground shadow-sm'
-                  : 'text-muted-foreground hover:text-foreground'
-              }`}
-            >
-              <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2" />
-              </svg>
-              <span className="hidden sm:inline">Offre financière</span>
-              <span className="sm:hidden">Offre</span>
-            </button>
-            <button
-              onClick={() => onTabChange('acte-engagement')}
-              className={`px-3 py-1.5 text-sm font-medium rounded-md transition-all flex items-center gap-1.5 ${
-                mainTab === 'acte-engagement'
-                  ? 'bg-card text-foreground shadow-sm'
-                  : 'text-muted-foreground hover:text-foreground'
-              }`}
-            >
-              <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
-              </svg>
-              <span className="hidden sm:inline">Acte d'engagement</span>
-              <span className="sm:hidden">Acte</span>
-            </button>
-          </div>
-
-          {/* Usage tokens + appels */}
-          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+        {/* Usage tokens + appels */}
+        <div className="flex items-center gap-2 text-xs text-muted-foreground flex-wrap">
           {usage !== null ? (
             <>
-              <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-card border border-border font-mono">
+              <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-card border border-border font-mono">
                 <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <circle cx="12" cy="12" r="10"/><path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6l4 2"/>
                 </svg>
@@ -269,7 +208,7 @@ function TopBar({
                   </svg>
                 </button>
               </span>
-              <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-card border border-border font-mono">
+              <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-card border border-border font-mono">
                 <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
                 </svg>
@@ -280,17 +219,16 @@ function TopBar({
               </span>
             </>
           ) : null}
-          </div>
-        </div>{/* fin Left: tabs + usage */}
+        </div>
 
-        {/* Right: RAG + status + user (cachés sur mobile) */}
-        <div className="hidden md:flex items-center gap-3">
+        {/* RAG + status + user */}
+        <div className="flex items-center gap-2">
           {ragStatus !== null && (
             <button
               onClick={onReindex}
               disabled={ragLoading || !ragStatus.etl_available}
               title={ragStatus.etl_available ? `RAG ${ragStatus.ready ? `actif · ${ragStatus.chunk_count} chunks` : 'vide'} — Réindexer` : 'Service ETL non disponible'}
-              className="text-xs px-3 py-1.5 rounded-md border border-border bg-card text-muted-foreground hover:text-foreground hover:border-primary/30 transition-all flex items-center gap-1.5 disabled:opacity-40"
+              className="text-xs px-2.5 py-1 rounded-md border border-border bg-card text-muted-foreground hover:text-foreground hover:border-primary/30 transition-all flex items-center gap-1.5 disabled:opacity-40"
             >
               <svg className={`h-3 w-3 ${ragLoading ? 'animate-spin' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
@@ -299,18 +237,18 @@ function TopBar({
             </button>
           )}
 
-          <div className="flex items-center gap-2 px-3 py-1.5 rounded-md bg-card border border-border">
+          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-card border border-border">
             <div className={`h-2 w-2 rounded-full ${statusColor}`} />
-            <span className="text-xs font-medium text-foreground">{statusLabel}</span>
+            <span className="text-xs font-medium text-foreground hidden sm:inline">{statusLabel}</span>
           </div>
 
-          <div className="flex items-center gap-2 px-3 py-1.5 rounded-md bg-card border border-border">
+          <div className="flex items-center gap-2 px-2.5 py-1 rounded-md bg-card border border-border">
             <div className="h-6 w-6 rounded-full gradient-primary flex items-center justify-center flex-shrink-0">
               <span className="text-[10px] text-primary-foreground font-bold">
                 {user.prenom?.[0]?.toUpperCase()}{user.nom?.[0]?.toUpperCase() ?? ''}
               </span>
             </div>
-            <span className="text-xs font-medium text-foreground">{user.prenom} {user.nom}</span>
+            <span className="text-xs font-medium text-foreground hidden sm:inline">{user.prenom} {user.nom}</span>
             <button
               onClick={onLogout}
               title="Se déconnecter"
@@ -323,6 +261,39 @@ function TopBar({
           </div>
         </div>
       </div>
+
+      {/* Row 2 : navigation tabs */}
+      <div className="flex items-center gap-1 py-2">
+        <div className="flex items-center gap-1 p-1 rounded-lg bg-muted">
+          <button
+            onClick={() => onTabChange('offres')}
+            className={`px-3 py-1.5 text-sm font-medium rounded-md transition-all flex items-center gap-1.5 ${
+              mainTab === 'offres'
+                ? 'bg-card text-foreground shadow-sm'
+                : 'text-muted-foreground hover:text-foreground'
+            }`}
+          >
+            <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+            <span>Appels d'offres</span>
+          </button>
+          <button
+            onClick={() => onTabChange('outils')}
+            className={`px-3 py-1.5 text-sm font-medium rounded-md transition-all flex items-center gap-1.5 ${
+              mainTab === 'outils'
+                ? 'bg-card text-foreground shadow-sm'
+                : 'text-muted-foreground hover:text-foreground'
+            }`}
+          >
+            <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M11.42 15.17L17.25 21A2.652 2.652 0 0021 17.25l-5.877-5.877M11.42 15.17l2.496-3.03c.317-.384.74-.626 1.208-.766M11.42 15.17l-4.655 5.653a2.548 2.548 0 11-3.586-3.586l6.837-5.63m5.108-.233c.55-.164 1.163-.188 1.743-.14a4.5 4.5 0 004.486-6.336l-3.276 3.277a3.004 3.004 0 01-2.25-2.25l3.276-3.276a4.5 4.5 0 00-6.336 4.486c.091 1.076-.071 2.264-.904 2.95l-.102.085m-1.745 1.437L5.909 7.5H4.5L2.25 3.75l1.5-1.5L7.5 4.5v1.409l4.26 4.26m-1.745 1.437l1.745-1.437m6.615 8.206L15.75 15.75M4.867 19.125h.008v.008h-.008v-.008z" />
+            </svg>
+            <span>Outils</span>
+          </button>
+        </div>
+      </div>
+
     </header>
   );
 }
@@ -563,6 +534,118 @@ function Loading({ provider, model }: { provider?: string; model?: string }) {
   );
 }
 
+// ── Page Outils ─────────────────────────────────────────────
+export type Outil = 'signatures' | 'bordereau' | 'acte';
+
+const OUTILS_NAV: { id: Outil; label: string; desc: string; icon: string }[] = [
+  { id: 'signatures', label: 'Documents & Signatures', desc: 'Signature, paraphe, cachet',   icon: 'M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z' },
+  { id: 'bordereau',  label: 'Offre financière',       desc: 'Tableau de prix, devis',       icon: 'M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2' },
+  { id: 'acte',       label: "Acte d'engagement",      desc: 'Formulaire acte engagement',   icon: 'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4' },
+];
+
+// Panneau gauche Outils — rendu dans App.tsx au même niveau que LeftPanel
+export function OutilsLeftPanel({ section, onSectionChange, onGoHome }: { section: Outil; onSectionChange: (s: Outil) => void; onGoHome: () => void }) {
+  const active = OUTILS_NAV.find(o => o.id === section)!;
+
+  return (
+    <aside className="w-[320px] min-w-[320px] h-screen border-r border-border bg-card flex flex-col overflow-hidden">
+
+      {/* Logo */}
+      <div className="px-5 py-4 border-b border-border flex items-center justify-between flex-shrink-0">
+        <div className="flex items-center gap-2.5">
+          <div className="h-8 w-8 rounded-lg gradient-primary flex items-center justify-center flex-shrink-0">
+            <span className="text-primary-foreground font-bold text-sm">O</span>
+          </div>
+          <span className="font-semibold text-foreground text-lg tracking-tight">
+            Offr<span className="text-primary">IA</span>
+          </span>
+        </div>
+      </div>
+
+      {/* Contenu scrollable */}
+      <div className="flex-1 overflow-y-auto px-3 py-4 space-y-5">
+        <div className="space-y-2">
+          {/* Accueil */}
+          <button
+            onClick={onGoHome}
+            className="w-full flex items-center gap-3 px-4 py-3 rounded-xl border border-border bg-card text-left hover:bg-muted/50 hover:border-primary/20 transition-all group mb-1"
+          >
+            <div className="h-8 w-8 rounded-lg bg-muted flex items-center justify-center flex-shrink-0">
+              <svg className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+              </svg>
+            </div>
+            <div className="flex flex-col gap-0.5">
+              <span className="text-sm font-medium text-foreground group-hover:text-primary transition-colors">Accueil</span>
+              <span className="text-[11px] text-muted-foreground">Retour à la génération</span>
+            </div>
+          </button>
+
+          <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground px-1">
+            Outils disponibles
+          </p>
+          <div className="border border-border rounded-xl bg-card overflow-hidden divide-y divide-border">
+            {OUTILS_NAV.map(item => (
+              <button
+                key={item.id}
+                onClick={() => onSectionChange(item.id)}
+                className={`w-full flex items-center gap-3 px-4 py-3.5 text-left transition-all ${
+                  section === item.id ? 'bg-primary/8 text-primary' : 'text-foreground hover:bg-muted/50'
+                }`}
+              >
+                <div className={`h-8 w-8 rounded-lg flex items-center justify-center flex-shrink-0 ${
+                  section === item.id ? 'bg-primary/15' : 'bg-muted'
+                }`}>
+                  <svg className={`h-4 w-4 ${section === item.id ? 'text-primary' : 'text-muted-foreground'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d={item.icon} />
+                  </svg>
+                </div>
+                <div className="flex flex-col gap-0.5">
+                  <span className={`text-sm font-medium leading-tight ${section === item.id ? 'text-primary' : 'text-foreground'}`}>
+                    {item.label}
+                  </span>
+                  <span className="text-[11px] text-muted-foreground">{item.desc}</span>
+                </div>
+                {section === item.id && (
+                  <div className="ml-auto h-1.5 w-1.5 rounded-full bg-primary flex-shrink-0" />
+                )}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Footer — outil actif */}
+      <div className="px-3 py-4 border-t border-border flex-shrink-0">
+        <div className="w-full rounded-xl border border-primary/20 bg-primary/5 px-4 py-3 flex items-center gap-3">
+          <div className="h-8 w-8 rounded-lg bg-primary/15 flex items-center justify-center flex-shrink-0">
+            <svg className="h-4 w-4 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d={active.icon} />
+            </svg>
+          </div>
+          <div>
+            <p className="text-xs font-semibold text-foreground">{active.label}</p>
+            <p className="text-[10px] text-muted-foreground mt-0.5">Outil actif</p>
+          </div>
+        </div>
+      </div>
+    </aside>
+  );
+}
+
+// Contenu seul (rendu dans RightPanel)
+function OutilsContent({ section }: { section: Outil }) {
+  return (
+    <div className="flex-1 overflow-y-auto">
+      <div className="max-w-4xl mx-auto px-6 py-8">
+        {section === 'signatures' && <DocumentsTab />}
+        {section === 'bordereau'  && <OffreFinanciereTab />}
+        {section === 'acte'       && <ActeEngagementTab />}
+      </div>
+    </div>
+  );
+}
+
 // ── Main component ──────────────────────────────────────────
 type Props = {
   state:           AppState;
@@ -583,19 +666,22 @@ type Props = {
   onResetUsage:    () => void;
   user:            User;
   onLogout:        () => void;
+  mainTab:         'offres' | 'outils';
+  onMainTabChange: (tab: 'offres' | 'outils') => void;
+  outilSection:    Outil;
 };
 
 export default function RightPanel({
   state, result, error, company, aoText, onReset,
   usage, ragStatus, history, onLoadHistory, onDeleteHistory, onClearHistory,
   apiStatus, ragLoading, onReindex, onResetUsage, user, onLogout,
+  mainTab, onMainTabChange, outilSection,
 }: Props) {
   const wordRef = useRef<HTMLDivElement>(null);
   const [copied, setCopied] = useState(false);
   const [tab, setTab] = useState<'document' | 'brief'>('document');
   const [docFile, setDocFile] = useState<'reponse' | 'equipe' | 'references'>('reponse');
   const [logoBase64, setLogoBase64] = useState<string>('');
-  const [mainTab, setMainTab] = useState<'offres' | 'documents' | 'bordereau' | 'acte-engagement'>('offres');
 
   // Load logo once at mount
   useEffect(() => {
@@ -661,34 +747,12 @@ export default function RightPanel({
         user={user}
         onLogout={onLogout}
         mainTab={mainTab}
-        onTabChange={setMainTab}
+        onTabChange={onMainTabChange}
       />
 
-      {/* Documents & Signatures tab */}
-      {mainTab === 'documents' && (
-        <div className="flex-1 overflow-y-auto">
-          <div className="max-w-4xl mx-auto px-4 md:px-8 py-6 md:py-10">
-            <DocumentsTab />
-          </div>
-        </div>
-      )}
-
-      {/* Offre financière tab */}
-      {mainTab === 'bordereau' && (
-        <div className="flex-1 overflow-y-auto">
-          <div className="max-w-4xl mx-auto px-4 md:px-8 py-6 md:py-10">
-            <OffreFinanciereTab />
-          </div>
-        </div>
-      )}
-
-      {/* Acte d'engagement tab */}
-      {mainTab === 'acte-engagement' && (
-        <div className="flex-1 overflow-y-auto">
-          <div className="max-w-4xl mx-auto px-4 md:px-8 py-6 md:py-10">
-            <ActeEngagementTab />
-          </div>
-        </div>
+      {/* Outils tab — contenu seul (panneau gauche rendu dans App.tsx) */}
+      {mainTab === 'outils' && (
+        <OutilsContent section={outilSection} />
       )}
 
       {/* Appels d'offres tab */}

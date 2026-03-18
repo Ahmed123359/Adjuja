@@ -10,6 +10,7 @@ from app.api.routes.brief_routes import router as brief_router
 from app.api.routes.signing_routes import router as signing_router
 from app.api.routes.bordereau_routes import router as bordereau_router
 from app.api.routes.acte_engagement_routes import router as acte_engagement_router
+from app.api.routes.chat_routes import router as chat_router
 
 __all__ = [
     "generation_router",
@@ -24,4 +25,5 @@ __all__ = [
     "signing_router",
     "bordereau_router",
     "acte_engagement_router",
+    "chat_router",
 ]
