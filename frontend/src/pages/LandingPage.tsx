@@ -157,8 +157,9 @@ export default function LandingPage({ onEnterApp, onGoRegister }: { onEnterApp: 
     <div className="min-h-screen bg-white text-foreground overflow-x-hidden font-sans">
 
       {/* ── Early bird banner ────────────────────────────── */}
-      <div className="fixed top-0 inset-x-0 z-50 flex items-center justify-center h-9 px-4 text-sm font-semibold overflow-hidden"
-        style={{ background: '#fbbf24', color: '#1c1917' }}>
+      <div className="fixed top-0 inset-x-0 z-50 flex items-center justify-center h-9 px-4 text-sm font-semibold overflow-hidden cursor-pointer hover:brightness-95 transition-all"
+        style={{ background: '#fbbf24', color: '#1c1917' }}
+        onClick={() => document.getElementById('pricing')?.scrollIntoView({ behavior: 'smooth' })}>
         {/* Mobile */}
         <span className="sm:hidden">🐦 Early Bird — <strong>−30 %</strong> sur tous les plans</span>
         {/* Desktop */}
@@ -175,7 +176,8 @@ export default function LandingPage({ onEnterApp, onGoRegister }: { onEnterApp: 
       >
         <nav className="max-w-6xl mx-auto px-6 h-full flex items-center justify-between">
           {/* Logo */}
-          <div className="flex items-center gap-2.5">
+          <div className="flex items-center gap-2.5 cursor-pointer"
+            onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
             <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: NAVY }}>
               <span className="font-display font-bold text-sm text-white">O</span>
             </div>
