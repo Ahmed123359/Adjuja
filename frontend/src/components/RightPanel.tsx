@@ -1,9 +1,11 @@
 import { useEffect, useRef, useState } from 'react';
 import { marked } from 'marked';
+import { FileText, Wrench } from 'lucide-react';
 import type { GenerationResult, CompanyData, AppState, UsageData, RagStatus, HistorySummary, User } from '../types';
 import DocumentsTab from './DocumentsTab';
 import OffreFinanciereTab from './OffreFinanciereTab';
 import ActeEngagementTab from './ActeEngagementTab';
+import { MenuBar } from './GlowMenu';
 
 // ── Helpers ─────────────────────────────────────────────────
 function toRoman(n: number): string {
@@ -162,15 +164,26 @@ ${sep}
 }
 
 // ── Top bar ─────────────────────────────────────────────────
+const APP_NAV_ITEMS = [
+  {
+    icon: FileText,
+    label: "Appels d'offres",
+    gradient: 'radial-gradient(circle, rgba(59,130,246,0.15) 0%, rgba(59,130,246,0) 70%)',
+    iconColor: 'text-blue-500',
+    tab: 'offres' as const,
+  },
+  {
+    icon: Wrench,
+    label: 'Outils',
+    gradient: 'radial-gradient(circle, rgba(99,102,241,0.15) 0%, rgba(99,102,241,0) 70%)',
+    iconColor: 'text-indigo-500',
+    tab: 'outils' as const,
+  },
+];
+
 function TopBar({
-  usage, ragStatus, ragLoading, onReindex, onResetUsage, apiStatus, user, onLogout,
-  mainTab, onTabChange, onGoSettings,
+  apiStatus, user, onLogout, mainTab, onTabChange, onGoSettings,
 }: {
-  usage: UsageData | null;
-  ragStatus: RagStatus | null;
-  ragLoading: boolean;
-  onReindex: () => void;
-  onResetUsage: () => void;
   apiStatus: 'online' | 'offline' | 'connecting';
   user: User;
   onLogout: () => void;
@@ -178,137 +191,50 @@ function TopBar({
   onTabChange: (tab: 'offres' | 'outils') => void;
   onGoSettings: () => void;
 }) {
-  const statusColor = { online: 'bg-emerald-500', offline: 'bg-red-500', connecting: 'bg-amber-400 animate-pulse' }[apiStatus];
-  const statusLabel = { online: 'Connecté', offline: 'Hors ligne', connecting: 'Connexion…' }[apiStatus];
+  const dotColor = { online: 'bg-emerald-500', offline: 'bg-red-500', connecting: 'bg-amber-400 animate-pulse' }[apiStatus];
+  const activeLabel = mainTab === 'offres' ? "Appels d'offres" : 'Outils';
 
   return (
-    <header className="sticky top-0 z-10 bg-background/80 backdrop-blur-md border-b border-border px-4 md:px-6 flex-shrink-0">
+    <header className="sticky top-0 z-10 bg-card border-b border-border px-4 md:px-6 flex-shrink-0">
+      <div className="flex items-center justify-between h-14">
 
-      {/* Row 1 : info (tokens · appels · RAG · user) */}
-      <div className="flex items-center justify-between gap-2 py-2 border-b border-border/50 overflow-x-auto">
+        {/* Left spacer */}
+        <div className="w-36 flex-shrink-0" />
 
-        {/* Usage tokens + appels */}
-        <div className="flex items-center gap-2 text-xs text-muted-foreground flex-shrink-0">
-          {usage !== null ? (
-            <>
-              <span className="flex items-center justify-between gap-1.5 px-2.5 py-1 rounded-md bg-card border border-border font-mono min-w-[160px]">
-                <span className="flex items-center gap-1.5">
-                  <svg className="h-3 w-3 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                    <circle cx="12" cy="12" r="10"/><path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6l4 2"/>
-                  </svg>
-                  <span className="hidden sm:inline text-muted-foreground">tokens</span>
-                </span>
-                <strong className="text-foreground mx-1">
-                  {usage.total_tokens.toLocaleString('fr-FR')} / {usage.max_tokens_cumul > 0 ? usage.max_tokens_cumul.toLocaleString('fr-FR') : '∞'}
-                </strong>
-                <button
-                  onClick={onResetUsage}
-                  title="Remettre à zéro"
-                  className="text-muted-foreground hover:text-primary transition-colors flex-shrink-0"
-                >
-                  <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                  </svg>
-                </button>
-              </span>
-              <span className="flex items-center justify-between gap-1.5 px-2.5 py-1 rounded-md bg-card border border-border font-mono min-w-[160px]">
-                <span className="flex items-center gap-1.5">
-                  <svg className="h-3 w-3 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
-                  </svg>
-                  <span className="hidden sm:inline text-muted-foreground">appels</span>
-                </span>
-                <strong className="text-foreground">
-                  {usage.total_appels} / {usage.max_appels > 0 ? usage.max_appels : '∞'}
-                </strong>
-              </span>
-            </>
-          ) : null}
-        </div>
+        {/* Center — GlowMenu */}
+        <MenuBar
+          items={APP_NAV_ITEMS}
+          activeItem={activeLabel}
+          onItemClick={(label) => {
+            const item = APP_NAV_ITEMS.find(i => i.label === label);
+            if (item) onTabChange(item.tab);
+          }}
+        />
 
-        {/* RAG + status + user */}
-        <div className="flex items-center gap-2">
-          {ragStatus !== null && (
-            <button
-              onClick={onReindex}
-              disabled={ragLoading || !ragStatus.etl_available}
-              title={ragStatus.etl_available ? `RAG ${ragStatus.ready ? `actif · ${ragStatus.chunk_count} chunks` : 'vide'} — Réindexer` : 'Service ETL non disponible'}
-              className="text-xs px-2.5 py-1 rounded-md border border-border bg-card text-muted-foreground hover:text-foreground hover:border-primary/30 transition-all flex items-center justify-between gap-1.5 disabled:opacity-40 min-w-[80px]"
-            >
-              <svg className={`h-3 w-3 ${ragLoading ? 'animate-spin' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-              </svg>
-              RAG{ragStatus.ready ? ` · ${ragStatus.chunk_count}` : ''}
-            </button>
-          )}
-
-          <div className="flex items-center justify-between gap-1.5 px-2.5 py-1 rounded-md bg-card border border-border min-w-[110px]">
-            <div className={`h-2 w-2 rounded-full flex-shrink-0 ${statusColor}`} />
-            <span className="text-xs font-medium text-foreground flex-1 text-center hidden sm:block">{statusLabel}</span>
-          </div>
-
-          <div className="flex items-center gap-2 px-2.5 py-1 rounded-md bg-card border border-border">
-            <div className="h-6 w-6 rounded-full gradient-primary flex items-center justify-center flex-shrink-0">
+        {/* Right — user */}
+        <div className="flex items-center gap-2 flex-shrink-0 w-36 justify-end">
+          <div className="relative">
+            <div className="h-8 w-8 rounded-full gradient-primary flex items-center justify-center flex-shrink-0">
               <span className="text-[10px] text-primary-foreground font-bold">
                 {user.prenom?.[0]?.toUpperCase()}{user.nom?.[0]?.toUpperCase() ?? ''}
               </span>
             </div>
-            <span className="text-xs font-medium text-foreground hidden sm:inline">{user.prenom} {user.nom}</span>
-            <button
-              onClick={onGoSettings}
-              title="Réglages"
-              className="ml-1 text-muted-foreground hover:text-foreground transition-colors"
-            >
-              <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-              </svg>
-            </button>
-            <button
-              onClick={onLogout}
-              title="Se déconnecter"
-              className="text-muted-foreground hover:text-destructive transition-colors"
-            >
-              <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-              </svg>
-            </button>
+            <span className={`absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full border-2 border-background ${dotColor}`} />
           </div>
-        </div>
-      </div>
-
-      {/* Row 2 : navigation tabs */}
-      <div className="flex items-center gap-1 py-2">
-        <div className="flex items-center gap-1 p-1 rounded-lg bg-muted">
-          <button
-            onClick={() => onTabChange('offres')}
-            className={`px-3 py-1.5 text-sm font-medium rounded-md transition-all flex items-center gap-1.5 ${
-              mainTab === 'offres'
-                ? 'bg-card text-foreground shadow-sm'
-                : 'text-muted-foreground hover:text-foreground'
-            }`}
-          >
-            <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+          <span className="text-sm font-medium text-foreground hidden md:inline">{user.prenom}</span>
+          <button onClick={onGoSettings} title="Réglages" className="text-muted-foreground hover:text-foreground transition-colors">
+            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
             </svg>
-            <span>Appels d'offres</span>
           </button>
-          <button
-            onClick={() => onTabChange('outils')}
-            className={`px-3 py-1.5 text-sm font-medium rounded-md transition-all flex items-center gap-1.5 ${
-              mainTab === 'outils'
-                ? 'bg-card text-foreground shadow-sm'
-                : 'text-muted-foreground hover:text-foreground'
-            }`}
-          >
-            <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M11.42 15.17L17.25 21A2.652 2.652 0 0021 17.25l-5.877-5.877M11.42 15.17l2.496-3.03c.317-.384.74-.626 1.208-.766M11.42 15.17l-4.655 5.653a2.548 2.548 0 11-3.586-3.586l6.837-5.63m5.108-.233c.55-.164 1.163-.188 1.743-.14a4.5 4.5 0 004.486-6.336l-3.276 3.277a3.004 3.004 0 01-2.25-2.25l3.276-3.276a4.5 4.5 0 00-6.336 4.486c.091 1.076-.071 2.264-.904 2.95l-.102.085m-1.745 1.437L5.909 7.5H4.5L2.25 3.75l1.5-1.5L7.5 4.5v1.409l4.26 4.26m-1.745 1.437l1.745-1.437m6.615 8.206L15.75 15.75M4.867 19.125h.008v.008h-.008v-.008z" />
+          <button onClick={onLogout} title="Se déconnecter" className="text-muted-foreground hover:text-destructive transition-colors">
+            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
             </svg>
-            <span>Outils</span>
           </button>
         </div>
       </div>
-
     </header>
   );
 }
@@ -561,22 +487,22 @@ const OUTILS_NAV: { id: Outil; label: string; desc: string; icon: string }[] = [
 ];
 
 // Panneau gauche Outils — rendu dans App.tsx au même niveau que LeftPanel
-export function OutilsLeftPanel({ section, onSectionChange }: { section: Outil; onSectionChange: (s: Outil) => void }) {
+export function OutilsLeftPanel({ section, onSectionChange, onGoLanding }: { section: Outil; onSectionChange: (s: Outil) => void; onGoLanding?: () => void }) {
   const active = OUTILS_NAV.find(o => o.id === section)!;
 
   return (
     <aside className="w-[320px] min-w-[320px] h-screen border-r border-border bg-card flex flex-col overflow-hidden">
 
       {/* Logo */}
-      <div className="px-5 py-4 border-b border-border flex items-center justify-between flex-shrink-0">
-        <div className="flex items-center gap-2.5">
+      <div className="h-14 flex-shrink-0 px-4 border-b border-border flex items-center">
+        <button onClick={onGoLanding} className="flex items-center gap-2.5 hover:opacity-80 transition-opacity">
           <div className="h-8 w-8 rounded-lg gradient-primary flex items-center justify-center flex-shrink-0">
             <span className="text-primary-foreground font-bold text-sm">O</span>
           </div>
           <span className="font-semibold text-foreground text-lg tracking-tight">
             Offr<span className="text-primary">IA</span>
           </span>
-        </div>
+        </button>
       </div>
 
       {/* Contenu scrollable */}
@@ -740,11 +666,6 @@ export default function RightPanel({
     <div className="flex-1 flex flex-col h-screen overflow-hidden">
       {/* Top bar — always visible */}
       <TopBar
-        usage={usage}
-        ragStatus={ragStatus}
-        ragLoading={ragLoading}
-        onReindex={onReindex}
-        onResetUsage={onResetUsage}
         apiStatus={apiStatus}
         user={user}
         onLogout={onLogout}

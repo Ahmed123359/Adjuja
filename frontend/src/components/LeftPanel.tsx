@@ -125,15 +125,15 @@ export default function LeftPanel(props: Props) {
     <aside className="w-[320px] min-w-[320px] h-screen border-r border-border bg-card flex flex-col overflow-hidden">
 
       {/* ── Logo ─────────────────────────────────────────── */}
-      <div className="px-4 py-3 border-b border-border flex items-center justify-between">
-        <div className="flex items-center gap-2.5">
+      <div className="h-14 flex-shrink-0 px-4 border-b border-border flex items-center justify-between">
+        <button onClick={onGoLanding} className="flex items-center gap-2.5 hover:opacity-80 transition-opacity">
           <div className="h-8 w-8 rounded-lg gradient-primary flex items-center justify-center flex-shrink-0">
             <span className="text-primary-foreground font-bold text-sm">O</span>
           </div>
           <span className="font-semibold text-foreground text-lg tracking-tight">
             Offr<span className="text-primary">IA</span>
           </span>
-        </div>
+        </button>
         <div className="flex items-center gap-2">
           {onClose && (
             <button

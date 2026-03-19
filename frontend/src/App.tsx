@@ -165,6 +165,9 @@ export default function App({ onGoLanding, onLogout, user: initialUser }: { onGo
           provider={provider} setProvider={setProvider}
           model={model}       setModel={setModel}
           models={models}
+          usage={usage}
+          onRefreshUsage={() => fetchUsage().then(setUsage).catch(() => {})}
+          onResetUsage={() => resetUsage().then(setUsage).catch(() => {})}
         />
       </div>
     );
@@ -183,7 +186,7 @@ export default function App({ onGoLanding, onLogout, user: initialUser }: { onGo
 
       {/* Panneau gauche Outils — desktop uniquement */}
       {mainTab === 'outils' && !isMobile && (
-        <OutilsLeftPanel section={outilSection} onSectionChange={setOutilSection} />
+        <OutilsLeftPanel section={outilSection} onSectionChange={setOutilSection} onGoLanding={onGoLanding} />
       )}
 
       {/* Panneau gauche Outils — mobile slide-in */}
@@ -192,6 +195,7 @@ export default function App({ onGoLanding, onLogout, user: initialUser }: { onGo
           <OutilsLeftPanel
             section={outilSection}
             onSectionChange={s => { setOutilSection(s); setSidebarOpen(false); }}
+            onGoLanding={onGoLanding}
           />
         </div>
       )}

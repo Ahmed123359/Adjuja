@@ -1,10 +1,11 @@
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, useState } from 'react';
 import { useScrollAnimation } from '../hooks/useScrollAnimation';
 import {
   Zap, Database, Shield,
   Clock, FileCheck, TrendingUp, Check,
-  Sparkles,
+  Sparkles, LayoutGrid, PlayCircle, CreditCard,
 } from 'lucide-react';
+import { MenuBar } from '../components/GlowMenu';
 
 // ── Palette tokens ──────────────────────────────────────────
 const NAVY   = '#1e3a8a';
@@ -133,9 +134,16 @@ const PLANS = [
   },
 ];
 
+const NAV_ITEMS = [
+  { icon: LayoutGrid, label: 'Fonctionnalités',    gradient: 'radial-gradient(circle, rgba(59,130,246,0.15) 0%, rgba(59,130,246,0) 70%)',  iconColor: 'text-blue-500',    id: 'features'     },
+  { icon: PlayCircle, label: 'Comment ça marche',  gradient: 'radial-gradient(circle, rgba(99,102,241,0.15) 0%, rgba(99,102,241,0) 70%)',   iconColor: 'text-indigo-500',  id: 'how-it-works' },
+  { icon: CreditCard, label: 'Tarifs',             gradient: 'radial-gradient(circle, rgba(16,185,129,0.15) 0%, rgba(16,185,129,0) 70%)',   iconColor: 'text-emerald-500', id: 'pricing'      },
+];
+
 // ── Main component ─────────────────────────────────────────
 export default function LandingPage({ onEnterApp, onGoRegister }: { onEnterApp: () => void; onGoRegister: () => void }) {
-  const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [activeNav, setActiveNav] = useState('');
 
   // Always light mode on landing
   useEffect(() => {
@@ -185,21 +193,15 @@ export default function LandingPage({ onEnterApp, onGoRegister }: { onEnterApp: 
           </div>
 
           {/* Nav links — desktop */}
-          <div className="hidden md:flex items-center gap-8">
-            {[
-              ['features',      'Fonctionnalités'],
-              ['how-it-works',  'Comment ça marche'],
-              ['pricing',       'Tarifs'],
-            ].map(([id, label]) => (
-              <button key={id} onClick={() => scrollTo(id)}
-                className="text-sm transition-colors"
-                style={{ color: BODY }}
-                onMouseEnter={e => (e.currentTarget.style.color = DARK)}
-                onMouseLeave={e => (e.currentTarget.style.color = BODY)}
-              >
-                {label}
-              </button>
-            ))}
+          <div className="hidden md:flex">
+            <MenuBar
+              items={NAV_ITEMS}
+              activeItem={activeNav}
+              onItemClick={(label) => {
+                const item = NAV_ITEMS.find(i => i.label === label);
+                if (item) { setActiveNav(label); scrollTo(item.id); }
+              }}
+            />
           </div>
 
           <div className="flex items-center gap-3">

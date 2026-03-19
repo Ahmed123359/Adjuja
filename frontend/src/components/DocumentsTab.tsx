@@ -237,7 +237,7 @@ export default function DocumentsTab() {
               </span>
             </span>
           </p>
-          <div className="grid grid-cols-1 gap-3">
+          <div className="grid grid-cols-2 gap-3">
             <div className="relative min-w-0">
               <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none">
                 <svg className="h-4 w-4 text-muted-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>

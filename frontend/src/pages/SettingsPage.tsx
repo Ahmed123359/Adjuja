@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import type { Model } from '../types';
+import type { Model, UsageData } from '../types';
 
 const inputCls = "w-full px-3 py-2 text-sm border border-border rounded-lg bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/40 transition-all";
 
@@ -44,11 +44,15 @@ type Props = {
   model: string;
   setModel: (v: string) => void;
   models: Model[];
+  usage: UsageData | null;
+  onRefreshUsage: () => void;
+  onResetUsage: () => void;
 };
 
-export default function SettingsPage({ provider, setProvider, model, setModel, models }: Props) {
+export default function SettingsPage({ provider, setProvider, model, setModel, models, usage, onRefreshUsage, onResetUsage }: Props) {
   const navigate = useNavigate();
   const [saved, setSaved] = useState(false);
+  const [confirmReset, setConfirmReset] = useState(false);
 
   const providers      = [...new Set(models.map(m => m.provider))];
   const filteredModels = models.filter(m => m.provider === provider);
@@ -109,6 +113,65 @@ export default function SettingsPage({ provider, setProvider, model, setModel, m
               ))}
             </select>
             <p className="text-xs text-muted-foreground">Ce modèle sera utilisé pour toutes les générations.</p>
+          </div>
+        </div>
+
+        {/* Utilisation */}
+        <div className="border border-border rounded-xl bg-card p-6 space-y-5">
+          <div className="flex items-center justify-between">
+            <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Utilisation</h2>
+            <button onClick={onRefreshUsage} className="text-xs text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1">
+              <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+              </svg>
+              Actualiser
+            </button>
+          </div>
+
+          {usage ? (
+            <div className="grid grid-cols-2 gap-4">
+              <div className="bg-background border border-border rounded-xl p-4 space-y-2">
+                <p className="text-xs text-muted-foreground font-medium">Tokens consommés</p>
+                <p className="text-2xl font-bold text-foreground tabular-nums">{usage.total_tokens.toLocaleString('fr-FR')}</p>
+                {usage.max_tokens_cumul > 0 && (
+                  <div className="space-y-1">
+                    <div className="h-1.5 rounded-full bg-muted overflow-hidden">
+                      <div className="h-full rounded-full bg-primary transition-all" style={{ width: `${Math.min(100, (usage.total_tokens / usage.max_tokens_cumul) * 100)}%` }} />
+                    </div>
+                    <p className="text-[10px] text-muted-foreground">{Math.round((usage.total_tokens / usage.max_tokens_cumul) * 100)}% · max {usage.max_tokens_cumul.toLocaleString('fr-FR')}</p>
+                  </div>
+                )}
+              </div>
+              <div className="bg-background border border-border rounded-xl p-4 space-y-2">
+                <p className="text-xs text-muted-foreground font-medium">Générations effectuées</p>
+                <p className="text-2xl font-bold text-foreground tabular-nums">{usage.total_appels}</p>
+                {usage.max_appels > 0 && (
+                  <div className="space-y-1">
+                    <div className="h-1.5 rounded-full bg-muted overflow-hidden">
+                      <div className="h-full rounded-full bg-primary transition-all" style={{ width: `${Math.min(100, (usage.total_appels / usage.max_appels) * 100)}%` }} />
+                    </div>
+                    <p className="text-[10px] text-muted-foreground">{Math.round((usage.total_appels / usage.max_appels) * 100)}% · max {usage.max_appels}</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          ) : (
+            <p className="text-sm text-muted-foreground">Chargement…</p>
+          )}
+
+          <div className="pt-1 border-t border-border flex items-center justify-between">
+            <p className="text-xs text-muted-foreground">Remettre les compteurs à zéro</p>
+            {confirmReset ? (
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-muted-foreground">Confirmer ?</span>
+                <button onClick={() => { onResetUsage(); setConfirmReset(false); }} className="text-xs px-3 py-1.5 rounded-lg bg-destructive text-destructive-foreground hover:bg-destructive/90 transition-colors">Oui</button>
+                <button onClick={() => setConfirmReset(false)} className="text-xs px-3 py-1.5 rounded-lg border border-border hover:bg-accent transition-colors">Annuler</button>
+              </div>
+            ) : (
+              <button onClick={() => setConfirmReset(true)} className="text-xs px-3 py-1.5 rounded-lg border border-border text-muted-foreground hover:text-destructive hover:border-destructive/40 transition-colors">
+                Réinitialiser
+              </button>
+            )}
           </div>
         </div>
 
