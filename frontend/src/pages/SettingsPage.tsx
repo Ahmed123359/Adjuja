@@ -79,7 +79,7 @@ export default function SettingsPage({ provider, setProvider, model, setModel, m
           {/* Provider */}
           <div className="space-y-3">
             <p className="text-sm font-medium text-foreground">Fournisseur</p>
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               {(providers.length > 0 ? providers : ['anthropic', 'openai', 'mistral']).map(p => {
                 const meta       = PROVIDER_META[p] ?? { name: p, icon: () => null, selectedColor: 'text-primary' };
                 const isSelected = p === provider;

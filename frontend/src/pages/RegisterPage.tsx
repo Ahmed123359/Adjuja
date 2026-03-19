@@ -54,7 +54,7 @@ export default function RegisterPage({ onSuccess, onGoLogin }: Props) {
         google.accounts.id.renderButton(googleBtnRef.current, {
           theme: 'outline',
           size: 'large',
-          width: googleBtnRef.current.offsetWidth || 320,
+          width: googleBtnRef.current.offsetWidth || 280,
           text: 'continue_with',
           shape: 'rectangular',
         });
@@ -157,7 +157,7 @@ export default function RegisterPage({ onSuccess, onGoLogin }: Props) {
         )}
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label className="block text-xs font-semibold mb-1.5" style={{ color: BODY }}>Prénom</label>
               <input type="text" value={prenom} onChange={e => setPrenom(e.target.value)}

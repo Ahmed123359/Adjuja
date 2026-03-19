@@ -198,8 +198,8 @@ function TopBar({
     <header className="sticky top-0 z-10 bg-card border-b border-border px-4 md:px-6 flex-shrink-0">
       <div className="flex items-center justify-between h-14">
 
-        {/* Left spacer */}
-        <div className="w-36 flex-shrink-0" />
+        {/* Left spacer — desktop only */}
+        <div className="hidden md:block w-36 flex-shrink-0" />
 
         {/* Center — GlowMenu */}
         <MenuBar
@@ -212,7 +212,7 @@ function TopBar({
         />
 
         {/* Right — user */}
-        <div className="flex items-center gap-2 flex-shrink-0 w-36 justify-end">
+        <div className="flex items-center gap-2 flex-shrink-0 md:w-36 justify-end">
           <div className="relative">
             <div className="h-8 w-8 rounded-full gradient-primary flex items-center justify-center flex-shrink-0">
               <span className="text-[10px] text-primary-foreground font-bold">

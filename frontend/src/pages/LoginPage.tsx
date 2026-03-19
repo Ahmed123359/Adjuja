@@ -51,7 +51,7 @@ export default function LoginPage({ onSuccess, onGoRegister }: Props) {
         google.accounts.id.renderButton(googleBtnRef.current, {
           theme: 'outline',
           size: 'large',
-          width: googleBtnRef.current.offsetWidth || 320,
+          width: googleBtnRef.current.offsetWidth || 280,
           text: 'continue_with',
           shape: 'rectangular',
         });
