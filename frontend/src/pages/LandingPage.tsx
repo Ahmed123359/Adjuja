@@ -1,7 +1,7 @@
 import React, { useRef, useEffect } from 'react';
 import { useScrollAnimation } from '../hooks/useScrollAnimation';
 import {
-  FileText, Zap, Database, Cpu, Code, Shield,
+  Zap, Database, Shield,
   Clock, FileCheck, TrendingUp, Check,
   Sparkles,
 } from 'lucide-react';
@@ -16,59 +16,36 @@ const SURF   = '#f8fafc';
 const BRD    = '#e2e8f0';
 
 // ── Data ───────────────────────────────────────────────────
-const FEATURES = [
-  {
-    icon: FileText,
-    title: 'Parsing automatique des AOs',
-    desc: "Collez le texte ou importez un PDF. OffrIA extrait le titre, le budget, le type de marché et chaque critère du cahier des charges. Zéro copier-coller.",
-  },
-  {
-    icon: Zap,
-    title: '8 sections rédigées en parallèle',
-    desc: "Notre moteur envoie jusqu'à 8 appels LLM simultanément. Une réponse complète et structurée en moins de 2 minutes, là où un humain passerait 16 à 38 heures.",
-  },
-  {
-    icon: Database,
-    title: 'Base de connaissances RAG',
-    desc: "Vos références, certifications et méthodologies internes enrichissent chaque section via Qdrant. L'IA parle en votre nom, avec vos propres données.",
-  },
-  {
-    icon: Cpu,
-    title: 'Multi-LLM au choix',
-    desc: "Claude Opus pour le raisonnement complexe, GPT-4o pour la formulation commerciale, Mistral Large pour la souveraineté des données. Le meilleur modèle pour chaque AO.",
-  },
-  {
-    icon: Code,
-    title: 'API REST intégrable',
-    desc: "Un endpoint POST /api/v1/generate. Compatible ERP, CRM, SharePoint ou Zapier. Intégrez OffrIA dans vos workflows existants sans changer vos outils.",
-  },
-  {
-    icon: Shield,
-    title: 'Hébergement souverain',
-    desc: "Déployez en 5 minutes avec Docker, on-premise ou sur votre cloud privé. Vos données restent chez vous. Option Mistral pour un traitement 100 % intra-EU.",
-  },
-];
-
-const BENEFITS = [
+const CARDS = [
   {
     icon: Clock,
     title: '2 minutes au lieu de 2 jours',
-    desc: "Votre réponse complète est générée en moins de 2 minutes, structurée selon les exigences du cahier des charges.",
+    desc: "Une réponse complète, structurée et prête à soumettre en moins de 2 minutes. Traitez 10× plus d'AOs sans recruter.",
+  },
+  {
+    icon: Database,
+    title: "L'IA apprend de vos documents",
+    desc: "Importez vos anciennes réponses gagnantes, références clients et certifications. OffrIA les réutilise automatiquement — comme un expert qui connaît tout votre historique.",
   },
   {
     icon: FileCheck,
-    title: 'Conformité garantie',
-    desc: "Chaque section est vérifiée : critères obligatoires, pièces attendues, format de réponse. Rien n'est oublié.",
+    title: 'Aucune exigence oubliée',
+    desc: "Chaque critère du cahier des charges est analysé et traité. Pièces attendues, format de réponse, critères de sélection — rien ne passe à travers les mailles.",
   },
   {
     icon: TrendingUp,
-    title: 'Taux de réussite en hausse',
-    desc: "Nos clients constatent une augmentation significative de leur taux de succès sur les marchés publics.",
+    title: 'Remportez plus de marchés',
+    desc: "Des réponses mieux structurées, plus conformes et rédigées dans le langage attendu par les acheteurs publics. Un avantage concret sur vos concurrents.",
   },
   {
     icon: Shield,
-    title: 'Données souveraines',
-    desc: "Vos documents ne quittent jamais l'infrastructure européenne. Conformité RGPD et hébergement certifié.",
+    title: 'Vos données restent chez vous',
+    desc: "Hébergement européen, conformité RGPD, option on-premise. Vos documents confidentiels ne quittent jamais votre périmètre.",
+  },
+  {
+    icon: Zap,
+    title: 'Claude, GPT-4o ou Mistral',
+    desc: "Choisissez le meilleur modèle selon l'AO : puissance de raisonnement, formulation commerciale ou souveraineté des données. Vous gardez le contrôle.",
   },
 ];
 
@@ -96,37 +73,39 @@ const STEPS = [
 const PLANS = [
   {
     name: 'Starter',
-    price: '79€',
+    price: '55€',
+    priceOld: '79€',
     period: '/ mois HT',
-    tagline: 'Pour tester et convaincre en interne',
+    tagline: 'Pour les solopreneurs qui veulent gagner plus d\'AOs',
     highlighted: false,
-    badge: null as string | null,
+    badge: 'Early Bird −30 %' as string | null,
     features: [
-      '50 AOs générés / mois',
-      '3 providers LLM (GPT-4o, Claude, Mistral)',
-      'Export Word (.docx)',
-      'Signatures instantanées illimitées',
-      '1 utilisateur',
-      'Support e-mail (48h)',
+      { text: '50 AOs générés / mois', tag: null },
+      { text: '3 providers LLM (GPT-4o, Claude, Mistral)', tag: null },
+      { text: 'Export Word (.docx)', tag: null },
+      { text: 'Signatures instantanées illimitées', tag: null },
+      { text: '1 utilisateur', tag: null },
+      { text: 'Support e-mail (48h)', tag: null },
     ],
-    cta: "S'abonner — 79€/mois",
+    cta: "S'abonner — 55€/mois",
     note: 'Sans engagement · résiliable à tout moment',
   },
   {
     name: 'Pro',
     price: '249€',
+    priceOld: null as string | null,
     period: '/ mois HT',
     tagline: 'Pour les équipes commerciales actives',
     highlighted: true,
     badge: 'Recommandé' as string | null,
     features: [
-      'Génération illimitée',
-      "Digestion jusqu'à 50 documents†",
-      'Chat avec vos documents',
-      'Signatures instantanées illimitées',
-      '5 utilisateurs',
-      'Historique complet des générations',
-      'Support prioritaire (4h)',
+      { text: 'Génération illimitée', tag: null },
+      { text: "Digestion jusqu'à 50 documents†", tag: null },
+      { text: 'Chat avec vos documents', tag: 'Nouveau' },
+      { text: 'Signatures instantanées illimitées', tag: null },
+      { text: '5 utilisateurs', tag: null },
+      { text: 'Historique complet des générations', tag: null },
+      { text: 'Support prioritaire (4h)', tag: null },
     ],
     cta: "Contacter l'équipe",
     note: 'Le plus choisi par nos clients PME / ETI',
@@ -134,19 +113,20 @@ const PLANS = [
   {
     name: 'Entreprise',
     price: 'Sur devis',
+    priceOld: null as string | null,
     period: '',
     tagline: 'Pour les grands groupes et cabinets',
     highlighted: false,
     badge: null as string | null,
     features: [
-      'Génération illimitée',
-      "Digestion jusqu'à 200 documents†",
-      'Chat avec vos documents',
-      'Signatures instantanées illimitées',
-      'Utilisateurs illimités',
-      'SSO / Active Directory',
-      'SLA 99,9 % garanti',
-      'Accompagnement dédié',
+      { text: 'Génération illimitée', tag: null },
+      { text: "Digestion jusqu'à 200 documents†", tag: null },
+      { text: 'Chat avec vos documents', tag: 'Nouveau' },
+      { text: 'Signatures instantanées illimitées', tag: null },
+      { text: 'Utilisateurs illimités', tag: null },
+      { text: 'SSO / Active Directory', tag: null },
+      { text: 'SLA 99,9 % garanti', tag: null },
+      { text: 'Accompagnement dédié', tag: null },
     ],
     cta: "Contacter l'équipe",
     note: 'Déploiement en 5 jours ouvrés',
@@ -336,42 +316,25 @@ export default function LandingPage({ onEnterApp, onGoRegister }: { onEnterApp: 
                 Fonctionnalités
               </p>
               <h2 className="font-display font-bold text-3xl sm:text-4xl mb-4 animate-on-scroll" style={{ color: DARK }}>
-                Pourquoi les entreprises choisissent OffrIA
+                Pourquoi les équipes choisissent OffrIA
               </h2>
               <p className="font-serif text-lg max-w-xl mx-auto animate-on-scroll" data-stagger="1" style={{ color: BODY }}>
                 Concentrez-vous sur la stratégie. Nous nous occupons de la rédaction.
               </p>
             </div>
 
-            <div className="grid md:grid-cols-2 gap-6">
-              {BENEFITS.map(({ icon: Icon, title, desc }, i) => (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              {CARDS.map(({ icon: Icon, title, desc }, i) => (
                 <div key={i}
-                  className="bg-white rounded-xl p-8 animate-on-scroll"
+                  className="bg-white rounded-xl p-7 animate-on-scroll"
                   data-stagger={i + 2}
                   style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.04), 0 4px 16px rgba(30,58,138,0.06)', border: `1px solid ${BRD}` }}>
-                  <div className="w-12 h-12 rounded-lg flex items-center justify-center mb-5"
-                    style={{ background: `${ROYAL}1a` }}>
-                    <Icon className="w-6 h-6" style={{ color: ROYAL }} />
+                  <div className="w-11 h-11 rounded-lg flex items-center justify-center mb-4"
+                    style={{ background: `${ROYAL}15` }}>
+                    <Icon className="w-5 h-5" style={{ color: ROYAL }} />
                   </div>
-                  <h3 className="font-display font-bold text-xl mb-3" style={{ color: DARK }}>{title}</h3>
-                  <p className="font-serif leading-relaxed" style={{ color: BODY }}>{desc}</p>
-                </div>
-              ))}
-            </div>
-
-            {/* Les 6 features techniques en grid 3-col */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-8">
-              {FEATURES.map(({ icon: Icon, title, desc }, i) => (
-                <div key={i}
-                  className="bg-white rounded-xl p-5 animate-on-scroll"
-                  data-stagger={i + 6}
-                  style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.04)', border: `1px solid ${BRD}` }}>
-                  <div className="w-9 h-9 rounded-lg flex items-center justify-center mb-3"
-                    style={{ background: `${NAVY}12` }}>
-                    <Icon className="w-5 h-5" style={{ color: NAVY }} />
-                  </div>
-                  <h3 className="font-display font-semibold text-sm mb-1.5" style={{ color: DARK }}>{title}</h3>
-                  <p className="text-xs leading-relaxed" style={{ color: MUTED }}>{desc}</p>
+                  <h3 className="font-display font-bold text-base mb-2" style={{ color: DARK }}>{title}</h3>
+                  <p className="font-serif text-sm leading-relaxed" style={{ color: BODY }}>{desc}</p>
                 </div>
               ))}
             </div>
@@ -437,7 +400,7 @@ export default function LandingPage({ onEnterApp, onGoRegister }: { onEnterApp: 
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-5 items-center">
-              {PLANS.map(({ name, price, period, tagline, highlighted, badge, features, cta, note }, i) => (
+              {PLANS.map(({ name, price, priceOld, period, tagline, highlighted, badge, features, cta, note }, i) => (
                 <div key={i}
                   className="bg-white rounded-2xl p-6 relative animate-on-scroll"
                   data-stagger={i + 2}
@@ -458,8 +421,11 @@ export default function LandingPage({ onEnterApp, onGoRegister }: { onEnterApp: 
                     <p className="text-xs" style={{ color: MUTED }}>{tagline}</p>
                   </div>
                   <div className="mb-5">
+                    {priceOld && (
+                      <span className="text-sm line-through mr-2" style={{ color: MUTED }}>{priceOld}</span>
+                    )}
                     {period
-                      ? <span className="font-display font-extrabold text-3xl" style={{ color: DARK }}>
+                      ? <span className="font-display font-extrabold text-3xl" style={{ color: priceOld ? '#dc2626' : DARK }}>
                           {price}<span className="text-sm font-normal ml-1" style={{ color: MUTED }}>{period}</span>
                         </span>
                       : <span className="font-display font-bold text-xl" style={{ color: DARK }}>{price}</span>
@@ -467,16 +433,22 @@ export default function LandingPage({ onEnterApp, onGoRegister }: { onEnterApp: 
                   </div>
                   <ul className="space-y-2 mb-6">
                     {features.map((f, j) => (
-                      <li key={j} className="flex items-start gap-2 text-sm" style={{ color: BODY }}>
-                        <Check className="w-4 h-4 flex-shrink-0 mt-0.5" style={{ color: ROYAL }} />
-                        <span>{f}</span>
+                      <li key={j} className="flex items-center gap-2 text-sm" style={{ color: BODY }}>
+                        <Check className="w-4 h-4 flex-shrink-0" style={{ color: ROYAL }} />
+                        <span>{f.text}</span>
+                        {f.tag && (
+                          <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded-full flex-shrink-0"
+                            style={{ background: `${ROYAL}20`, color: ROYAL, border: `1px solid ${ROYAL}40` }}>
+                            {f.tag}
+                          </span>
+                        )}
                       </li>
                     ))}
                   </ul>
                   <button
                     onClick={() => {
                       if (name === 'Starter') {
-                        window.open('https://buy.stripe.com/eVq28qcic8UD3Eb8wDdQQ00', '_blank');
+                        window.open('https://buy.stripe.com/5kQaEWcic8UD2A7aELdQQ01', '_blank');
                       } else {
                         (window as any).Calendly?.initPopupWidget({ url: 'https://calendly.com/charif-eljazouli' });
                       }
