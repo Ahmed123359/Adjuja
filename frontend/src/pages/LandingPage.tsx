@@ -1,114 +1,94 @@
 import React, { useRef, useEffect } from 'react';
 import { useScrollAnimation } from '../hooks/useScrollAnimation';
+import {
+  FileText, Zap, Database, Cpu, Code, Shield,
+  Clock, FileCheck, TrendingUp, Check,
+  Sparkles,
+} from 'lucide-react';
 
-type OnEnterApp = () => void;
-
-// ── Inline SVG icons ───────────────────────────────────────
-function IconDoc() {
-  return (
-    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.7}>
-      <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-    </svg>
-  );
-}
-function IconLightning() {
-  return (
-    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.7}>
-      <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
-    </svg>
-  );
-}
-function IconDatabase() {
-  return (
-    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.7}>
-      <ellipse cx="12" cy="5" rx="9" ry="3" />
-      <path d="M21 12c0 1.66-4.03 3-9 3S3 13.66 3 12" />
-      <path d="M3 5v14c0 1.66 4.03 3 9 3s9-1.34 9-3V5" />
-    </svg>
-  );
-}
-function IconCpu() {
-  return (
-    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.7}>
-      <rect x="9" y="9" width="6" height="6" rx="1" />
-      <path d="M3 10h2M3 14h2M19 10h2M19 14h2M10 3v2M14 3v2M10 19v2M14 19v2" />
-      <rect x="5" y="5" width="14" height="14" rx="2" />
-    </svg>
-  );
-}
-function IconCode() {
-  return (
-    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.7}>
-      <path strokeLinecap="round" strokeLinejoin="round" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
-    </svg>
-  );
-}
-function IconShield() {
-  return (
-    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.7}>
-      <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-    </svg>
-  );
-}
-function IconCheck() {
-  return (
-    <svg className="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-    </svg>
-  );
-}
+// ── Palette tokens ──────────────────────────────────────────
+const NAVY   = '#1e3a8a';
+const ROYAL  = '#3b82f6';
+const DARK   = '#0f172a';
+const BODY   = '#475569';
+const MUTED  = '#64748b';
+const SURF   = '#f8fafc';
+const BRD    = '#e2e8f0';
 
 // ── Data ───────────────────────────────────────────────────
 const FEATURES = [
   {
-    icon: <IconDoc />,
+    icon: FileText,
     title: 'Parsing automatique des AOs',
     desc: "Collez le texte ou importez un PDF. OffrIA extrait le titre, le budget, le type de marché et chaque critère du cahier des charges. Zéro copier-coller.",
   },
   {
-    icon: <IconLightning />,
-    title: '9 sections rédigées en parallèle',
-    desc: "Notre moteur envoie jusqu'à 9 appels LLM simultanément. Une réponse complète et structurée en moins de 2 minutes, là où un humain passerait 16 à 38 heures.",
+    icon: Zap,
+    title: '8 sections rédigées en parallèle',
+    desc: "Notre moteur envoie jusqu'à 8 appels LLM simultanément. Une réponse complète et structurée en moins de 2 minutes, là où un humain passerait 16 à 38 heures.",
   },
   {
-    icon: <IconDatabase />,
+    icon: Database,
     title: 'Base de connaissances RAG',
     desc: "Vos références, certifications et méthodologies internes enrichissent chaque section via Qdrant. L'IA parle en votre nom, avec vos propres données.",
   },
   {
-    icon: <IconCpu />,
+    icon: Cpu,
     title: 'Multi-LLM au choix',
     desc: "Claude Opus pour le raisonnement complexe, GPT-4o pour la formulation commerciale, Mistral Large pour la souveraineté des données. Le meilleur modèle pour chaque AO.",
   },
   {
-    icon: <IconCode />,
+    icon: Code,
     title: 'API REST intégrable',
     desc: "Un endpoint POST /api/v1/generate. Compatible ERP, CRM, SharePoint ou Zapier. Intégrez OffrIA dans vos workflows existants sans changer vos outils.",
   },
   {
-    icon: <IconShield />,
+    icon: Shield,
     title: 'Hébergement souverain',
     desc: "Déployez en 5 minutes avec Docker, on-premise ou sur votre cloud privé. Vos données restent chez vous. Option Mistral pour un traitement 100 % intra-EU.",
+  },
+];
+
+const BENEFITS = [
+  {
+    icon: Clock,
+    title: '2 minutes au lieu de 2 jours',
+    desc: "Votre réponse complète est générée en moins de 2 minutes, structurée selon les exigences du cahier des charges.",
+  },
+  {
+    icon: FileCheck,
+    title: 'Conformité garantie',
+    desc: "Chaque section est vérifiée : critères obligatoires, pièces attendues, format de réponse. Rien n'est oublié.",
+  },
+  {
+    icon: TrendingUp,
+    title: 'Taux de réussite en hausse',
+    desc: "Nos clients constatent une augmentation significative de leur taux de succès sur les marchés publics.",
+  },
+  {
+    icon: Shield,
+    title: 'Données souveraines',
+    desc: "Vos documents ne quittent jamais l'infrastructure européenne. Conformité RGPD et hébergement certifié.",
   },
 ];
 
 const STEPS = [
   {
     n: '01',
-    title: 'Chargez votre AO',
-    desc: "Collez le texte brut ou importez un PDF. OffrIA lit le document en entier et identifie automatiquement les critères de sélection et les exigences clés.",
+    title: 'Importez votre AO',
+    desc: "Glissez votre DCE (PDF ou texte brut). OffrIA extrait automatiquement les critères, les lots et les pièces demandées.",
     note: 'PDF natif · texte brut',
   },
   {
     n: '02',
-    title: "L'IA analyse et rédige",
-    desc: "Le moteur enrichit le contexte avec votre base documentaire, puis rédige les 8 sections de réponse en parallèle avec le LLM de votre choix.",
+    title: "Réponse générée en parallèle",
+    desc: "Chaque section — mémoire technique, références, planning — est rédigée simultanément et adaptée à votre profil entreprise.",
     note: '~90 secondes en moyenne',
   },
   {
     n: '03',
-    title: 'Relisez, ajustez, exportez',
-    desc: "Votre réponse structurée s'affiche section par section, éditable directement dans le navigateur. Exportez en .docx prêt à soumettre d'un seul clic.",
+    title: 'Relisez, ajustez, soumettez',
+    desc: "Exportez en Word ou PDF, apportez vos touches finales et déposez sur la plateforme de votre choix.",
     note: 'Export Word · éditable en ligne',
   },
 ];
@@ -122,12 +102,12 @@ const PLANS = [
     highlighted: false,
     badge: null as string | null,
     features: [
-      { text: '50 AOs générés / mois', tag: null },
-      { text: '3 providers LLM (GPT-4o, Claude, Mistral)', tag: null },
-      { text: 'Export Word (.docx)', tag: null },
-      { text: 'Signatures instantanées illimitées', tag: null },
-      { text: '1 utilisateur', tag: null },
-      { text: 'Support e-mail (48h)', tag: null },
+      '50 AOs générés / mois',
+      '3 providers LLM (GPT-4o, Claude, Mistral)',
+      'Export Word (.docx)',
+      'Signatures instantanées illimitées',
+      '1 utilisateur',
+      'Support e-mail (48h)',
     ],
     cta: "S'abonner — 79€/mois",
     note: 'Sans engagement · résiliable à tout moment',
@@ -140,13 +120,13 @@ const PLANS = [
     highlighted: true,
     badge: 'Recommandé' as string | null,
     features: [
-      { text: 'Génération illimitée', tag: null },
-      { text: 'Digestion jusqu\'à 50 documents†', tag: null },
-      { text: 'Chat avec vos documents', tag: 'Nouveau' },
-      { text: 'Signatures instantanées illimitées', tag: null },
-      { text: '5 utilisateurs', tag: null },
-      { text: 'Historique complet des générations', tag: null },
-      { text: 'Support prioritaire (4h)', tag: null },
+      'Génération illimitée',
+      "Digestion jusqu'à 50 documents†",
+      'Chat avec vos documents',
+      'Signatures instantanées illimitées',
+      '5 utilisateurs',
+      'Historique complet des générations',
+      'Support prioritaire (4h)',
     ],
     cta: "Contacter l'équipe",
     note: 'Le plus choisi par nos clients PME / ETI',
@@ -159,42 +139,33 @@ const PLANS = [
     highlighted: false,
     badge: null as string | null,
     features: [
-      { text: 'Génération illimitée', tag: null },
-      { text: 'Digestion jusqu\'à 200 documents†', tag: null },
-      { text: 'Chat avec vos documents', tag: 'Nouveau' },
-      { text: 'Signatures instantanées illimitées', tag: null },
-      { text: 'Utilisateurs illimités', tag: null },
-      { text: 'SSO / Active Directory', tag: null },
-      { text: 'SLA 99,9 % garanti', tag: null },
-      { text: 'Accompagnement dédié', tag: null },
+      'Génération illimitée',
+      "Digestion jusqu'à 200 documents†",
+      'Chat avec vos documents',
+      'Signatures instantanées illimitées',
+      'Utilisateurs illimités',
+      'SSO / Active Directory',
+      'SLA 99,9 % garanti',
+      'Accompagnement dédié',
     ],
     cta: "Contacter l'équipe",
     note: 'Déploiement en 5 jours ouvrés',
   },
 ];
 
-// ── Shared sub-elements ────────────────────────────────────
-function SectionLabel({ text }: { text: string }) {
-  return (
-    <p className="text-center text-[11px] font-semibold uppercase tracking-[0.18em] text-indigo-400 mb-3">
-      {text}
-    </p>
-  );
-}
-
 // ── Main component ─────────────────────────────────────────
-export default function LandingPage({ onEnterApp, onGoRegister }: { onEnterApp: OnEnterApp; onGoRegister: () => void }) {
+export default function LandingPage({ onEnterApp, onGoRegister }: { onEnterApp: () => void; onGoRegister: () => void }) {
   const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
 
-  // Landing is always dark
+  // Always light mode on landing
   useEffect(() => {
-    document.documentElement.classList.add('dark');
+    document.documentElement.classList.remove('dark');
   }, []);
 
-  const featuresRef  = useRef<HTMLElement>(null);
-  const howRef       = useRef<HTMLElement>(null);
-  const pricingRef   = useRef<HTMLElement>(null);
-  useScrollAnimation(featuresRef);
+  const benefitsRef = useRef<HTMLElement>(null);
+  const howRef      = useRef<HTMLElement>(null);
+  const pricingRef  = useRef<HTMLElement>(null);
+  useScrollAnimation(benefitsRef);
   useScrollAnimation(howRef);
   useScrollAnimation(pricingRef);
 
@@ -202,244 +173,237 @@ export default function LandingPage({ onEnterApp, onGoRegister }: { onEnterApp: 
     document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
   }
 
-  const btnGradient: React.CSSProperties = {
-    background: 'linear-gradient(135deg,#4338ca,#6366f1)',
-    boxShadow: '0 4px 24px rgba(99,102,241,0.4)',
-  };
-
   return (
-    <div className="min-h-screen text-white overflow-x-hidden" style={{ background: '#050914' }}>
+    <div className="min-h-screen bg-white text-foreground overflow-x-hidden font-sans">
 
-      {/* ── Fixed orb layer ───────────────────────────────── */}
-      <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
-        <div className="orb orb-1" />
-        <div className="orb orb-2" />
-        <div className="orb orb-3" />
-        <div className="noise-overlay" />
+      {/* ── Early bird banner ────────────────────────────── */}
+      <div className="fixed top-0 inset-x-0 z-50 flex items-center justify-center h-9 px-4 text-sm font-semibold overflow-hidden"
+        style={{ background: '#fbbf24', color: '#1c1917' }}>
+        {/* Mobile */}
+        <span className="sm:hidden">🐦 Early Bird — <strong>−30 %</strong> sur tous les plans</span>
+        {/* Desktop */}
+        <span className="hidden sm:inline">
+          🐦 Offre Early Bird — <strong>−30 % sur tous les plans</strong> pour les 50 premiers abonnés
+          <span style={{ color: '#78350f' }}> · Profitez-en avant la fin du lancement</span>
+        </span>
       </div>
 
       {/* ── Nav ──────────────────────────────────────────── */}
-      <nav
-        className="fixed top-0 inset-x-0 z-50 h-14 border-b border-white/[.05]"
-        style={{ background: 'rgba(5,9,20,0.75)', backdropFilter: 'blur(18px)', WebkitBackdropFilter: 'blur(18px)' }}
+      <header
+        className="fixed inset-x-0 z-40 h-16 border-b"
+        style={{ top: '36px', background: 'rgba(255,255,255,0.85)', backdropFilter: 'blur(18px)', borderColor: BRD }}
       >
-        <div className="max-w-6xl mx-auto px-6 h-full flex items-center justify-between">
+        <nav className="max-w-6xl mx-auto px-6 h-full flex items-center justify-between">
           {/* Logo */}
           <div className="flex items-center gap-2.5">
-            <div className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0"
-              style={{ background: 'linear-gradient(135deg,#4338ca,#6366f1)' }}>
+            <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: NAVY }}>
               <span className="font-display font-bold text-sm text-white">O</span>
             </div>
-            <span className="font-display text-[1.15rem] font-bold tracking-tight">
-              <span className="text-white">Offr</span>
-              <span className="text-gradient">IA</span>
-            </span>
+            <span className="font-display font-bold text-lg" style={{ color: DARK }}>OffrIA</span>
           </div>
 
           {/* Nav links — desktop */}
-          <div className="hidden md:flex items-center gap-7">
+          <div className="hidden md:flex items-center gap-8">
             {[
-              ['features', 'Fonctionnalités'],
-              ['how-it-works', 'Comment ça marche'],
-              ['pricing', 'Tarifs'],
+              ['features',      'Fonctionnalités'],
+              ['how-it-works',  'Comment ça marche'],
+              ['pricing',       'Tarifs'],
             ].map(([id, label]) => (
               <button key={id} onClick={() => scrollTo(id)}
-                className="text-sm text-slate-400 hover:text-white transition-colors">
+                className="text-sm transition-colors"
+                style={{ color: BODY }}
+                onMouseEnter={e => (e.currentTarget.style.color = DARK)}
+                onMouseLeave={e => (e.currentTarget.style.color = BODY)}
+              >
                 {label}
               </button>
             ))}
           </div>
 
           <div className="flex items-center gap-3">
-            {/* CTA */}
             <button onClick={onEnterApp}
-              className="px-4 py-2 rounded-lg text-sm font-semibold text-white transition-all hover:scale-[1.03] active:scale-[0.97]"
-              style={btnGradient}>
+              className="px-5 py-2 rounded-lg text-sm font-semibold text-white transition-all hover:opacity-90 active:scale-[0.97]"
+              style={{ background: NAVY }}>
               Accéder →
             </button>
             {/* Hamburger — mobile */}
-            <button
-              className="md:hidden p-2 text-slate-400 hover:text-white transition-colors"
-              onClick={() => setMobileMenuOpen(o => !o)}
-            >
+            <button className="md:hidden p-2 transition-colors" style={{ color: MUTED }}
+              onClick={() => setMobileMenuOpen(o => !o)}>
               {mobileMenuOpen
                 ? <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
                 : <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" /></svg>
               }
             </button>
           </div>
-        </div>
+        </nav>
 
         {/* Mobile menu */}
         {mobileMenuOpen && (
-          <div className="md:hidden border-t border-white/[.05] py-3 flex flex-col gap-1">
+          <div className="md:hidden border-t py-3 flex flex-col gap-1 bg-white" style={{ borderColor: BRD }}>
             {[
-              ['features', 'Fonctionnalités'],
+              ['features',     'Fonctionnalités'],
               ['how-it-works', 'Comment ça marche'],
-              ['pricing', 'Tarifs'],
+              ['pricing',      'Tarifs'],
             ].map(([id, label]) => (
               <button key={id}
                 onClick={() => { scrollTo(id); setMobileMenuOpen(false); }}
-                className="text-sm text-slate-400 hover:text-white transition-colors text-left px-6 py-2">
+                className="text-sm text-left px-6 py-2 transition-colors"
+                style={{ color: BODY }}>
                 {label}
               </button>
             ))}
           </div>
         )}
-      </nav>
+      </header>
 
-      <main className="relative z-10">
+      <main>
 
         {/* ══ 1 — HERO ══════════════════════════════════════════ */}
-        <section className="flex flex-col items-center justify-center px-6 text-center"
-          style={{ height: 'clamp(600px, 100vh, 900px)', paddingTop: '3.5rem', boxSizing: 'border-box' }}>
+        <section className="pt-40 sm:pt-44 pb-20 sm:pb-24 px-6 text-center">
+          <div className="max-w-4xl mx-auto">
 
-          <div
-            className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full border mb-6"
-            style={{ borderColor: 'rgba(99,102,241,0.3)', background: 'rgba(99,102,241,0.08)', animation: 'fade-in 0.7s ease forwards' }}
-          >
-            <span className="w-1.5 h-1.5 rounded-full bg-indigo-400 animate-pulse" />
-            <span className="text-indigo-300 text-xs font-semibold tracking-wide">Propulsé par Claude · GPT-4o · Mistral</span>
-          </div>
-
-          <h1
-            className="font-display font-bold leading-[1.06] tracking-tight mb-5 mx-auto"
-            style={{ fontSize: 'clamp(2rem, 5.5vw, 4.2rem)', maxWidth: '820px', animation: 'fade-in-up 0.7s ease 0.1s both' }}
-          >
-            Remportez plus de marchés.
-            <br /><span className="text-gradient">En 2 minutes chrono.</span>
-          </h1>
-
-          <p
-            className="text-slate-400 max-w-xl mx-auto mb-8 leading-relaxed"
-            style={{ fontSize: '1rem', animation: 'fade-in-up 0.7s ease 0.2s both' }}
-          >
-            OffrIA analyse votre appel d'offres, rédige 8 sections en parallèle et vous livre
-            une réponse professionnelle — pendant que vous prenez un café.
-          </p>
-
-          <div
-            className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-12"
-            style={{ animation: 'fade-in-up 0.7s ease 0.3s both' }}
-          >
-            <button onClick={onEnterApp}
-              className="px-7 py-3 rounded-xl text-white font-semibold transition-all hover:scale-[1.03] active:scale-[0.97]"
-              style={{ ...btnGradient, fontSize: '0.95rem', boxShadow: '0 4px 32px rgba(99,102,241,0.45)' }}>
-              Essayer gratuitement →
-            </button>
-            <button onClick={() => scrollTo('how-it-works')}
-              className="text-slate-500 hover:text-white text-sm transition-colors">
-              Comment ça marche ↓
-            </button>
-          </div>
-
-          <div
-            className="flex flex-wrap justify-center gap-8 sm:gap-14"
-            style={{ animation: 'fade-in-up 0.7s ease 0.4s both' }}
-          >
-            {[
-              { v: '< 2 min', l: 'par réponse AO' },
-              { v: '10×',     l: "plus d'AOs traités" },
-              { v: '3 LLMs',  l: 'Claude · GPT-4o · Mistral' },
-              { v: '100 Md€', l: 'marchés publics / an' },
-            ].map(({ v, l }) => (
-              <div key={v} className="text-center">
-                <p className="font-display font-bold text-2xl sm:text-3xl text-white mb-0.5">{v}</p>
-                <p className="text-xs text-slate-600">{l}</p>
-              </div>
-            ))}
-          </div>
-        </section>
-
-        {/* ══ 2 — VUE APPLICATION ═══════════════════════════════ */}
-        <section className="flex flex-col items-center justify-center px-6 py-8"
-          style={{ height: 'clamp(600px, 100vh, 900px)', paddingTop: '3.5rem', boxSizing: 'border-box' }}>
-          <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-indigo-400 mb-4">Aperçu</p>
-          <h2 className="font-display font-bold text-center mb-6"
-            style={{ fontSize: 'clamp(1.5rem, 3vw, 2.2rem)' }}>
-            L'interface en action
-          </h2>
-          <div
-            className="w-full max-w-4xl rounded-2xl overflow-hidden border border-white/[.07] flex-shrink-0"
-            style={{ boxShadow: '0 32px 80px rgba(0,0,0,0.75), 0 0 0 1px rgba(99,102,241,0.12)' }}
-          >
-            <div className="px-4 py-2.5 flex items-center gap-2 border-b border-white/[.06]" style={{ background: '#0a1526' }}>
-              <div className="flex gap-1.5">
-                <div className="w-2.5 h-2.5 rounded-full" style={{ background: 'rgba(239,68,68,.5)' }} />
-                <div className="w-2.5 h-2.5 rounded-full" style={{ background: 'rgba(234,179,8,.5)' }} />
-                <div className="w-2.5 h-2.5 rounded-full" style={{ background: 'rgba(34,197,94,.5)' }} />
-              </div>
-              <div className="flex-1 h-4 rounded mx-8" style={{ background: '#0f1929' }} />
+            {/* Badge */}
+            <div
+              className="inline-flex items-center gap-2 mb-8"
+              style={{ animation: 'fade-in-up 0.6s ease both' }}
+            >
+              <Sparkles className="w-4 h-4" style={{ color: MUTED }} />
+              <span className="text-sm font-sans" style={{ color: MUTED }}>
+                Propulsé par des agents IA autonomes
+              </span>
             </div>
-            <img src="/app-review.png" alt="Interface OffrIA" className="w-full block object-contain" />
-          </div>
-        </section>
 
-        {/* ══ 3 — FONCTIONNALITÉS ═══════════════════════════════ */}
-        <section id="features" ref={featuresRef}
-          className="flex flex-col items-center justify-center px-6 py-16 md:py-0"
-          style={{ minHeight: 'clamp(600px, 100vh, 900px)', paddingTop: '3.5rem', boxSizing: 'border-box' }}>
-          <div className="w-full max-w-6xl">
-            <SectionLabel text="Fonctionnalités" />
-            <h2 className="font-display font-bold text-center mb-2 animate-on-scroll"
-              style={{ fontSize: 'clamp(1.5rem, 3vw, 2.2rem)' }}>
-              Tout ce dont vous avez besoin
-              <br /><span className="text-gradient">pour répondre vite et bien</span>
-            </h2>
-            <p className="text-slate-500 text-center max-w-xl mx-auto mb-6 text-sm animate-on-scroll" data-stagger="1">
-              Une IA entraînée sur le langage des marchés publics, pas un chatbot généraliste.
+            {/* H1 */}
+            <h1
+              className="font-display font-extrabold leading-[1.08] tracking-tight mb-6"
+              style={{
+                fontSize: 'clamp(2.2rem, 5.5vw, 4rem)',
+                color: DARK,
+                animation: 'fade-in-up 0.6s ease 0.1s both',
+              }}
+            >
+              Remportez plus de marchés.
+              <br />
+              <span style={{ color: ROYAL }}>Sans y passer vos nuits.</span>
+            </h1>
+
+            {/* Subtitle */}
+            <p
+              className="font-serif text-lg sm:text-xl max-w-2xl mx-auto mb-10 leading-relaxed"
+              style={{ color: BODY, animation: 'fade-in-up 0.6s ease 0.2s both' }}
+            >
+              OffrIA analyse votre appel d'offres, rédige chaque section
+              et vous livre une réponse professionnelle — pendant que vous
+              vous concentrez sur votre cœur de métier.
             </p>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-              {FEATURES.map(({ icon, title, desc }, i) => (
-                <div key={i}
-                  className="animate-on-scroll rounded-xl p-4 border border-white/[.06] hover:border-indigo-500/30 transition-all duration-200 flex gap-3 sm:flex-col sm:gap-0"
-                  data-stagger={i + 2}
-                  style={{ background: 'rgba(11,18,32,0.7)', backdropFilter: 'blur(8px)' }}
-                >
-                  <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 sm:mb-3 text-indigo-400"
-                    style={{ background: 'rgba(99,102,241,0.12)', border: '1px solid rgba(99,102,241,0.2)' }}>
-                    {icon}
-                  </div>
-                  <div>
-                    <h3 className="font-display font-semibold text-white mb-1 text-sm">{title}</h3>
-                    <p className="text-slate-500 text-xs leading-relaxed">{desc}</p>
-                  </div>
+
+            {/* CTA */}
+            <div style={{ animation: 'fade-in-up 0.6s ease 0.3s both' }}>
+              <button onClick={onEnterApp}
+                className="w-full sm:w-auto px-8 py-4 rounded-xl text-white font-semibold text-base transition-all hover:opacity-90 active:scale-[0.97]"
+                style={{ background: ROYAL, boxShadow: `0 4px 20px ${ROYAL}55` }}>
+                Essayer gratuitement →
+              </button>
+            </div>
+
+            {/* Stats */}
+            <div
+              className="flex flex-wrap justify-center gap-10 sm:gap-16 mt-16"
+              style={{ animation: 'fade-in-up 0.6s ease 0.45s both' }}
+            >
+              {[
+                { v: '< 2 min',  l: 'par réponse AO' },
+                { v: '10×',      l: "plus d'AOs traités" },
+                { v: '3 LLMs',   l: 'Claude · GPT-4o · Mistral' },
+                { v: '100 Md€',  l: 'marchés publics / an' },
+              ].map(({ v, l }) => (
+                <div key={v} className="text-center">
+                  <p className="font-display font-extrabold text-2xl sm:text-3xl mb-0.5" style={{ color: DARK }}>{v}</p>
+                  <p className="text-xs" style={{ color: MUTED }}>{l}</p>
                 </div>
               ))}
             </div>
           </div>
         </section>
 
-        {/* ══ 4 — COMMENT ÇA MARCHE ════════════════════════════ */}
-        <section id="how-it-works" ref={howRef}
-          className="flex flex-col items-center justify-center px-6 py-16 md:py-0"
-          style={{ minHeight: 'clamp(600px, 100vh, 900px)', paddingTop: '3.5rem', boxSizing: 'border-box', background: 'rgba(8,14,26,0.6)' }}>
-          <div className="w-full max-w-5xl text-center">
-            <SectionLabel text="Comment ça marche" />
-            <h2 className="font-display font-bold mb-10 animate-on-scroll"
-              style={{ fontSize: 'clamp(1.5rem, 3vw, 2.2rem)' }}>
-              De l'AO brut à la réponse<br />
-              <span className="text-gradient">en 3 étapes</span>
-            </h2>
+        {/* ══ 2 — FONCTIONNALITÉS ═══════════════════════════════ */}
+        <section id="features" ref={benefitsRef}
+          className="py-24 px-6"
+          style={{ background: SURF }}>
+          <div className="max-w-6xl mx-auto">
+            <div className="text-center mb-14">
+              <p className="text-xs font-semibold uppercase tracking-widest mb-3" style={{ color: ROYAL }}>
+                Fonctionnalités
+              </p>
+              <h2 className="font-display font-bold text-3xl sm:text-4xl mb-4 animate-on-scroll" style={{ color: DARK }}>
+                Pourquoi les entreprises choisissent OffrIA
+              </h2>
+              <p className="font-serif text-lg max-w-xl mx-auto animate-on-scroll" data-stagger="1" style={{ color: BODY }}>
+                Concentrez-vous sur la stratégie. Nous nous occupons de la rédaction.
+              </p>
+            </div>
 
-            <div className="relative flex flex-col md:flex-row gap-6 md:gap-4 mb-10">
-              <div className="hidden md:block absolute top-7 left-[20%] right-[20%] h-px"
-                style={{ background: 'linear-gradient(90deg, transparent, rgba(99,102,241,0.25) 30%, rgba(99,102,241,0.25) 70%, transparent)' }} />
+            <div className="grid md:grid-cols-2 gap-6">
+              {BENEFITS.map(({ icon: Icon, title, desc }, i) => (
+                <div key={i}
+                  className="bg-white rounded-xl p-8 animate-on-scroll"
+                  data-stagger={i + 2}
+                  style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.04), 0 4px 16px rgba(30,58,138,0.06)', border: `1px solid ${BRD}` }}>
+                  <div className="w-12 h-12 rounded-lg flex items-center justify-center mb-5"
+                    style={{ background: `${ROYAL}1a` }}>
+                    <Icon className="w-6 h-6" style={{ color: ROYAL }} />
+                  </div>
+                  <h3 className="font-display font-bold text-xl mb-3" style={{ color: DARK }}>{title}</h3>
+                  <p className="font-serif leading-relaxed" style={{ color: BODY }}>{desc}</p>
+                </div>
+              ))}
+            </div>
+
+            {/* Les 6 features techniques en grid 3-col */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-8">
+              {FEATURES.map(({ icon: Icon, title, desc }, i) => (
+                <div key={i}
+                  className="bg-white rounded-xl p-5 animate-on-scroll"
+                  data-stagger={i + 6}
+                  style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.04)', border: `1px solid ${BRD}` }}>
+                  <div className="w-9 h-9 rounded-lg flex items-center justify-center mb-3"
+                    style={{ background: `${NAVY}12` }}>
+                    <Icon className="w-5 h-5" style={{ color: NAVY }} />
+                  </div>
+                  <h3 className="font-display font-semibold text-sm mb-1.5" style={{ color: DARK }}>{title}</h3>
+                  <p className="text-xs leading-relaxed" style={{ color: MUTED }}>{desc}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* ══ 3 — COMMENT ÇA MARCHE ════════════════════════════ */}
+        <section id="how-it-works" ref={howRef} className="py-24 px-6">
+          <div className="max-w-4xl mx-auto">
+            <div className="text-center mb-16">
+              <p className="text-xs font-semibold uppercase tracking-widest mb-3" style={{ color: ROYAL }}>
+                Processus
+              </p>
+              <h2 className="font-display font-bold text-3xl sm:text-4xl mb-3 animate-on-scroll" style={{ color: DARK }}>
+                Comment ça marche
+              </h2>
+              <p className="font-serif text-lg animate-on-scroll" data-stagger="1" style={{ color: BODY }}>
+                Trois étapes. Zéro complexité.
+              </p>
+            </div>
+
+            <div className="space-y-12">
               {STEPS.map(({ n, title, desc, note }, i) => (
-                <div key={i} className="flex-1 flex md:flex-col items-start md:items-center text-left md:text-center gap-4 md:gap-0 px-0 md:px-4 animate-on-scroll" data-stagger={i + 1}>
-                  <div className="w-12 h-12 md:w-14 md:h-14 rounded-full flex items-center justify-center flex-shrink-0 md:mb-4 relative z-10"
-                    style={{
-                      background: i === 1 ? 'linear-gradient(135deg,#4338ca,#6366f1)' : 'rgba(99,102,241,0.1)',
-                      border: i === 1 ? 'none' : '1px solid rgba(99,102,241,0.3)',
-                      boxShadow: i === 1 ? '0 0 36px rgba(99,102,241,0.55)' : 'none',
-                    }}>
-                    <span className="font-display font-bold text-sm" style={{ color: i === 1 ? '#fff' : '#818cf8' }}>{n}</span>
+                <div key={i} className="flex gap-5 sm:gap-8 items-start animate-on-scroll" data-stagger={i + 2}>
+                  <div className="flex-shrink-0 w-12 h-12 sm:w-14 sm:h-14 rounded-full flex items-center justify-center"
+                    style={{ background: NAVY }}>
+                    <span className="font-display font-bold text-white text-base sm:text-lg">{n}</span>
                   </div>
                   <div>
-                    <h3 className="font-display font-semibold text-white mb-1 text-sm">{title}</h3>
-                    <p className="text-slate-500 text-sm leading-relaxed mb-2">{desc}</p>
-                    <span className="text-[11px] px-2.5 py-1 rounded-full text-slate-600"
-                      style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.06)' }}>
+                    <h3 className="font-display font-bold text-xl mb-2" style={{ color: DARK }}>{title}</h3>
+                    <p className="font-serif leading-relaxed mb-3 max-w-xl" style={{ color: BODY }}>{desc}</p>
+                    <span className="text-xs px-2.5 py-1 rounded-full font-sans" style={{ background: `${ROYAL}14`, color: ROYAL, border: `1px solid ${ROYAL}30` }}>
                       {note}
                     </span>
                   </div>
@@ -447,67 +411,65 @@ export default function LandingPage({ onEnterApp, onGoRegister }: { onEnterApp: 
               ))}
             </div>
 
-            <button onClick={onEnterApp}
-              className="px-7 py-3 rounded-xl text-white font-semibold transition-all hover:scale-[1.03] active:scale-[0.97] animate-on-scroll"
-              data-stagger="4"
-              style={btnGradient}>
-              Générer ma première réponse →
-            </button>
+            <div className="text-center mt-14 animate-on-scroll" data-stagger="5">
+              <button onClick={onEnterApp}
+                className="w-full sm:w-auto px-8 py-4 rounded-xl text-white font-semibold text-base transition-all hover:opacity-90 active:scale-[0.97]"
+                style={{ background: ROYAL }}>
+                Générer ma première réponse →
+              </button>
+            </div>
           </div>
         </section>
 
-        {/* ══ 5 — TARIFS ════════════════════════════════════════ */}
-        <section id="pricing" ref={pricingRef}
-          className="flex flex-col items-center justify-center px-6 py-16 md:py-0"
-          style={{ minHeight: 'clamp(600px, 100vh, 900px)', paddingTop: '3.5rem', boxSizing: 'border-box' }}>
-          <div className="w-full max-w-5xl">
-            <SectionLabel text="Tarifs" />
-            <h2 className="font-display font-bold text-center mb-1 animate-on-scroll"
-              style={{ fontSize: 'clamp(1.5rem, 3vw, 2.2rem)' }}>
-              Choisissez votre plan
-            </h2>
-            <p className="text-slate-500 text-center mb-6 text-sm animate-on-scroll" data-stagger="1">
-              Sans engagement · Annulez à tout moment · Facture sous 48h
-            </p>
+        {/* ══ 4 — TARIFS ════════════════════════════════════════ */}
+        <section id="pricing" ref={pricingRef} className="py-24 px-6" style={{ background: SURF }}>
+          <div className="max-w-5xl mx-auto">
+            <div className="text-center mb-10">
+              <p className="text-xs font-semibold uppercase tracking-widest mb-3" style={{ color: ROYAL }}>
+                Tarifs
+              </p>
+              <h2 className="font-display font-bold text-3xl sm:text-4xl mb-2 animate-on-scroll" style={{ color: DARK }}>
+                Choisissez votre plan
+              </h2>
+              <p className="font-serif animate-on-scroll" data-stagger="1" style={{ color: BODY }}>
+                Sans engagement · Annulez à tout moment · Facture sous 48h
+              </p>
+            </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-center">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-5 items-center">
               {PLANS.map(({ name, price, period, tagline, highlighted, badge, features, cta, note }, i) => (
                 <div key={i}
-                  className="animate-on-scroll rounded-2xl p-5 border relative"
+                  className="bg-white rounded-2xl p-6 relative animate-on-scroll"
                   data-stagger={i + 2}
                   style={{
-                    background: highlighted ? 'rgba(12,21,38,0.95)' : 'rgba(8,14,26,0.6)',
-                    borderColor: highlighted ? 'rgba(99,102,241,0.5)' : 'rgba(255,255,255,0.06)',
+                    border: highlighted ? `2px solid ${NAVY}` : `1px solid ${BRD}`,
+                    boxShadow: highlighted ? `0 8px 40px ${NAVY}20, 0 0 0 1px ${NAVY}15` : '0 1px 3px rgba(0,0,0,0.04)',
                     transform: highlighted ? 'scale(1.02)' : 'none',
-                    boxShadow: highlighted ? '0 0 48px rgba(99,102,241,0.2), 0 0 0 1px rgba(99,102,241,0.15)' : 'none',
                     zIndex: highlighted ? 1 : 0,
                   }}>
                   {badge && (
                     <div className="absolute -top-3.5 left-1/2 -translate-x-1/2">
                       <span className="text-[11px] font-semibold px-3 py-1 rounded-full text-white"
-                        style={{ background: 'linear-gradient(135deg,#4338ca,#6366f1)' }}>{badge}</span>
+                        style={{ background: NAVY }}>{badge}</span>
                     </div>
                   )}
-                  <div className="flex items-start justify-between gap-4 mb-3">
-                    <div>
-                      <p className="font-display font-semibold text-white text-sm">{name}</p>
-                      <p className="text-slate-500 text-xs">{tagline}</p>
-                    </div>
-                    <div className="text-right flex-shrink-0">
-                      {period
-                        ? <span className="font-display font-bold text-2xl text-white">{price}<span className="text-slate-500 text-xs font-normal ml-1">{period}</span></span>
-                        : <span className="font-display font-bold text-lg text-white">{price}</span>
-                      }
-                    </div>
+                  <div className="mb-4">
+                    <p className="font-display font-bold text-base mb-0.5" style={{ color: DARK }}>{name}</p>
+                    <p className="text-xs" style={{ color: MUTED }}>{tagline}</p>
                   </div>
-                  <ul className="space-y-1.5 mb-4">
+                  <div className="mb-5">
+                    {period
+                      ? <span className="font-display font-extrabold text-3xl" style={{ color: DARK }}>
+                          {price}<span className="text-sm font-normal ml-1" style={{ color: MUTED }}>{period}</span>
+                        </span>
+                      : <span className="font-display font-bold text-xl" style={{ color: DARK }}>{price}</span>
+                    }
+                  </div>
+                  <ul className="space-y-2 mb-6">
                     {features.map((f, j) => (
-                      <li key={j} className="flex items-center gap-2 text-xs text-slate-400">
-                        <span className="text-indigo-400 flex-shrink-0"><IconCheck /></span>
-                        <span>{typeof f === 'string' ? f : f.text}</span>
-                        {typeof f !== 'string' && f.tag && (
-                          <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 flex-shrink-0">{f.tag}</span>
-                        )}
+                      <li key={j} className="flex items-start gap-2 text-sm" style={{ color: BODY }}>
+                        <Check className="w-4 h-4 flex-shrink-0 mt-0.5" style={{ color: ROYAL }} />
+                        <span>{f}</span>
                       </li>
                     ))}
                   </ul>
@@ -519,54 +481,77 @@ export default function LandingPage({ onEnterApp, onGoRegister }: { onEnterApp: 
                         (window as any).Calendly?.initPopupWidget({ url: 'https://calendly.com/charif-eljazouli' });
                       }
                     }}
-                    className="w-full py-2 rounded-xl text-sm font-semibold transition-all hover:scale-[1.02] active:scale-[0.98]"
+                    className="w-full py-2.5 rounded-xl text-sm font-semibold transition-all hover:opacity-90 active:scale-[0.98]"
                     style={highlighted
-                      ? { background: 'linear-gradient(135deg,#4338ca,#6366f1)', color: '#fff', boxShadow: '0 4px 20px rgba(99,102,241,0.4)' }
-                      : { background: 'rgba(99,102,241,0.12)', color: '#a5b4fc', border: '1px solid rgba(99,102,241,0.3)' }
+                      ? { background: NAVY, color: '#fff' }
+                      : { background: 'transparent', color: NAVY, border: `1.5px solid ${NAVY}` }
                     }>
                     {cta}
                   </button>
-                  <p className="text-[10px] text-slate-600 text-center mt-2">{note}</p>
+                  <p className="text-[10px] text-center mt-2" style={{ color: MUTED }}>{note}</p>
                 </div>
               ))}
             </div>
 
-            <p className="text-center text-slate-600 text-[11px] mt-4 animate-on-scroll" data-stagger="5">
+            <p className="text-center text-xs mt-4 animate-on-scroll" data-stagger="5" style={{ color: MUTED }}>
               † 1 document = fichier PDF jusqu'à 20 pages A4
             </p>
-            <p className="text-center text-slate-700 text-xs mt-2 animate-on-scroll" data-stagger="5">
+            <p className="text-center text-xs mt-1 animate-on-scroll" data-stagger="5" style={{ color: MUTED }}>
               Tous les prix sont HT · TVA applicable · Déploiement on-premise sur devis
             </p>
-            <p className="text-center text-slate-600 text-xs mt-4 animate-on-scroll" data-stagger="5">
+            <p className="text-center text-sm mt-5 animate-on-scroll" data-stagger="5" style={{ color: MUTED }}>
               Pas encore convaincu ?{' '}
-              <button onClick={onGoRegister} className="text-indigo-400 hover:text-indigo-300 transition-colors underline underline-offset-2">
+              <button onClick={onGoRegister} className="font-semibold underline underline-offset-2 transition-colors"
+                style={{ color: ROYAL }}>
                 Essayez gratuitement — 1 AO sans CB →
               </button>
             </p>
           </div>
         </section>
+
+        {/* ══ 5 — CTA BAND ═════════════════════════════════════ */}
+        <section className="py-24 px-6" style={{ background: NAVY }}>
+          <div className="max-w-3xl mx-auto text-center">
+            <h2 className="font-display font-bold text-3xl sm:text-4xl text-white mb-4">
+              Prêt à transformer votre taux de réussite ?
+            </h2>
+            <p className="font-serif text-lg mb-10 max-w-xl mx-auto" style={{ color: 'rgba(255,255,255,0.7)' }}>
+              Rejoignez les équipes commerciales qui gagnent du temps et remportent plus de marchés avec OffrIA.
+            </p>
+            <button onClick={onEnterApp}
+              className="w-full sm:w-auto px-8 py-4 rounded-xl font-semibold text-base transition-all hover:opacity-90 active:scale-[0.97]"
+              style={{ background: '#ffffff', color: NAVY }}>
+              Commencer gratuitement →
+            </button>
+          </div>
+        </section>
+
       </main>
 
       {/* ── Footer ───────────────────────────────────────────── */}
-      <footer className="relative z-10 border-t border-white/[.05] py-8 px-6">
-        <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4 text-slate-600 text-sm">
-          <span className="font-display font-bold text-base">
-            <span className="text-white">Offr</span>
-            <span className="text-gradient">IA</span>
-          </span>
-          <p>© 2025 OffrIA — L'IA qui remporte vos marchés.</p>
-          <div className="flex gap-6">
+      <footer className="py-12 px-6 border-t" style={{ borderColor: BRD }}>
+        <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6">
+          <div className="flex items-center gap-2.5">
+            <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: NAVY }}>
+              <span className="font-display font-bold text-xs text-white">O</span>
+            </div>
+            <span className="font-display font-semibold" style={{ color: DARK }}>OffrIA</span>
+          </div>
+          <div className="flex items-center gap-8 text-sm" style={{ color: MUTED }}>
             {[
-              ['features', 'Fonctionnalités'],
+              ['features',     'Fonctionnalités'],
               ['how-it-works', 'Comment ça marche'],
-              ['pricing', 'Tarifs'],
+              ['pricing',      'Tarifs'],
             ].map(([id, label]) => (
               <button key={id} onClick={() => scrollTo(id)}
-                className="hover:text-white transition-colors">
+                className="transition-colors hover:text-gray-900">
                 {label}
               </button>
             ))}
           </div>
+          <p className="text-sm font-serif" style={{ color: MUTED }}>
+            © 2025 OffrIA. Tous droits réservés.
+          </p>
         </div>
       </footer>
     </div>

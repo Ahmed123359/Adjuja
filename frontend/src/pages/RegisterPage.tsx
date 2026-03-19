@@ -10,6 +10,13 @@ type Props = {
   onGoLogin: () => void;
 };
 
+const NAVY  = '#1e3a8a';
+const ROYAL = '#3b82f6';
+const DARK  = '#0f172a';
+const BODY  = '#475569';
+const MUTED = '#64748b';
+const BRD   = '#e2e8f0';
+
 export default function RegisterPage({ onSuccess, onGoLogin }: Props) {
   const [nom,       setNom]       = useState('');
   const [prenom,    setPrenom]    = useState('');
@@ -25,6 +32,7 @@ export default function RegisterPage({ onSuccess, onGoLogin }: Props) {
   const googleBtnRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    document.documentElement.classList.remove('dark');
     const interval = setInterval(() => {
       if (typeof google !== 'undefined' && googleBtnRef.current) {
         clearInterval(interval);
@@ -44,7 +52,7 @@ export default function RegisterPage({ onSuccess, onGoLogin }: Props) {
           },
         });
         google.accounts.id.renderButton(googleBtnRef.current, {
-          theme: 'filled_black',
+          theme: 'outline',
           size: 'large',
           width: googleBtnRef.current.offsetWidth || 320,
           text: 'continue_with',
@@ -62,197 +70,143 @@ export default function RegisterPage({ onSuccess, onGoLogin }: Props) {
     try {
       const isAdmin = await register({ nom, prenom, email, password });
       if (isAdmin) {
-        onSuccess();  // admin → connexion directe
+        onSuccess();
       } else {
-        setEmailSent(true);  // freemium → vérification email
+        setEmailSent(true);
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Erreur lors de l\'inscription.');
+      setError(err instanceof Error ? err.message : "Erreur lors de l'inscription.");
     } finally {
       setLoading(false);
     }
   }
 
-  const inputStyle: React.CSSProperties = {
+  const inputCls: React.CSSProperties = {
     width: '100%',
     padding: '10px 14px',
     borderRadius: 10,
-    border: '1px solid rgba(255,255,255,0.1)',
-    background: 'rgba(255,255,255,0.04)',
-    color: '#e2e8f0',
+    border: `1px solid ${BRD}`,
+    background: '#fff',
+    color: DARK,
     fontSize: 14,
     outline: 'none',
   };
 
-  const btnStyle: React.CSSProperties = {
-    width: '100%',
-    padding: '11px',
-    borderRadius: 10,
-    background: loading ? '#312e81' : 'linear-gradient(135deg,#4338ca,#6366f1)',
-    color: '#fff',
-    fontWeight: 600,
-    fontSize: 14,
-    border: 'none',
-    cursor: loading ? 'not-allowed' : 'pointer',
-    transition: 'opacity 0.2s',
-    opacity: loading ? 0.7 : 1,
-  };
-
+  // ── Email sent state ───────────────────────────────────
   if (emailSent) {
     return (
-      <div className="min-h-screen flex items-center justify-center px-4" style={{ background: '#050914' }}>
-        <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
-          <div className="orb orb-1" /><div className="orb orb-2" /><div className="noise-overlay" />
+      <div className="min-h-screen flex flex-col items-center justify-center px-4" style={{ background: '#f8fafc' }}>
+        <div className="flex items-center gap-2.5 mb-8">
+          <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: NAVY }}>
+            <span className="font-display font-bold text-sm text-white">O</span>
+          </div>
+          <span className="font-display font-bold text-xl" style={{ color: DARK }}>OffrIA</span>
         </div>
-        <div className="relative z-10 w-full max-w-sm text-center">
-          <div className="flex items-center justify-center gap-2.5 mb-8">
-            <div className="w-8 h-8 rounded-xl flex items-center justify-center"
-              style={{ background: 'linear-gradient(135deg,#4338ca,#6366f1)' }}>
-              <span className="font-display font-bold text-base text-white">O</span>
-            </div>
-            <span className="font-display text-xl font-bold tracking-tight text-white">
-              Offr<span className="text-gradient">IA</span>
-            </span>
+
+        <div className="w-full max-w-sm bg-white rounded-2xl p-8 text-center"
+          style={{ border: `1px solid ${BRD}`, boxShadow: '0 4px 24px rgba(30,58,138,0.07)' }}>
+          <div className="w-14 h-14 rounded-full flex items-center justify-center mx-auto mb-5"
+            style={{ background: `${ROYAL}15`, border: `1px solid ${ROYAL}40` }}>
+            <svg className="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+              strokeWidth={1.8} style={{ color: ROYAL }}>
+              <path strokeLinecap="round" strokeLinejoin="round"
+                d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+            </svg>
           </div>
-          <div className="rounded-2xl p-8 border border-white/[.08]"
-            style={{ background: 'rgba(10,16,28,0.85)', backdropFilter: 'blur(20px)' }}>
-            <div className="w-14 h-14 rounded-full flex items-center justify-center mx-auto mb-4"
-              style={{ background: 'rgba(99,102,241,0.15)', border: '1px solid rgba(99,102,241,0.3)' }}>
-              <svg className="w-7 h-7 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-              </svg>
-            </div>
-            <h2 className="font-display font-bold text-white text-lg mb-2">Vérifiez votre email</h2>
-            <p className="text-slate-400 text-sm mb-1">
-              Un lien de confirmation a été envoyé à
-            </p>
-            <p className="text-indigo-300 font-medium text-sm mb-4">{email}</p>
-            <p className="text-slate-500 text-xs mb-6">
-              Cliquez sur le lien dans l'email pour activer votre compte et accéder à vos <strong className="text-slate-300">3 générations gratuites</strong>.
-            </p>
-            <button onClick={onGoLogin}
-              className="w-full py-2.5 rounded-xl text-sm font-semibold text-indigo-300 transition-colors hover:text-indigo-200"
-              style={{ background: 'rgba(99,102,241,0.1)', border: '1px solid rgba(99,102,241,0.25)' }}>
-              Aller à la connexion
-            </button>
-          </div>
+          <h2 className="font-display font-bold text-xl mb-2" style={{ color: DARK }}>Vérifiez votre email</h2>
+          <p className="text-sm mb-1" style={{ color: BODY }}>Un lien de confirmation a été envoyé à</p>
+          <p className="font-semibold text-sm mb-4" style={{ color: ROYAL }}>{email}</p>
+          <p className="text-xs mb-6" style={{ color: MUTED }}>
+            Cliquez sur le lien dans l'email pour activer votre compte
+            et accéder à votre <strong style={{ color: BODY }}>génération gratuite</strong>.
+          </p>
+          <button onClick={onGoLogin}
+            className="w-full py-2.5 rounded-xl text-sm font-semibold transition-all hover:opacity-90"
+            style={{ background: NAVY, color: '#fff' }}>
+            Aller à la connexion
+          </button>
         </div>
       </div>
     );
   }
 
+  // ── Register form ──────────────────────────────────────
   return (
-    <div className="min-h-screen flex items-center justify-center px-4" style={{ background: '#050914' }}>
-      {/* Orbs */}
-      <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
-        <div className="orb orb-1" />
-        <div className="orb orb-2" />
-        <div className="noise-overlay" />
+    <div className="min-h-screen flex flex-col items-center justify-center px-4" style={{ background: '#f8fafc' }}>
+
+      {/* Logo */}
+      <div className="flex items-center gap-2.5 mb-8">
+        <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: NAVY }}>
+          <span className="font-display font-bold text-sm text-white">O</span>
+        </div>
+        <span className="font-display font-bold text-xl" style={{ color: DARK }}>OffrIA</span>
       </div>
 
-      <div className="relative z-10 w-full max-w-sm">
-        {/* Logo */}
-        <div className="flex items-center justify-center gap-2.5 mb-8">
-          <div className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0"
-            style={{ background: 'linear-gradient(135deg,#4338ca,#6366f1)' }}>
-            <span className="font-display font-bold text-base text-white">O</span>
+      {/* Card */}
+      <div className="w-full max-w-sm bg-white rounded-2xl p-8"
+        style={{ border: `1px solid ${BRD}`, boxShadow: '0 4px 24px rgba(30,58,138,0.07)' }}>
+
+        <h1 className="font-display font-bold text-xl text-center mb-1" style={{ color: DARK }}>Créer un compte</h1>
+        <p className="text-sm text-center mb-6" style={{ color: MUTED }}>Rejoignez OffrIA gratuitement</p>
+
+        {error && (
+          <div className="mb-4 px-4 py-3 rounded-lg text-sm"
+            style={{ background: '#fef2f2', border: '1px solid #fecaca', color: '#dc2626' }}>
+            {error}
           </div>
-          <span className="font-display text-xl font-bold tracking-tight text-white">
-            Offr<span className="text-gradient">IA</span>
-          </span>
-        </div>
+        )}
 
-        {/* Card */}
-        <div
-          className="rounded-2xl p-8 border border-white/[.08]"
-          style={{ background: 'rgba(10,16,28,0.85)', backdropFilter: 'blur(20px)' }}
-        >
-          <h1 className="font-display font-bold text-white text-xl mb-1 text-center">Créer un compte</h1>
-          <p className="text-slate-500 text-sm text-center mb-6">Rejoignez OffrIA gratuitement</p>
-
-          {error && (
-            <div className="mb-4 px-4 py-3 rounded-lg text-sm text-red-300"
-              style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.25)' }}>
-              {error}
-            </div>
-          )}
-
-          <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="block text-xs text-slate-400 mb-1.5 font-medium">Prénom</label>
-                <input
-                  type="text"
-                  value={prenom}
-                  onChange={e => setPrenom(e.target.value)}
-                  placeholder="Jean"
-                  required
-                  style={inputStyle}
-                />
-              </div>
-              <div>
-                <label className="block text-xs text-slate-400 mb-1.5 font-medium">Nom</label>
-                <input
-                  type="text"
-                  value={nom}
-                  onChange={e => setNom(e.target.value)}
-                  placeholder="Dupont"
-                  required
-                  style={inputStyle}
-                />
-              </div>
+        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-semibold mb-1.5" style={{ color: BODY }}>Prénom</label>
+              <input type="text" value={prenom} onChange={e => setPrenom(e.target.value)}
+                placeholder="Jean" required style={inputCls} />
             </div>
             <div>
-              <label className="block text-xs text-slate-400 mb-1.5 font-medium">Email</label>
-              <input
-                type="email"
-                value={email}
-                onChange={e => setEmail(e.target.value)}
-                placeholder="vous@exemple.com"
-                required
-                style={inputStyle}
-              />
+              <label className="block text-xs font-semibold mb-1.5" style={{ color: BODY }}>Nom</label>
+              <input type="text" value={nom} onChange={e => setNom(e.target.value)}
+                placeholder="Dupont" required style={inputCls} />
             </div>
-            <div>
-              <label className="block text-xs text-slate-400 mb-1.5 font-medium">
-                Mot de passe{' '}
-                <span className="text-slate-600">
-                  (min. {rules.min_length} caractères{rules.require_digit ? ', 1 chiffre' : ''})
-                </span>
-              </label>
-              <input
-                type="password"
-                value={password}
-                onChange={e => setPassword(e.target.value)}
-                placeholder="••••••••"
-                minLength={rules.min_length}
-                required
-                style={inputStyle}
-              />
-            </div>
-
-            <button type="submit" disabled={loading} style={btnStyle}>
-              {loading ? 'Création…' : 'Créer mon compte'}
-            </button>
-          </form>
-
-          {/* Séparateur */}
-          <div className="flex items-center gap-3 my-4">
-            <div className="flex-1 h-px bg-white/10" />
-            <span className="text-xs text-slate-600">ou</span>
-            <div className="flex-1 h-px bg-white/10" />
+          </div>
+          <div>
+            <label className="block text-xs font-semibold mb-1.5" style={{ color: BODY }}>Email</label>
+            <input type="email" value={email} onChange={e => setEmail(e.target.value)}
+              placeholder="vous@exemple.com" required style={inputCls} />
+          </div>
+          <div>
+            <label className="block text-xs font-semibold mb-1.5" style={{ color: BODY }}>
+              Mot de passe{' '}
+              <span style={{ color: MUTED, fontWeight: 400 }}>
+                (min. {rules.min_length} car.{rules.require_digit ? ', 1 chiffre' : ''})
+              </span>
+            </label>
+            <input type="password" value={password} onChange={e => setPassword(e.target.value)}
+              placeholder="••••••••" minLength={rules.min_length} required style={inputCls} />
           </div>
 
-          {/* Bouton Google — rendu par le SDK GSI */}
-          <div ref={googleBtnRef} style={{ width: '100%', minHeight: 44 }} />
+          <button type="submit" disabled={loading}
+            className="w-full py-3 rounded-xl text-sm font-semibold text-white transition-all hover:opacity-90 active:scale-[0.98]"
+            style={{ background: loading ? MUTED : NAVY, cursor: loading ? 'not-allowed' : 'pointer' }}>
+            {loading ? 'Création…' : 'Créer mon compte'}
+          </button>
+        </form>
 
-          <p className="text-center text-sm text-slate-500 mt-5">
-            Déjà un compte ?{' '}
-            <button onClick={onGoLogin} className="text-indigo-400 hover:text-indigo-300 font-medium transition-colors">
-              Se connecter
-            </button>
-          </p>
+        <div className="flex items-center gap-3 my-5">
+          <div className="flex-1 h-px" style={{ background: BRD }} />
+          <span className="text-xs" style={{ color: MUTED }}>ou</span>
+          <div className="flex-1 h-px" style={{ background: BRD }} />
         </div>
+
+        <div ref={googleBtnRef} style={{ width: '100%', minHeight: 44 }} />
+
+        <p className="text-center text-sm mt-5" style={{ color: MUTED }}>
+          Déjà un compte ?{' '}
+          <button onClick={onGoLogin} className="font-semibold transition-colors hover:underline"
+            style={{ color: ROYAL }}>
+            Se connecter
+          </button>
+        </p>
       </div>
     </div>
   );

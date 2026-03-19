@@ -17,6 +17,7 @@ data/
 documents/
 knowledge_base/
 scripts/
+QA/
 
 # R&D — sorties du scraper (ZIPs téléchargés, debug, rapports, base de données locale)
 rd/scrapper/output/
@@ -29,4 +30,5 @@ worker/.venv/
 
 # Lovable — dossier généré automatiquement
 lovable/
+
 
