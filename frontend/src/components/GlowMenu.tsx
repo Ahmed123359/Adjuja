@@ -13,7 +13,8 @@ export interface MenuItem {
   iconColor: string;
 }
 
-interface MenuBarProps extends React.HTMLAttributes<HTMLDivElement> {
+interface MenuBarProps {
+  className?: string;
   items: MenuItem[];
   activeItem?: string;
   onItemClick?: (label: string) => void;
@@ -40,14 +41,13 @@ const navGlowVariants = {
 const sharedTransition = { type: 'spring', stiffness: 100, damping: 20, duration: 0.5 };
 
 export const MenuBar = React.forwardRef<HTMLDivElement, MenuBarProps>(
-  ({ className, items, activeItem, onItemClick, ...props }, ref) => {
+  ({ className, items, activeItem, onItemClick }, ref) => {
     return (
       <motion.nav
         ref={ref}
         className={cn('flex items-center relative', className)}
         initial="initial"
         whileHover="hover"
-        {...(props as React.HTMLAttributes<HTMLElement>)}
       >
         <ul className="flex items-center gap-1">
           {items.map((item) => {
