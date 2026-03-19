@@ -303,7 +303,7 @@ export default function LeftPanel(props: Props) {
                         : 'text-muted-foreground hover:text-foreground'
                     }`}
                   >
-                    {l === 'fr' ? '🇫🇷 FR' : '🇬🇧 EN'}
+                    {l === 'fr' ? 'FR' : 'EN'}
                   </button>
                 ))}
               </div>
