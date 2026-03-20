@@ -42,20 +42,20 @@ class UsageService:
                 CREATE TABLE IF NOT EXISTS usage (
                     id               INTEGER PRIMARY KEY CHECK (id = 1),
                     total_tokens     INTEGER NOT NULL DEFAULT 0,
-                    total_appels     INTEGER NOT NULL DEFAULT 0,
-                    total_tokens_ocr INTEGER NOT NULL DEFAULT 0
+                    total_appels     INTEGER NOT NULL DEFAULT 0
                 )
             """)
+            # Migration : ajoute la colonne si elle n'existe pas (DB existante)
+            # Doit s'exécuter AVANT l'INSERT pour ne pas référencer une colonne absente.
+            try:
+                conn.execute("ALTER TABLE usage ADD COLUMN total_tokens_ocr INTEGER NOT NULL DEFAULT 0")
+            except Exception:
+                pass  # Colonne déjà présente
             # INSERT OR IGNORE : crée la ligne au premier démarrage,
             # ne fait rien si elle existe déjà (données conservées).
             conn.execute(
                 "INSERT OR IGNORE INTO usage (id, total_tokens, total_appels, total_tokens_ocr) VALUES (1, 0, 0, 0)"
             )
-            # Migration : ajoute la colonne si elle n'existe pas (DB existante)
-            try:
-                conn.execute("ALTER TABLE usage ADD COLUMN total_tokens_ocr INTEGER NOT NULL DEFAULT 0")
-            except Exception:
-                pass  # Colonne déjà présente
 
     def _connect(self) -> sqlite3.Connection:
         conn = sqlite3.connect(str(self._db_path), check_same_thread=False)
