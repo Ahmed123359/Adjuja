@@ -38,12 +38,12 @@ export default function SettingsPage({
   }
 
   return (
-    <div className="flex-1 flex min-h-screen bg-background">
+    <div className="flex-1 flex flex-col sm:flex-row min-h-screen bg-background">
 
-      {/* ── Sidebar ─────────────────────────────────────── */}
-      <aside className="w-56 flex-shrink-0 px-3 py-10 border-r border-border">
-        <h1 className="text-2xl font-semibold text-foreground px-3 mb-6">Paramètres</h1>
-        <nav className="flex flex-col gap-0.5">
+      {/* ── Sidebar (desktop) / Tabs (mobile) ───────────── */}
+      <aside className="sm:w-56 sm:flex-shrink-0 sm:px-3 sm:py-10 sm:border-r border-b sm:border-b-0 border-border">
+        <h1 className="hidden sm:block text-2xl font-semibold text-foreground px-3 mb-6">Paramètres</h1>
+        <nav className="flex sm:flex-col gap-0.5 px-3 sm:px-0 py-2 sm:py-0">
           {([
             { id: 'general',     label: 'Général' },
             { id: 'utilisation', label: 'Utilisation' },
@@ -64,7 +64,7 @@ export default function SettingsPage({
       </aside>
 
       {/* ── Content ─────────────────────────────────────── */}
-      <main className="flex-1 overflow-y-auto px-12 py-10 max-w-2xl">
+      <main className="flex-1 overflow-y-auto px-4 sm:px-12 py-6 sm:py-10 max-w-2xl">
 
         {section === 'general' && (
           <div className="space-y-8">
