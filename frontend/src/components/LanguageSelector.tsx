@@ -38,7 +38,7 @@ export default function LanguageSelector() {
 
       {open && (
         <div
-          className="absolute right-0 mt-2 w-36 rounded-xl overflow-hidden shadow-lg border"
+          className="absolute left-0 mt-2 w-36 rounded-xl overflow-hidden shadow-lg border"
           style={{ background: 'rgba(255,255,255,0.95)', backdropFilter: 'blur(16px)', borderColor: '#e2e8f0', animation: 'fade-in-down 0.15s ease both' }}
         >
           {LANGUAGES.map(lang => (
