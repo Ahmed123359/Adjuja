@@ -135,7 +135,7 @@ export default function LandingPage({ onEnterApp, onGoRegister }: { onEnterApp: 
             <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: NAVY }}>
               <span className="font-display font-bold text-sm text-white">O</span>
             </div>
-            <span className="font-display font-bold text-lg" style={{ color: DARK }}>OffrIA</span>
+            <span className="hidden sm:inline font-display font-bold text-lg" style={{ color: DARK }}>OffrIA</span>
           </div>
 
           {/* Nav links — desktop */}
