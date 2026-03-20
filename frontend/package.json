@@ -16,7 +16,9 @@
     "pdfjs-dist":    "^3.11.174",
     "xlsx":          "^0.18.5",
     "framer-motion": "^11.0.0",
-    "lucide-react":  "^0.400.0"
+    "lucide-react":  "^0.400.0",
+    "lottie-react":  "^2.4.0",
+    "@lottiefiles/dotlottie-react": "^0.6.0"
   },
   "devDependencies": {
     "@types/react":        "^18.3.1",
