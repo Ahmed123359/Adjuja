@@ -268,7 +268,27 @@ export default function LandingPage({ onEnterApp, onGoRegister }: { onEnterApp: 
             >
               Remportez plus de marchés.
               <br />
-              <span style={{ color: ROYAL }}>Sans y passer vos nuits.</span>
+              <span style={{ color: ROYAL }}>
+                Sans y passer vos{' '}
+                <span className="relative inline-block">
+                  nuits
+                  {/* Tache de marqueur rouge — forme irrégulière, style main */}
+                  <svg
+                    aria-hidden="true"
+                    className="absolute overflow-visible pointer-events-none"
+                    viewBox="0 0 100 22"
+                    preserveAspectRatio="none"
+                    style={{ top: '65%', transform: 'translateY(-50%)', height: '0.55em', left: '-3%', width: '106%' }}
+                  >
+                    <path
+                      d="M0,6 C8,3 30,2 55,4 C75,5 90,3 102,5 L103,16 C88,19 60,18 40,17 C20,16 8,18 -1,15 Z"
+                      fill="#ef4444"
+                      opacity="0.78"
+                    />
+                  </svg>
+                </span>
+                .
+              </span>
             </h1>
 
             {/* Subtitle */}
