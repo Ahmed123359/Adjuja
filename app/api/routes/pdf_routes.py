@@ -1,9 +1,10 @@
 import logging
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, status
 from pydantic import BaseModel
-from app.api.dependencies import get_current_user
+from app.api.dependencies import get_current_user, get_usage_service
 from app.models.user import UserPublic
 from app.services.pdf_extract_service import PdfExtractService
+from app.services.usage_service import UsageService
 from app.config.settings import get_settings
 
 router = APIRouter(prefix="/pdf", tags=["PDF"])
@@ -32,6 +33,7 @@ class PdfExtractResponse(BaseModel):
 async def extract_pdf(
     file:         UploadFile       = File(..., description="Fichier PDF de l'appel d'offres"),
     current_user: UserPublic       = Depends(get_current_user),
+    usage:        UsageService     = Depends(get_usage_service),
 ) -> PdfExtractResponse:
     """
     Extrait le texte d'un PDF d'appel d'offres.
@@ -77,10 +79,17 @@ async def extract_pdf(
             detail=f"Impossible d'extraire le texte du PDF : {e}",
         )
 
-    logger.info(
-        "Extraction PDF réussie — user=%s méthode=%s pages=%d",
-        current_user.id, result.method, result.pages,
-    )
+    if result.tokens_ocr > 0:
+        usage.add_ocr_tokens(result.tokens_ocr)
+        logger.info(
+            "OCR GPT-4o — user=%s pages=%d tokens_ocr=%d",
+            current_user.id, result.pages, result.tokens_ocr,
+        )
+    else:
+        logger.info(
+            "Extraction PDF réussie — user=%s méthode=%s pages=%d",
+            current_user.id, result.method, result.pages,
+        )
 
     return PdfExtractResponse(
         text=result.text,

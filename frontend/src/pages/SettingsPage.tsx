@@ -1,42 +1,8 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import type { Model, UsageData } from '../types';
 
-const inputCls = "w-full px-3 py-2 text-sm border border-border rounded-lg bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/40 transition-all";
-
-const PROVIDER_META: Record<string, { name: string; selectedColor: string; icon: (cls: string) => React.ReactNode }> = {
-  openai: {
-    name: 'GPT-4',
-    selectedColor: 'text-emerald-600',
-    icon: cls => (
-      <svg className={`h-5 w-5 ${cls}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-        <path d="M12 8V4H8"/><rect width="16" height="12" x="4" y="8" rx="2"/>
-        <path d="M2 14h2"/><path d="M20 14h2"/><path d="M15 13v2"/><path d="M9 13v2"/>
-      </svg>
-    ),
-  },
-  anthropic: {
-    name: 'Claude',
-    selectedColor: 'text-amber-600',
-    icon: cls => (
-      <svg className={`h-5 w-5 ${cls}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-        <path d="M9.5 2A2.5 2.5 0 0 1 12 4.5v15a2.5 2.5 0 0 1-4.96-.44 2.5 2.5 0 0 1-2.96-3.08 3 3 0 0 1-.34-5.58 2.5 2.5 0 0 1 1.32-4.24 2.5 2.5 0 0 1 1.98-3A2.5 2.5 0 0 1 9.5 2Z"/>
-        <path d="M14.5 2A2.5 2.5 0 0 0 12 4.5v15a2.5 2.5 0 0 0 4.96-.44 2.5 2.5 0 0 0 2.96-3.08 3 3 0 0 0 .34-5.58 2.5 2.5 0 0 0-1.32-4.24 2.5 2.5 0 0 0-1.98-3A2.5 2.5 0 0 0 14.5 2Z"/>
-      </svg>
-    ),
-  },
-  mistral: {
-    name: 'Mistral',
-    selectedColor: 'text-sky-600',
-    icon: cls => (
-      <svg className={`h-5 w-5 ${cls}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-        <path d="M17.7 7.7a2.5 2.5 0 1 1 1.8 4.3H2"/>
-        <path d="M9.6 4.6A2 2 0 1 1 11 8H2"/>
-        <path d="M12.6 19.4A2 2 0 1 0 14 16H2"/>
-      </svg>
-    ),
-  },
-};
+type Section = 'general' | 'utilisation';
 
 type Props = {
   provider: string;
@@ -49,156 +15,255 @@ type Props = {
   onResetUsage: () => void;
 };
 
-export default function SettingsPage({ provider, setProvider, model, setModel, models, usage, onRefreshUsage, onResetUsage }: Props) {
+const PROVIDERS: { id: string; label: string; description: string }[] = [
+  { id: 'anthropic', label: 'Anthropic',  description: 'Claude — Meilleur pour la rédaction complexe' },
+  { id: 'openai',    label: 'OpenAI',     description: 'GPT-4o — Polyvalent et rapide' },
+  { id: 'mistral',   label: 'Mistral',    description: 'Mistral — Souveraineté européenne des données' },
+];
+
+export default function SettingsPage({
+  provider, setProvider, model, setModel, models,
+  usage, onRefreshUsage, onResetUsage,
+}: Props) {
   const navigate = useNavigate();
+  const [section, setSection] = useState<Section>('general');
   const [saved, setSaved] = useState(false);
   const [confirmReset, setConfirmReset] = useState(false);
 
-  const providers      = [...new Set(models.map(m => m.provider))];
   const filteredModels = models.filter(m => m.provider === provider);
 
   function handleSave() {
     setSaved(true);
-    setTimeout(() => { setSaved(false); navigate(-1); }, 800);
+    setTimeout(() => { setSaved(false); navigate(-1); }, 900);
   }
 
   return (
-    <div className="flex-1 overflow-y-auto">
-      <div className="max-w-2xl mx-auto px-6 py-8 space-y-8">
+    <div className="flex-1 flex min-h-screen bg-background">
 
-        {/* Hero */}
-        <div className="space-y-2 animate-fade-in">
-          <h1 className="text-3xl font-bold text-foreground tracking-tight">Réglages</h1>
-          <p className="text-base text-muted-foreground">Configurez le modèle IA utilisé pour la génération.</p>
-        </div>
-
-        {/* Modèle IA */}
-        <div className="border border-border rounded-xl bg-card p-6 space-y-6">
-          <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Modèle IA</h2>
-
-          {/* Provider */}
-          <div className="space-y-3">
-            <p className="text-sm font-medium text-foreground">Fournisseur</p>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              {(providers.length > 0 ? providers : ['anthropic', 'openai', 'mistral']).map(p => {
-                const meta       = PROVIDER_META[p] ?? { name: p, icon: () => null, selectedColor: 'text-primary' };
-                const isSelected = p === provider;
-                return (
-                  <button
-                    key={p}
-                    onClick={() => setProvider(p)}
-                    className={`relative flex flex-col items-center gap-2 py-4 px-3 rounded-xl text-sm font-medium transition-all border ${
-                      isSelected
-                        ? 'border-primary bg-primary/5 text-foreground shadow-sm ring-1 ring-primary/20'
-                        : 'border-border bg-card text-muted-foreground hover:border-primary/30 hover:bg-accent/50'
-                    }`}
-                  >
-                    {isSelected && <div className="absolute top-2 right-2 h-2 w-2 rounded-full bg-primary" />}
-                    {meta.icon(isSelected ? meta.selectedColor : 'text-muted-foreground')}
-                    <span>{meta.name}</span>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* Modèle */}
-          <div className="space-y-2">
-            <p className="text-sm font-medium text-foreground">Modèle</p>
-            <select className={inputCls} value={model} onChange={e => setModel(e.target.value)}>
-              {filteredModels.map(m => (
-                <option key={m.model_id} value={m.model_id}>
-                  {m.model_id}{m.description ? ` — ${m.description}` : ''}
-                </option>
-              ))}
-            </select>
-            <p className="text-xs text-muted-foreground">Ce modèle sera utilisé pour toutes les générations.</p>
-          </div>
-        </div>
-
-        {/* Utilisation */}
-        <div className="border border-border rounded-xl bg-card p-6 space-y-5">
-          <div className="flex items-center justify-between">
-            <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Utilisation</h2>
-            <button onClick={onRefreshUsage} className="text-xs text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1">
-              <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-              </svg>
-              Actualiser
+      {/* ── Sidebar ─────────────────────────────────────── */}
+      <aside className="w-56 flex-shrink-0 px-3 py-10 border-r border-border">
+        <h1 className="text-2xl font-semibold text-foreground px-3 mb-6">Paramètres</h1>
+        <nav className="flex flex-col gap-0.5">
+          {([
+            { id: 'general',     label: 'Général' },
+            { id: 'utilisation', label: 'Utilisation' },
+          ] as { id: Section; label: string }[]).map(item => (
+            <button
+              key={item.id}
+              onClick={() => setSection(item.id)}
+              className={`text-left px-3 py-2 rounded-lg text-sm transition-colors ${
+                section === item.id
+                  ? 'bg-muted text-foreground font-medium'
+                  : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
+              }`}
+            >
+              {item.label}
             </button>
-          </div>
+          ))}
+        </nav>
+      </aside>
 
-          {usage ? (
-            <div className="grid grid-cols-2 gap-4">
-              <div className="bg-background border border-border rounded-xl p-4 space-y-2">
-                <p className="text-xs text-muted-foreground font-medium">Tokens consommés</p>
-                <p className="text-2xl font-bold text-foreground tabular-nums">{usage.total_tokens.toLocaleString('fr-FR')}</p>
-                {usage.max_tokens_cumul > 0 && (
-                  <div className="space-y-1">
-                    <div className="h-1.5 rounded-full bg-muted overflow-hidden">
-                      <div className="h-full rounded-full bg-primary transition-all" style={{ width: `${Math.min(100, (usage.total_tokens / usage.max_tokens_cumul) * 100)}%` }} />
-                    </div>
-                    <p className="text-[10px] text-muted-foreground">{Math.round((usage.total_tokens / usage.max_tokens_cumul) * 100)}% · max {usage.max_tokens_cumul.toLocaleString('fr-FR')}</p>
-                  </div>
-                )}
-              </div>
-              <div className="bg-background border border-border rounded-xl p-4 space-y-2">
-                <p className="text-xs text-muted-foreground font-medium">Générations effectuées</p>
-                <p className="text-2xl font-bold text-foreground tabular-nums">{usage.total_appels}</p>
-                {usage.max_appels > 0 && (
-                  <div className="space-y-1">
-                    <div className="h-1.5 rounded-full bg-muted overflow-hidden">
-                      <div className="h-full rounded-full bg-primary transition-all" style={{ width: `${Math.min(100, (usage.total_appels / usage.max_appels) * 100)}%` }} />
-                    </div>
-                    <p className="text-[10px] text-muted-foreground">{Math.round((usage.total_appels / usage.max_appels) * 100)}% · max {usage.max_appels}</p>
-                  </div>
-                )}
+      {/* ── Content ─────────────────────────────────────── */}
+      <main className="flex-1 overflow-y-auto px-12 py-10 max-w-2xl">
+
+        {section === 'general' && (
+          <div className="space-y-8">
+            <h2 className="text-xl font-semibold text-foreground">Modèle IA</h2>
+
+            {/* Provider */}
+            <div className="space-y-3">
+              <label className="text-sm font-medium text-foreground">Fournisseur</label>
+              <div className="flex flex-col gap-2">
+                {PROVIDERS.filter(p => models.some(m => m.provider === p.id) || models.length === 0).map(p => {
+                  const isSelected = p.id === provider;
+                  return (
+                    <button
+                      key={p.id}
+                      onClick={() => setProvider(p.id)}
+                      className={`flex items-center justify-between px-4 py-3 rounded-xl border text-left transition-all ${
+                        isSelected
+                          ? 'border-foreground/20 bg-muted'
+                          : 'border-border hover:border-foreground/10 hover:bg-muted/40'
+                      }`}
+                    >
+                      <div>
+                        <p className={`text-sm font-medium ${isSelected ? 'text-foreground' : 'text-muted-foreground'}`}>
+                          {p.label}
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-0.5">{p.description}</p>
+                      </div>
+                      <div className={`h-4 w-4 rounded-full border-2 flex-shrink-0 transition-all ${
+                        isSelected ? 'border-foreground bg-foreground' : 'border-border'
+                      }`}>
+                        {isSelected && <div className="h-full w-full rounded-full bg-background scale-[0.4]" />}
+                      </div>
+                    </button>
+                  );
+                })}
               </div>
             </div>
-          ) : (
-            <p className="text-sm text-muted-foreground">Chargement…</p>
-          )}
 
-          <div className="pt-1 border-t border-border flex items-center justify-between">
-            <p className="text-xs text-muted-foreground">Remettre les compteurs à zéro</p>
-            {confirmReset ? (
-              <div className="flex items-center gap-2">
-                <span className="text-xs text-muted-foreground">Confirmer ?</span>
-                <button onClick={() => { onResetUsage(); setConfirmReset(false); }} className="text-xs px-3 py-1.5 rounded-lg bg-destructive text-destructive-foreground hover:bg-destructive/90 transition-colors">Oui</button>
-                <button onClick={() => setConfirmReset(false)} className="text-xs px-3 py-1.5 rounded-lg border border-border hover:bg-accent transition-colors">Annuler</button>
+            {/* Modèle */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-foreground">Modèle</label>
+              <select
+                value={model}
+                onChange={e => setModel(e.target.value)}
+                className="w-full px-3 py-2.5 text-sm border border-border rounded-xl bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-foreground/10 focus:border-foreground/20 transition-all"
+              >
+                {filteredModels.map(m => (
+                  <option key={m.model_id} value={m.model_id}>
+                    {m.model_id}{m.description ? ` — ${m.description}` : ''}
+                  </option>
+                ))}
+              </select>
+              <p className="text-xs text-muted-foreground">Utilisé pour toutes les générations et le chat.</p>
+            </div>
+
+            {/* Save */}
+            <div className="flex items-center gap-3 pt-2">
+              <button
+                onClick={handleSave}
+                className={`px-5 py-2 rounded-lg text-sm font-medium transition-all ${
+                  saved
+                    ? 'bg-emerald-500 text-white'
+                    : 'bg-foreground text-background hover:bg-foreground/90'
+                }`}
+              >
+                {saved ? '✓ Enregistré' : 'Enregistrer'}
+              </button>
+              <button
+                onClick={() => navigate(-1)}
+                className="px-5 py-2 rounded-lg text-sm text-muted-foreground hover:text-foreground border border-border hover:border-foreground/20 transition-all"
+              >
+                Retour
+              </button>
+            </div>
+          </div>
+        )}
+
+        {section === 'utilisation' && (
+          <div className="space-y-8">
+            <div className="flex items-center justify-between">
+              <h2 className="text-xl font-semibold text-foreground">Utilisation</h2>
+              <button
+                onClick={onRefreshUsage}
+                className="text-sm text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1.5"
+              >
+                <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                </svg>
+                Actualiser
+              </button>
+            </div>
+
+            {usage ? (
+              <div className="space-y-6">
+
+                {/* Tokens génération */}
+                <div className="space-y-2">
+                  <div className="flex items-end justify-between">
+                    <div>
+                      <p className="text-sm font-medium text-foreground">Tokens de génération</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">Brief stratégique + réponse AO + chat inclus</p>
+                    </div>
+                    <span className="text-2xl font-semibold text-foreground tabular-nums">
+                      {usage.total_tokens.toLocaleString('fr-FR')}
+                    </span>
+                  </div>
+                  {usage.max_tokens_cumul > 0 && (
+                    <div className="space-y-1">
+                      <div className="h-1.5 rounded-full bg-muted overflow-hidden">
+                        <div
+                          className="h-full rounded-full bg-foreground transition-all"
+                          style={{ width: `${Math.min(100, (usage.total_tokens / usage.max_tokens_cumul) * 100)}%` }}
+                        />
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        {usage.total_tokens.toLocaleString('fr-FR')} / {usage.max_tokens_cumul.toLocaleString('fr-FR')} tokens ({Math.round((usage.total_tokens / usage.max_tokens_cumul) * 100)}%)
+                      </p>
+                    </div>
+                  )}
+                </div>
+
+                <div className="border-t border-border" />
+
+                {/* Générations */}
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-foreground">Réponses AO générées</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">Appels complets uniquement</p>
+                  </div>
+                  <div className="text-right">
+                    <span className="text-2xl font-semibold text-foreground tabular-nums">{usage.total_appels}</span>
+                    {usage.max_appels > 0 && (
+                      <p className="text-xs text-muted-foreground">/ {usage.max_appels} max</p>
+                    )}
+                  </div>
+                </div>
+
+                <div className="border-t border-border" />
+
+                {/* OCR */}
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-foreground">Tokens OCR</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      GPT-4o vision — PDFs scannés uniquement
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <span className={`text-2xl font-semibold tabular-nums ${usage.total_tokens_ocr > 0 ? 'text-amber-600' : 'text-muted-foreground'}`}>
+                      {usage.total_tokens_ocr.toLocaleString('fr-FR')}
+                    </span>
+                    {usage.total_tokens_ocr === 0 && (
+                      <p className="text-xs text-muted-foreground">Aucun PDF scanné</p>
+                    )}
+                  </div>
+                </div>
+
+                <div className="border-t border-border" />
+
+                {/* Reset */}
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-foreground">Réinitialiser les compteurs</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">Remet tous les compteurs à zéro</p>
+                  </div>
+                  {confirmReset ? (
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-muted-foreground">Confirmer ?</span>
+                      <button
+                        onClick={() => { onResetUsage(); setConfirmReset(false); }}
+                        className="text-xs px-3 py-1.5 rounded-lg bg-red-500 text-white hover:bg-red-600 transition-colors"
+                      >
+                        Réinitialiser
+                      </button>
+                      <button
+                        onClick={() => setConfirmReset(false)}
+                        className="text-xs px-3 py-1.5 rounded-lg border border-border hover:bg-muted transition-colors"
+                      >
+                        Annuler
+                      </button>
+                    </div>
+                  ) : (
+                    <button
+                      onClick={() => setConfirmReset(true)}
+                      className="text-sm text-muted-foreground hover:text-red-500 transition-colors"
+                    >
+                      Réinitialiser
+                    </button>
+                  )}
+                </div>
+
               </div>
             ) : (
-              <button onClick={() => setConfirmReset(true)} className="text-xs px-3 py-1.5 rounded-lg border border-border text-muted-foreground hover:text-destructive hover:border-destructive/40 transition-colors">
-                Réinitialiser
-              </button>
+              <p className="text-sm text-muted-foreground">Chargement…</p>
             )}
           </div>
-        </div>
+        )}
 
-        {/* Actions */}
-        <div className="flex items-center justify-between">
-          <button
-            onClick={() => navigate(-1)}
-            className="text-sm text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1.5"
-          >
-            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-            </svg>
-            Retour
-          </button>
-          <button
-            onClick={handleSave}
-            className={`px-6 py-2.5 rounded-xl text-sm font-semibold transition-all ${
-              saved
-                ? 'bg-emerald-500 text-white'
-                : 'bg-primary text-primary-foreground hover:bg-primary/90'
-            }`}
-          >
-            {saved ? '✓ Enregistré' : 'Enregistrer'}
-          </button>
-        </div>
-
-      </div>
+      </main>
     </div>
   );
 }

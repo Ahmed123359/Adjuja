@@ -4,7 +4,8 @@ from pydantic import BaseModel, Field
 from app.models.generation import GenerationRequest
 from app.models.user import UserPublic
 from app.services.generation_service import GenerationService
-from app.api.dependencies import get_generation_service, get_current_user
+from app.services.usage_service import UsageService
+from app.api.dependencies import get_generation_service, get_current_user, get_usage_service
 
 router = APIRouter(prefix="/brief", tags=["Brief stratégique"])
 logger = logging.getLogger(__name__)
@@ -32,6 +33,7 @@ async def generate_brief(
     body:         GenerationRequest,
     service:      GenerationService = Depends(get_generation_service),
     current_user: UserPublic        = Depends(get_current_user),
+    usage:        UsageService      = Depends(get_usage_service),
 ) -> BriefResult:
     """
     Génère uniquement le brief stratégique.
@@ -60,9 +62,11 @@ async def generate_brief(
             detail=f"Erreur lors de la génération du brief : {e}",
         )
 
+    tokens = result["tokens_utilises"]
     logger.info(
         "Brief généré — user=%s provider=%s tokens=%d",
-        current_user.id, result["provider_utilise"], result["tokens_utilises"],
+        current_user.id, result["provider_utilise"], tokens,
     )
+    usage.add_tokens(tokens)
 
     return BriefResult(**result)

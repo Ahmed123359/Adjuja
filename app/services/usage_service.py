@@ -40,16 +40,22 @@ class UsageService:
         with self._connect() as conn:
             conn.execute("""
                 CREATE TABLE IF NOT EXISTS usage (
-                    id            INTEGER PRIMARY KEY CHECK (id = 1),
-                    total_tokens  INTEGER NOT NULL DEFAULT 0,
-                    total_appels  INTEGER NOT NULL DEFAULT 0
+                    id               INTEGER PRIMARY KEY CHECK (id = 1),
+                    total_tokens     INTEGER NOT NULL DEFAULT 0,
+                    total_appels     INTEGER NOT NULL DEFAULT 0,
+                    total_tokens_ocr INTEGER NOT NULL DEFAULT 0
                 )
             """)
             # INSERT OR IGNORE : crée la ligne au premier démarrage,
             # ne fait rien si elle existe déjà (données conservées).
             conn.execute(
-                "INSERT OR IGNORE INTO usage (id, total_tokens, total_appels) VALUES (1, 0, 0)"
+                "INSERT OR IGNORE INTO usage (id, total_tokens, total_appels, total_tokens_ocr) VALUES (1, 0, 0, 0)"
             )
+            # Migration : ajoute la colonne si elle n'existe pas (DB existante)
+            try:
+                conn.execute("ALTER TABLE usage ADD COLUMN total_tokens_ocr INTEGER NOT NULL DEFAULT 0")
+            except Exception:
+                pass  # Colonne déjà présente
 
     def _connect(self) -> sqlite3.Connection:
         conn = sqlite3.connect(str(self._db_path), check_same_thread=False)
@@ -72,16 +78,40 @@ class UsageService:
             row = conn.execute("SELECT total_appels FROM usage WHERE id = 1").fetchone()
         return row["total_appels"] if row else 0
 
+    @property
+    def total_tokens_ocr(self) -> int:
+        with self._connect() as conn:
+            row = conn.execute("SELECT total_tokens_ocr FROM usage WHERE id = 1").fetchone()
+        return row["total_tokens_ocr"] if row else 0
+
     # ------------------------------------------------------------------
     # Écriture
     # ------------------------------------------------------------------
 
     def add(self, tokens: int) -> None:
-        """Incrémente les compteurs après une génération réussie."""
+        """Incrémente tokens + compteur d'appels (génération complète)."""
         with self._lock:
             with self._connect() as conn:
                 conn.execute(
                     "UPDATE usage SET total_tokens = total_tokens + ?, total_appels = total_appels + 1 WHERE id = 1",
+                    (tokens,),
+                )
+
+    def add_tokens(self, tokens: int) -> None:
+        """Incrémente uniquement les tokens texte (brief, chat — pas un appel complet)."""
+        with self._lock:
+            with self._connect() as conn:
+                conn.execute(
+                    "UPDATE usage SET total_tokens = total_tokens + ? WHERE id = 1",
+                    (tokens,),
+                )
+
+    def add_ocr_tokens(self, tokens: int) -> None:
+        """Incrémente le compteur OCR (GPT-4o vision sur PDF scanné)."""
+        with self._lock:
+            with self._connect() as conn:
+                conn.execute(
+                    "UPDATE usage SET total_tokens_ocr = total_tokens_ocr + ? WHERE id = 1",
                     (tokens,),
                 )
 
@@ -90,7 +120,7 @@ class UsageService:
         with self._lock:
             with self._connect() as conn:
                 conn.execute(
-                    "UPDATE usage SET total_tokens = 0, total_appels = 0 WHERE id = 1"
+                    "UPDATE usage SET total_tokens = 0, total_appels = 0, total_tokens_ocr = 0 WHERE id = 1"
                 )
 
 

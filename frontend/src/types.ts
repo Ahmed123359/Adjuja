@@ -57,6 +57,7 @@ export interface AppDefaults {
 export interface UsageData {
   total_tokens:     number;
   total_appels:     number;
+  total_tokens_ocr: number;
   max_tokens_cumul: number;
   max_appels:       number;
 }

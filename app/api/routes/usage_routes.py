@@ -9,10 +9,11 @@ router = APIRouter(prefix="/usage", tags=["Compteur"])
 
 
 class UsageData(BaseModel):
-    total_tokens:    int
-    total_appels:    int
+    total_tokens:     int
+    total_appels:     int
+    total_tokens_ocr: int
     max_tokens_cumul: int
-    max_appels:      int
+    max_appels:       int
 
 
 def _build_usage(usage: UsageService) -> UsageData:
@@ -20,6 +21,7 @@ def _build_usage(usage: UsageService) -> UsageData:
     return UsageData(
         total_tokens=usage.total_tokens,
         total_appels=usage.total_appels,
+        total_tokens_ocr=usage.total_tokens_ocr,
         max_tokens_cumul=limits.max_tokens_cumul,
         max_appels=limits.max_appels,
     )

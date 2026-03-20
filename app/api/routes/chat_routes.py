@@ -11,8 +11,9 @@ from app.models.chat import ChatRequest, ChatResponse
 from app.models.user import UserPublic
 from app.services.chat_service import ChatService
 from app.services.rag_service import RagService
+from app.services.usage_service import UsageService
 from app.config.settings import Settings, get_settings
-from app.api.dependencies import get_current_user, get_rag_service
+from app.api.dependencies import get_current_user, get_rag_service, get_usage_service
 
 router = APIRouter(prefix="/chat", tags=["Chat RAG"])
 logger = logging.getLogger(__name__)
@@ -39,6 +40,7 @@ async def chat(
     body:         ChatRequest  = ...,
     service:      ChatService  = Depends(get_chat_service),
     current_user: UserPublic   = Depends(get_current_user),
+    usage:        UsageService = Depends(get_usage_service),
 ) -> ChatResponse:
     """
     Tour de conversation chat avec RAG.
@@ -54,11 +56,13 @@ async def chat(
     )
 
     try:
-        return await service.chat(
+        response = await service.chat(
             messages=body.messages,
             provider=body.provider,
             model=body.model,
         )
+        usage.add_tokens(response.tokens_used)
+        return response
     except TimeoutError as e:
         raise HTTPException(status_code=status.HTTP_504_GATEWAY_TIMEOUT, detail=str(e))
     except ValueError as e:

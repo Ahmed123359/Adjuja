@@ -12,11 +12,12 @@ _RENDER_DPI = 150
 
 
 class PdfExtractResult:
-    def __init__(self, text: str, method: str, pages: int, is_scanned: bool):
+    def __init__(self, text: str, method: str, pages: int, is_scanned: bool, tokens_ocr: int = 0):
         self.text       = text
         self.method     = method
         self.pages      = pages
         self.is_scanned = is_scanned
+        self.tokens_ocr = tokens_ocr  # 0 si pymupdf, > 0 si GPT-4o vision
 
 
 class PdfExtractService:
@@ -72,11 +73,11 @@ class PdfExtractService:
             )
 
         logger.info("PDF scanné → fallback GPT-4o vision")
-        images    = self._render_pages(pdf_bytes)
-        ocr_text  = await self._ocr_with_gpt4o(images)
+        images             = self._render_pages(pdf_bytes)
+        ocr_text, tokens   = await self._ocr_with_gpt4o(images)
 
         return PdfExtractResult(
-            text=ocr_text, method="gpt4o_vision", pages=n_pages, is_scanned=True,
+            text=ocr_text, method="gpt4o_vision", pages=n_pages, is_scanned=True, tokens_ocr=tokens,
         )
 
     # ── Helpers privés ────────────────────────────────────────────────────
@@ -142,4 +143,5 @@ class PdfExtractService:
             ],
         )
 
-        return response.choices[0].message.content or ""
+        tokens = response.usage.total_tokens if response.usage else 0
+        return response.choices[0].message.content or "", tokens
