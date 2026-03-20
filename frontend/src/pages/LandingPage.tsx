@@ -151,7 +151,9 @@ export default function LandingPage({ onEnterApp, onGoRegister }: { onEnterApp: 
           </div>
 
           <div className="flex items-center gap-3">
-            <LanguageSelector />
+            <div className="hidden md:block">
+              <LanguageSelector />
+            </div>
 
             <button onClick={onEnterApp}
               className="px-5 py-2 rounded-lg text-sm font-semibold text-white transition-all hover:opacity-90 active:scale-[0.97]"
@@ -180,6 +182,9 @@ export default function LandingPage({ onEnterApp, onGoRegister }: { onEnterApp: 
                 {label}
               </button>
             ))}
+            <div className="px-6 py-2 border-t mt-1" style={{ borderColor: BRD }}>
+              <LanguageSelector />
+            </div>
           </div>
         )}
       </header>
