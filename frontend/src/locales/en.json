@@ -1,0 +1,119 @@
+{
+  "nav": {
+    "features": "Features",
+    "howItWorks": "How it works",
+    "pricing": "Pricing",
+    "access": "Get started →"
+  },
+  "banner": {
+    "mobile": "🐦 Early Bird — <strong>−30 %</strong> on all plans",
+    "desktop": "🐦 Early Bird offer — <strong>−30 % on all plans</strong> for the first 50 subscribers",
+    "sub": " · Take advantage before the launch ends"
+  },
+  "hero": {
+    "title1": "Win more contracts.",
+    "title2": "Without spending your",
+    "highlight": "nights.",
+    "subtitle": "OffrIA analyses your tender, drafts every section and delivers a professional response — while you focus on your core business.",
+    "cta": "Try for free →",
+    "catCaption": "Meanwhile…",
+    "stats": {
+      "time": "< 2 min",
+      "timeLabel": "per tender response",
+      "scale": "10×",
+      "scaleLabel": "more tenders handled",
+      "llms": "3 LLMs",
+      "llmsLabel": "Claude · GPT-4o · Mistral",
+      "market": "€100 Bn",
+      "marketLabel": "public contracts / year"
+    }
+  },
+  "features": {
+    "label": "Features",
+    "title": "Why teams choose OffrIA",
+    "subtitle": "Focus on strategy. We handle the writing.",
+    "cards": {
+      "speed_title": "2 minutes instead of 2 days",
+      "speed_desc": "A complete, structured response ready to submit in under 2 minutes. Handle 10× more tenders without hiring.",
+      "memory_title": "AI learns from your documents",
+      "memory_desc": "Import your past winning responses, client references and certifications. OffrIA reuses them automatically — like an expert who knows your entire history.",
+      "complete_title": "No requirement missed",
+      "complete_desc": "Every criterion in the specification is analysed and addressed. Expected documents, response format, selection criteria — nothing slips through the cracks.",
+      "winrate_title": "Win more contracts",
+      "winrate_desc": "Better-structured, more compliant responses written in the language public buyers expect. A concrete advantage over your competitors.",
+      "privacy_title": "Your data stays with you",
+      "privacy_desc": "European hosting, GDPR compliance, on-premise option. Your confidential documents never leave your perimeter.",
+      "models_title": "Claude, GPT-4o or Mistral",
+      "models_desc": "Choose the best model for each tender: reasoning power, commercial phrasing or data sovereignty. You stay in control."
+    }
+  },
+  "howItWorks": {
+    "label": "Process",
+    "title": "How it works",
+    "subtitle": "Three steps. Zero complexity.",
+    "steps": {
+      "s1_title": "Import your tender",
+      "s1_desc": "Drop your RFP (PDF or plain text). OffrIA automatically extracts criteria, lots and required documents.",
+      "s1_note": "Native PDF · plain text",
+      "s2_title": "Response generated in parallel",
+      "s2_desc": "Each section — technical memo, references, timeline — is written simultaneously and tailored to your company profile.",
+      "s2_note": "~90 seconds on average",
+      "s3_title": "Review, adjust, submit",
+      "s3_desc": "Export to Word or PDF, add your finishing touches and upload to the platform of your choice.",
+      "s3_note": "Word export · editable online"
+    },
+    "cta": "Generate my first response →"
+  },
+  "pricing": {
+    "label": "Pricing",
+    "title": "Choose your plan",
+    "subtitle": "No commitment · Cancel anytime · Invoice within 48h",
+    "footnote1": "† 1 document = PDF file up to 20 A4 pages",
+    "footnote2": "All prices excl. VAT · VAT applicable · On-premise deployment on request",
+    "freeTrial": "Not convinced yet? ",
+    "freeTrialCta": "Try for free — 1 tender, no credit card →",
+    "plans": {
+      "starter_name": "Starter",
+      "starter_tagline": "For solopreneurs who want to win more tenders",
+      "starter_badge": "Early Bird −30 %",
+      "starter_cta": "Subscribe — €55/month",
+      "starter_note": "No commitment · cancel anytime",
+      "pro_name": "Pro",
+      "pro_tagline": "For active sales teams",
+      "pro_badge": "Recommended",
+      "pro_cta": "Contact the team",
+      "pro_note": "Most chosen by our SME / mid-market clients",
+      "enterprise_name": "Enterprise",
+      "enterprise_tagline": "For large groups and consulting firms",
+      "enterprise_price": "Custom pricing",
+      "enterprise_cta": "Contact the team",
+      "enterprise_note": "Deployed in 5 business days",
+      "tag_new": "New",
+      "f_unlimited_gen": "Unlimited generation",
+      "f_docs_50": "Ingest up to 50 documents†",
+      "f_docs_200": "Ingest up to 200 documents†",
+      "f_chat": "Chat with your documents",
+      "f_signatures": "Unlimited instant signatures",
+      "f_history": "Full generation history",
+      "f_users_1": "1 user",
+      "f_users_5": "5 users",
+      "f_users_unlimited": "Unlimited users",
+      "f_support_email": "Email support (48h)",
+      "f_support_priority": "Priority support (4h)",
+      "f_sso": "SSO / Active Directory",
+      "f_sla": "99.9 % SLA guaranteed",
+      "f_onboarding": "Dedicated onboarding",
+      "f_export": "Word export (.docx)",
+      "f_providers": "3 LLM providers (GPT-4o, Claude, Mistral)",
+      "f_50_ao": "50 tenders generated / month"
+    }
+  },
+  "ctaBand": {
+    "title": "Ready to transform your win rate?",
+    "subtitle": "Join the sales teams saving time and winning more contracts with OffrIA.",
+    "cta": "Get started for free →"
+  },
+  "footer": {
+    "rights": "© 2025 OffrIA. All rights reserved."
+  }
+}

@@ -1,0 +1,119 @@
+{
+  "nav": {
+    "features": "Fonctionnalités",
+    "howItWorks": "Comment ça marche",
+    "pricing": "Tarifs",
+    "access": "Accéder →"
+  },
+  "banner": {
+    "mobile": "🐦 Early Bird — <strong>−30 %</strong> sur tous les plans",
+    "desktop": "🐦 Offre Early Bird — <strong>−30 % sur tous les plans</strong> pour les 50 premiers abonnés",
+    "sub": " · Profitez-en avant la fin du lancement"
+  },
+  "hero": {
+    "title1": "Remportez plus de marchés.",
+    "title2": "Sans y passer vos",
+    "highlight": "nuits.",
+    "subtitle": "OffrIA analyse votre appel d'offres, rédige chaque section et vous livre une réponse professionnelle — pendant que vous vous concentrez sur votre cœur de métier.",
+    "cta": "Essayer gratuitement →",
+    "catCaption": "Pendant ce temps…",
+    "stats": {
+      "time": "< 2 min",
+      "timeLabel": "par réponse AO",
+      "scale": "10×",
+      "scaleLabel": "plus d'AOs traités",
+      "llms": "3 LLMs",
+      "llmsLabel": "Claude · GPT-4o · Mistral",
+      "market": "100 Md€",
+      "marketLabel": "marchés publics / an"
+    }
+  },
+  "features": {
+    "label": "Fonctionnalités",
+    "title": "Pourquoi les équipes choisissent OffrIA",
+    "subtitle": "Concentrez-vous sur la stratégie. Nous nous occupons de la rédaction.",
+    "cards": {
+      "speed_title": "2 minutes au lieu de 2 jours",
+      "speed_desc": "Une réponse complète, structurée et prête à soumettre en moins de 2 minutes. Traitez 10× plus d'AOs sans recruter.",
+      "memory_title": "L'IA apprend de vos documents",
+      "memory_desc": "Importez vos anciennes réponses gagnantes, références clients et certifications. OffrIA les réutilise automatiquement — comme un expert qui connaît tout votre historique.",
+      "complete_title": "Aucune exigence oubliée",
+      "complete_desc": "Chaque critère du cahier des charges est analysé et traité. Pièces attendues, format de réponse, critères de sélection — rien ne passe à travers les mailles.",
+      "winrate_title": "Remportez plus de marchés",
+      "winrate_desc": "Des réponses mieux structurées, plus conformes et rédigées dans le langage attendu par les acheteurs publics. Un avantage concret sur vos concurrents.",
+      "privacy_title": "Vos données restent chez vous",
+      "privacy_desc": "Hébergement européen, conformité RGPD, option on-premise. Vos documents confidentiels ne quittent jamais votre périmètre.",
+      "models_title": "Claude, GPT-4o ou Mistral",
+      "models_desc": "Choisissez le meilleur modèle selon l'AO : puissance de raisonnement, formulation commerciale ou souveraineté des données. Vous gardez le contrôle."
+    }
+  },
+  "howItWorks": {
+    "label": "Processus",
+    "title": "Comment ça marche",
+    "subtitle": "Trois étapes. Zéro complexité.",
+    "steps": {
+      "s1_title": "Importez votre AO",
+      "s1_desc": "Glissez votre DCE (PDF ou texte brut). OffrIA extrait automatiquement les critères, les lots et les pièces demandées.",
+      "s1_note": "PDF natif · texte brut",
+      "s2_title": "Réponse générée en parallèle",
+      "s2_desc": "Chaque section — mémoire technique, références, planning — est rédigée simultanément et adaptée à votre profil entreprise.",
+      "s2_note": "~90 secondes en moyenne",
+      "s3_title": "Relisez, ajustez, soumettez",
+      "s3_desc": "Exportez en Word ou PDF, apportez vos touches finales et déposez sur la plateforme de votre choix.",
+      "s3_note": "Export Word · éditable en ligne"
+    },
+    "cta": "Générer ma première réponse →"
+  },
+  "pricing": {
+    "label": "Tarifs",
+    "title": "Choisissez votre plan",
+    "subtitle": "Sans engagement · Annulez à tout moment · Facture sous 48h",
+    "footnote1": "† 1 document = fichier PDF jusqu'à 20 pages A4",
+    "footnote2": "Tous les prix sont HT · TVA applicable · Déploiement on-premise sur devis",
+    "freeTrial": "Pas encore convaincu ? ",
+    "freeTrialCta": "Essayez gratuitement — 1 AO sans CB →",
+    "plans": {
+      "starter_name": "Starter",
+      "starter_tagline": "Pour les solopreneurs qui veulent gagner plus d'AOs",
+      "starter_badge": "Early Bird −30 %",
+      "starter_cta": "S'abonner — 55€/mois",
+      "starter_note": "Sans engagement · résiliable à tout moment",
+      "pro_name": "Pro",
+      "pro_tagline": "Pour les équipes commerciales actives",
+      "pro_badge": "Recommandé",
+      "pro_cta": "Contacter l'équipe",
+      "pro_note": "Le plus choisi par nos clients PME / ETI",
+      "enterprise_name": "Entreprise",
+      "enterprise_tagline": "Pour les grands groupes et cabinets",
+      "enterprise_price": "Sur devis",
+      "enterprise_cta": "Contacter l'équipe",
+      "enterprise_note": "Déploiement en 5 jours ouvrés",
+      "tag_new": "Nouveau",
+      "f_unlimited_gen": "Génération illimitée",
+      "f_docs_50": "Digestion jusqu'à 50 documents†",
+      "f_docs_200": "Digestion jusqu'à 200 documents†",
+      "f_chat": "Chat avec vos documents",
+      "f_signatures": "Signatures instantanées illimitées",
+      "f_history": "Historique complet des générations",
+      "f_users_1": "1 utilisateur",
+      "f_users_5": "5 utilisateurs",
+      "f_users_unlimited": "Utilisateurs illimités",
+      "f_support_email": "Support e-mail (48h)",
+      "f_support_priority": "Support prioritaire (4h)",
+      "f_sso": "SSO / Active Directory",
+      "f_sla": "SLA 99,9 % garanti",
+      "f_onboarding": "Accompagnement dédié",
+      "f_export": "Export Word (.docx)",
+      "f_providers": "3 providers LLM (GPT-4o, Claude, Mistral)",
+      "f_50_ao": "50 AOs générés / mois"
+    }
+  },
+  "ctaBand": {
+    "title": "Prêt à transformer votre taux de réussite ?",
+    "subtitle": "Rejoignez les équipes commerciales qui gagnent du temps et remportent plus de marchés avec OffrIA.",
+    "cta": "Commencer gratuitement →"
+  },
+  "footer": {
+    "rights": "© 2025 OffrIA. Tous droits réservés."
+  }
+}

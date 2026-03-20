@@ -8,6 +8,7 @@ import RegisterPage from './pages/RegisterPage';
 import { getMe, clearToken } from './api';
 import type { User } from './types';
 import './index.css';
+import './i18n';
 
 function AppRouter() {
   const navigate  = useNavigate();
