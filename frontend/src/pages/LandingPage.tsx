@@ -270,22 +270,16 @@ export default function LandingPage({ onEnterApp, onGoRegister }: { onEnterApp: 
               <br />
               <span style={{ color: ROYAL }}>
                 Sans y passer vos{' '}
-                <span className="relative inline-block">
+                <span style={{
+                  display: 'inline-block',
+                  backgroundImage: `url("data:image/svg+xml,%3Csvg width='268' height='172' viewBox='0 0 268 172' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M4.65617 81.6702C-2.63807 84.3564 0.045652 102.025 6.0508 109.879C6.18987 110.573 6.35292 111.261 6.51601 111.949C-2.15454 117.053 5.99213 146.525 15.8737 143.292C16.9197 142.963 17.9781 142.679 19.0356 142.298C14.3142 150.684 22.021 174.324 30.7604 171.446C107.481 146.304 184.177 121.168 260.897 96.0259C270.37 92.9024 263.818 67.6366 254.409 64.5974C257.319 63.8175 260.206 63.044 263.129 62.3095C273.415 59.6999 264.821 28.7868 254.407 30.5528C243.174 32.4407 231.991 34.4131 220.833 36.5736C224.21 35.3274 227.587 34.0811 230.988 32.8284C240.877 29.1542 232.227 -2.62179 222.265 1.07173C149.709 27.927 77.1886 54.8214 4.63208 81.6767L4.65617 81.6702Z' fill='%23ef4444' opacity='0.6'/%3E%3C/svg%3E")`,
+                  backgroundSize: 'contain',
+                  backgroundPosition: 'center center',
+                  backgroundRepeat: 'no-repeat',
+                  whiteSpace: 'nowrap',
+                  padding: '0.2em 0.25em',
+                }}>
                   nuits
-                  {/* Tache de marqueur rouge — forme irrégulière, style main */}
-                  <svg
-                    aria-hidden="true"
-                    className="absolute overflow-visible pointer-events-none"
-                    viewBox="0 0 100 22"
-                    preserveAspectRatio="none"
-                    style={{ top: '65%', transform: 'translateY(-50%)', height: '0.55em', left: '-3%', width: '106%' }}
-                  >
-                    <path
-                      d="M0,6 C8,3 30,2 55,4 C75,5 90,3 102,5 L103,16 C88,19 60,18 40,17 C20,16 8,18 -1,15 Z"
-                      fill="#ef4444"
-                      opacity="0.78"
-                    />
-                  </svg>
                 </span>
                 .
               </span>
