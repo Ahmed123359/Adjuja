@@ -5,6 +5,132 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <title>OffrIA — L'IA qui remporte vos marchés</title>
+
+    <!-- SEO -->
+    <meta name="description" content="OffrIA rédige vos réponses à appels d'offres en moins de 2 minutes. Déposez votre DCE, obtenez une réponse complète et professionnelle prête à soumettre. Essai gratuit." />
+    <meta name="keywords" content="appel d'offres IA, réponse AO automatique, logiciel marchés publics, générateur appel d'offres, IA rédaction AO" />
+    <meta name="robots" content="index, follow" />
+    <link rel="canonical" href="https://offria.cloud" />
+
+    <!-- Open Graph (LinkedIn, WhatsApp, Facebook) -->
+    <meta property="og:type"        content="website" />
+    <meta property="og:url"         content="https://offria.cloud" />
+    <meta property="og:title"       content="OffrIA — L'IA qui remporte vos marchés" />
+    <meta property="og:description" content="Répondez à 10× plus d'appels d'offres sans y passer vos nuits. OffrIA analyse votre DCE et rédige une réponse complète en 2 minutes." />
+    <meta property="og:image"       content="https://offria.cloud/og-image.png" />
+    <meta property="og:locale"      content="fr_FR" />
+    <meta property="og:site_name"   content="OffrIA" />
+
+    <!-- Twitter / X -->
+    <meta name="twitter:card"        content="summary_large_image" />
+    <meta name="twitter:url"         content="https://offria.cloud" />
+    <meta name="twitter:title"       content="OffrIA — L'IA qui remporte vos marchés" />
+    <meta name="twitter:description" content="Répondez à 10× plus d'appels d'offres sans y passer vos nuits. OffrIA analyse votre DCE et rédige une réponse complète en 2 minutes." />
+    <meta name="twitter:image"       content="https://offria.cloud/og-image.png" />
+
+    <!-- JSON-LD — Données structurées (Google + LLMs) -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "SoftwareApplication",
+      "name": "OffrIA",
+      "url": "https://offria.cloud",
+      "logo": "https://offria.cloud/og-image.png",
+      "description": "OffrIA est un logiciel SaaS qui génère automatiquement des réponses complètes à des appels d'offres publics grâce à l'intelligence artificielle. Analyse du DCE, rédaction structurée, export Word en moins de 2 minutes.",
+      "applicationCategory": "BusinessApplication",
+      "operatingSystem": "Web",
+      "offers": [
+        {
+          "@type": "Offer",
+          "name": "Starter",
+          "price": "55",
+          "priceCurrency": "EUR",
+          "priceSpecification": {
+            "@type": "UnitPriceSpecification",
+            "billingDuration": "P1M"
+          },
+          "description": "50 AOs générés par mois, 1 utilisateur, export Word"
+        },
+        {
+          "@type": "Offer",
+          "name": "Pro",
+          "price": "174",
+          "priceCurrency": "EUR",
+          "priceSpecification": {
+            "@type": "UnitPriceSpecification",
+            "billingDuration": "P1M"
+          },
+          "description": "Génération illimitée, 5 utilisateurs, chat avec documents"
+        }
+      ],
+      "featureList": [
+        "Génération automatique de réponses AO",
+        "Analyse du cahier des charges",
+        "Export Word natif (.docx)",
+        "Compatible Claude, GPT-4o, Mistral",
+        "Signature de documents PDF",
+        "Historique des générations",
+        "Hébergement européen RGPD"
+      ],
+      "inLanguage": ["fr", "en"],
+      "publisher": {
+        "@type": "Organization",
+        "name": "OffrIA",
+        "url": "https://offria.cloud"
+      }
+    }
+    </script>
+
+    <!-- JSON-LD — FAQ (boost SEO + GEO) -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "Combien de temps faut-il pour générer une réponse à un appel d'offres avec OffrIA ?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "OffrIA génère une réponse complète et structurée en moins de 2 minutes. Il suffit de déposer votre DCE (PDF ou texte) et l'IA analyse le cahier des charges et rédige chaque section en parallèle."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Quels formats de fichiers sont supportés ?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "OffrIA accepte les fichiers PDF (natifs et scannés via OCR) ainsi que le texte brut. Le résultat est exportable en Word (.docx) ou PDF."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Quels modèles d'IA sont utilisés ?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "OffrIA supporte trois providers : Anthropic Claude (meilleur pour la rédaction complexe), OpenAI GPT-4o (polyvalent et rapide) et Mistral (souveraineté européenne des données). Vous choisissez le modèle adapté à chaque AO."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Mes données sont-elles sécurisées ?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Oui. OffrIA est hébergé en Europe, conforme RGPD, et propose une option on-premise pour les entreprises qui ne souhaitent pas que leurs documents quittent leur infrastructure."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Y a-t-il un engagement minimum ?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Non. OffrIA est sans engagement, résiliable à tout moment. Un essai gratuit est disponible sans carte bancaire."
+          }
+        }
+      ]
+    }
+    </script>
+
     <!-- Anti-flash : applique le thème avant le premier rendu -->
     <script>if(localStorage.getItem('theme')!=='light')document.documentElement.classList.add('dark');</script>
     <script src="https://accounts.google.com/gsi/client" async defer></script>

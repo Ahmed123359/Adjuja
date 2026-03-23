@@ -1,7 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
+import { DotLottieReact } from '@lottiefiles/dotlottie-react';
+import catGenerationUrl from '../assets/Cat Loading Generation.lottie?url';
 import { marked } from 'marked';
 import { FileText, Wrench } from 'lucide-react';
 import type { GenerationResult, CompanyData, AppState, UsageData, RagStatus, HistorySummary, User } from '../types';
+import { exportDocx } from '../api';
 import DocumentsTab from './DocumentsTab';
 import OffreFinanciereTab from './OffreFinanciereTab';
 import ActeEngagementTab from './ActeEngagementTab';
@@ -454,24 +457,13 @@ function Dashboard({
 // ── Loading ─────────────────────────────────────────────────
 function Loading({ provider, model }: { provider?: string; model?: string }) {
   return (
-    <div className="flex-1 flex flex-col items-center justify-center gap-7">
-      <div className="relative w-24 h-24">
-        <div className="absolute inset-0 rounded-full border border-primary/10 animate-ping" style={{ animationDuration: '2s' }} />
-        <div className="absolute inset-3 rounded-full border border-primary/15 animate-ping" style={{ animationDuration: '2s', animationDelay: '.4s' }} />
-        <div className="absolute inset-6 rounded-full border border-primary/25 animate-ping" style={{ animationDuration: '2s', animationDelay: '.8s' }} />
-        <div className="absolute inset-10 rounded-full bg-accent border border-primary/30 flex items-center justify-center">
-          <div className="w-4 h-4 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
-        </div>
-      </div>
+    <div className="flex-1 flex flex-col items-center justify-center gap-4">
+      <DotLottieReact src={catGenerationUrl} loop autoplay style={{ width: 420, height: 420, marginBottom: '-60px' }} />
       <div className="text-center">
         <p className="text-base font-semibold text-foreground">Génération en cours…</p>
         {provider && model && (
           <p className="text-sm text-primary mt-1 font-medium">{provider} · {model}</p>
         )}
-        <div className="mt-3 flex flex-col gap-1 text-[11px] text-muted-foreground">
-          <p>① Analyse stratégique de l'appel d'offres…</p>
-          <p>② Rédaction des 8 sections en parallèle</p>
-        </div>
       </div>
     </div>
   );
@@ -641,15 +633,19 @@ export default function RightPanel({
     });
   }
 
-  function downloadWord() {
+  async function downloadWord() {
     if (!result) return;
-    const html = buildDocumentHTML(result, company, aoText, logoBase64);
-    const fullHtml = `<!DOCTYPE html><html><head><meta charset="utf-8"><style>body{font-family:Calibri,'Segoe UI',Arial,sans-serif;font-size:11pt;line-height:1.65;color:#1a1a2e;background:#f0f2f5;}</style></head><body>${html}</body></html>`;
-    const blob = new Blob([fullHtml], { type: 'application/msword' });
-    const url  = URL.createObjectURL(blob);
-    const a    = document.createElement('a');
-    a.href = url; a.download = `${(company.nom || 'reponse').replace(/\s+/g, '_')}_ao.doc`;
-    a.click(); URL.revokeObjectURL(url);
+    try {
+      const blob = await exportDocx(result, company.nom || '', aoText);
+      const url  = URL.createObjectURL(blob);
+      const a    = document.createElement('a');
+      a.href = url;
+      a.download = `${(company.nom || 'reponse').replace(/\s+/g, '_')}_ao.docx`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch {
+      alert('Erreur lors de la génération du fichier Word.');
+    }
   }
 
   function printPDF() {

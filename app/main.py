@@ -11,7 +11,7 @@ from slowapi.middleware import SlowAPIMiddleware
 from app.api.routes import (
     generation_router, models_router, rag_router,
     defaults_router, usage_router, history_router, auth_router, pdf_router, brief_router,
-    signing_router, bordereau_router, acte_engagement_router, chat_router,
+    signing_router, bordereau_router, acte_engagement_router, chat_router, export_router,
 )
 from app.config.settings import get_settings
 from app.limiter import limiter
@@ -101,12 +101,35 @@ app.include_router(signing_router,          prefix="/api/v1")
 app.include_router(bordereau_router,        prefix="/api/v1")
 app.include_router(acte_engagement_router,  prefix="/api/v1")
 app.include_router(chat_router,             prefix="/api/v1")
+app.include_router(export_router,           prefix="/api/v1")
 
 
 @app.get("/", include_in_schema=False)
 def root():
     """Redirige vers l'interface web."""
     return RedirectResponse(url="/ui/")
+
+
+@app.get("/sitemap.xml", include_in_schema=False)
+def sitemap():
+    """Sitemap XML pour les moteurs de recherche."""
+    content = """<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url>
+    <loc>https://offria.cloud</loc>
+    <lastmod>2026-03-23</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>1.0</priority>
+  </url>
+</urlset>"""
+    return Response(content=content, media_type="application/xml")
+
+
+@app.get("/robots.txt", include_in_schema=False)
+def robots():
+    """Robots.txt pour les crawlers."""
+    content = "User-agent: *\nAllow: /\nSitemap: https://offria.cloud/sitemap.xml\n"
+    return Response(content=content, media_type="text/plain")
 
 
 @app.get("/health", tags=["Santé"])

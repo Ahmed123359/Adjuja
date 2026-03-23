@@ -333,6 +333,26 @@ export async function generate(params: {
   return data;
 }
 
+// ── Export DOCX (protégé) ──────────────────────────────────────────────────
+
+export async function exportDocx(
+  result: GenerationResult,
+  companyNom: string,
+  aoText: string,
+): Promise<Blob> {
+  const res = await fetch('/api/v1/export/docx', {
+    method:  'POST',
+    headers: { 'Content-Type': 'application/json', ...authHeaders() },
+    body:    JSON.stringify({ result, company_nom: companyNom, ao_text: aoText }),
+  });
+
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    throw new Error(typeof data.detail === 'string' ? data.detail : 'Erreur lors de la génération du Word.');
+  }
+  return res.blob();
+}
+
 // ── Chat RAG (protégé) ─────────────────────────────────────────────────────
 
 export async function sendChatMessage(

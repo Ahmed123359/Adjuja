@@ -41,6 +41,9 @@ slowapi==0.1.9
 # Export Excel (bordereau de prix, offre financière)
 openpyxl==3.1.5
 
+# Export Word (.docx natif)
+python-docx==1.1.2
+
 # Tests
 pytest==8.3.3
 pytest-asyncio==0.24.0

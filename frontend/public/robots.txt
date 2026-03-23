@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://offria.cloud/sitemap.xml
