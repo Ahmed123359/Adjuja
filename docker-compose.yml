@@ -117,6 +117,7 @@ services:
       - "443:443"
     volumes:
       - /etc/letsencrypt:/etc/letsencrypt:ro
+      - ./certbot:/var/www/certbot:ro
     depends_on:
       api:
         condition: service_healthy
