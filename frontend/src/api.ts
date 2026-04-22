@@ -1,4 +1,4 @@
-import type { Model, CompanyData, GenerationResult, RagStatus, AppDefaults, UsageData, HistorySummary, HistoryEntry, User, ActeEngagementData, ChatMessage, ChatApiResponse } from './types';
+import type { Model, CompanyData, GenerationResult, RagStatus, AppDefaults, UsageData, HistorySummary, HistoryEntry, User, ActeEngagementData, ChatMessage, ChatApiResponse, CompanyCase, FillerResult } from './types';
 
 // ── Token helpers ──────────────────────────────────────────────────────
 
@@ -351,6 +351,43 @@ export async function exportDocx(
     throw new Error(typeof data.detail === 'string' ? data.detail : 'Erreur lors de la génération du Word.');
   }
   return res.blob();
+}
+
+// ── Remplissage dossier AO (protégé) ──────────────────────────────────────
+
+export async function runFiller(
+  file: File,
+  companyCase: CompanyCase,
+  lots: number[],
+): Promise<FillerResult> {
+  const form = new FormData();
+  form.append('file', file);
+  form.append('company_case', companyCase);
+  form.append('lots', lots.join(','));
+
+  const res = await fetch('/api/v1/filler/run', {
+    method:  'POST',
+    headers: authHeaders(),
+    body:    form,
+  });
+
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(typeof data.detail === 'string' ? data.detail : 'Erreur lors du remplissage.');
+  }
+  return data;
+}
+
+export async function downloadFillerFile(downloadUrl: string, filename: string): Promise<void> {
+  const res = await fetch(downloadUrl, { headers: authHeaders() });
+  if (!res.ok) throw new Error('Fichier introuvable ou expiré.');
+  const blob = await res.blob();
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href     = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
 }
 
 // ── Chat RAG (protégé) ─────────────────────────────────────────────────────

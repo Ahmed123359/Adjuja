@@ -16,6 +16,19 @@ RUN npm run build
 # ─────────────────────────────────────────────
 FROM python:3.12-slim AS builder
 
+# Packages système requis par le filler pipeline :
+#   tesseract-ocr / tesseract-ocr-fra : OCR basse résolution pour détection de pages scannées
+#   poppler-utils                      : pdf2image (pdftoppm) pour conversion PDF → images
+#   libglib2.0-0 libsm6 libxext6       : dépendances runtime de PyMuPDF
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        tesseract-ocr \
+        tesseract-ocr-fra \
+        poppler-utils \
+        libglib2.0-0 \
+        libsm6 \
+        libxext6 \
+    && rm -rf /var/lib/apt/lists/*
+
 WORKDIR /app
 
 COPY requirements.txt .

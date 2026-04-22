@@ -44,6 +44,13 @@ openpyxl==3.1.5
 # Export Word (.docx natif)
 python-docx==1.1.2
 
+# Remplissage dossier AO (filler pipeline)
+pdf2image==1.17.0       # Conversion PDF → images (pipeline PDF scanné)
+pytesseract==0.3.13     # OCR basse résolution pour détection d'en-têtes scannés
+pdf2docx==0.5.8         # Conversion PDF → DOCX (utilitaire auxiliaire)
+# Packages système requis (à installer dans le Dockerfile) :
+#   tesseract-ocr tesseract-ocr-fra poppler-utils
+
 # Tests
 pytest==8.3.3
 pytest-asyncio==0.24.0

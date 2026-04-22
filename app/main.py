@@ -12,6 +12,7 @@ from app.api.routes import (
     generation_router, models_router, rag_router,
     defaults_router, usage_router, history_router, auth_router, pdf_router, brief_router,
     signing_router, bordereau_router, acte_engagement_router, chat_router, export_router,
+    filler_router,
 )
 from app.config.settings import get_settings
 from app.limiter import limiter
@@ -102,6 +103,7 @@ app.include_router(bordereau_router,        prefix="/api/v1")
 app.include_router(acte_engagement_router,  prefix="/api/v1")
 app.include_router(chat_router,             prefix="/api/v1")
 app.include_router(export_router,           prefix="/api/v1")
+app.include_router(filler_router,           prefix="/api/v1")
 
 
 @app.get("/", include_in_schema=False)

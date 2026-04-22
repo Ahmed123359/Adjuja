@@ -131,6 +131,31 @@ export const DEFAULT_COMPANY: CompanyData = {
   references:'',
 };
 
+// ── Remplissage dossier AO ──────────────────────────────────────────────────
+
+export type CompanyCase =
+  | 'societe'
+  | 'personne_physique'
+  | 'auto_entrepreneur'
+  | 'groupement'
+  | 'cooperative'
+  | 'etablissement_public';
+
+export interface FillerOutputFile {
+  doc_type:     string;
+  filename:     string;
+  format:       string;  // 'pdf' | 'docx' | 'excel'
+  download_url: string;
+}
+
+export interface FillerResult {
+  job_id:   string;
+  succes:   boolean;
+  fichiers: FillerOutputFile[];
+  erreurs:  string[];
+  message:  string;
+}
+
 // ── Chat RAG ────────────────────────────────────────────────────────────────
 
 export interface ChatMessage {
