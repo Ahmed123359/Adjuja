@@ -1,124 +1,68 @@
-"""
-Service de persistance de l'historique des générations.
+from sqlalchemy import delete, select
+from sqlalchemy.ext.asyncio import AsyncSession
 
-Stockage : table SQLite `launches` dans data/offria.db.
-Clé étrangère : launches.user_id → users.id
-Thread-safe via threading.Lock.
-"""
-from __future__ import annotations
-
-import sqlite3
-import threading
-from pathlib import Path
-
+from app.db.models import Launch
 from app.models.generation import GenerationResult
 from app.models.history import HistoryEntry, HistorySummary
 
-_DB_PATH = Path(__file__).parents[2] / "data" / "offria.db"
-
 
 class HistoryService:
-    def __init__(self, db_path: Path = _DB_PATH) -> None:
-        self._db_path = db_path
-        self._lock    = threading.Lock()
-        self._init_db()
+    def __init__(self, db: AsyncSession) -> None:
+        self._db = db
 
-    # ── Init ────────────────────────────────────────────────────
+    async def add(self, entry: HistoryEntry) -> None:
+        self._db.add(Launch(
+            id=entry.id,
+            user_id=entry.user_id,
+            created_at=entry.created_at,
+            ao_excerpt=entry.ao_excerpt,
+            company_nom=entry.company_nom,
+            provider=entry.provider,
+            model=entry.model,
+            tokens_utilises=entry.tokens_utilises,
+            langue=entry.langue,
+            result_json=entry.result.model_dump_json(),
+        ))
+        await self._db.commit()
 
-    def _init_db(self) -> None:
-        self._db_path.parent.mkdir(parents=True, exist_ok=True)
-        with self._connect() as conn:
-            conn.execute("""
-                CREATE TABLE IF NOT EXISTS launches (
-                    id              TEXT    PRIMARY KEY,
-                    user_id         TEXT    NOT NULL,
-                    created_at      TEXT    NOT NULL,
-                    ao_excerpt      TEXT    NOT NULL DEFAULT '',
-                    company_nom     TEXT    NOT NULL DEFAULT '',
-                    provider        TEXT    NOT NULL DEFAULT '',
-                    model           TEXT    NOT NULL DEFAULT '',
-                    tokens_utilises INTEGER NOT NULL DEFAULT 0,
-                    langue          TEXT    NOT NULL DEFAULT 'fr',
-                    result_json     TEXT    NOT NULL DEFAULT '{}',
-                    FOREIGN KEY (user_id) REFERENCES users(id)
-                )
-            """)
-            conn.execute(
-                "CREATE INDEX IF NOT EXISTS idx_launches_user_id ON launches(user_id)"
+    async def list_summaries(self, user_id: str) -> list[HistorySummary]:
+        result = await self._db.execute(
+            select(Launch)
+            .where(Launch.user_id == user_id)
+            .order_by(Launch.created_at.desc())
+        )
+        return [
+            HistorySummary(
+                id=r.id, user_id=r.user_id, created_at=r.created_at,
+                ao_excerpt=r.ao_excerpt, company_nom=r.company_nom,
+                provider=r.provider, model=r.model,
+                tokens_utilises=r.tokens_utilises, langue=r.langue,
             )
+            for r in result.scalars().all()
+        ]
 
-    def _connect(self) -> sqlite3.Connection:
-        conn = sqlite3.connect(str(self._db_path), check_same_thread=False)
-        conn.row_factory = sqlite3.Row
-        conn.execute("PRAGMA foreign_keys = ON")
-        return conn
-
-    # ── Public API ──────────────────────────────────────────────
-
-    def add(self, entry: HistoryEntry) -> None:
-        """Insère un lancement en base."""
-        with self._lock:
-            with self._connect() as conn:
-                conn.execute(
-                    "INSERT INTO launches "
-                    "(id, user_id, created_at, ao_excerpt, company_nom, "
-                    " provider, model, tokens_utilises, langue, result_json) "
-                    "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-                    (
-                        entry.id,
-                        entry.user_id,
-                        entry.created_at,
-                        entry.ao_excerpt,
-                        entry.company_nom,
-                        entry.provider,
-                        entry.model,
-                        entry.tokens_utilises,
-                        entry.langue,
-                        entry.result.model_dump_json(),
-                    ),
-                )
-
-    def list_summaries(self, user_id: str = "") -> list[HistorySummary]:
-        """Liste allégée des lancements d'un utilisateur, du plus récent au plus ancien."""
-        with self._connect() as conn:
-            rows = conn.execute(
-                "SELECT id, user_id, created_at, ao_excerpt, company_nom, "
-                "       provider, model, tokens_utilises, langue "
-                "FROM launches WHERE user_id = ? ORDER BY created_at DESC",
-                (user_id,),
-            ).fetchall()
-        return [HistorySummary(**dict(row)) for row in rows]
-
-    def get(self, entry_id: str, user_id: str = "") -> HistoryEntry | None:
-        """Retourne un lancement complet (avec result) pour un utilisateur donné."""
-        with self._connect() as conn:
-            row = conn.execute(
-                "SELECT * FROM launches WHERE id = ? AND user_id = ?",
-                (entry_id, user_id),
-            ).fetchone()
+    async def get(self, entry_id: str, user_id: str) -> HistoryEntry | None:
+        result = await self._db.execute(
+            select(Launch).where(Launch.id == entry_id, Launch.user_id == user_id)
+        )
+        row = result.scalar_one_or_none()
         if row is None:
             return None
-        d = dict(row)
-        result = GenerationResult.model_validate_json(d.pop("result_json"))
-        return HistoryEntry(**d, result=result)
+        return HistoryEntry(
+            id=row.id, user_id=row.user_id, created_at=row.created_at,
+            ao_excerpt=row.ao_excerpt, company_nom=row.company_nom,
+            provider=row.provider, model=row.model,
+            tokens_utilises=row.tokens_utilises, langue=row.langue,
+            result=GenerationResult.model_validate_json(row.result_json),
+        )
 
-    def delete(self, entry_id: str, user_id: str = "") -> bool:
-        """Supprime un lancement. Retourne True s'il existait."""
-        with self._lock:
-            with self._connect() as conn:
-                cursor = conn.execute(
-                    "DELETE FROM launches WHERE id = ? AND user_id = ?",
-                    (entry_id, user_id),
-                )
-                return cursor.rowcount > 0
+    async def delete(self, entry_id: str, user_id: str) -> bool:
+        result = await self._db.execute(
+            delete(Launch).where(Launch.id == entry_id, Launch.user_id == user_id)
+        )
+        await self._db.commit()
+        return result.rowcount > 0
 
-    def clear(self, user_id: str = "") -> None:
-        """Supprime tous les lancements d'un utilisateur."""
-        with self._lock:
-            with self._connect() as conn:
-                conn.execute("DELETE FROM launches WHERE user_id = ?", (user_id,))
-
-    @property
-    def count(self) -> int:
-        with self._connect() as conn:
-            return conn.execute("SELECT COUNT(*) FROM launches").fetchone()[0]
+    async def clear(self, user_id: str) -> None:
+        await self._db.execute(delete(Launch).where(Launch.user_id == user_id))
+        await self._db.commit()

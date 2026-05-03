@@ -409,3 +409,34 @@ export async function sendChatMessage(
   }
   return data;
 }
+// ── Offre Technique ──────────────────────────────────────────────────────────
+
+import type { OffreTechniqueResult } from './types';
+
+export async function runOffreTechnique(file: File): Promise<OffreTechniqueResult> {
+  const form = new FormData();
+  form.append('file', file);
+
+  const res = await fetch('/api/v1/offre-technique/run', {
+    method:  'POST',
+    headers: authHeaders(),
+    body:    form,
+  });
+
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(typeof data.detail === 'string' ? data.detail : 'Erreur lors de la génération.');
+  }
+  return data;
+}
+
+export async function downloadOffreTechniqueFile(downloadUrl: string, filename: string): Promise<void> {
+  const res  = await fetch(downloadUrl, { headers: authHeaders() });
+  const blob = await res.blob();
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href     = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+}

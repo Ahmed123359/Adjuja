@@ -171,3 +171,32 @@ export interface ChatApiResponse {
   provider_utilise: string;
   model_utilise:    string;
 }
+// ── Offre Technique ──────────────────────────────────────────────────────────
+
+export interface OffreTechniqueOutputFile {
+  filename:     string;
+  format:       string;
+  download_url: string;
+}
+
+export interface SectionScore {
+  score:  number;
+  issues: string[];
+}
+
+export interface QualityReport {
+  conformite:      SectionScore;
+  coherence:       SectionScore;
+  differentiation: SectionScore;
+  global_score:    number;
+  approved:        boolean;
+}
+
+export interface OffreTechniqueResult {
+  job_id:   string;
+  succes:   boolean;
+  fichiers: OffreTechniqueOutputFile[];
+  quality:  QualityReport | null;
+  erreurs:  string[];
+  message:  string;
+}

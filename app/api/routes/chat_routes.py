@@ -61,7 +61,7 @@ async def chat(
             provider=body.provider,
             model=body.model,
         )
-        usage.add_tokens(response.tokens_used)
+        await usage.add_tokens(response.tokens_used)
         return response
     except TimeoutError as e:
         raise HTTPException(status_code=status.HTTP_504_GATEWAY_TIMEOUT, detail=str(e))

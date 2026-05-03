@@ -5,10 +5,10 @@ from functools import lru_cache
 class RagSettings(BaseSettings):
     """Configuration du service RAG ETL."""
 
-    # OpenAI — pour la génération des embeddings
-    openai_api_key: str = ""
-    embedding_model: str = "text-embedding-3-small"
-    embedding_dimensions: int = 1536
+    # Mistral — pour la génération des embeddings
+    mistral_api_key: str = ""
+    embedding_model: str = "mistral-embed"
+    embedding_dimensions: int = 1024
 
     # Qdrant — base de données vectorielle
     qdrant_host: str = "localhost"

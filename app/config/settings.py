@@ -59,6 +59,13 @@ class Settings(BaseSettings):
     """Active le mode debug (CORS permissif, rechargement automatique)."""
 
     # ------------------------------------------------------------------
+    # Base de données PostgreSQL
+    # ------------------------------------------------------------------
+
+    database_url: str = "postgresql+asyncpg://offria:offria@localhost:5432/offria"
+    """URL de connexion PostgreSQL async. Format : postgresql+asyncpg://user:pass@host/db"""
+
+    # ------------------------------------------------------------------
     # RAG — base de données vectorielle Qdrant
     # ------------------------------------------------------------------
 

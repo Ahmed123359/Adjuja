@@ -80,7 +80,7 @@ async def extract_pdf(
         )
 
     if result.tokens_ocr > 0:
-        usage.add_ocr_tokens(result.tokens_ocr)
+        await usage.add_ocr_tokens(result.tokens_ocr)
         logger.info(
             "OCR GPT-4o — user=%s pages=%d tokens_ocr=%d",
             current_user.id, result.pages, result.tokens_ocr,

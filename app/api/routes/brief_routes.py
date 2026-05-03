@@ -67,6 +67,6 @@ async def generate_brief(
         "Brief généré — user=%s provider=%s tokens=%d",
         current_user.id, result["provider_utilise"], tokens,
     )
-    usage.add_tokens(tokens)
+    await usage.add_tokens(tokens)
 
     return BriefResult(**result)

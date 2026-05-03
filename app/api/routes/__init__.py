@@ -30,4 +30,6 @@ __all__ = [
     "chat_router",
     "export_router",
     "filler_router",
+    "offre_technique_router",
 ]
+from app.api.routes.offre_technique_routes import router as offre_technique_router

@@ -82,7 +82,7 @@ async def register(
     is_admin = data.email.lower() in [e.lower() for e in settings.admin_emails]
 
     try:
-        user, verification_token = users.create(data, unlimited=is_admin)
+        user, verification_token = await users.create(data, unlimited=is_admin)
     except ValueError as e:
         msg = str(e)
         code = status.HTTP_409_CONFLICT if "déjà utilisée" in msg else status.HTTP_500_INTERNAL_SERVER_ERROR
@@ -110,12 +110,12 @@ async def register(
     "/verify-email",
     summary="Vérifier l'adresse email via le token reçu par mail",
 )
-def verify_email(
+async def verify_email(
     token:    str,
     users:    UserService = Depends(get_user_service),
     settings: Settings    = Depends(get_settings),
 ) -> RedirectResponse:
-    user = users.verify_email(token)
+    user = await users.verify_email(token)
     if user is None:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -131,12 +131,12 @@ def verify_email(
     response_model=Token,
     summary="Se connecter",
 )
-def login(
+async def login(
     data: LoginRequest,
     users: UserService = Depends(get_user_service),
     settings: Settings = Depends(get_settings),
 ) -> Token:
-    user = users.verify_password(data.email, data.password)
+    user = await users.verify_password(data.email, data.password)
     if user is None:
         # WARNING : tentative de connexion échouée. Plusieurs WARNING consécutifs
         # sur le même email = signal potentiel de brute-force.
@@ -159,7 +159,7 @@ class GoogleTokenRequest(BaseModel):
     response_model=Token,
     summary="Connexion via Google OAuth",
 )
-def login_google(
+async def login_google(
     data: GoogleTokenRequest,
     users: UserService = Depends(get_user_service),
     settings: Settings = Depends(get_settings),
@@ -187,7 +187,7 @@ def login_google(
         logger.warning("Connexion Google refusée (hors liste blanche) — email=%s", email)
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Accès sur invitation uniquement.")
 
-    user = users.get_or_create_google_user(email=email, prenom=prenom, nom=nom)
+    user = await users.get_or_create_google_user(email=email, prenom=prenom, nom=nom)
     logger.info("Connexion Google réussie — user_id=%s email=%s", user.id, email)
     return Token(access_token=_make_token(user.id, settings))
 

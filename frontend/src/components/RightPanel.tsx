@@ -9,6 +9,7 @@ import DocumentsTab from './DocumentsTab';
 import OffreFinanciereTab from './OffreFinanciereTab';
 import ActeEngagementTab from './ActeEngagementTab';
 import FillerTab from './FillerTab';
+import OffreTechniqueTab from './OffreTechniqueTab';
 import { MenuBar } from './GlowMenu';
 
 // ── Helpers ─────────────────────────────────────────────────
@@ -471,13 +472,14 @@ function Loading({ provider, model }: { provider?: string; model?: string }) {
 }
 
 // ── Page Outils ─────────────────────────────────────────────
-export type Outil = 'signatures' | 'bordereau' | 'acte' | 'filler';
+export type Outil = 'signatures' | 'bordereau' | 'acte' | 'filler' | 'offre_technique';
 
 const OUTILS_NAV: { id: Outil; label: string; desc: string; icon: string }[] = [
   { id: 'signatures', label: 'Documents & Signatures', desc: 'Signature, paraphe, cachet',         icon: 'M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z' },
   { id: 'bordereau',  label: 'Offre financière',       desc: 'Tableau de prix, devis',             icon: 'M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2' },
   { id: 'acte',       label: "Acte d'engagement",      desc: 'Formulaire acte engagement',         icon: 'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4' },
-  { id: 'filler',     label: 'Remplissage dossier',    desc: 'Remplissage automatique dossier AO', icon: 'M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z' },
+  { id: 'filler',          label: 'Remplissage dossier',    desc: 'Remplissage automatique dossier AO', icon: 'M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z' },
+  { id: 'offre_technique', label: 'Offre technique',         desc: 'Génération offre technique depuis CPS', icon: 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z' },
 ];
 
 // Panneau gauche Outils — rendu dans App.tsx au même niveau que LeftPanel
@@ -562,7 +564,8 @@ function OutilsContent({ section }: { section: Outil }) {
         {section === 'signatures' && <DocumentsTab />}
         {section === 'bordereau'  && <OffreFinanciereTab />}
         {section === 'acte'       && <ActeEngagementTab />}
-        {section === 'filler'     && <FillerTab />}
+        {section === 'filler'          && <FillerTab />}
+        {section === 'offre_technique' && <OffreTechniqueTab />}
       </div>
     </div>
   );

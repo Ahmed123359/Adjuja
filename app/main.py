@@ -1,5 +1,5 @@
 import logging
-import sqlite3
+from contextlib import asynccontextmanager
 from pathlib import Path
 from fastapi import FastAPI, Response, status
 from fastapi.middleware.cors import CORSMiddleware
@@ -12,12 +12,23 @@ from app.api.routes import (
     generation_router, models_router, rag_router,
     defaults_router, usage_router, history_router, auth_router, pdf_router, brief_router,
     signing_router, bordereau_router, acte_engagement_router, chat_router, export_router,
-    filler_router,
+    filler_router, offre_technique_router,
 )
 from app.config.settings import get_settings
 from app.limiter import limiter
 
 settings = get_settings()
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    from app.db.base import engine
+    from app.db.models import Base  # noqa: F401
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
+    yield
+    await engine.dispose()
+
 
 # ── Configuration du logging ────────────────────────────────────────────────
 # Configuré une seule fois ici au démarrage. Tous les modules de l'app utilisent
@@ -44,6 +55,7 @@ logger.info("Démarrage de l'application OffrIA (env=%s)", settings.app_env)
 # ────────────────────────────────────────────────────────────────────────────
 
 app = FastAPI(
+    lifespan=lifespan,
     title="Générateur de réponses AO",
     description=(
         "API de génération automatique de réponses aux appels d'offres. "
@@ -103,7 +115,8 @@ app.include_router(bordereau_router,        prefix="/api/v1")
 app.include_router(acte_engagement_router,  prefix="/api/v1")
 app.include_router(chat_router,             prefix="/api/v1")
 app.include_router(export_router,           prefix="/api/v1")
-app.include_router(filler_router,           prefix="/api/v1")
+app.include_router(filler_router,            prefix="/api/v1")
+app.include_router(offre_technique_router,   prefix="/api/v1")
 
 
 @app.get("/", include_in_schema=False)
@@ -135,7 +148,7 @@ def robots():
 
 
 @app.get("/health", tags=["Santé"])
-def health(response: Response):
+async def health(response: Response):
     """
     Vérifie l'état de santé de l'application.
 
@@ -154,16 +167,15 @@ def health(response: Response):
     checks: dict[str, str] = {}
     tout_ok = True
 
-    # ── 1. SQLite ────────────────────────────────────────────────────────
-    # On tente une connexion + requête triviale. Si le fichier est corrompu
-    # ou le dossier inaccessible, sqlite3 lève une exception.
-    _db_path = Path(__file__).parent.parent / "data" / "offria.db"
+    # ── 1. PostgreSQL ────────────────────────────────────────────────────
     try:
-        with sqlite3.connect(str(_db_path), timeout=2) as conn:
-            conn.execute("SELECT 1")
-        checks["sqlite"] = "ok"
+        from sqlalchemy import text
+        from app.db.base import AsyncSessionLocal
+        async with AsyncSessionLocal() as session:
+            await session.execute(text("SELECT 1"))
+        checks["postgres"] = "ok"
     except Exception as e:
-        checks["sqlite"] = f"error: {e}"
+        checks["postgres"] = f"error: {e}"
         tout_ok = False
 
     # ── 2. Clés API ──────────────────────────────────────────────────────

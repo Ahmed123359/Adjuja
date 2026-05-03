@@ -131,12 +131,10 @@ class ETLPipeline:
         self,
         settings: RagSettings,
         qdrant: QdrantClient,
-        openai_client,
         manifest: Manifest,
     ) -> None:
         self._settings = settings
         self._qdrant = qdrant
-        self._openai = openai_client
         self._manifest = manifest
 
     def ensure_collection(self) -> None:
@@ -239,14 +237,25 @@ class ETLPipeline:
         self, rel_path: str, path: Path, doc_type: str, file_hash: str
     ) -> int:
         """Charge, découpe, embed et stocke un fichier. Retourne le nombre de chunks."""
+        from ingestion_validator import validate_document, validate_chunk, IngestionError
+
         # Charge le texte
         text = _load_file(path)
         if not text.strip():
             logger.warning("Fichier vide, ignoré : %s", rel_path)
             return 0
 
+        # Valide le document avant indexation (anti-poisoning LLM03)
+        validate_document(text, rel_path)
+
         # Découpe en chunks
-        chunks = _chunk_text(text, self._settings.chunk_size, self._settings.chunk_overlap)
+        raw_chunks = _chunk_text(text, self._settings.chunk_size, self._settings.chunk_overlap)
+        chunks = []
+        for i, c in enumerate(raw_chunks):
+            try:
+                chunks.append(validate_chunk(c, rel_path, i))
+            except IngestionError as e:
+                logger.warning("[SKIP CHUNK] %s", e)
         if not chunks:
             return 0
 
@@ -301,17 +310,20 @@ class ETLPipeline:
             pass  # La collection n'existe pas encore — ignoré
 
     def _embed_batch(self, texts: list[str]) -> list[list[float]]:
-        """Génère les embeddings pour une liste de textes via OpenAI."""
-        # OpenAI accepte jusqu'à 2048 inputs par appel
-        batch_size = 100
+        """Génère les embeddings pour une liste de textes via Mistral Embed."""
+        import httpx
+        batch_size = 64  # Mistral recommande des batches plus petits
         all_embeddings: list[list[float]] = []
 
         for i in range(0, len(texts), batch_size):
             batch = texts[i: i + batch_size]
-            response = self._openai.embeddings.create(
-                model=self._settings.embedding_model,
-                input=batch,
+            resp = httpx.post(
+                "https://api.mistral.ai/v1/embeddings",
+                headers={"Authorization": f"Bearer {self._settings.mistral_api_key}"},
+                json={"model": self._settings.embedding_model, "input": batch},
+                timeout=30,
             )
-            all_embeddings.extend(d.embedding for d in response.data)
+            resp.raise_for_status()
+            all_embeddings.extend(d["embedding"] for d in resp.json()["data"])
 
         return all_embeddings

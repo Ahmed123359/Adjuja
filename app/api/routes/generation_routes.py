@@ -66,13 +66,14 @@ async def generate_response(
         )
 
     # Vérification des limites globales avant génération
-    limits = _load_defaults()
-    if limits.max_appels > 0 and usage.total_appels >= limits.max_appels:
+    limits  = _load_defaults()
+    totals  = await usage.get_totals()
+    if limits.max_appels > 0 and totals["total_appels"] >= limits.max_appels:
         raise HTTPException(
             status_code=status.HTTP_429_TOO_MANY_REQUESTS,
             detail=f"Limite d'appels atteinte ({limits.max_appels} appels). Réinitialisez le compteur.",
         )
-    if limits.max_tokens_cumul > 0 and usage.total_tokens >= limits.max_tokens_cumul:
+    if limits.max_tokens_cumul > 0 and totals["total_tokens"] >= limits.max_tokens_cumul:
         raise HTTPException(
             status_code=status.HTTP_429_TOO_MANY_REQUESTS,
             detail=f"Limite de tokens atteinte ({limits.max_tokens_cumul:,} tokens). Réinitialisez le compteur.",
@@ -107,11 +108,11 @@ async def generate_response(
             current_user.id, result.provider_utilise, result.tokens_utilises or 0, duree,
         )
 
-        usage.add(result.tokens_utilises or 0)
-        user_service.increment_generations(current_user.id)
+        await usage.add(result.tokens_utilises or 0)
+        await user_service.increment_generations(current_user.id)
 
         # Sauvegarde dans l'historique
-        history.add(HistoryEntry(
+        await history.add(HistoryEntry(
             user_id=current_user.id,
             ao_excerpt=body.ao_texte[:150].strip(),
             company_nom=body.contexte_entreprise.nom,
