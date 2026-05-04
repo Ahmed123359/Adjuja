@@ -263,7 +263,56 @@ QDRANT_URL=http://localhost:6333
 
 ---
 
-## 7. Ordre d'implémentation
+## 7. Démarrage local (sans Docker complet)
+
+```bash
+# 1. PostgreSQL
+docker compose -f docker-compose.dev.yml up postgres -d
+
+# 2. Qdrant
+docker compose up qdrant -d
+
+# 3. Migrations base de données
+alembic upgrade head
+
+# 4. Backend
+uvicorn app.main:app --reload --port 8000
+
+# 5. Frontend
+cd frontend && npm run dev
+
+# 6. ETL RAG (service séparé)
+docker compose --profile rag up rag-etl -d
+curl -X POST http://localhost:8001/index
+```
+
+---
+
+## 8. Base de connaissances RAG
+
+Le dossier `knowledge_base/` est la source de vérité du RAG. Il doit être organisé en sous-dossiers correspondant aux `doc_type` attendus par Qdrant :
+
+```
+knowledge_base/
+├── templates/       # Notes méthodologiques des offres techniques passées
+├── references/      # Attestations de bonne exécution
+├── resources/       # Notes sur les moyens humains et matériels
+├── company/         # Présentation entreprise, statuts
+└── certifications/  # Certifications ISO, agréments
+```
+
+Le cycle de mise à jour est simple : ajouter un nouveau document dans le bon sous-dossier, puis appeler `POST /index`. L'ETL détecte les fichiers nouveaux via SHA256 (manifest), n'indexe que ce qui a changé, et supprime les anciennes versions automatiquement.
+
+Points techniques importants :
+- Le lecteur PDF utilise `pymupdf` en priorité (gère les PDFs scannés et corrompus), avec `pypdf` en fallback.
+- Les `QDRANT_URL` et `RAG_ETL_URL` doivent pointer vers `localhost` en dev local, et vers les noms de services Docker (`qdrant`, `rag-etl`) en production Docker.
+- La collection Qdrant s'appelle `offria_kb`, dimension vectorielle 1024 (mistral-embed).
+
+**Vérification via dashboard :** `http://localhost:6333/dashboard` > Collections > `offria_kb` > Browse.
+
+---
+
+## 9. Ordre d'implémentation
 
 ```
 Étape 1 : Migration PostgreSQL
