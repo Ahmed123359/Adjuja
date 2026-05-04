@@ -55,6 +55,13 @@ SUPPORTED_EXT = {".txt", ".md", ".pdf", ".docx"}
 # ── Chargement des fichiers ────────────────────────────────────────────────
 
 try:
+    import pymupdf as _pymupdf
+    _PYMUPDF_OK = True
+except ImportError:
+    _pymupdf = None  # type: ignore
+    _PYMUPDF_OK = False
+
+try:
     import pypdf as _pypdf
     _PYPDF_OK = True
 except ImportError:
@@ -74,8 +81,18 @@ def _load_txt(path: Path) -> str:
 
 
 def _load_pdf(path: Path) -> str:
+    # pymupdf handles scanned PDFs and corrupt files better than pypdf
+    if _PYMUPDF_OK:
+        try:
+            doc  = _pymupdf.open(str(path))
+            text = "\n".join(page.get_text() for page in doc)
+            doc.close()
+            if text.strip():
+                return text
+        except Exception as exc:
+            logger.debug("pymupdf fallback pour %s : %s", path.name, exc)
     if not _PYPDF_OK:
-        logger.warning("pypdf absent — skip %s", path.name)
+        logger.warning("Aucun lecteur PDF disponible — skip %s", path.name)
         return ""
     try:
         reader = _pypdf.PdfReader(str(path))

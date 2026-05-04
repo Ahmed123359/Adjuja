@@ -4,6 +4,10 @@
 
 L'offre technique est le document soumis par un prestataire en réponse à un appel d'offres public. Elle doit convaincre l'acheteur que l'entreprise a compris les enjeux du projet et que sa solution est la plus robuste. Elle est structurée autour de cinq composantes : la méthodologie, les moyens humains et matériels, le planning d'exécution, la note RSE, et les fiches techniques.
 
+---
+
+
+
 Le module **Offre Technique** d'OffrIA a pour rôle de générer automatiquement ce document à partir du CPS (Cahier des Prescriptions Spéciales) et du profil de l'entreprise, en produisant un rendu DOCX et PDF téléchargeable.
 
 ---
@@ -26,11 +30,11 @@ Si deux entreprises concurrentes utilisent la plateforme pour répondre au même
 
 L'offre technique est le miroir du prestataire. Une offre incohérente, incomplète ou générique est pire qu'une offre absente. Trois dimensions de qualité doivent être contrôlées :
 
-| Dimension  | Ce qu'elle mesure                                           |
-| ---------- | ----------------------------------------------------------- |
-| Conformité | Chaque exigence du CPS est-elle adressée ?                  |
+| Dimension   | Ce qu'elle mesure                                              |
+| ----------- | -------------------------------------------------------------- |
+| Conformité | Chaque exigence du CPS est-elle adressée ?                    |
 | Cohérence  | L'équipe, la méthodologie et le planning sont-ils alignés ? |
-| Persuasion | L'angle narratif est-il maintenu de bout en bout ?          |
+| Persuasion  | L'angle narratif est-il maintenu de bout en bout ?             |
 
 **Solution :** une porte de qualité automatique après génération, avec score par section et régénération ciblée si le score est insuffisant.
 
@@ -44,12 +48,12 @@ Le RAG actuel utilise `text-embedding-3-small` (OpenAI) et `gpt-4o-mini` pour le
 
 Les systèmes RAG et de génération sont exposés à des classes d'attaques documentées dans l'OWASP LLM Top 10 (2025). Les risques prioritaires pour ce module sont les suivants :
 
-| Risque                           | Description                                                                         | Mesure retenue                                                              |
-| -------------------------------- | ----------------------------------------------------------------------------------- | --------------------------------------------------------------------------- |
-| LLM01 Injection de prompt        | L'utilisateur insère des instructions dans le texte du CPS pour détourner le modèle | Délimiteurs XML autour du contenu utilisateur, détection de patterns connus |
-| LLM03 Empoisonnement RAG         | Un document malveillant indexé dans Qdrant contamine les réponses générées          | Validation du contenu à l'ingestion, traçabilité de la provenance           |
-| LLM04/LLM10 Déni de portefeuille | Des requêtes répétées ou mal contraintes épuisent le budget API                     | Circuit breaker par utilisateur avec plafond de tokens par appel            |
-| LLM06 Fuite d'information        | Le modèle reproduit le système de prompt ou des données sensibles                   | Le système de prompt ne contient aucune donnée opérationnelle sensible      |
+| Risque                            | Description                                                                            | Mesure retenue                                                                |
+| --------------------------------- | -------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------- |
+| LLM01 Injection de prompt         | L'utilisateur insère des instructions dans le texte du CPS pour détourner le modèle | Délimiteurs XML autour du contenu utilisateur, détection de patterns connus |
+| LLM03 Empoisonnement RAG          | Un document malveillant indexé dans Qdrant contamine les réponses générées        | Validation du contenu à l'ingestion, traçabilité de la provenance          |
+| LLM04/LLM10 Déni de portefeuille | Des requêtes répétées ou mal contraintes épuisent le budget API                   | Circuit breaker par utilisateur avec plafond de tokens par appel              |
+| LLM06 Fuite d'information         | Le modèle reproduit le système de prompt ou des données sensibles                   | Le système de prompt ne contient aucune donnée opérationnelle sensible     |
 
 L'approche retenue est la **défense en profondeur** : contrôles distribués sur la couche entrée, la couche prompt, la couche base de connaissances et la couche infrastructure. Pas de solution unique, pas de sur-ingénierie.
 
@@ -57,13 +61,13 @@ L'approche retenue est la **défense en profondeur** : contrôles distribués su
 
 ## 3. Architecture en cinq couches
 
-| Couche | Nom | Entrée | Traitement | Sortie |
-|--------|-----|--------|------------|--------|
-| 0 | Company DNA | Données brutes de l'entreprise | Profil riche : ton d'écriture, certifications, références passées, CVs de l'équipe. Stocké dans une collection Qdrant dédiée par entreprise. | `CompanyDNA` injecté dans toutes les couches suivantes |
-| 1 | Analyse CPS | PDF du CPS uploadé | Extraction par PyMuPDF + LLM : scope du projet, délais imposés, plan RC obligatoire, critères de pondération. Score de correspondance entreprise vs exigences. | `CPSContext` : objet structuré avec tous les champs extraits |
-| 2 | Moteur de stratégie | `CPSContext` + `CompanyDNA` | Sélection de l'angle narratif selon le profil de l'entreprise (track record, innovation, proximité locale, etc.). Identification des différenciateurs à mettre en avant section par section. | `StrategyAngle` : angle choisi + liste de différenciateurs par section |
-| 3 | Génération différenciée | `StrategyAngle` + contexte RAG | 5 appels Mistral lancés en parallèle via `asyncio.gather`. Chaque appel reçoit le `StrategyAngle`, un prompt spécialisé et les extraits RAG pertinents (mistral-embed + Qdrant). | 5 sections rédigées : méthodologie, moyens, planning, RSE, fiches techniques |
-| 4 | Porte de qualité | Les 5 sections + `CPSContext` | Évaluation automatique sur trois scores : conformité CPS, cohérence interne, différenciation. Si un score est sous le seuil, la section défaillante est renvoyée en couche 3 (max 2 tentatives). Assemblage DOCX + PDF si tout est validé. | `offre_technique.docx` + `offre_technique.pdf` |
+| Couche | Nom                         | Entrée                          | Traitement                                                                                                                                                                                                                                        | Sortie                                                                          |
+| ------ | --------------------------- | -------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------- |
+| 0      | Company DNA                 | Données brutes de l'entreprise  | Profil riche : ton d'écriture, certifications, références passées, CVs de l'équipe. Stocké dans une collection Qdrant dédiée par entreprise.                                                                                              | `CompanyDNA` injecté dans toutes les couches suivantes                       |
+| 1      | Analyse CPS                 | PDF du CPS uploadé              | Extraction par PyMuPDF + LLM : scope du projet, délais imposés, plan RC obligatoire, critères de pondération. Score de correspondance entreprise vs exigences.                                                                                | `CPSContext` : objet structuré avec tous les champs extraits                 |
+| 2      | Moteur de stratégie        | `CPSContext` + `CompanyDNA`  | Sélection de l'angle narratif selon le profil de l'entreprise (track record, innovation, proximité locale, etc.). Identification des différenciateurs à mettre en avant section par section.                                                  | `StrategyAngle` : angle choisi + liste de différenciateurs par section       |
+| 3      | Génération différenciée | `StrategyAngle` + contexte RAG | 5 appels Mistral lancés en parallèle via `asyncio.gather`. Chaque appel reçoit le `StrategyAngle`, un prompt spécialisé et les extraits RAG pertinents (mistral-embed + Qdrant).                                                         | 5 sections rédigées : méthodologie, moyens, planning, RSE, fiches techniques |
+| 4      | Porte de qualité           | Les 5 sections +`CPSContext`   | Évaluation automatique sur trois scores : conformité CPS, cohérence interne, différenciation. Si un score est sous le seuil, la section défaillante est renvoyée en couche 3 (max 2 tentatives). Assemblage DOCX + PDF si tout est validé. | `offre_technique.docx` + `offre_technique.pdf`                              |
 
 ---
 
@@ -107,8 +111,11 @@ Contient les prompts système spécifiques à chaque section. Séparés du code 
 **`app/api/routes/offre_technique_routes.py`**
 Expose deux endpoints : `POST /api/v1/offre-technique/run` pour lancer le pipeline et `GET /api/v1/offre-technique/download/{job_id}/{file}` pour récupérer les fichiers produits.
 
-**`app/api/middleware/budget_guard.py`**
-Middleware FastAPI qui intercepte les requêtes vers les routes LLM et vérifie le quota avant de laisser passer la requête.
+**`app/models/offre_technique.py`**
+Modèles Pydantic partagés entre routes et services : `CPSContext`, `StrategyAngle`, `SectionScore`, `QualityReport`, `OffreTechniqueOutputFile`, `OffreTechniqueResult`.
+
+**`app/services/offre_technique_service.py`**
+Orchestrateur du pipeline complet : crée le job, appelle `_run_pipeline` dans un thread via `asyncio.to_thread`, gère les chemins de fichiers en sortie et retourne le résultat au format `OffreTechniqueResult`.
 
 **`rag_service/ingestion_validator.py`**
 Valide chaque document avant indexation dans Qdrant : détecte les patterns d'injection dans le contenu, impose une taille maximale par chunk, enregistre la provenance (source, date, user_id) dans le payload. Couvre LLM03.
@@ -153,29 +160,29 @@ app/
 ├── db/
 │   ├── base.py                         # Engine asyncpg + session factory SQLAlchemy
 │   ├── models.py                       # ORM : User, Launch, Usage
-│   └── migrations/
-│       ├── env.py
-│       └── versions/
-│           └── 001_initial.py
+│   └── __init__.py
 │
 ├── services/
 │   ├── security/
 │   │   ├── input_sanitizer.py          # Délimiteurs XML, détection injection, longueur max
 │   │   └── budget_guard.py             # Circuit breaker tokens par utilisateur
 │   │
-│   └── offre_technique/
-│       ├── cps_analyzer.py             # Extrait scope, délais, plan RC depuis le PDF
-│       ├── strategy_engine.py          # Sélectionne l'angle narratif selon le profil
-│       ├── section_generator.py        # 5 appels LLM parallèles (asyncio.gather)
-│       ├── quality_gate.py             # Score conformité + cohérence + différenciation
-│       ├── doc_assembler.py            # Compose le DOCX et le PDF final
-│       └── prompts.py                  # Prompts système par section
+│   ├── offre_technique/
+│   │   ├── cps_analyzer.py             # Extrait scope, délais, plan RC depuis le PDF
+│   │   ├── strategy_engine.py          # Sélectionne l'angle narratif selon le profil
+│   │   ├── section_generator.py        # 5 appels LLM parallèles (asyncio.gather)
+│   │   ├── quality_gate.py             # Score conformité + cohérence + différenciation
+│   │   ├── doc_assembler.py            # Compose le DOCX et le PDF final
+│   │   └── prompts.py                  # Prompts système par section
+│   │
+│   └── offre_technique_service.py      # Orchestrateur : job runner + asyncio.to_thread bridge
+│
+├── models/
+│   └── offre_technique.py              # Pydantic : CPSContext, StrategyAngle, QualityReport...
 │
 ├── api/
-│   ├── routes/
-│   │   └── offre_technique_routes.py   # POST /run, GET /download/{job_id}/{file}
-│   └── middleware/
-│       └── budget_guard.py             # Middleware FastAPI vérifiant le quota avant appel LLM
+│   └── routes/
+│       └── offre_technique_routes.py   # POST /run, GET /download/{job_id}/{file}
 │
 └── main.py                             # Mise à jour : lifespan async pour init DB
 
@@ -183,6 +190,10 @@ rag_service/
 └── ingestion_validator.py              # Validation anti-empoisonnement à l'ingestion
 
 alembic.ini                             # Configuration Alembic
+alembic/
+├── env.py
+└── versions/
+    └── 001_initial.py
 ```
 
 ### Fichiers existants à mettre à jour
@@ -197,6 +208,15 @@ app/api/dependencies.py         # Câblage des nouveaux services async
 rag_service/etl.py              # Remplacement OpenAI embed -> mistral-embed
 docker-compose.dev.yml          # Ajout service PostgreSQL
 requirements.txt                # asyncpg, sqlalchemy[asyncio], alembic
+```
+
+### Frontend ajouté
+
+```
+frontend/src/components/OffreTechniqueTab.tsx   # Upload CPS, progress ring, scores qualité, download cards
+frontend/src/types.ts                            # Ajout : OffreTechniqueResult, QualityReport, SectionScore
+frontend/src/api.ts                              # Ajout : runOffreTechnique(), downloadOffreTechniqueFile()
+frontend/src/components/RightPanel.tsx           # Ajout entrée nav + rendu OffreTechniqueTab
 ```
 
 ### Ce qui ne change pas

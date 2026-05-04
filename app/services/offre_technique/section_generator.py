@@ -1,7 +1,5 @@
 import asyncio
 import json
-import re
-
 import httpx
 
 from app.models.offre_technique import CPSContext, StrategyAngle

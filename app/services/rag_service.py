@@ -39,6 +39,14 @@ _SECTION_TYPE_MAP: dict[str, list[str]] = {
     "Conclusion et engagements":              ["company", "templates"],
 }
 
+_OT_SECTION_TYPE_MAP: dict[str, list[str]] = {
+    "methodologie": ["templates"],
+    "moyens":       ["resources", "company", "certifications"],
+    "planning":     ["templates"],
+    "rse":          ["company", "certifications"],
+    "references":   ["references"],
+}
+
 _COLLECTION   = "offria_kb"
 _N_CANDIDATES = 20
 _RERANK_TOP_K = 3
@@ -128,6 +136,41 @@ class RagService:
 
         except Exception as exc:
             logger.debug("RAG retrieval ignoré : %s", exc)
+            return ""
+
+    async def retrieve_for_ot_section(self, section: str, cps_scope: str) -> str:
+        """RAG retrieval for offre technique sections (methodologie, moyens, planning, rse, references)."""
+        if not self.is_ready:
+            return ""
+        doc_types = _OT_SECTION_TYPE_MAP.get(section, [])
+        if not doc_types:
+            return ""
+        try:
+            query  = await self._build_query(section, cps_scope)
+            vector = await self._embed(query)
+            results = await self._client.search(  # type: ignore[union-attr]
+                collection_name=_COLLECTION,
+                query_vector=vector,
+                query_filter=Filter(
+                    should=[FieldCondition(key="doc_type", match=MatchAny(any=doc_types))]
+                ),
+                limit=_N_CANDIDATES,
+                with_payload=True,
+            )
+            if not results:
+                return ""
+            results = await self._rerank(query, results, _RERANK_TOP_K)
+            lines = ["---", "## CONTEXTE DOCUMENTAIRE (base de connaissances interne)", ""]
+            for r in results:
+                payload  = r.payload or {}
+                label    = DOCUMENT_TYPES.get(payload.get("doc_type", ""), "")
+                doc_name = payload.get("doc_name", "")
+                lines.append(f"**[{label} — {doc_name}]**")
+                lines.append(payload.get("content", ""))
+                lines.append("")
+            return "\n".join(lines)
+        except Exception as exc:
+            logger.debug("RAG OT retrieval ignoré pour '%s' : %s", section, exc)
             return ""
 
     async def _embed(self, text: str) -> list[float]:

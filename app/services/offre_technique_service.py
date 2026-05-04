@@ -70,13 +70,28 @@ def _run_pipeline(pdf_path: Path, output_dir: Path, api_key: str) -> dict:
 async def _generate_sections(
     cps, angle, company_info, api_key, existing: dict
 ) -> dict[str, str]:
-    from app.services.offre_technique.section_generator import generate_all, SECTION_NAMES
+    from app.services.offre_technique.section_generator import SECTION_NAMES
+    from app.services.offre_technique import section_generator
+    from app.services.rag_service import RagService
+    from app.config.settings import get_settings
+
     missing = [s for s in SECTION_NAMES if s not in existing]
     if not missing:
         return {}
-    # Generate only missing sections
-    from app.services.offre_technique import section_generator
-    result = await section_generator.generate_all(cps, angle, company_info, api_key)
+
+    settings = get_settings()
+    rag = RagService(qdrant_url=settings.qdrant_url or "", mistral_api_key=api_key)
+    rag_contexts: dict[str, str] = {}
+    if rag.is_ready:
+        raw = await asyncio.gather(
+            *[rag.retrieve_for_ot_section(s, cps.scope) for s in missing],
+            return_exceptions=True,
+        )
+        for section, ctx in zip(missing, raw):
+            rag_contexts[section] = ctx if isinstance(ctx, str) else ""
+        logger.info("RAG contexts fetched for: %s", list(rag_contexts.keys()))
+
+    result = await section_generator.generate_all(cps, angle, company_info, api_key, rag_contexts)
     return {k: v for k, v in result.items() if k in missing}
 
 

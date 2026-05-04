@@ -11,7 +11,8 @@ from pydantic import BaseModel
 from app.api.dependencies import get_current_user
 from app.config.settings import Settings, get_settings
 from app.models.user import Token, UserCreate, UserPublic, PASSWORD_MIN_LENGTH, PASSWORD_REQUIRE_DIGIT
-from app.services.user_service import UserService, get_user_service
+from app.services.user_service import UserService
+from app.api.dependencies import get_user_service
 from app.services.email_service import send_verification_email
 
 router = APIRouter(prefix="/auth", tags=["Authentification"])
