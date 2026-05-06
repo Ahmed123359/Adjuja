@@ -18,35 +18,35 @@ services:
       timeout: 3s
       retries: 10
 
-  api:
-    build:
-      context: .
-      dockerfile: Dockerfile
-      target: api-dev            # Saute le stage frontend-builder inutile en dev
-    volumes:
-      - ./app:/app/app           # Hot-reload : monte le code source Python en live
-    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
-    environment:
-      APP_ENV: development
-      APP_DEBUG: "true"
+  # api:
+  #   build:
+  #     context: .
+  #     dockerfile: Dockerfile
+  #     target: api-dev            # Saute le stage frontend-builder inutile en dev
+  #   volumes:
+  #     - ./app:/app/app           # Hot-reload : monte le code source Python en live
+  #   command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+  #   environment:
+  #     APP_ENV: development
+  #     APP_DEBUG: "true"
 
-  frontend:
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile
-      target: dev
-    working_dir: /app
-    volumes:
-      - ./frontend:/app
-      - /app/node_modules        # Volume anonyme pour isoler node_modules du host
-    ports:
-      - "5173:5173"
-    environment:
-      - VITE_API_TARGET=http://api:8000
-    depends_on:
-      - api
-    networks:
-      - ao_network
+  # frontend:
+  #   build:
+  #     context: ./frontend
+  #     dockerfile: Dockerfile
+  #     target: dev
+  #   working_dir: /app
+  #   volumes:
+  #     - ./frontend:/app
+  #     - /app/node_modules        # Volume anonyme pour isoler node_modules du host
+  #   ports:
+  #     - "5173:5173"
+  #   environment:
+  #     - VITE_API_TARGET=http://api:8000
+  #   depends_on:
+  #     - api
+  #   networks:
+  #     - ao_network
 
 volumes:
   postgres_data:

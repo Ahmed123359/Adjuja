@@ -1,13 +1,18 @@
 import json
+import logging
 import re
+import time
 
 import requests
 
 from app.models.offre_technique import CPSContext, StrategyAngle
 from app.services.offre_technique.prompts import STRATEGY_SYSTEM
 
-_MISTRAL_URL = "https://api.mistral.ai/v1/chat/completions"
-_MODEL       = "mistral-small-latest"
+logger = logging.getLogger(__name__)
+
+_MISTRAL_URL  = "https://api.mistral.ai/v1/chat/completions"
+_MODEL        = "mistral-small-latest"
+_RETRY_DELAYS = (10, 30, 60)
 
 
 def choose_angle(cps: CPSContext, company_info: dict, api_key: str) -> StrategyAngle:
@@ -29,12 +34,17 @@ def choose_angle(cps: CPSContext, company_info: dict, api_key: str) -> StrategyA
         "temperature":     0.3,
         "response_format": {"type": "json_object"},
     }
-    resp = requests.post(
-        _MISTRAL_URL,
-        headers={"Authorization": f"Bearer {api_key}"},
-        json=payload,
-        timeout=30,
-    )
+    for attempt, delay in enumerate((*_RETRY_DELAYS, None), start=1):
+        resp = requests.post(
+            _MISTRAL_URL,
+            headers={"Authorization": f"Bearer {api_key}"},
+            json=payload,
+            timeout=30,
+        )
+        if resp.status_code != 429 or delay is None:
+            break
+        logger.warning("Strategy engine 429 — attente %ds (tentative %d)", delay, attempt)
+        time.sleep(delay)
     resp.raise_for_status()
     raw = resp.json()["choices"][0]["message"]["content"]
 

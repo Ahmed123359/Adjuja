@@ -13,15 +13,23 @@ def _to_str(v: object) -> str:
 
 
 class CPSContext(BaseModel):
-    scope:      str = ""
-    acheteur:   str = ""
-    reference:  str = ""
-    delais:     str = ""
-    plan_rc:    str = ""
-    criteres:   list[dict] = Field(default_factory=list)
-    lots:       list[str]  = Field(default_factory=list)
+    scope:                str = ""
+    acheteur:             str = ""
+    reference:            str = ""
+    delais:               str = ""
+    plan_rc:              str = ""
+    criteres:             list[dict] = Field(default_factory=list)
+    lots:                 list[str]  = Field(default_factory=list)
+    nb_sessions:          str = ""
+    horaire:              str = ""
+    livrables:            list[str]  = Field(default_factory=list)
+    exigences_formateurs: str = ""
+    planning_note:        str = ""
+    sous_traitance:       str = ""
 
-    @field_validator("scope", "acheteur", "reference", "delais", "plan_rc", mode="before")
+    @field_validator("scope", "acheteur", "reference", "delais", "plan_rc",
+                     "nb_sessions", "horaire", "exigences_formateurs",
+                     "planning_note", "sous_traitance", mode="before")
     @classmethod
     def coerce_to_str(cls, v: object) -> str:
         return _to_str(v)

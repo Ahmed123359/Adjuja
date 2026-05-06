@@ -413,9 +413,15 @@ export async function sendChatMessage(
 
 import type { OffreTechniqueResult } from './types';
 
-export async function runOffreTechnique(file: File): Promise<OffreTechniqueResult> {
+export async function runOffreTechnique(
+  file: File,
+  opts?: { logo?: File; brandColor?: string; customInstructions?: string },
+): Promise<OffreTechniqueResult> {
   const form = new FormData();
   form.append('file', file);
+  if (opts?.logo)               form.append('logo',                opts.logo);
+  if (opts?.brandColor)         form.append('brand_color',         opts.brandColor);
+  if (opts?.customInstructions) form.append('custom_instructions', opts.customInstructions);
 
   const res = await fetch('/api/v1/offre-technique/run', {
     method:  'POST',

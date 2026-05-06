@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import json
 import logging
 
 import httpx
@@ -16,9 +15,7 @@ except ImportError:
     logger.warning("qdrant-client non installé -> RAG désactivé.")
 
 _MISTRAL_EMBED_URL = "https://api.mistral.ai/v1/embeddings"
-_MISTRAL_CHAT_URL  = "https://api.mistral.ai/v1/chat/completions"
 _EMBED_MODEL       = "mistral-embed"
-_CHEAP_MODEL       = "mistral-small-latest"
 
 DOCUMENT_TYPES: dict[str, str] = {
     "references":     "Références et réalisations",
@@ -100,7 +97,7 @@ class RagService:
             return ""
 
         try:
-            query  = await self._build_query(section_title, ao_context)
+            query  = self._build_query(section_title, ao_context)
             vector = await self._embed(query)
 
             results = await self._client.search(  # type: ignore[union-attr]
@@ -116,7 +113,7 @@ class RagService:
                 return ""
 
             top_k   = _SECTION_TOP_K.get(section_title, _RERANK_TOP_K)
-            results = await self._rerank(query, results, top_k)
+            results = self._rerank(results, top_k)
 
             lines = [
                 "---",
@@ -146,7 +143,7 @@ class RagService:
         if not doc_types:
             return ""
         try:
-            query  = await self._build_query(section, cps_scope)
+            query  = self._build_query(section, cps_scope)
             vector = await self._embed(query)
             results = await self._client.search(  # type: ignore[union-attr]
                 collection_name=_COLLECTION,
@@ -159,7 +156,7 @@ class RagService:
             )
             if not results:
                 return ""
-            results = await self._rerank(query, results, _RERANK_TOP_K)
+            results = self._rerank(results, _RERANK_TOP_K)
             lines = ["---", "## CONTEXTE DOCUMENTAIRE (base de connaissances interne)", ""]
             for r in results:
                 payload  = r.payload or {}
@@ -183,50 +180,13 @@ class RagService:
             resp.raise_for_status()
             return resp.json()["data"][0]["embedding"]
 
-    async def _mistral_chat(self, system: str, user: str, max_tokens: int = 100) -> str:
-        async with httpx.AsyncClient(timeout=20) as client:
-            resp = await client.post(
-                _MISTRAL_CHAT_URL,
-                headers={"Authorization": f"Bearer {self._api_key}"},
-                json={
-                    "model":      _CHEAP_MODEL,
-                    "messages":   [{"role": "system", "content": system}, {"role": "user", "content": user}],
-                    "max_tokens": max_tokens,
-                    "temperature": 0,
-                },
-            )
-            resp.raise_for_status()
-            return resp.json()["choices"][0]["message"]["content"].strip()
+    def _build_query(self, section_title: str, ao_text: str) -> str:
+        """Build embedding query with no LLM call — saves rate-limit budget."""
+        return f"{section_title} {ao_text[:400]}"
 
-    async def _build_query(self, section_title: str, ao_text: str) -> str:
-        try:
-            return await self._mistral_chat(
-                _QUERY_GEN_SYSTEM,
-                f"Section : {section_title}\n\nAppel d'offres :\n{ao_text}",
-                max_tokens=60,
-            )
-        except Exception as exc:
-            logger.debug("Query gen échoué, fallback : %s", exc)
-            return f"{section_title} {ao_text[:300]}"
-
-    async def _rerank(self, query: str, candidates: list, top_k: int) -> list:
-        if len(candidates) <= top_k:
-            return candidates
-        try:
-            chunks_text = "\n".join(
-                f"[{i}] {r.payload.get('content', '')[:400]}"
-                for i, r in enumerate(candidates)
-            )
-            raw = await self._mistral_chat(
-                _RERANK_SYSTEM,
-                f"Query: {query}\n\nChunks:\n{chunks_text}\n\nReturn a JSON array of the {top_k} most relevant chunk indices (0-based).",
-                max_tokens=50,
-            )
-            indices = [i for i in json.loads(raw) if isinstance(i, int) and 0 <= i < len(candidates)]
-            return [candidates[i] for i in indices[:top_k]] if indices else candidates[:top_k]
-        except Exception as exc:
-            logger.debug("Reranker ignoré : %s", exc)
-            return candidates[:top_k]
+    def _rerank(self, candidates: list, top_k: int) -> list:
+        """Return top-k by Qdrant score — no LLM reranking."""
+        return sorted(candidates, key=lambda r: r.score, reverse=True)[:top_k]
 
     async def get_collection_stats(self) -> dict:
         if self._client is None:

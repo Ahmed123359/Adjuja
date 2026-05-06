@@ -17,7 +17,11 @@ def _build_job_dir(job_id: str) -> Path:
     return d
 
 
-def _run_pipeline(pdf_path: Path, output_dir: Path, api_key: str) -> dict:
+def _run_pipeline(
+    pdf_path: Path, output_dir: Path, api_key: str,
+    logo_bytes: bytes | None, logo_filename: str | None,
+    brand_color: str | None, custom_instructions: str | None,
+) -> dict:
     """Synchronous pipeline — runs in a thread via asyncio.to_thread."""
     from app.services.filler.company_adapter import get_company_info
     from app.services.offre_technique.cps_analyzer   import analyze
@@ -28,20 +32,15 @@ def _run_pipeline(pdf_path: Path, output_dir: Path, api_key: str) -> dict:
 
     company_info = get_company_info()
 
-    # Phase 1 : analyse CPS
-    cps = analyze(pdf_path, api_key)
-
-    # Phase 2 : angle stratégique
+    cps   = analyze(pdf_path, api_key)
     angle = choose_angle(cps, company_info, api_key)
 
-    # Phase 3 + 4 : génération + quality gate avec max 2 tentatives
     sections: dict[str, str] = {}
     report = None
 
     for attempt in range(_MAX_REGEN_ATTEMPTS + 1):
-        # section_generator est async — on le roule dans un nouveau event loop
         new_sections = asyncio.run(
-            _generate_sections(cps, angle, company_info, api_key, sections)
+            _generate_sections(cps, angle, company_info, api_key, sections, custom_instructions)
         )
         sections.update(new_sections)
 
@@ -55,20 +54,24 @@ def _run_pipeline(pdf_path: Path, output_dir: Path, api_key: str) -> dict:
         logger.info("Quality gate: régénération ciblée de '%s' (tentative %d)", weakest, attempt + 1)
         sections.pop(weakest, None)
 
-    # Phase 5 : assemblage
     docx_path = output_dir / "offre_technique.docx"
-    build_docx(sections, cps, company_info, docx_path)
-    pdf_path  = build_pdf(docx_path)
+    build_docx(
+        sections, cps, company_info, docx_path,
+        logo_bytes=logo_bytes, logo_filename=logo_filename,
+        brand_color=brand_color,
+    )
+    pdf_path = build_pdf(docx_path)
 
     return {
-        "docx": str(docx_path),
-        "pdf":  str(pdf_path) if pdf_path else None,
+        "docx":    str(docx_path),
+        "pdf":     str(pdf_path) if pdf_path else None,
         "quality": report.model_dump() if report else None,
     }
 
 
 async def _generate_sections(
-    cps, angle, company_info, api_key, existing: dict
+    cps, angle, company_info, api_key, existing: dict,
+    custom_instructions: str | None = None,
 ) -> dict[str, str]:
     from app.services.offre_technique.section_generator import SECTION_NAMES
     from app.services.offre_technique import section_generator
@@ -91,11 +94,17 @@ async def _generate_sections(
             rag_contexts[section] = ctx if isinstance(ctx, str) else ""
         logger.info("RAG contexts fetched for: %s", list(rag_contexts.keys()))
 
-    result = await section_generator.generate_all(cps, angle, company_info, api_key, rag_contexts)
+    result = await section_generator.generate_all(
+        cps, angle, company_info, api_key, rag_contexts, custom_instructions
+    )
     return {k: v for k, v in result.items() if k in missing}
 
 
-async def run_offre_technique(pdf_bytes: bytes, filename: str, api_key: str) -> OffreTechniqueResult:
+async def run_offre_technique(
+    pdf_bytes: bytes, filename: str, api_key: str,
+    logo_bytes: bytes | None = None, logo_filename: str | None = None,
+    brand_color: str | None = None, custom_instructions: str | None = None,
+) -> OffreTechniqueResult:
     job_id   = uuid.uuid4().hex
     job_dir  = _build_job_dir(job_id)
     pdf_path = job_dir / "input.pdf"
@@ -106,7 +115,10 @@ async def run_offre_technique(pdf_bytes: bytes, filename: str, api_key: str) -> 
     logger.info("OffreTechnique job=%s file=%s", job_id, filename)
 
     try:
-        result = await asyncio.to_thread(_run_pipeline, pdf_path, out_dir, api_key)
+        result = await asyncio.to_thread(
+            _run_pipeline, pdf_path, out_dir, api_key,
+            logo_bytes, logo_filename, brand_color, custom_instructions,
+        )
     except Exception as exc:
         logger.error("OffreTechnique job=%s failed: %s", job_id, exc, exc_info=True)
         return OffreTechniqueResult(

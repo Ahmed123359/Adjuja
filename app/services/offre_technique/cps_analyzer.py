@@ -1,5 +1,7 @@
 import json
+import logging
 import re
+import time
 from pathlib import Path
 
 import pymupdf
@@ -8,9 +10,12 @@ import requests
 from app.models.offre_technique import CPSContext
 from app.services.offre_technique.prompts import CPS_EXTRACT_SYSTEM
 
-_MISTRAL_URL = "https://api.mistral.ai/v1/chat/completions"
-_MODEL       = "mistral-small-latest"
-_MAX_CHARS   = 40_000
+logger = logging.getLogger(__name__)
+
+_MISTRAL_URL   = "https://api.mistral.ai/v1/chat/completions"
+_MODEL         = "mistral-small-latest"
+_MAX_CHARS     = 40_000
+_RETRY_DELAYS  = (10, 30, 60)
 
 
 def extract_text(pdf_path: Path) -> str:
@@ -32,12 +37,17 @@ def analyze(pdf_path: Path, api_key: str) -> CPSContext:
         "temperature":     0,
         "response_format": {"type": "json_object"},
     }
-    resp = requests.post(
-        _MISTRAL_URL,
-        headers={"Authorization": f"Bearer {api_key}"},
-        json=payload,
-        timeout=60,
-    )
+    for attempt, delay in enumerate((*_RETRY_DELAYS, None), start=1):
+        resp = requests.post(
+            _MISTRAL_URL,
+            headers={"Authorization": f"Bearer {api_key}"},
+            json=payload,
+            timeout=60,
+        )
+        if resp.status_code != 429 or delay is None:
+            break
+        logger.warning("CPS analyzer 429 — attente %ds (tentative %d)", delay, attempt)
+        time.sleep(delay)
     resp.raise_for_status()
     raw = resp.json()["choices"][0]["message"]["content"]
 
@@ -55,4 +65,10 @@ def analyze(pdf_path: Path, api_key: str) -> CPSContext:
         plan_rc=data.get("plan_rc", ""),
         criteres=data.get("criteres", []),
         lots=data.get("lots", []),
+        nb_sessions=data.get("nb_sessions", ""),
+        horaire=data.get("horaire", ""),
+        livrables=data.get("livrables", []),
+        exigences_formateurs=data.get("exigences_formateurs", ""),
+        planning_note=data.get("planning_note", ""),
+        sous_traitance=data.get("sous_traitance", ""),
     )

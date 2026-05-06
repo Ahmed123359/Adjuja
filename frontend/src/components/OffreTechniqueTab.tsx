@@ -143,15 +143,22 @@ function DownloadCard({ file, index }: { file: OffreTechniqueOutputFile; index: 
   );
 }
 
+const MAX_INSTRUCTIONS = 1500;
+
 export default function OffreTechniqueTab() {
-  const [pdf,        setPdf]        = useState<File | null>(null);
-  const [loading,    setLoading]    = useState(false);
-  const [elapsed,    setElapsed]    = useState(0);
-  const [error,      setError]      = useState('');
-  const [result,     setResult]     = useState<OffreTechniqueResult | null>(null);
-  const [isDragging, setIsDragging] = useState(false);
+  const [pdf,              setPdf]             = useState<File | null>(null);
+  const [logo,             setLogo]            = useState<File | null>(null);
+  const [brandColor,       setBrandColor]      = useState('#1F3864');
+  const [instructions,     setInstructions]    = useState('');
+  const [showCustom,       setShowCustom]      = useState(false);
+  const [loading,          setLoading]         = useState(false);
+  const [elapsed,          setElapsed]         = useState(0);
+  const [error,            setError]           = useState('');
+  const [result,           setResult]          = useState<OffreTechniqueResult | null>(null);
+  const [isDragging,       setIsDragging]      = useState(false);
 
   const pdfRef   = useRef<HTMLInputElement>(null);
+  const logoRef  = useRef<HTMLInputElement>(null);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
@@ -171,7 +178,12 @@ export default function OffreTechniqueTab() {
     setError('');
     setResult(null);
     try {
-      const res = await runOffreTechnique(pdf);
+      const opts = {
+        logo:               logo ?? undefined,
+        brandColor:         brandColor || undefined,
+        customInstructions: instructions.trim() || undefined,
+      };
+      const res = await runOffreTechnique(pdf, opts);
       setResult(res);
       if (!res.succes && res.erreurs.length > 0) {
         setError(res.erreurs.join(' · '));
@@ -185,6 +197,10 @@ export default function OffreTechniqueTab() {
 
   function reset() {
     setPdf(null);
+    setLogo(null);
+    setBrandColor('#1F3864');
+    setInstructions('');
+    setShowCustom(false);
     setError('');
     setResult(null);
   }
@@ -274,6 +290,154 @@ export default function OffreTechniqueTab() {
             const f = e.target.files?.[0];
             if (f) { setPdf(f); setResult(null); setError(''); }
           }} />
+      </div>
+
+      {/* Customization panel */}
+      <div className="border border-border rounded-xl overflow-hidden">
+        <button
+          type="button"
+          onClick={() => setShowCustom(v => !v)}
+          className="w-full flex items-center justify-between px-4 py-3 text-sm font-medium text-foreground hover:bg-accent/30 transition-colors"
+        >
+          <span className="flex items-center gap-2">
+            <svg className="h-4 w-4 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
+            </svg>
+            Options de personnalisation
+            {(logo || instructions.trim()) && (
+              <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-primary/10 border border-primary/20 text-primary font-semibold">
+                {[logo ? 'logo' : '', instructions.trim() ? 'instructions' : ''].filter(Boolean).join(' + ')}
+              </span>
+            )}
+          </span>
+          <svg
+            className={`h-4 w-4 text-muted-foreground transition-transform ${showCustom ? 'rotate-180' : ''}`}
+            fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+          </svg>
+        </button>
+
+        {showCustom && (
+          <div className="p-4 border-t border-border bg-card space-y-4">
+
+            {/* Logo + Brand color row */}
+            <div className="grid grid-cols-2 gap-4">
+
+              {/* Logo upload */}
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-foreground uppercase tracking-wider">
+                  Logo entreprise
+                </label>
+                <div
+                  onClick={() => logoRef.current?.click()}
+                  className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-all ${
+                    logo
+                      ? 'border-emerald-400/40 bg-emerald-500/5'
+                      : 'border-border hover:border-primary/40 hover:bg-accent/20'
+                  }`}
+                >
+                  <div className={`h-8 w-8 rounded-lg flex-shrink-0 flex items-center justify-center ${logo ? 'bg-emerald-500/10' : 'bg-accent'}`}>
+                    {logo ? (
+                      <svg className="h-4 w-4 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                      </svg>
+                    ) : (
+                      <svg className="h-4 w-4 text-accent-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                      </svg>
+                    )}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    {logo ? (
+                      <p className="text-xs font-medium text-foreground truncate">{logo.name}</p>
+                    ) : (
+                      <p className="text-xs text-muted-foreground">PNG / JPG · max 2 Mo</p>
+                    )}
+                  </div>
+                  {logo && (
+                    <button
+                      type="button"
+                      onClick={e => { e.stopPropagation(); setLogo(null); }}
+                      className="flex-shrink-0 h-5 w-5 rounded-full bg-muted hover:bg-destructive/10 hover:text-destructive flex items-center justify-center transition-colors"
+                    >
+                      <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
+                  )}
+                </div>
+                <input
+                  ref={logoRef}
+                  type="file"
+                  accept=".png,.jpg,.jpeg"
+                  className="hidden"
+                  onChange={e => {
+                    const f = e.target.files?.[0];
+                    if (f) setLogo(f);
+                  }}
+                />
+              </div>
+
+              {/* Brand color */}
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-foreground uppercase tracking-wider">
+                  Couleur principale
+                </label>
+                <div className="flex items-center gap-2 p-3 rounded-lg border border-border bg-background">
+                  <input
+                    type="color"
+                    value={brandColor}
+                    onChange={e => setBrandColor(e.target.value)}
+                    className="h-7 w-7 rounded-md border-0 cursor-pointer bg-transparent p-0"
+                  />
+                  <input
+                    type="text"
+                    value={brandColor}
+                    onChange={e => {
+                      const v = e.target.value;
+                      if (/^#[0-9A-Fa-f]{0,6}$/.test(v)) setBrandColor(v);
+                    }}
+                    className="flex-1 text-xs font-mono bg-transparent outline-none text-foreground"
+                    placeholder="#1F3864"
+                    maxLength={7}
+                  />
+                  <div
+                    className="h-5 w-5 rounded border border-border flex-shrink-0"
+                    style={{ backgroundColor: /^#[0-9A-Fa-f]{6}$/.test(brandColor) ? brandColor : '#1F3864' }}
+                  />
+                </div>
+                <p className="text-[10px] text-muted-foreground">
+                  Appliquée aux titres et à la page de garde
+                </p>
+              </div>
+            </div>
+
+            {/* Custom instructions */}
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-semibold text-foreground uppercase tracking-wider">
+                  Instructions spécifiques
+                </label>
+                <span className={`text-[10px] tabular-nums ${instructions.length > MAX_INSTRUCTIONS * 0.9 ? 'text-destructive' : 'text-muted-foreground'}`}>
+                  {instructions.length} / {MAX_INSTRUCTIONS}
+                </span>
+              </div>
+              <textarea
+                value={instructions}
+                onChange={e => {
+                  if (e.target.value.length <= MAX_INSTRUCTIONS) setInstructions(e.target.value);
+                }}
+                rows={4}
+                placeholder="Ex : Insistez sur nos certifications ISO 9001 et ISO 14001. Mentionnez notre expérience de 10 ans en projets similaires…"
+                className="w-full text-sm px-3 py-2.5 rounded-lg border border-border bg-background text-foreground placeholder:text-muted-foreground/60 resize-none outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/20 transition-colors"
+              />
+              <p className="text-[10px] text-muted-foreground">
+                Transmises à l'IA lors de la rédaction des 5 sections. Max {MAX_INSTRUCTIONS} caractères.
+              </p>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Loading */}

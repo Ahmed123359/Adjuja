@@ -1,14 +1,19 @@
 import json
+import logging
 import re
+import time
 
 import requests
 
 from app.models.offre_technique import CPSContext, QualityReport, SectionScore, StrategyAngle
 from app.services.offre_technique.prompts import QUALITY_REVIEW_SYSTEM
 
+logger = logging.getLogger(__name__)
+
 _MISTRAL_URL   = "https://api.mistral.ai/v1/chat/completions"
 _MODEL         = "mistral-small-latest"
 _SCORE_FLOOR   = 0.65
+_RETRY_DELAYS  = (10, 30, 60)
 
 
 def evaluate(
@@ -40,12 +45,17 @@ def evaluate(
         "temperature":     0,
         "response_format": {"type": "json_object"},
     }
-    resp = requests.post(
-        _MISTRAL_URL,
-        headers={"Authorization": f"Bearer {api_key}"},
-        json=payload,
-        timeout=45,
-    )
+    for attempt, delay in enumerate((*_RETRY_DELAYS, None), start=1):
+        resp = requests.post(
+            _MISTRAL_URL,
+            headers={"Authorization": f"Bearer {api_key}"},
+            json=payload,
+            timeout=45,
+        )
+        if resp.status_code != 429 or delay is None:
+            break
+        logger.warning("Quality gate 429 — attente %ds (tentative %d)", delay, attempt)
+        time.sleep(delay)
     resp.raise_for_status()
     raw = resp.json()["choices"][0]["message"]["content"]
 
