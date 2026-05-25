@@ -1,4 +1,4 @@
-# SUIVI — OffrIA
+# SUIVI OffrIA
 
 ## Branche courante : `feat/improve-methodology`
 
@@ -6,14 +6,16 @@
 
 ## Ce qui a été fait (par session)
 
-### Session 1 — Fondations (branches précédentes)
+### Session 1 Fondations (branches précédentes)
+
 - Génération AO complète (brief + 8 sections en parallèle)
 - Auth JWT (register/login/me), historique par user
 - Rate limiting slowapi
 - Export Word/PDF
 - RAG Qdrant (optionnel)
 
-### Session 2 — Améliorations qualité (branche `feat/rate-limiting`)
+### Session 2 Améliorations qualité (branche `feat/rate-limiting`)
+
 - **Section "Présentation de notre entreprise" figée** : bypass LLM, lit directement `knowledge_base/company/presentation_abi_consulting.md`
   - Fichier : `app/services/generation_service.py` → `_STATIC_SECTIONS` dict
 - **Fix max_tokens** : `_SECTION_MAX_TOKENS=1000` hardcodé remplacé par `request.max_tokens`
@@ -29,7 +31,8 @@
   - Fichier : `rag_service/etl.py`
 - **.gitignore** : `knowledge_base/` et `data/` exclus
 
-### Session 3 — Préparation itération méthodologie (branche `feat/improve-methodology`)
+### Session 3 Préparation itération méthodologie (branche `feat/improve-methodology`)
+
 - **`_DEV_SECTIONS`** ajouté dans `prompt_builder_service.py` :
   - `None` = toutes les sections (prod)
   - `["Notre approche méthodologique"]` = une seule section générée (dev)
@@ -40,24 +43,28 @@
 
 ---
 
-## TODO — En cours / À faire
+## TODO En cours / À faire
 
-### Priorité 1 — Méthodologie (branche `feat/improve-methodology`)
+### Priorité 1 Méthodologie (branche `feat/improve-methodology`)
+
 - [ ] Améliorer le prompt "Notre approche méthodologique" dans `prompt_builder_service.py`
 - [ ] Tester avec différents AOs et comparer les résultats
 - [ ] Remettre `_DEV_SECTIONS = None` avant de merger
 
-### Priorité 2 — Logo dans Word
+### Priorité 2 Logo dans Word
+
 - [ ] Intégrer `logo_abi.png` en base64 dans `buildDocumentHTML()` (RightPanel.tsx)
   - Actuellement : CSS approximation `/BI` en cercle
   - À faire : `fetch('/logo_abi.png')` → base64 → `<img src="data:image/png;base64,...">`
 
-### Priorité 3 — RAG
+### Priorité 3 RAG
+
 - [ ] Indexer les fichiers de `knowledge_base/` (lancer `POST /index`)
 - [ ] Tester la pertinence des chunks récupérés sur un vrai AO
 - [ ] Évaluer l'impact du RAG sur la qualité de génération
 
-### Priorité 4 — Qualité génération
+### Priorité 4 Qualité génération
+
 - [ ] Parser AO par LLM (remplacer les regex)
 - [ ] Gestion des échecs partiels (7/8 sections si 1 timeout)
 - [ ] Retry automatique avec backoff exponentiel
@@ -67,18 +74,18 @@
 
 ## Décisions techniques importantes
 
-| Décision | Raison | Fichier |
-|----------|--------|---------|
-| Section "Présentation" figée (pas de LLM) | Contenu exact ABI Consulting, pas de hallucination | `generation_service.py` |
-| `_DEV_SECTIONS` variable (pas hardcodé) | Changer de section à tester sans modifier la logique | `prompt_builder_service.py` |
-| ETL timeout 30s/fichier | PDFs scannés bloquaient pypdf indéfiniment | `rag_service/etl.py` |
-| knowledge_base/ dans .gitignore | Fichiers confidentiels entreprise | `.gitignore` |
-| max_tokens depuis request | Était hardcodé à 1000, ignorait le paramètre utilisateur | `generation_service.py` |
+| Décision                                  | Raison                                                   | Fichier                     |
+| ----------------------------------------- | -------------------------------------------------------- | --------------------------- |
+| Section "Présentation" figée (pas de LLM) | Contenu exact ABI Consulting, pas de hallucination       | `generation_service.py`     |
+| `_DEV_SECTIONS` variable (pas hardcodé)   | Changer de section à tester sans modifier la logique     | `prompt_builder_service.py` |
+| ETL timeout 30s/fichier                   | PDFs scannés bloquaient pypdf indéfiniment               | `rag_service/etl.py`        |
+| knowledge_base/ dans .gitignore           | Fichiers confidentiels entreprise                        | `.gitignore`                |
+| max_tokens depuis request                 | Était hardcodé à 1000, ignorait le paramètre utilisateur | `generation_service.py`     |
 
 ---
 
 ## Variables DEV à remettre en prod avant merge
 
-| Fichier | Variable | Valeur DEV | Valeur PROD |
-|---------|----------|------------|-------------|
-| `app/services/prompt_builder_service.py` | `_DEV_SECTIONS` | `["Notre approche méthodologique"]` | `None` |
+| Fichier                                  | Variable        | Valeur DEV                          | Valeur PROD |
+| ---------------------------------------- | --------------- | ----------------------------------- | ----------- |
+| `app/services/prompt_builder_service.py` | `_DEV_SECTIONS` | `["Notre approche méthodologique"]` | `None`      |

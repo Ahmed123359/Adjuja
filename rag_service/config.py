@@ -5,12 +5,12 @@ from functools import lru_cache
 class RagSettings(BaseSettings):
     """Configuration du service RAG ETL."""
 
-    # Mistral — pour la génération des embeddings
+    # Mistral  pour la génération des embeddings
     mistral_api_key: str = ""
     embedding_model: str = "mistral-embed"
     embedding_dimensions: int = 1024
 
-    # Qdrant — base de données vectorielle
+    # Qdrant  base de données vectorielle
     qdrant_host: str = "localhost"
     qdrant_port: int = 6333
     collection_name: str = "offria_kb"

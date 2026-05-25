@@ -8,7 +8,7 @@ _MAX_TOKENS_PER_CALL = 60_000
 
 def check_user_quota(current_user: UserPublic = Depends(get_current_user)) -> UserPublic:
     """
-    Dependency FastAPI — vérifie le quota freemium avant tout appel LLM.
+    Dependency FastAPI  vérifie le quota freemium avant tout appel LLM.
     max_generations == 0 signifie compte admin (illimité).
     """
     if (

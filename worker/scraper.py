@@ -80,7 +80,7 @@ def _save_debug(content: str, name: str, debug_dir: Path) -> None:
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
-# ÉTAPE 1 — LISTE DES AOs
+# ÉTAPE 1  LISTE DES AOs
 # ═══════════════════════════════════════════════════════════════════════════════
 
 
@@ -190,7 +190,7 @@ async def _get_ao_links(page: Page, acheteur: str, settings: WorkerSettings, deb
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
-# ÉTAPE 2 — TÉLÉCHARGEMENT D'UN AO
+# ÉTAPE 2  TÉLÉCHARGEMENT D'UN AO
 # ═══════════════════════════════════════════════════════════════════════════════
 
 
@@ -270,7 +270,7 @@ async def _download_dossier(
 
         await asyncio.sleep(0.5)
 
-        # ── D : Valider (PRADO AJAX — URL inchangée, DOM mis à jour) ──────────
+        # ── D : Valider (PRADO AJAX  URL inchangée, DOM mis à jour) ──────────
         await _safe_click(page, "#ctl0_CONTENU_PAGE_validateButton", timeout=5_000)
         await asyncio.sleep(5)
 
@@ -365,7 +365,7 @@ async def run_scrape(settings: WorkerSettings, known_refs: set[str] | None = Non
                 for idx, ao in enumerate(ao_links, 1):
                     ref = _extract_ref(ao["url"])
                     if ref in known_refs:
-                        logger.info("[%d/%d] AO %s déjà en base — ignoré", idx, len(ao_links), ref)
+                        logger.info("[%d/%d] AO %s déjà en base  ignoré", idx, len(ao_links), ref)
                         continue
                     logger.info("[%d/%d] %s", idx, len(ao_links), ao["titre"][:80])
                     r = await _download_dossier(page, ao, idx, settings, output_dir, debug_dir)

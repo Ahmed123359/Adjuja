@@ -56,7 +56,7 @@ class AbstractLLMProvider(ABC):
     @abstractmethod
     async def generate(self, request: GenerationRequest, prompt: str) -> GenerationResult:
         """
-        Génération complète legacy — conservé pour compatibilité.
+        Génération complète legacy  conservé pour compatibilité.
 
         Les nouvelles implémentations appellent `generate_text()` en interne.
         """

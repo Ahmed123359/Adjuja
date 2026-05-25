@@ -1,4 +1,4 @@
-import type { Model, CompanyData, GenerationResult, RagStatus, AppDefaults, UsageData, HistorySummary, HistoryEntry, User, ActeEngagementData, ChatMessage, ChatApiResponse, CompanyCase, FillerResult } from './types';
+import type { Model, CompanyData, GenerationResult, RagStatus, AppDefaults, UsageData, HistorySummary, HistoryEntry, User, ActeEngagementData, ChatMessage, ChatApiResponse, CompanyCase, FillerResult, MarcheSummary, MarcheDetail, AoSummary, AoResponse, AoStatus, AoDocumentOut, CompanyProfile, CompanyProfileForm, ProfileCheck } from './types';
 
 // ── Token helpers ──────────────────────────────────────────────────────
 
@@ -359,11 +359,13 @@ export async function runFiller(
   file: File,
   companyCase: CompanyCase,
   lots: number[],
+  marcheId?: string,
 ): Promise<FillerResult> {
   const form = new FormData();
   form.append('file', file);
   form.append('company_case', companyCase);
   form.append('lots', lots.join(','));
+  if (marcheId) form.append('marche_id', marcheId);
 
   const res = await fetch('/api/v1/filler/run', {
     method:  'POST',
@@ -415,13 +417,15 @@ import type { OffreTechniqueResult } from './types';
 
 export async function runOffreTechnique(
   file: File,
-  opts?: { logo?: File; brandColor?: string; customInstructions?: string },
+  opts?: { logo?: File; brandColor?: string; customInstructions?: string; rc?: File; marcheId?: string },
 ): Promise<OffreTechniqueResult> {
   const form = new FormData();
   form.append('file', file);
   if (opts?.logo)               form.append('logo',                opts.logo);
   if (opts?.brandColor)         form.append('brand_color',         opts.brandColor);
   if (opts?.customInstructions) form.append('custom_instructions', opts.customInstructions);
+  if (opts?.rc)                 form.append('rc',                  opts.rc);
+  if (opts?.marcheId)           form.append('marche_id',           opts.marcheId);
 
   const res = await fetch('/api/v1/offre-technique/run', {
     method:  'POST',
@@ -445,4 +449,310 @@ export async function downloadOffreTechniqueFile(downloadUrl: string, filename: 
   a.download = filename;
   a.click();
   URL.revokeObjectURL(url);
+}
+
+// ── Marchés (protégé) ─────────────────────────────────────────────────────
+
+export async function createMarche(data: { reference: string; acheteur: string; objet: string }): Promise<MarcheSummary> {
+  const res = await fetch('/api/v1/marches', {
+    method:  'POST',
+    headers: { 'Content-Type': 'application/json', ...authHeaders() },
+    body:    JSON.stringify(data),
+  });
+  const json = await res.json();
+  if (!res.ok) throw new Error(typeof json.detail === 'string' ? json.detail : 'Erreur création marché.');
+  return json;
+}
+
+export async function fetchMarches(): Promise<MarcheSummary[]> {
+  const res = await fetch('/api/v1/marches', { headers: authHeaders() });
+  if (!res.ok) throw new Error('Impossible de charger les marchés.');
+  return res.json();
+}
+
+export async function fetchMarche(id: string): Promise<MarcheDetail> {
+  const res = await fetch(`/api/v1/marches/${id}`, { headers: authHeaders() });
+  if (!res.ok) throw new Error('Marché introuvable.');
+  return res.json();
+}
+
+export async function uploadCps(marcheId: string, file: File): Promise<MarcheSummary> {
+  const form = new FormData();
+  form.append('file', file);
+  const res = await fetch(`/api/v1/marches/${marcheId}/upload-cps`, {
+    method:  'POST',
+    headers: authHeaders(),
+    body:    form,
+  });
+  const json = await res.json();
+  if (!res.ok) throw new Error(typeof json.detail === 'string' ? json.detail : 'Erreur upload CPS.');
+  return json;
+}
+
+export async function uploadRc(marcheId: string, file: File): Promise<MarcheSummary> {
+  const form = new FormData();
+  form.append('file', file);
+  const res = await fetch(`/api/v1/marches/${marcheId}/upload-rc`, {
+    method:  'POST',
+    headers: authHeaders(),
+    body:    form,
+  });
+  const json = await res.json();
+  if (!res.ok) throw new Error(typeof json.detail === 'string' ? json.detail : 'Erreur upload RC.');
+  return json;
+}
+
+export async function downloadPresignedFile(url: string, filename: string): Promise<void> {
+  const a    = document.createElement('a');
+  a.href     = url;
+  a.download = filename;
+  a.target   = '_blank';
+  a.click();
+}
+
+// ── Pipeline Appel d'offres (Phase 4) ────────────────────────────────────────
+
+export async function createAo(data: { reference: string; acheteur: string; objet: string }): Promise<AoSummary> {
+  const res = await fetch('/api/v1/ao', {
+    method:  'POST',
+    headers: { ...authHeaders(), 'Content-Type': 'application/json' },
+    body:    JSON.stringify(data),
+  });
+  const json = await res.json();
+  if (!res.ok) throw new Error(typeof json.detail === 'string' ? json.detail : 'Erreur création AO.');
+  return json;
+}
+
+export async function fetchAos(): Promise<AoSummary[]> {
+  const res = await fetch('/api/v1/ao', { headers: authHeaders() });
+  const json = await res.json();
+  if (!res.ok) throw new Error('Erreur chargement AOs.');
+  return json;
+}
+
+export async function fetchAo(id: string): Promise<AoResponse> {
+  const res = await fetch(`/api/v1/ao/${id}`, { headers: authHeaders() });
+  const json = await res.json();
+  if (!res.ok) throw new Error('Erreur chargement AO.');
+  return json;
+}
+
+export async function fetchAoStatus(id: string): Promise<AoStatus> {
+  const res = await fetch(`/api/v1/ao/${id}/status`, { headers: authHeaders() });
+  const json = await res.json();
+  if (!res.ok) throw new Error('Erreur statut AO.');
+  return json;
+}
+
+export async function uploadAoDocuments(aoId: string, files: File[]): Promise<AoDocumentOut[]> {
+  const form = new FormData();
+  for (const f of files) form.append('files', f);
+  const res = await fetch(`/api/v1/ao/${aoId}/upload-multiple`, {
+    method:  'POST',
+    headers: authHeaders(),
+    body:    form,
+  });
+  const json = await res.json();
+  if (!res.ok) throw new Error(typeof json.detail === 'string' ? json.detail : 'Erreur upload documents.');
+  return json;
+}
+
+export async function startAoPipeline(aoId: string): Promise<AoStatus> {
+  const res = await fetch(`/api/v1/ao/${aoId}/start-pipeline`, {
+    method:  'POST',
+    headers: authHeaders(),
+  });
+  const json = await res.json();
+  if (!res.ok) throw new Error(typeof json.detail === 'string' ? json.detail : 'Erreur démarrage pipeline.');
+  return json;
+}
+
+export async function cancelAoPipeline(aoId: string): Promise<AoStatus> {
+  const res = await fetch(`/api/v1/ao/${aoId}/cancel`, {
+    method:  'POST',
+    headers: authHeaders(),
+  });
+  const json = await res.json();
+  if (!res.ok) throw new Error(typeof json.detail === 'string' ? json.detail : 'Erreur annulation pipeline.');
+  return json;
+}
+
+export async function getAoDocumentDownloadUrl(aoId: string, docId: string): Promise<string> {
+  const res = await fetch(`/api/v1/ao/${aoId}/documents/${docId}/download`, { headers: authHeaders() });
+  const json = await res.json();
+  if (!res.ok) throw new Error(typeof json.detail === 'string' ? json.detail : 'Erreur téléchargement.');
+  return json.url;
+}
+
+export async function deleteAo(aoId: string): Promise<void> {
+  const res = await fetch(`/api/v1/ao/${aoId}`, {
+    method: 'DELETE',
+    headers: authHeaders(),
+  });
+  if (!res.ok) {
+    const json = await res.json().catch(() => ({}));
+    throw new Error(typeof json.detail === 'string' ? json.detail : 'Erreur suppression AO.');
+  }
+}
+
+// ── Profil entreprise ────────────────────────────────────────────────────────
+
+export async function fetchCompanyProfile(): Promise<CompanyProfile | null> {
+  const res = await fetch('/api/v1/company-profile', { headers: authHeaders() });
+  if (res.status === 404) return null;
+  const json = await res.json();
+  if (!res.ok) throw new Error('Erreur chargement profil.');
+  return json;
+}
+
+export async function upsertCompanyProfile(data: CompanyProfileForm): Promise<CompanyProfile> {
+  const res = await fetch('/api/v1/company-profile', {
+    method:  'POST',
+    headers: { ...authHeaders(), 'Content-Type': 'application/json' },
+    body:    JSON.stringify(data),
+  });
+  const json = await res.json();
+  if (!res.ok) throw new Error(typeof json.detail === 'string' ? json.detail : 'Erreur sauvegarde profil.');
+  return json;
+}
+
+export async function checkCompanyProfile(): Promise<ProfileCheck> {
+  const res = await fetch('/api/v1/company-profile/check', { headers: authHeaders() });
+  const json = await res.json();
+  if (!res.ok) throw new Error('Erreur vérification profil.');
+  return json;
+}
+
+// ── Phase 5  Signature / Cachet ─────────────────────────────────────────────
+
+export async function uploadSignature(file: File): Promise<import('./types').CompanyProfile> {
+  const form = new FormData();
+  form.append('file', file);
+  const res = await fetch('/api/v1/company-profile/signature', {
+    method: 'POST', headers: authHeaders(), body: form,
+  });
+  const json = await res.json();
+  if (!res.ok) throw new Error(json.detail ?? 'Erreur upload signature.');
+  return json;
+}
+
+export async function uploadCachet(file: File): Promise<import('./types').CompanyProfile> {
+  const form = new FormData();
+  form.append('file', file);
+  const res = await fetch('/api/v1/company-profile/cachet', {
+    method: 'POST', headers: authHeaders(), body: form,
+  });
+  const json = await res.json();
+  if (!res.ok) throw new Error(json.detail ?? 'Erreur upload cachet.');
+  return json;
+}
+
+// ── Phase 5  Documents permanents ───────────────────────────────────────────
+
+export async function fetchCompanyDocuments(): Promise<import('./types').CompanyDocument[]> {
+  const res = await fetch('/api/v1/company-documents', { headers: authHeaders() });
+  const json = await res.json();
+  if (!res.ok) throw new Error('Erreur chargement documents entreprise.');
+  return json;
+}
+
+export async function uploadCompanyDocument(
+  file: File,
+  docType: string,
+  description?: string,
+  dateValidite?: string,
+): Promise<import('./types').CompanyDocument> {
+  const form = new FormData();
+  form.append('file', file);
+  form.append('doc_type', docType);
+  if (description) form.append('description', description);
+  if (dateValidite) form.append('date_validite', dateValidite);
+  const res = await fetch('/api/v1/company-documents', {
+    method: 'POST', headers: authHeaders(), body: form,
+  });
+  const json = await res.json();
+  if (!res.ok) throw new Error(json.detail ?? 'Erreur upload document.');
+  return json;
+}
+
+export async function deleteCompanyDocument(docId: string): Promise<void> {
+  const res = await fetch(`/api/v1/company-documents/${docId}`, {
+    method: 'DELETE', headers: authHeaders(),
+  });
+  if (!res.ok) throw new Error('Erreur suppression document.');
+}
+
+// ── Phase 5  CVs / Equipe ───────────────────────────────────────────────────
+
+export async function fetchStaffCvs(): Promise<import('./types').StaffCv[]> {
+  const res = await fetch('/api/v1/staff-cvs', { headers: authHeaders() });
+  const json = await res.json();
+  if (!res.ok) throw new Error('Erreur chargement CVs.');
+  return json;
+}
+
+export async function createStaffCv(data: import('./types').StaffCvForm): Promise<import('./types').StaffCv> {
+  const res = await fetch('/api/v1/staff-cvs', {
+    method: 'POST', headers: { ...authHeaders(), 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
+  const json = await res.json();
+  if (!res.ok) throw new Error(json.detail ?? 'Erreur création CV.');
+  return json;
+}
+
+export async function updateStaffCv(cvId: string, data: import('./types').StaffCvForm): Promise<import('./types').StaffCv> {
+  const res = await fetch(`/api/v1/staff-cvs/${cvId}`, {
+    method: 'PUT', headers: { ...authHeaders(), 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
+  const json = await res.json();
+  if (!res.ok) throw new Error(json.detail ?? 'Erreur mise à jour CV.');
+  return json;
+}
+
+export async function deleteStaffCv(cvId: string): Promise<void> {
+  const res = await fetch(`/api/v1/staff-cvs/${cvId}`, {
+    method: 'DELETE', headers: authHeaders(),
+  });
+  if (!res.ok) throw new Error('Erreur suppression CV.');
+}
+
+export async function uploadCvPdf(cvId: string, file: File): Promise<import('./types').StaffCv> {
+  const form = new FormData();
+  form.append('file', file);
+  const res = await fetch(`/api/v1/staff-cvs/${cvId}/upload`, {
+    method: 'POST', headers: authHeaders(), body: form,
+  });
+  const json = await res.json();
+  if (!res.ok) throw new Error(json.detail ?? 'Erreur upload CV PDF.');
+  return json;
+}
+
+export async function fetchAoTeam(aoId: string): Promise<import('./types').AoTeamMember[]> {
+  const res = await fetch(`/api/v1/staff-cvs/ao/${aoId}/team`, { headers: authHeaders() });
+  const json = await res.json();
+  if (!res.ok) throw new Error('Erreur chargement équipe.');
+  return json;
+}
+
+export interface CvExtractResult {
+  nom:               string;
+  prenom:            string;
+  poste:             string;
+  specialite:        string;
+  diplome:           string;
+  annees_experience: number;
+  tmp_pdf_bytes_b64: string;
+}
+
+export async function extractCvFromPdf(file: File): Promise<CvExtractResult> {
+  const form = new FormData();
+  form.append('file', file);
+  const res = await fetch('/api/v1/staff-cvs/extract', {
+    method: 'POST', headers: authHeaders(), body: form,
+  });
+  const json = await res.json();
+  if (!res.ok) throw new Error(json.detail ?? "Erreur extraction CV.");
+  return json;
 }

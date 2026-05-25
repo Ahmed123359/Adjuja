@@ -13,7 +13,7 @@ class ProviderFactory:
     un identifiant textuel à la classe concrète correspondante.
 
     Avantage principal : ajouter un nouveau provider ne nécessite aucune
-    modification du reste de l'application — il suffit de l'enregistrer ici.
+    modification du reste de l'application  il suffit de l'enregistrer ici.
 
     Pour ajouter un nouveau provider :
     1. Créer ``app/providers/mon_provider.py`` avec une classe héritant de

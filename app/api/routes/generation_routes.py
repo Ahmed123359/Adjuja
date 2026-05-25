@@ -84,7 +84,7 @@ async def generate_response(
         body = body.model_copy(update={'instructions_supplementaires': limits.instructions})
 
     logger.info(
-        "Génération démarrée — user=%s provider=%s model=%s langue=%s",
+        "Génération démarrée  user=%s provider=%s model=%s langue=%s",
         current_user.id, body.provider.value, body.model, body.langue,
     )
     debut = time.monotonic()
@@ -94,7 +94,7 @@ async def generate_response(
         if not result.succes:
             # Erreur remontée par le service (ex: clé API invalide, quota LLM)
             logger.error(
-                "Génération échouée — user=%s provider=%s erreur=%s",
+                "Génération échouée  user=%s provider=%s erreur=%s",
                 current_user.id, body.provider.value, result.erreur,
             )
             raise HTTPException(
@@ -104,7 +104,7 @@ async def generate_response(
 
         duree = time.monotonic() - debut
         logger.info(
-            "Génération réussie — user=%s provider=%s tokens=%d durée=%.1fs",
+            "Génération réussie  user=%s provider=%s tokens=%d durée=%.1fs",
             current_user.id, result.provider_utilise, result.tokens_utilises or 0, duree,
         )
 
@@ -128,14 +128,14 @@ async def generate_response(
     except HTTPException:
         raise
     except ValueError as e:
-        logger.warning("Paramètres invalides — user=%s erreur=%s", current_user.id, e)
+        logger.warning("Paramètres invalides  user=%s erreur=%s", current_user.id, e)
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=str(e),
         )
     except Exception:
         # exc_info=True inclut la stacktrace complète dans les logs pour diagnostic
-        logger.error("Erreur interne inattendue — user=%s", current_user.id, exc_info=True)
+        logger.error("Erreur interne inattendue  user=%s", current_user.id, exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Une erreur interne est survenue.",

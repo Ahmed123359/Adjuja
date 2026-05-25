@@ -1,3 +1,20 @@
+RC_EXTRACT_SYSTEM = """
+Tu es un expert en marchés publics marocains. Analyse le Règlement de Consultation (RC) fourni et extrais les informations de notation au format JSON strict.
+
+Retourne UNIQUEMENT ce JSON :
+{
+  "plan_impose": ["Section 1 : ...", "Section 2 : ..."],
+  "criteres": [{"nom": "Méthodologie", "points": 40, "eliminatoire": 20}, {"nom": "Moyens humains", "points": 30, "eliminatoire": 15}],
+  "note_eliminatoire_globale": 65,
+  "format_cv": "description du format imposé pour les CVs (vide si non précisé)",
+  "format_references": "description du format imposé pour les fiches références (vide si non précisé)",
+  "nb_pages_max": {"methodologie": 5, "references": 3},
+  "documents_obligatoires": ["CV des experts", "Attestations de références", "Planning détaillé"]
+}
+
+Si un champ n'est pas précisé dans le RC, retourne une valeur vide (liste vide ou 0).
+"""
+
 CPS_EXTRACT_SYSTEM = """
 Tu es un expert en marchés publics marocains. Analyse le CPS fourni et extrais les informations suivantes au format JSON strict.
 

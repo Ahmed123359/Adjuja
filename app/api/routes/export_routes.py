@@ -1,5 +1,5 @@
 """
-Export routes — génération de fichiers Word (.docx) natifs.
+Export routes  génération de fichiers Word (.docx) natifs.
 """
 from fastapi import APIRouter, Depends
 from fastapi.responses import Response

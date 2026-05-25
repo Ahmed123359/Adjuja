@@ -1,17 +1,17 @@
-# OffrIA — Architecture technique
+# OffrIA Architecture technique
 
 ## Sommaire
 
 1. [Vue d'ensemble](#vue-densemble)
 2. [Structure des dossiers](#structure-des-dossiers)
-3. [Backend — Patterns d'architecture](#backend--patterns-darchitecture)
-4. [Flux de génération — Parse + Phase 1 + Phase 2](#flux-de-génération--parse--phase-1--phase-2)
+3. [Backend Patterns d'architecture](#backend--patterns-darchitecture)
+4. [Flux de génération Parse + Phase 1 + Phase 2](#flux-de-génération--parse--phase-1--phase-2)
 5. [Flux d'extraction PDF](#flux-dextraction-pdf)
 6. [Authentification](#authentification)
 7. [Base de données SQLite](#base-de-données-sqlite)
 8. [Sécurité](#sécurité)
 9. [Configuration (.env)](#configuration-env)
-10. [API — Référence des routes](#api--référence-des-routes)
+10. [API Référence des routes](#api--référence-des-routes)
 11. [Infrastructure Docker](#infrastructure-docker)
 12. [Tests](#tests)
 
@@ -50,7 +50,7 @@ reponse_ao_generation/
 │   ├── main.py                   # Entrée ASGI : app FastAPI, middlewares, routers
 │   ├── limiter.py                # Instance SlowAPI (rate limiting)
 │   ├── config/
-│   │   └── settings.py           # Pydantic-settings — config centralisée via .env
+│   │   └── settings.py           # Pydantic-settings  config centralisée via .env
 │   ├── models/
 │   │   ├── appel_offre.py        # AppelOffre, Section, Critere, TypeMarche
 │   │   ├── generation.py         # GenerationRequest, GenerationResult, ModeleDisponible
@@ -61,7 +61,7 @@ reponse_ao_generation/
 │   │   ├── openai_provider.py    # Implémentation OpenAI
 │   │   ├── anthropic_provider.py # Implémentation Anthropic (Claude)
 │   │   ├── mistral_provider.py   # Implémentation Mistral
-│   │   └── provider_factory.py   # Factory Pattern — instanciation par nom
+│   │   └── provider_factory.py   # Factory Pattern  instanciation par nom
 │   ├── services/
 │   │   ├── ao_parser_service.py      # Parse texte brut → AppelOffre structuré
 │   │   ├── prompt_builder_service.py # Construit les prompts LLM (brief + sections)
@@ -72,7 +72,7 @@ reponse_ao_generation/
 │   │   ├── user_service.py           # CRUD users SQLite (hash bcrypt, JWT)
 │   │   └── rag_service.py            # Retrieval-Augmented Generation via Qdrant
 │   └── api/
-│       ├── dependencies.py           # FastAPI Depends — injection de services
+│       ├── dependencies.py           # FastAPI Depends  injection de services
 │       └── routes/
 │           ├── auth_routes.py        # POST /auth/register, /auth/login, GET /auth/me
 │           ├── generation_routes.py  # POST /generate
@@ -86,8 +86,8 @@ reponse_ao_generation/
 │
 ├── frontend/                     # Frontend TypeScript (React + Vite)
 │   └── src/
-│       ├── main.tsx              # Entrée React — auth state machine
-│       ├── App.tsx               # Root — state global (aoText, provider, company…)
+│       ├── main.tsx              # Entrée React  auth state machine
+│       ├── App.tsx               # Root  state global (aoText, provider, company…)
 │       ├── api.ts                # Couche fetch vers le backend (auth headers)
 │       ├── types.ts              # Interfaces TypeScript du domaine
 │       └── components/
@@ -105,11 +105,11 @@ reponse_ao_generation/
 │   ├── resources/                # CVs équipe, listes matériels (PDFs)
 │   └── templates/                # Notes méthodologiques et logistiques (PDFs)
 │
-├── rag_service/                  # Microservice ETL — indexation Qdrant
+├── rag_service/                  # Microservice ETL  indexation Qdrant
 │   ├── etl.py                    # Pipeline : extraction → chunking → embedding → Qdrant
 │   └── ROADMAP.md                # Roadmap qualité RAG pipeline
 │
-├── rd/                           # R&D — notebooks d'expérimentation
+├── rd/                           # R&D  notebooks d'expérimentation
 │   ├── ocr/
 │   │   └── ocr_extraction.ipynb     # Validation approche extraction PDF
 │   ├── rag/
@@ -134,7 +134,7 @@ reponse_ao_generation/
 
 ---
 
-## Backend — Patterns d'architecture
+## Backend Patterns d'architecture
 
 ### 1. Layered Architecture
 
@@ -142,7 +142,7 @@ reponse_ao_generation/
 Route (HTTP) → Service (logique métier) → Provider / Repository (infra)
 ```
 
-Les routes ne contiennent pas de logique métier — elles valident, appellent le service, gèrent les codes HTTP.
+Les routes ne contiennent pas de logique métier elles valident, appellent le service, gèrent les codes HTTP.
 
 ### 2. Abstract Base Class + Strategy Pattern (Providers LLM)
 
@@ -178,7 +178,7 @@ Les services sont des singletons via `@lru_cache`. L'injection permet de les rem
 
 ---
 
-## Flux de génération — Parse + Phase 1 + Phase 2
+## Flux de génération Parse + Phase 1 + Phase 2
 
 ```
 POST /api/v1/generate
@@ -194,15 +194,15 @@ GenerationService.generate(request)
         │               │
         │               └─► LLM (1 appel) ──► brief_strategique
         │
-        └─ Phase 2 ──► asyncio.gather() — 8 coroutines en parallèle
+        └─ Phase 2 ──► asyncio.gather()  8 coroutines en parallèle
                         │
                         ├─► _gen_section(section_1)
                         │       ├─► RAG retrieve (optionnel)
-                        │       │       ├─► _build_query_for_section() — LLM cheap (1 appel)
+                        │       │       ├─► _build_query_for_section()  LLM cheap (1 appel)
                         │       │       │       AO complet + section_title → query 10-20 mots
                         │       │       ├─► Qdrant top-20 (embedding + recherche vectorielle)
-                        │       │       └─► _rerank() — LLM cheap (1 appel) → top-K chunks
-                        │       └─► LLM (1 appel) — prompt + AO + brief + RAG context
+                        │       │       └─► _rerank()  LLM cheap (1 appel) → top-K chunks
+                        │       └─► LLM (1 appel)  prompt + AO + brief + RAG context
                         ├─► _gen_section(section_2)
                         │   ...
                         └─► _gen_section(section_8)
@@ -211,14 +211,15 @@ GenerationService.generate(request)
 ```
 
 **Total appels LLM par génération complète :**
-- **Sans RAG : 10** (1 parse cheap + 1 brief + 8 sections)
-- **Avec RAG : 26** (+ 8 query gen cheap + 8 rerank cheap — tous en parallèle)
 
-| Provider | Modèle utilisé pour le parse |
-|---|---|
-| Anthropic | `claude-haiku-4-5-20251001` |
-| OpenAI | `gpt-4o-mini` |
-| Mistral | `mistral-small-latest` |
+- **Sans RAG : 10** (1 parse cheap + 1 brief + 8 sections)
+- **Avec RAG : 26** (+ 8 query gen cheap + 8 rerank cheap tous en parallèle)
+
+| Provider  | Modèle utilisé pour le parse |
+| --------- | ---------------------------- |
+| Anthropic | `claude-haiku-4-5-20251001`  |
+| OpenAI    | `gpt-4o-mini`                |
+| Mistral   | `mistral-small-latest`       |
 
 **POST /api/v1/brief** : 2 appels (1 parse cheap + 1 brief), sans déclencher les sections.
 
@@ -262,7 +263,7 @@ GET  /api/v1/auth/me        →  decode Bearer  →  UserPublic
 ```typescript
 // api.ts
 function authHeaders() {
-  const token = localStorage.getItem('offria_token');
+  const token = localStorage.getItem("offria_token");
   return token ? { Authorization: `Bearer ${token}` } : {};
 }
 ```
@@ -311,65 +312,65 @@ CREATE TABLE usage (
 
 ## Sécurité
 
-| Mesure | Implémentation |
-|---|---|
-| Mots de passe | `bcrypt` via `passlib` |
-| Sessions | JWT HS256, expiration 7j, clé ≥ 32 chars |
-| CORS | `*` en dev, liste explicite en prod via `ALLOWED_ORIGINS` |
-| Rate limiting | `slowapi` sur POST /generate — 10 req/min/user par défaut |
-| Inscription restreinte | `ALLOWED_EMAILS` dans `.env` pour whitelist optionnelle |
-| Clé JWT par défaut refusée en prod | Validateur Pydantic au démarrage |
+| Mesure                             | Implémentation                                            |
+| ---------------------------------- | --------------------------------------------------------- |
+| Mots de passe                      | `bcrypt` via `passlib`                                    |
+| Sessions                           | JWT HS256, expiration 7j, clé ≥ 32 chars                  |
+| CORS                               | `*` en dev, liste explicite en prod via `ALLOWED_ORIGINS` |
+| Rate limiting                      | `slowapi` sur POST /generate 10 req/min/user par défaut   |
+| Inscription restreinte             | `ALLOWED_EMAILS` dans `.env` pour whitelist optionnelle   |
+| Clé JWT par défaut refusée en prod | Validateur Pydantic au démarrage                          |
 
 ---
 
 ## Configuration (`.env`)
 
-| Variable | Défaut | Description |
-|---|---|---|
-| `ANTHROPIC_API_KEY` | — | Clé API Claude |
-| `OPENAI_API_KEY` | — | Clé API OpenAI (génération + OCR vision) |
-| `MISTRAL_API_KEY` | — | Clé API Mistral |
-| `JWT_SECRET_KEY` | change-me | Clé de signature JWT (min 32 chars) |
-| `JWT_EXPIRE_MINUTES` | 10080 | Durée token (7 jours) |
-| `ALLOWED_ORIGINS` | `[]` | Origines CORS en prod |
-| `ALLOWED_EMAILS` | `[]` | Whitelist emails inscription |
-| `APP_ENV` | development | `development` \| `production` |
-| `QDRANT_URL` | — | URL Qdrant (vide = RAG désactivé) |
-| `RAG_ETL_URL` | — | URL microservice ETL (proxy /index) |
-| `AO_MAX_CHARS` | 100000 | Limite chars texte AO injectés dans le prompt (~25k tokens, couvre 99%+ des AOs) |
-| `RATE_LIMIT_GENERATE` | 10/minute | Limite POST /generate par user |
-| `LLM_TIMEOUT_SECONDS` | 60 | Timeout par appel LLM |
+| Variable              | Défaut      | Description                                                                      |
+| --------------------- | ----------- | -------------------------------------------------------------------------------- |
+| `ANTHROPIC_API_KEY`   |             | Clé API Claude                                                                   |
+| `OPENAI_API_KEY`      |             | Clé API OpenAI (génération + OCR vision)                                         |
+| `MISTRAL_API_KEY`     |             | Clé API Mistral                                                                  |
+| `JWT_SECRET_KEY`      | change-me   | Clé de signature JWT (min 32 chars)                                              |
+| `JWT_EXPIRE_MINUTES`  | 10080       | Durée token (7 jours)                                                            |
+| `ALLOWED_ORIGINS`     | `[]`        | Origines CORS en prod                                                            |
+| `ALLOWED_EMAILS`      | `[]`        | Whitelist emails inscription                                                     |
+| `APP_ENV`             | development | `development` \| `production`                                                    |
+| `QDRANT_URL`          |             | URL Qdrant (vide = RAG désactivé)                                                |
+| `RAG_ETL_URL`         |             | URL microservice ETL (proxy /index)                                              |
+| `AO_MAX_CHARS`        | 100000      | Limite chars texte AO injectés dans le prompt (~25k tokens, couvre 99%+ des AOs) |
+| `RATE_LIMIT_GENERATE` | 10/minute   | Limite POST /generate par user                                                   |
+| `LLM_TIMEOUT_SECONDS` | 60          | Timeout par appel LLM                                                            |
 
 ---
 
-## API — Référence des routes
+## API Référence des routes
 
 ### Publiques (sans auth)
 
-| Méthode | Route | Description |
-|---|---|---|
-| GET | `/health` | Santé de l'application (SQLite, clés API, Qdrant) |
-| GET | `/api/v1/models` | Tous les modèles disponibles |
-| GET | `/api/v1/defaults` | Valeurs par défaut (profil, instructions) |
-| POST | `/api/v1/auth/register` | Inscription |
-| POST | `/api/v1/auth/login` | Connexion |
+| Méthode | Route                   | Description                                       |
+| ------- | ----------------------- | ------------------------------------------------- |
+| GET     | `/health`               | Santé de l'application (SQLite, clés API, Qdrant) |
+| GET     | `/api/v1/models`        | Tous les modèles disponibles                      |
+| GET     | `/api/v1/defaults`      | Valeurs par défaut (profil, instructions)         |
+| POST    | `/api/v1/auth/register` | Inscription                                       |
+| POST    | `/api/v1/auth/login`    | Connexion                                         |
 
 ### Protégées (Bearer JWT requis)
 
-| Méthode | Route | Description |
-|---|---|---|
-| GET | `/api/v1/auth/me` | Profil utilisateur courant |
-| POST | `/api/v1/generate` | Génération complète (brief + 8 sections) |
-| POST | `/api/v1/brief` | Brief stratégique seul (phase 1) |
-| POST | `/api/v1/pdf/extract` | Extraction texte PDF (pymupdf ou OCR GPT-4o) |
-| GET | `/api/v1/history` | Liste des générations de l'utilisateur |
-| GET | `/api/v1/history/{id}` | Détail d'une génération |
-| DELETE | `/api/v1/history/{id}` | Supprimer une entrée |
-| DELETE | `/api/v1/history` | Vider l'historique |
-| GET | `/api/v1/usage` | Compteurs tokens/appels |
-| POST | `/api/v1/usage/reset` | Réinitialiser les compteurs |
-| GET | `/api/v1/rag/status` | Statut de la base vectorielle |
-| POST | `/api/v1/rag/index` | Déclencher la réindexation |
+| Méthode | Route                  | Description                                  |
+| ------- | ---------------------- | -------------------------------------------- |
+| GET     | `/api/v1/auth/me`      | Profil utilisateur courant                   |
+| POST    | `/api/v1/generate`     | Génération complète (brief + 8 sections)     |
+| POST    | `/api/v1/brief`        | Brief stratégique seul (phase 1)             |
+| POST    | `/api/v1/pdf/extract`  | Extraction texte PDF (pymupdf ou OCR GPT-4o) |
+| GET     | `/api/v1/history`      | Liste des générations de l'utilisateur       |
+| GET     | `/api/v1/history/{id}` | Détail d'une génération                      |
+| DELETE  | `/api/v1/history/{id}` | Supprimer une entrée                         |
+| DELETE  | `/api/v1/history`      | Vider l'historique                           |
+| GET     | `/api/v1/usage`        | Compteurs tokens/appels                      |
+| POST    | `/api/v1/usage/reset`  | Réinitialiser les compteurs                  |
+| GET     | `/api/v1/rag/status`   | Statut de la base vectorielle                |
+| POST    | `/api/v1/rag/index`    | Déclencher la réindexation                   |
 
 ---
 
@@ -398,7 +399,7 @@ Le frontend de développement (port 5173) proxifie `/api` et `/health` vers le b
 tests/
 ├── unit/
 │   ├── test_ao_parser.py        # Parse texte brut → AppelOffre
-│   └── test_provider_factory.py # Factory — instanciation des providers
+│   └── test_provider_factory.py # Factory  instanciation des providers
 └── integration/
     └── test_api.py              # TestClient FastAPI + mocks LLM
 ```
@@ -408,3 +409,103 @@ pytest                    # tous les tests
 pytest tests/unit/        # tests unitaires seuls
 pytest --cov=app          # couverture de code
 ```
+
+---
+
+## Phase 4 Pipeline AO automatise (2026-05-18)
+
+### Vue d'ensemble
+
+Pipeline "minimal clicks" : upload CPS + RC → dossier complet signe en ZIP.
+
+```
+┌──────────────────────────────────────────────────────────────────┐
+│                        Frontend React                            │
+│  AoPipelinePage  upload, suivi polling, telechargement docs     │
+└──────────────────────────┬───────────────────────────────────────┘
+                           │ POST /api/ao/:id/pipeline/start
+                           ▼
+┌──────────────────────────────────────────────────────────────────┐
+│                    Backend FastAPI                                │
+│  /api/ao routes (create, upload, start, status, download)        │
+└──────────────────────────┬───────────────────────────────────────┘
+                           │ Celery tasks via Redis broker
+          ┌────────────────┴────────────────┐
+          ▼                                 ▼
+┌──────────────────┐               ┌──────────────────┐
+│   celery-io      │               │   celery-cpu     │
+│  concurrency=4   │               │  concurrency=2   │
+│  LLM / I/O bound │               │  CPU / fichiers  │
+│                  │               │                  │
+│ task_classify    │               │ task_generate    │
+│ task_analyze     │               │   _note_metho    │
+│ task_build       │               │ task_fill_docs   │
+│   _pipeline      │               │ task_sign_and    │
+│ task_index       │               │   _compile       │
+│   _results       │               └──────────────────┘
+└──────────────────┘
+```
+
+### Graphe de taches Celery
+
+```python
+chain(
+    task_classify_uploads,      # 5%    classification CPS/RC/autres
+    task_analyze_ao_context,    # 20%   Mistral Large : analyse_json
+    task_build_pipeline,        # dispatch dynamique selon analyse_json
+)
+
+chord(
+    group(
+        task_generate_note_metho,   # 50%   offre_technique_service (RAG)
+        task_fill_documents,        # 70%   filler_orchestrator sur tous uploads
+    ),
+    task_sign_and_compile           # 99%   signature + ZIP MinIO
+)
+
+task_index_results                  # 100%  indexation RAG kb_{org_id}
+```
+
+### Classification des uploads
+
+Priorite : nom de fichier > analyse contenu.
+
+- `_classify_by_filename()` : regex sur `nom_fichier` (CPS, RC, acte, declaration...)
+- Fallback : `detect_document_type()` sur le texte extrait
+
+### Filler detection encodage corrompu
+
+Certains PDFs ont un encodage font corrompu (`get_text("dict")` retourne des spans `-l-e-t-t-r-e-s-` via `get_text()` simple qui normalise).
+
+Detection : `_pages_have_corrupted_spans()` dans `filler_orchestrator.py` verifie les pages cibles via `get_text("dict")` avant de choisir le pipeline texte ou Pixtral.
+
+**Bug critique corrige (2026-05-18)** : `_pdf_safe_text()` dans `filler_processors.py` avait une cle vide `""` dans son dict de remplacement. En Python, `str.replace("", "-")` insere `-` entre chaque caractere. Corrige : cle remplacee par `""` (em-dash U+2014).
+
+### Structure MinIO AO
+
+```
+{org_id}/ao/{ao_id}/
+  source/          <- uploads bruts (CPS, RC, ...)
+  technique/       <- note_methodologique.docx + .pdf
+  financier/       <- acte_engagement.pdf/.docx, bordereau.xlsx
+  administratif/   <- declaration_honneur.pdf/.docx
+  output/          <- dossier_complet.zip
+```
+
+### DB tables Phase 4
+
+```sql
+appels_offres       -- id, org_id, reference, acheteur, statut,
+                    -- pipeline_pct, analyse_json, custom_instructions
+
+ao_documents        -- id, ao_id, doc_type, dossier, origine,
+                    -- statut, minio_key, nom_fichier, taille_octets
+                    -- origine: upload | genere | rempli
+                    -- dossier: source | technique | financier | administratif | output
+```
+
+### Frontend AoPipelinePage
+
+- Polling automatique (2s) quand `statut in ["en_analyse", "en_traitement"]`
+- `DossierSection` groupe les docs par `doc_type` (pdf+docx = 1 ligne, boutons format)
+- Upload multi-fichiers : cle de groupe `upload__{id}` pour eviter fusion des uploads

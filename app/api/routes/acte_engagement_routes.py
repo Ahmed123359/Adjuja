@@ -59,8 +59,8 @@ async def fill_acte_engagement_endpoint(
     Retourne le PDF complété en bytes (Content-Disposition: attachment).
 
     Codes d'erreur :
-        400 — fichier non PDF ou trop volumineux (> 10 MB)
-        500 — erreur de traitement (PDF corrompu, erreur GPT-4o...)
+        400  fichier non PDF ou trop volumineux (> 10 MB)
+        500  erreur de traitement (PDF corrompu, erreur GPT-4o...)
     """
     # Validation du fichier PDF
     if not pdf.filename or not pdf.filename.lower().endswith(".pdf"):

@@ -33,7 +33,7 @@ def validate_document(content: str, source: str) -> None:
         )
     if _INJECTION_PATTERNS.search(content):
         raise IngestionError(
-            f"Document '{source}' contient des patterns d'injection suspects — indexation refusée."
+            f"Document '{source}' contient des patterns d'injection suspects  indexation refusée."
         )
 
 
@@ -44,6 +44,6 @@ def validate_chunk(chunk: str, source: str, chunk_idx: int) -> str:
     """
     if _INJECTION_PATTERNS.search(chunk):
         raise IngestionError(
-            f"Chunk {chunk_idx} de '{source}' contient un pattern d'injection — ignoré."
+            f"Chunk {chunk_idx} de '{source}' contient un pattern d'injection  ignoré."
         )
     return chunk[:_MAX_CHUNK_CHARS]

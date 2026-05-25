@@ -1,4 +1,4 @@
-# Worker de scraping — dépendances Python
+# Worker de scraping  dépendances Python
 # Versions alignées avec le Python 3.12 de l'image Docker
 
 # Scraping

@@ -43,7 +43,7 @@ def choose_angle(cps: CPSContext, company_info: dict, api_key: str) -> StrategyA
         )
         if resp.status_code != 429 or delay is None:
             break
-        logger.warning("Strategy engine 429 — attente %ds (tentative %d)", delay, attempt)
+        logger.warning("Strategy engine 429  attente %ds (tentative %d)", delay, attempt)
         time.sleep(delay)
     resp.raise_for_status()
     raw = resp.json()["choices"][0]["message"]["content"]

@@ -1,4 +1,4 @@
-# Architecture — Worker de scraping OffrIA
+# Architecture Worker de scraping OffrIA
 
 ## Vue d'ensemble
 
@@ -20,14 +20,14 @@ sans interférer avec le reste de l'application.
 
 ## Séparation des responsabilités
 
-| Fichier         | Rôle                                                  | Dépendances           |
-|-----------------|-------------------------------------------------------|-----------------------|
-| `config.py`     | Variables d'environnement (`WORKER_*`)                | pydantic-settings     |
-| `models.py`     | Dataclass `AOResult` (structure de données)           | aucune                |
-| `db.py`         | Schéma SQLite, migration, upsert                      | models, config        |
-| `scraper.py`    | Playwright : recherche + téléchargement               | models, config        |
-| `scheduler.py`  | Orchestration DB + scraper, APScheduler               | db, scraper, config   |
-| `main.py`       | Point d'entrée, SIGINT/SIGTERM, boucle principale     | scheduler, config     |
+| Fichier        | Rôle                                              | Dépendances         |
+| -------------- | ------------------------------------------------- | ------------------- |
+| `config.py`    | Variables d'environnement (`WORKER_*`)            | pydantic-settings   |
+| `models.py`    | Dataclass `AOResult` (structure de données)       | aucune              |
+| `db.py`        | Schéma SQLite, migration, upsert                  | models, config      |
+| `scraper.py`   | Playwright : recherche + téléchargement           | models, config      |
+| `scheduler.py` | Orchestration DB + scraper, APScheduler           | db, scraper, config |
+| `main.py`      | Point d'entrée, SIGINT/SIGTERM, boucle principale | scheduler, config   |
 
 **Règle fondamentale :** `scraper.py` ne touche jamais la base de données.
 La DB est exclusivement gérée par `db.py`, appelé depuis `scheduler.py`.
@@ -122,13 +122,14 @@ de cibler l'ID complet.
 
 ## Stockage
 
-| Donnée          | Emplacement                        | Partagé avec  |
-|-----------------|------------------------------------|---------------|
-| Base SQLite     | `./data/ao_catalog.db`             | API (lecture) |
-| ZIPs téléchargés| `./worker/output/`                 | worker seul   |
-| Fichiers debug  | `./worker/output/debug/`           | worker seul   |
+| Donnée           | Emplacement              | Partagé avec  |
+| ---------------- | ------------------------ | ------------- |
+| Base SQLite      | `./data/ao_catalog.db`   | API (lecture) |
+| ZIPs téléchargés | `./worker/output/`       | worker seul   |
+| Fichiers debug   | `./worker/output/debug/` | worker seul   |
 
 En Docker, les chemins sont montés via bind mounts :
+
 - `./data` → `/app/data` (volume partagé avec le service `api`)
 - `./worker/output` → `/app/output`
 

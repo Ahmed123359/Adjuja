@@ -1,10 +1,10 @@
 """
 Routes RAG de l'application principale.
 
-GET  /api/v1/rag/status  — interroge Qdrant directement (stats de la collection)
-POST /api/v1/rag/index   — proxie vers le microservice rag-etl pour déclencher l'ETL
+GET  /api/v1/rag/status   interroge Qdrant directement (stats de la collection)
+POST /api/v1/rag/index    proxie vers le microservice rag-etl pour déclencher l'ETL
 
-Le service principal ne fait jamais d'indexation — il délègue au rag-etl.
+Le service principal ne fait jamais d'indexation  il délègue au rag-etl.
 """
 import httpx
 from fastapi import APIRouter, Depends, HTTPException, status

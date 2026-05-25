@@ -13,7 +13,7 @@ def _make_default_signature() -> bytes:
     "Signé électroniquement".
 
     Input  : aucun
-    Output : bytes — image PNG (200×58 px)
+    Output : bytes  image PNG (200×58 px)
     """
     doc = fitz.open()
     page = doc.new_page(width=200, height=58)
@@ -30,7 +30,7 @@ def _make_default_cachet() -> bytes:
     Génère un cachet par défaut : cercle violet avec le texte "CACHET".
 
     Input  : aucun
-    Output : bytes — image PNG (110×110 px)
+    Output : bytes  image PNG (110×110 px)
     """
     doc = fitz.open()
     page = doc.new_page(width=110, height=110)
@@ -51,9 +51,9 @@ def _load_asset(stem: str, fallback_fn) -> bytes:
     Pour utiliser ta propre signature : dépose  data/assets/signature.png (ou .jpg)
     Pour utiliser ton propre cachet   : dépose  data/assets/cachet.png    (ou .jpg)
 
-    Input  : stem       — nom du fichier sans extension ("signature" ou "cachet")
-             fallback_fn — fonction appelée si le fichier est absent
-    Output : bytes — contenu brut de l'image (PNG ou JPEG)
+    Input  : stem        nom du fichier sans extension ("signature" ou "cachet")
+             fallback_fn  fonction appelée si le fichier est absent
+    Output : bytes  contenu brut de l'image (PNG ou JPEG)
     """
     from pathlib import Path
     base = Path("data/assets")
@@ -86,10 +86,10 @@ def _extract_lines(page: fitz.Page) -> list[tuple[str, fitz.Rect]]:
     Extrait toutes les lignes de texte d'une page PDF.
     Chaque ligne est la concaténation de ses spans (fragments de texte).
 
-    Input  : page — fitz.Page (une page du document PDF)
+    Input  : page  fitz.Page (une page du document PDF)
     Output : list of (texte_lowercase, rect)
-             — texte : contenu de la ligne en minuscules
-             — rect  : bounding box de la ligne en points PDF (1pt = 1/72 pouce)
+              texte : contenu de la ligne en minuscules
+              rect  : bounding box de la ligne en points PDF (1pt = 1/72 pouce)
     """
     lines = []
     for block in page.get_text("dict").get("blocks", []):
@@ -112,9 +112,9 @@ def _score_line(text: str, tokens: list[str]) -> int:
     Score = nombre de tokens présents comme sous-chaîne dans le texte.
     Plus le score est élevé, plus la ligne est pertinente pour cette zone.
 
-    Input  : text   — texte de la ligne (lowercase)
-             tokens — liste de tokens à chercher (ex: _SIG_TOKENS)
-    Output : int — nombre de tokens trouvés (0 = aucune correspondance)
+    Input  : text    texte de la ligne (lowercase)
+             tokens  liste de tokens à chercher (ex: _SIG_TOKENS)
+    Output : int  nombre de tokens trouvés (0 = aucune correspondance)
     """
     return sum(1 for t in tokens if t in text)
 
@@ -126,8 +126,8 @@ def _find_zone_below(page: fitz.Page, below_y: float) -> fitz.Rect | None:
     si un document a "Fait à … le …" suivi d'une zone de signature sur la même page,
     il faut aussi y placer la signature.
 
-    Input  : page    — fitz.Page
-             below_y — seuil : seules les lignes avec y0 > below_y sont candidates
+    Input  : page     fitz.Page
+             below_y  seuil : seules les lignes avec y0 > below_y sont candidates
     Output : fitz.Rect de la ligne détectée, ou None
     """
     lines = _extract_lines(page)
@@ -158,8 +158,8 @@ def _find_zone_on_last_page(page: fitz.Page) -> fitz.Rect | None:
     la plus basse dans la page est préférée (les zones de signature sont
     généralement en bas du dernier feuillet).
 
-    Input  : page — fitz.Page (doit être la dernière page du document)
-    Output : fitz.Rect — bounding box de la ligne détectée, ou None si aucune
+    Input  : page  fitz.Page (doit être la dernière page du document)
+    Output : fitz.Rect  bounding box de la ligne détectée, ou None si aucune
              ligne ne contient de token signature/cachet
     """
     lines  = _extract_lines(page)
@@ -189,13 +189,13 @@ def _place_image_below(
     alignée sur le bord gauche de ce rectangle.
     Si l'image déborderait en bas de page, elle est placée au-dessus du header.
 
-    Input  : page         — fitz.Page à modifier (en place)
-             keyword_rect — rect du header détecté (ex: "Signature du soumissionnaire")
-             image_bytes  — contenu brut de l'image (PNG ou JPEG)
-             img_w        — largeur cible en points PDF
-             img_h        — hauteur cible en points PDF
-             gap          — espace entre le bas du header et le haut de l'image (défaut 6pt)
-    Output : None — modifie la page en place
+    Input  : page          fitz.Page à modifier (en place)
+             keyword_rect  rect du header détecté (ex: "Signature du soumissionnaire")
+             image_bytes   contenu brut de l'image (PNG ou JPEG)
+             img_w         largeur cible en points PDF
+             img_h         hauteur cible en points PDF
+             gap           espace entre le bas du header et le haut de l'image (défaut 6pt)
+    Output : None  modifie la page en place
     """
     ph = page.rect.height
     x0 = keyword_rect.x0
@@ -220,10 +220,10 @@ def _find_fait_a_span(page: fitz.Page) -> tuple[fitz.Rect | None, float]:
     Parcourt les spans directement pour être robuste aux encodages PDF variables
     (l'accent "à" peut être encodé différemment selon le générateur du PDF).
 
-    Input  : page — fitz.Page
+    Input  : page  fitz.Page
     Output : (rect, fontsize)
-             — rect     : bounding box du premier span de la ligne (ou None)
-             — fontsize : taille de police du span trouvé (défaut 10.0 si non trouvé)
+              rect     : bounding box du premier span de la ligne (ou None)
+              fontsize : taille de police du span trouvé (défaut 10.0 si non trouvé)
     """
     for block in page.get_text("dict").get("blocks", []):
         for line in block.get("lines", []):
@@ -245,10 +245,10 @@ def _fill_fait_a(page: fitz.Page, lieu: str, date_str: str) -> None:
     rectangle blanc (couvre les points, tirets ou underscores du placeholder),
     puis on réécrit le texte reconstruit à la même position.
 
-    Input  : page     — fitz.Page à modifier (en place)
-             lieu     — ville à insérer (ex: "Casablanca"), peut être vide
-             date_str — date à insérer (ex: "16/03/2026"), peut être vide
-    Output : None — modifie la page en place. Ne fait rien si lieu ET date sont vides,
+    Input  : page      fitz.Page à modifier (en place)
+             lieu      ville à insérer (ex: "Casablanca"), peut être vide
+             date_str  date à insérer (ex: "16/03/2026"), peut être vide
+    Output : None  modifie la page en place. Ne fait rien si lieu ET date sont vides,
              ou si "Fait à" n'est pas trouvé sur cette page.
     """
     if not lieu and not date_str:
@@ -295,32 +295,33 @@ def sign_pdf(
     cac_my: int = 40,
     fait_a_lieu: str = "",
     fait_a_date: str = "",
+    lu_et_accepte: bool = False,
 ) -> bytes:
     """
     Traite un PDF en trois étapes :
 
-    1. FAIT À — Remplit "Fait à [lieu], le [date]" sur chaque page où la ligne
+    1. FAIT À  Remplit "Fait à [lieu], le [date]" sur chaque page où la ligne
        est présente (détection par contenu textuel).
 
-    2. SIGNATURE — Cherche le header "signature du soumissionnaire" (ou variantes)
+    2. SIGNATURE  Cherche le header "signature du soumissionnaire" (ou variantes)
        sur toutes les pages. Si trouvé : place l'image juste en dessous.
        Si non trouvé (fallback) : place en bas à droite de chaque page.
 
-    3. CACHET — Même logique pour "cachet du concurrent".
+    3. CACHET  Même logique pour "cachet du concurrent".
        Fallback : bas à gauche de la dernière page uniquement.
 
     Input  :
-        pdf_bytes       — contenu brut du PDF à traiter
-        signature_bytes — image de signature (PNG/JPEG), None = utilise le défaut
-        cachet_bytes    — image de cachet    (PNG/JPEG), None = utilise le défaut
-        sig_w / sig_h   — dimensions de la signature en points PDF (défaut 120×50)
-        sig_mx / sig_my — marges fallback depuis bord droit/bas (défaut 50/40)
-        cac_w / cac_h   — dimensions du cachet   en points PDF (défaut 100×100)
-        cac_mx / cac_my — marges fallback depuis bord gauche/bas (défaut 50/40)
-        fait_a_lieu     — ville à insérer dans "Fait à …" (vide = pas de remplissage)
-        fait_a_date     — date  à insérer dans "… le …"   (vide = pas de remplissage)
+        pdf_bytes        contenu brut du PDF à traiter
+        signature_bytes  image de signature (PNG/JPEG), None = utilise le défaut
+        cachet_bytes     image de cachet    (PNG/JPEG), None = utilise le défaut
+        sig_w / sig_h    dimensions de la signature en points PDF (défaut 120×50)
+        sig_mx / sig_my  marges fallback depuis bord droit/bas (défaut 50/40)
+        cac_w / cac_h    dimensions du cachet   en points PDF (défaut 100×100)
+        cac_mx / cac_my  marges fallback depuis bord gauche/bas (défaut 50/40)
+        fait_a_lieu      ville à insérer dans "Fait à …" (vide = pas de remplissage)
+        fait_a_date      date  à insérer dans "… le …"   (vide = pas de remplissage)
 
-    Output : bytes — contenu brut du PDF signé
+    Output : bytes  contenu brut du PDF signé
     """
     sig = signature_bytes or _DEFAULT_SIGNATURE
     cac = cachet_bytes   or _DEFAULT_CACHET
@@ -363,6 +364,10 @@ def sign_pdf(
                     stream=cac, keep_proportion=True,
                 )
 
+        # Tampon "Lu et accepté" sur toutes les pages si demandé
+        if lu_et_accepte:
+            _stamp_lu_et_accepte(page)
+
         # Signature en bas à droite sur TOUTES les pages (paraphe)
         page.insert_image(
             fitz.Rect(pw - sig_mx - sig_w, ph - sig_my - sig_h, pw - sig_mx, ph - sig_my),
@@ -373,3 +378,28 @@ def sign_pdf(
     doc.save(output)
     doc.close()
     return output.getvalue()
+
+
+def _stamp_lu_et_accepte(page: fitz.Page) -> None:
+    """
+    Appose le tampon "Lu et accepté" en bas à gauche de chaque page,
+    juste au-dessus de la zone du paraphe.
+    """
+    pw = page.rect.width
+    ph = page.rect.height
+    text = "Lu et accepté"
+    fontsize = 8.5
+    tw = fitz.get_text_length(text, fontsize=fontsize)
+    x0 = 20
+    y  = ph - 52  # au-dessus du paraphe (paraphe est à ph - 40 - 50 = ph - 90 min)
+    # Fond blanc semi-transparent pour lisibilité
+    page.draw_rect(
+        fitz.Rect(x0 - 2, y - fontsize - 2, x0 + tw + 4, y + 2),
+        color=(1, 1, 1), fill=(1, 1, 1),
+    )
+    page.insert_text(
+        fitz.Point(x0, y),
+        text,
+        fontsize=fontsize,
+        color=(0.1, 0.1, 0.1),
+    )

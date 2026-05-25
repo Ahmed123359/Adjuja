@@ -1,7 +1,7 @@
 services:
 
   # ─────────────────────────────────────────────────────────────
-  # Qdrant — base de données vectorielle (démarrage automatique)
+  # Qdrant  base de données vectorielle (démarrage automatique)
   # Stockage persistant en bind mount → ./data/qdrant/
   # Survit à `docker compose down -v`, sauvegardable comme un dossier normal.
   # ─────────────────────────────────────────────────────────────
@@ -24,7 +24,7 @@ services:
       - ao_network
 
   # ─────────────────────────────────────────────────────────────
-  # RAG ETL — microservice d'indexation (démarrage manuel)
+  # RAG ETL  microservice d'indexation (démarrage manuel)
   #
   # Ce service est séparé du service principal et NE démarre PAS
   # automatiquement avec `docker compose up`.
@@ -39,8 +39,6 @@ services:
   #   Cliquez sur le bouton "Reindexer" dans l'en-tête.
   # ─────────────────────────────────────────────────────────────
   rag-etl:
-    profiles:
-      - rag                         # Ne démarre qu'avec --profile rag
     build:
       context: rag_service
       dockerfile: Dockerfile
@@ -68,7 +66,7 @@ services:
       - ao_network
 
   # ─────────────────────────────────────────────────────────────
-  # API FastAPI — commenté, lancé localement via :
+  # API FastAPI  commenté, lancé localement via :
   #   uvicorn app.main:app --reload
   # ─────────────────────────────────────────────────────────────
   # api:
@@ -103,7 +101,7 @@ services:
   #     - ao_network
 
   # ─────────────────────────────────────────────────────────────
-  # Frontend React — commenté, lancé localement via :
+  # Frontend React  commenté, lancé localement via :
   #   cd frontend && npm run dev
   # ─────────────────────────────────────────────────────────────
   # frontend:
@@ -125,7 +123,7 @@ services:
   #     - ao_network
 
   # ─────────────────────────────────────────────────────────────
-  # Worker — Scraper silencieux marchespublics.gov.ma
+  # Worker  Scraper silencieux marchespublics.gov.ma
   #
   # NE démarre PAS automatiquement avec `docker compose up`.
   # Démarrage manuel uniquement :
@@ -153,7 +151,7 @@ services:
       WORKER_OUTPUT_DIR: /app/output
     volumes:
       - ./data:/app/data           # Base SQLite partagée avec le service api
-      - ./worker/output:/app/output # ZIPs téléchargés — visible dans worker/output/
+      - ./worker/output:/app/output # ZIPs téléchargés  visible dans worker/output/
     networks:
       - ao_network
 

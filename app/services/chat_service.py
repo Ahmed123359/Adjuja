@@ -1,5 +1,5 @@
 """
-Service de chat RAG — répond aux questions de l'utilisateur en s'appuyant
+Service de chat RAG  répond aux questions de l'utilisateur en s'appuyant
 sur la base de connaissances Qdrant.
 
 Flux par appel :
@@ -112,7 +112,7 @@ class ChatService:
         )
 
         logger.info(
-            "Chat — provider=%s model=%s rag_sources=%d",
+            "Chat  provider=%s model=%s rag_sources=%d",
             provider.value, llm.current_model, len(sources),
         )
 
@@ -137,7 +137,7 @@ class ChatService:
         """
         Interroge Qdrant avec la question et retourne (contexte_texte, titres_sources).
 
-        Input:  question — dernière question de l'utilisateur
+        Input:  question  dernière question de l'utilisateur
         Output: (bloc_markdown_rag, liste_de_titres_sources)
                 Si RAG indisponible → ("", [])
         """
@@ -180,7 +180,7 @@ class ChatService:
         """
         Retourne la clé API correspondant au provider.
 
-        Input:  provider — enum du provider LLM
+        Input:  provider  enum du provider LLM
         Output: clé API (str)
         Raises: ValueError si la clé n'est pas configurée
         """

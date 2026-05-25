@@ -15,7 +15,7 @@ class MistralProvider(AbstractLLMProvider):
     Provider Mistral AI.
 
     Utilise le SDK officiel `mistralai` via l'API Chat.
-    Provider européen, hébergé en France — pertinent pour les marchés publics
+    Provider européen, hébergé en France  pertinent pour les marchés publics
     soumis à des contraintes de souveraineté des données.
     """
 

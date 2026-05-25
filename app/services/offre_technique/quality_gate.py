@@ -28,7 +28,7 @@ def evaluate(
     )
 
     user_prompt = (
-        f"Angle narratif attendu : {angle.angle} — {angle.narrative}\n\n"
+        f"Angle narratif attendu : {angle.angle}  {angle.narrative}\n\n"
         f"Exigences CPS :\n"
         f"- Scope : {cps.scope}\n"
         f"- Délais : {cps.delais}\n"
@@ -54,7 +54,7 @@ def evaluate(
         )
         if resp.status_code != 429 or delay is None:
             break
-        logger.warning("Quality gate 429 — attente %ds (tentative %d)", delay, attempt)
+        logger.warning("Quality gate 429  attente %ds (tentative %d)", delay, attempt)
         time.sleep(delay)
     resp.raise_for_status()
     raw = resp.json()["choices"][0]["message"]["content"]

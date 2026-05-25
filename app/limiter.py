@@ -45,6 +45,6 @@ def _user_or_ip(request: Request) -> str:
     return request.client.host if request.client else "unknown"
 
 
-# Instance singleton du limiter — partagée entre main.py et les routes.
+# Instance singleton du limiter  partagée entre main.py et les routes.
 # key_func=_user_or_ip : une limite par utilisateur identifié (pas par IP globale).
 limiter = Limiter(key_func=_user_or_ip)

@@ -13,6 +13,12 @@ from app.api.routes.acte_engagement_routes import router as acte_engagement_rout
 from app.api.routes.chat_routes import router as chat_router
 from app.api.routes.export_routes import router as export_router
 from app.api.routes.filler_routes import router as filler_router
+from app.api.routes.offre_technique_routes import router as offre_technique_router
+from app.api.routes.marche_routes import router as marche_router
+from app.api.routes.ao_routes import router as ao_router
+from app.api.routes.company_profile_routes import router as company_profile_router
+from app.api.routes.staff_cvs_routes import router as staff_cvs_router
+from app.api.routes.company_documents_routes import router as company_documents_router
 
 __all__ = [
     "generation_router",
@@ -31,5 +37,9 @@ __all__ = [
     "export_router",
     "filler_router",
     "offre_technique_router",
+    "marche_router",
+    "ao_router",
+    "company_profile_router",
+    "staff_cvs_router",
+    "company_documents_router",
 ]
-from app.api.routes.offre_technique_routes import router as offre_technique_router

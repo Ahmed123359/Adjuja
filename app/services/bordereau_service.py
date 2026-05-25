@@ -50,7 +50,7 @@ Règles :
 - Respecte l'ordre et le nombre exact de colonnes du document
 - Les cellules vides (à remplir par le soumissionnaire) ont la valeur null
 - Les cellules renseignées gardent leur valeur exacte
-- Ne déduis rien, ne complète rien — recopie uniquement ce qui est visible"""
+- Ne déduis rien, ne complète rien  recopie uniquement ce qui est visible"""
 
 
 async def detect_and_extract_bordereau(pdf_bytes: bytes) -> Optional[dict]:

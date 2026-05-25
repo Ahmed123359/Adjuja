@@ -3,17 +3,17 @@ Service de remplissage des Actes d'Engagement / Déclarations sur l'Honneur PDF.
 
 Deux modes de remplissage selon la disponibilité d'une clé OpenAI :
 
-  Mode GPT-4o (openai_api_key fourni) — pipeline en 3 étapes :
+  Mode GPT-4o (openai_api_key fourni)  pipeline en 3 étapes :
     1. Scoring local des pages (pymupdf, sans API) → sélection des 3 pages pertinentes
     2. Analyse GPT-4o vision → JSON des champs + positions
     3. Remplissage pymupdf avec 3 niveaux de résolution :
-         Niveau 1 — label_text  : recherche textuelle (PDF natif, label > 3 chars)
-         Niveau 2 — line_order  : Nème ligne avec points dans la section (label court/absent)
-         Niveau 3 — x_pct/y_pct : coordonnées GPT-4o directes (PDF scanné sans texte)
+         Niveau 1  label_text  : recherche textuelle (PDF natif, label > 3 chars)
+         Niveau 2  line_order  : Nème ligne avec points dans la section (label court/absent)
+         Niveau 3  x_pct/y_pct : coordonnées GPT-4o directes (PDF scanné sans texte)
 
   Mode fallback (pas de clé OpenAI) :
     Recherche par mots-clés sur toutes les pages (approche initiale).
-    Plus simple mais moins robuste — peut remplir la mauvaise section.
+    Plus simple mais moins robuste  peut remplir la mauvaise section.
 """
 
 from __future__ import annotations
@@ -38,17 +38,17 @@ _DOT_CHARS = set('._\u2026\u00b7\u00b7\u2025\u22ef\u0085')
 # ── Mots-clés de scoring (mode GPT-4o) ───────────────────────────────────────
 # Utilisés pour identifier les pages d'un acte d'engagement SANS appel API.
 # Plus le score est élevé, plus la page est susceptible d'être pertinente.
-_KEYWORDS_STRONG = [          # +3 pts — discriminants forts
+_KEYWORDS_STRONG = [          # +3 pts  discriminants forts
     "déclaration sur l'honneur", "declaration sur l'honneur",
     "acte d'engagement", "acte dengagement",
     "je soussigné", "je soussignée",
 ]
-_KEYWORDS_MEDIUM = [          # +2 pts — présents dans la section société
+_KEYWORDS_MEDIUM = [          # +2 pts  présents dans la section société
     "personne morale", "personnes morales",
     "raison sociale", "capital social",
     "cas des sociétés", "société privée",
 ]
-_KEYWORDS_WEAK = [            # +1 pt — présents dans plusieurs sections
+_KEYWORDS_WEAK = [            # +1 pt  présents dans plusieurs sections
     "cnss", "registre du commerce", "registre de commerce",
     "identifiant commun", "taxe professionnelle",
     "domicile élu", "adresse du siège",
@@ -79,21 +79,21 @@ IGNORE ces autres sous-sections :
 RÈGLES CRITIQUES SUR LES CHAMPS PARTAGEANT LA MÊME LIGNE
 ═══════════════════════════════════════════════════════════
 
-⚠️ RÈGLE 1 — "Je soussigné" et "agissant" sont TOUJOURS sur la même ligne :
+⚠️ RÈGLE 1  "Je soussigné" et "agissant" sont TOUJOURS sur la même ligne :
    → UN SEUL champ : field_key="signataire_nom", nth=0
    → NE PAS créer qualite_signataire séparément
 
-⚠️ RÈGLE 2 — "raison sociale" et "capital social" sont SOUVENT sur la même ligne :
+⚠️ RÈGLE 2  "raison sociale" et "capital social" sont SOUVENT sur la même ligne :
    → raison_sociale : nth=0
    → capital_social : nth=1, MÊME label_text que raison_sociale
    Si sur lignes séparées : nth=0 pour chacun avec son propre label.
 
-⚠️ RÈGLE 3 — "rc_localite" et "rc_numero" sont SOUVENT sur la même ligne :
+⚠️ RÈGLE 3  "rc_localite" et "rc_numero" sont SOUVENT sur la même ligne :
    → rc_localite : nth=0
    → rc_numero   : nth=1, MÊME label_text que rc_localite
-   NE PAS utiliser "sous le numéro" seul — trop générique.
+   NE PAS utiliser "sous le numéro" seul  trop générique.
 
-⚠️ RÈGLE 4 — "telephone" et "fax" peuvent être sur la même ligne :
+⚠️ RÈGLE 4  "telephone" et "fax" peuvent être sur la même ligne :
    → telephone : nth=0,  fax : nth=1, même label_text
 
 ════════════════════════════════════════════════════════════
@@ -140,7 +140,7 @@ Retourne ce JSON et rien d'autre :
 
 
 # ═════════════════════════════════════════════════════════════════════════════
-# HELPERS — DÉTECTION DES ZONES À REMPLIR (rawdict char-level)
+# HELPERS  DÉTECTION DES ZONES À REMPLIR (rawdict char-level)
 # ═════════════════════════════════════════════════════════════════════════════
 
 def _find_dot_zones_in_spans(spans: list) -> list[tuple]:
@@ -157,9 +157,9 @@ def _find_dot_zones_in_spans(spans: list) -> list[tuple]:
     (ex: "(nom, prénom et qualité)") pour les supprimer proprement.
 
     Input :
-        spans (list) — liste de spans rawdict d'une ligne pymupdf
+        spans (list)  liste de spans rawdict d'une ligne pymupdf
     Output :
-        list[tuple] — liste de (x0_insert, y0, x1_erase, y1, fontsize)
+        list[tuple]  liste de (x0_insert, y0, x1_erase, y1, fontsize)
             x0_insert : x du début des points → où écrire la valeur
             x1_erase  : x de fin de la zone à effacer (inclut le hint si présent)
     """
@@ -205,8 +205,8 @@ def _span_text(span: dict) -> str:
     Reconstruit le texte d'un span rawdict depuis ses caractères.
     Nécessaire car rawdict ne fournit pas de clé 'text' directement.
 
-    Input  : span (dict) — span rawdict pymupdf
-    Output : str — texte reconstitué
+    Input  : span (dict)  span rawdict pymupdf
+    Output : str  texte reconstitué
     """
     return "".join(c["c"] for c in span.get("chars", []))
 
@@ -219,8 +219,8 @@ def _clean_label(label_text: str) -> str:
     - Les séquences de points ("......") que GPT-4o inclut parfois malgré les instructions
     - Les hints entre parenthèses "(nom, prénom et qualité)"
 
-    Input  : label_text (str) — label brut retourné par GPT-4o
-    Output : str — label nettoyé, prêt pour la recherche textuelle
+    Input  : label_text (str)  label brut retourné par GPT-4o
+    Output : str  label nettoyé, prêt pour la recherche textuelle
 
     Exemples :
         "Je soussigné:......(nom, prénom)" → "Je soussigné:"
@@ -232,7 +232,7 @@ def _clean_label(label_text: str) -> str:
 
 
 # ═════════════════════════════════════════════════════════════════════════════
-# HELPERS — LOCALISATION DES LIGNES
+# HELPERS  LOCALISATION DES LIGNES
 # ═════════════════════════════════════════════════════════════════════════════
 
 def _get_all_dot_lines(
@@ -248,11 +248,11 @@ def _get_all_dot_lines(
     Exemple : index 0 = première ligne avec points, 1 = deuxième, etc.
 
     Input :
-        page      (fitz.Page) — page pymupdf à analyser
-        y_min_abs (float)     — borne haute de la section (points PDF absolus)
-        y_max_abs (float)     — borne basse de la section (points PDF absolus)
+        page      (fitz.Page)  page pymupdf à analyser
+        y_min_abs (float)      borne haute de la section (points PDF absolus)
+        y_max_abs (float)      borne basse de la section (points PDF absolus)
     Output :
-        list[tuple] — liste de (line_y, spans, zones) triée par Y croissant
+        list[tuple]  liste de (line_y, spans, zones) triée par Y croissant
     """
     lines_with_dots = []
     for block in page.get_text("rawdict").get("blocks", []):
@@ -287,10 +287,10 @@ def _find_line_by_label(
     En cas d'ex-aequo → ligne la plus haute (évite de tomber dans une section adjacente).
 
     Input :
-        page       (fitz.Page) — page à analyser
-        label_text (str)       — label nettoyé par _clean_label()
-        y_min_abs  (float)     — borne haute de la section
-        y_max_abs  (float)     — borne basse de la section
+        page       (fitz.Page)  page à analyser
+        label_text (str)        label nettoyé par _clean_label()
+        y_min_abs  (float)      borne haute de la section
+        y_max_abs  (float)      borne basse de la section
     Output :
         tuple (spans, zones) si trouvée, None sinon
     """
@@ -331,7 +331,7 @@ def _find_line_by_label(
 
 
 # ═════════════════════════════════════════════════════════════════════════════
-# HELPERS — ÉCRITURE
+# HELPERS  ÉCRITURE
 # ═════════════════════════════════════════════════════════════════════════════
 
 def _write_value(page: fitz.Page, zones: list, nth: int, value: str) -> None:
@@ -343,12 +343,12 @@ def _write_value(page: fitz.Page, zones: list, nth: int, value: str) -> None:
         2. insert_text au x0 exact des points → écrit la valeur
 
     Input :
-        page   (fitz.Page) — page à modifier (en place)
-        zones  (list)      — liste de zones retournée par _find_dot_zones_in_spans()
-        nth    (int)       — index de la zone à remplir (0 = première)
-        value  (str)       — valeur à écrire
+        page   (fitz.Page)  page à modifier (en place)
+        zones  (list)       liste de zones retournée par _find_dot_zones_in_spans()
+        nth    (int)        index de la zone à remplir (0 = première)
+        value  (str)        valeur à écrire
     Output :
-        None — modifie la page en place
+        None  modifie la page en place
     """
     nth_safe = min(nth, len(zones) - 1)   # protection si GPT-4o retourne nth trop grand
     x0, y0, x1_erase, y1, fs = zones[nth_safe]
@@ -379,31 +379,31 @@ def _fill_field(
     """
     Remplit un champ avec 3 niveaux de résolution (priorité décroissante).
 
-    Niveau 1 — label_text (PDF natif, label > 3 chars) :
+    Niveau 1  label_text (PDF natif, label > 3 chars) :
         Cherche la ligne par son texte via _find_line_by_label().
         Précis, indépendant de la position dans la section.
 
-    Niveau 2 — line_order (PDF natif, label court ou absent) :
+    Niveau 2  line_order (PDF natif, label court ou absent) :
         Prend la Nème ligne avec des points dans la section.
         GPT-4o a compté ces lignes dans l'image → index fiable.
 
-    Niveau 3 — x_pct/y_pct (PDF scanné, pas de couche texte) :
+    Niveau 3  x_pct/y_pct (PDF scanné, pas de couche texte) :
         Utilise les coordonnées estimées par GPT-4o en %.
         Approximatif (~5-10% d'erreur) mais fonctionne sur tous PDF.
 
     Input :
-        page          (fitz.Page) — page à modifier
-        label_text    (str)       — label brut GPT-4o (sera nettoyé par _clean_label)
-        line_order    (int)       — index de la ligne dans all_dot_lines (fallback L2)
-        y_min_abs     (float)     — borne haute de section (pts absolus)
-        y_max_abs     (float)     — borne basse de section (pts absolus)
-        y_target_abs  (float)     — position Y GPT-4o en pts absolus (fallback L3)
-        x_target_abs  (float)     — position X GPT-4o en pts absolus (fallback L3)
-        nth           (int)       — Nème zone de points sur la ligne
-        value         (str)       — valeur à insérer
-        all_dot_lines (list)      — cache des lignes avec points (_get_all_dot_lines)
+        page          (fitz.Page)  page à modifier
+        label_text    (str)        label brut GPT-4o (sera nettoyé par _clean_label)
+        line_order    (int)        index de la ligne dans all_dot_lines (fallback L2)
+        y_min_abs     (float)      borne haute de section (pts absolus)
+        y_max_abs     (float)      borne basse de section (pts absolus)
+        y_target_abs  (float)      position Y GPT-4o en pts absolus (fallback L3)
+        x_target_abs  (float)      position X GPT-4o en pts absolus (fallback L3)
+        nth           (int)        Nème zone de points sur la ligne
+        value         (str)        valeur à insérer
+        all_dot_lines (list)       cache des lignes avec points (_get_all_dot_lines)
     Output :
-        str — mode utilisé : "label" | "order" | "scanné" | "echec"
+        str  mode utilisé : "label" | "order" | "scanné" | "echec"
     """
     label_clean = _clean_label(label_text)
 
@@ -439,7 +439,7 @@ def _fill_field(
 
 
 # ═════════════════════════════════════════════════════════════════════════════
-# HELPERS — SCORING ET SÉLECTION DES PAGES (sans appel API)
+# HELPERS  SCORING ET SÉLECTION DES PAGES (sans appel API)
 # ═════════════════════════════════════════════════════════════════════════════
 
 def _score_page(page: fitz.Page) -> int:
@@ -447,8 +447,8 @@ def _score_page(page: fitz.Page) -> int:
     Score une page selon la densité de mots-clés liés à une déclaration sur l'honneur.
     Travail purement local (pymupdf), zéro appel API.
 
-    Input  : page (fitz.Page) — page pymupdf à scorer
-    Output : int — score (0 si page vide ou scannée)
+    Input  : page (fitz.Page)  page pymupdf à scorer
+    Output : int  score (0 si page vide ou scannée)
     """
     text = page.get_text("text").lower()
     score = 0
@@ -477,8 +477,8 @@ def _select_relevant_pages(
         - Si tout le monde a score 0 (PDF scanné) → prend les top_n premières pages
 
     Input :
-        pdf_bytes (bytes) — PDF brut
-        top_n     (int)   — nombre de pages à sélectionner (défaut 3)
+        pdf_bytes (bytes)  PDF brut
+        top_n     (int)    nombre de pages à sélectionner (défaut 3)
     Output :
         tuple[list[int], list[str]] :
             - page_indices : indices des pages sélectionnées (ordre original PDF)
@@ -509,7 +509,7 @@ def _select_relevant_pages(
 
 
 # ═════════════════════════════════════════════════════════════════════════════
-# HELPERS — APPEL GPT-4o
+# HELPERS  APPEL GPT-4o
 # ═════════════════════════════════════════════════════════════════════════════
 
 async def _analyze_with_gpt4o(
@@ -524,17 +524,17 @@ async def _analyze_with_gpt4o(
         label_text  : texte du libellé (Niveau 1)
         line_order  : Nème ligne avec points dans la section (Niveau 2)
         nth         : Nème zone de points sur la ligne
-        y_pct/x_pct : coordonnées % (Niveau 3 — PDF scanné)
+        y_pct/x_pct : coordonnées % (Niveau 3  PDF scanné)
 
     Les indices page relatifs (0,1,2 = images reçues) sont traduits en indices
     PDF réels grâce à page_indices.
 
     Input :
-        pages_b64     (list[str])  — images base64 des pages sélectionnées
-        page_indices  (list[int])  — indices PDF réels correspondants
-        openai_api_key (str)       — clé OpenAI
+        pages_b64     (list[str])   images base64 des pages sélectionnées
+        page_indices  (list[int])   indices PDF réels correspondants
+        openai_api_key (str)        clé OpenAI
     Output :
-        dict — résultat JSON GPT-4o avec indices page traduits
+        dict  résultat JSON GPT-4o avec indices page traduits
                Clés : section_label, y_start_pct, y_end_pct, page, fields[]
     """
     image_contents = [
@@ -571,7 +571,7 @@ async def _analyze_with_gpt4o(
 
 
 # ═════════════════════════════════════════════════════════════════════════════
-# HELPERS — REMPLISSAGE GUIDÉ PAR GPT-4o (mode principal)
+# HELPERS  REMPLISSAGE GUIDÉ PAR GPT-4o (mode principal)
 # ═════════════════════════════════════════════════════════════════════════════
 
 def _fill_from_gpt_result(
@@ -589,11 +589,11 @@ def _fill_from_gpt_result(
         4. Appelle _fill_field() avec les 3 niveaux de résolution
 
     Input :
-        doc        (fitz.Document) — document PDF ouvert et modifiable
-        gpt_result (dict)          — résultat de _analyze_with_gpt4o()
-        data       (dict[str,str]) — valeurs à insérer, clés = field_key GPT-4o
+        doc        (fitz.Document)  document PDF ouvert et modifiable
+        gpt_result (dict)           résultat de _analyze_with_gpt4o()
+        data       (dict[str,str])  valeurs à insérer, clés = field_key GPT-4o
     Output :
-        dict[str, str] — rapport : field_key → mode utilisé ("label"|"order"|"scanné"|"echec"|"skip")
+        dict[str, str]  rapport : field_key → mode utilisé ("label"|"order"|"scanné"|"echec"|"skip")
     """
     gpt_fields   = gpt_result.get("fields", [])
     section_page = gpt_result.get("page", 0)
@@ -652,7 +652,7 @@ def _fill_from_gpt_result(
 
 
 # ═════════════════════════════════════════════════════════════════════════════
-# HELPERS — ÉLÉMENTS COMPLÉMENTAIRES (Fait à, signature, cachet)
+# HELPERS  ÉLÉMENTS COMPLÉMENTAIRES (Fait à, signature, cachet)
 # ═════════════════════════════════════════════════════════════════════════════
 
 def _fill_fait_a(page: fitz.Page, lieu: str, date_str: str) -> None:
@@ -663,11 +663,11 @@ def _fill_fait_a(page: fitz.Page, lieu: str, date_str: str) -> None:
     efface la ligne entière et réécrit "Fait à <lieu>, le <date>".
 
     Input :
-        page     (fitz.Page) — page à modifier
-        lieu     (str)       — ex: "Casablanca"
-        date_str (str)       — ex: "16/03/2026"
+        page     (fitz.Page)  page à modifier
+        lieu     (str)        ex: "Casablanca"
+        date_str (str)        ex: "16/03/2026"
     Output :
-        None — modifie la page en place
+        None  modifie la page en place
     """
     if not lieu and not date_str:
         return
@@ -710,11 +710,11 @@ def _apply_images(
     Cachet    : coin bas-gauche (toutes les pages qui en ont un).
 
     Input :
-        page            (fitz.Page)   — page à modifier
-        signature_bytes (bytes|None)  — image PNG/JPEG de la signature
-        cachet_bytes    (bytes|None)  — image PNG/JPEG du cachet
+        page            (fitz.Page)    page à modifier
+        signature_bytes (bytes|None)   image PNG/JPEG de la signature
+        cachet_bytes    (bytes|None)   image PNG/JPEG du cachet
     Output :
-        None — modifie la page en place
+        None  modifie la page en place
     """
     pw, ph = page.rect.width, page.rect.height
     if signature_bytes:
@@ -732,7 +732,7 @@ def _apply_images(
 
 
 # ═════════════════════════════════════════════════════════════════════════════
-# MODE FALLBACK — Remplissage par mots-clés (sans OpenAI)
+# MODE FALLBACK  Remplissage par mots-clés (sans OpenAI)
 # ═════════════════════════════════════════════════════════════════════════════
 
 def _fill_nth_dots(
@@ -749,13 +749,13 @@ def _fill_nth_dots(
     ne distingue pas les sections du document (risque de remplir la mauvaise section).
 
     Input :
-        page      (fitz.Page)  — page à modifier
-        keywords  (list[str])  — mots-clés pour identifier la ligne (insensible casse)
-        value     (str)        — valeur à insérer
-        nth       (int)        — index de la zone de points (0 = première)
-        max_fills (int)        — nombre max de lignes à remplir (1 = première occurrence)
+        page      (fitz.Page)   page à modifier
+        keywords  (list[str])   mots-clés pour identifier la ligne (insensible casse)
+        value     (str)         valeur à insérer
+        nth       (int)         index de la zone de points (0 = première)
+        max_fills (int)         nombre max de lignes à remplir (1 = première occurrence)
     Output :
-        None — modifie la page en place
+        None  modifie la page en place
     """
     if not value:
         return
@@ -790,11 +790,11 @@ def _fill_keyword_mode(doc: fitz.Document, data: dict[str, str], type_soumission
     Remplissage fallback sur toutes les pages par mots-clés.
 
     Input :
-        doc                  (fitz.Document) — document à modifier
-        data                 (dict)          — valeurs à insérer
-        type_soumissionnaire (str)           — "physique" | "morale" | "groupement"
+        doc                  (fitz.Document)  document à modifier
+        data                 (dict)           valeurs à insérer
+        type_soumissionnaire (str)            "physique" | "morale" | "groupement"
     Output :
-        None — modifie le document en place
+        None  modifie le document en place
     """
     for page in doc:
         _fill_nth_dots(page, ["identifiant commun"],                   data.get("ice", ""))
@@ -871,31 +871,31 @@ async def fill_acte_engagement(
         - openai_api_key absent → mode fallback (mots-clés sur toutes les pages)
 
     Input :
-        pdf_bytes            — PDF vierge (bytes)
-        openai_api_key       — clé OpenAI (si vide → mode fallback)
-        type_soumissionnaire — "physique" | "morale" | "groupement"
-        signataire_nom       — ex: "Ahmed Benali, Directeur Général"
-        adresse_domicile     — ex: "12 Rue Hassan II, Casablanca"
-        telephone            — ex: "0522 123 456"
-        fax                  — ex: "0522 789 012"
-        email                — ex: "contact@abi.ma"
-        rib                  — ex: "007780000001234567890123" (24 positions)
-        cnss                 — ex: "1234567"
-        rc_localite          — ex: "Casablanca"
-        rc_numero            — ex: "RC 145853"
-        taxe_pro             — ex: "TP 56789012"
-        ice                  — ex: "002579010000023"
-        raison_sociale       — ex: "ABI Consulting"
-        forme_juridique      — ex: "SARL AU"
-        capital_social       — ex: "100.000 MAD"
-        adresse_siege        — ex: "Imm 30, Appt 08, Rue Loukili, Rabat"
-        membres_groupement   — membres séparés par \\n (mode groupement)
-        fait_a_lieu          — ex: "Casablanca"
-        fait_a_date          — ex: "16/03/2026"
-        signature_bytes      — image PNG/JPEG de la signature (None = pas de signature)
-        cachet_bytes         — image PNG/JPEG du cachet (None = pas de cachet)
+        pdf_bytes             PDF vierge (bytes)
+        openai_api_key        clé OpenAI (si vide → mode fallback)
+        type_soumissionnaire  "physique" | "morale" | "groupement"
+        signataire_nom        ex: "Ahmed Benali, Directeur Général"
+        adresse_domicile      ex: "12 Rue Hassan II, Casablanca"
+        telephone             ex: "0522 123 456"
+        fax                   ex: "0522 789 012"
+        email                 ex: "contact@abi.ma"
+        rib                   ex: "007780000001234567890123" (24 positions)
+        cnss                  ex: "1234567"
+        rc_localite           ex: "Casablanca"
+        rc_numero             ex: "RC 145853"
+        taxe_pro              ex: "TP 56789012"
+        ice                   ex: "002579010000023"
+        raison_sociale        ex: "ABI Consulting"
+        forme_juridique       ex: "SARL AU"
+        capital_social        ex: "100.000 MAD"
+        adresse_siege         ex: "Imm 30, Appt 08, Rue Loukili, Rabat"
+        membres_groupement    membres séparés par \\n (mode groupement)
+        fait_a_lieu           ex: "Casablanca"
+        fait_a_date           ex: "16/03/2026"
+        signature_bytes       image PNG/JPEG de la signature (None = pas de signature)
+        cachet_bytes          image PNG/JPEG du cachet (None = pas de cachet)
     Output :
-        bytes — PDF rempli
+        bytes  PDF rempli
     """
     # Dict unifié des valeurs (utilisé dans les deux modes)
     data: dict[str, str] = {

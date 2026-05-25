@@ -12,7 +12,7 @@ COPY frontend/ .
 RUN npm run build
 
 # ─────────────────────────────────────────────
-# Étape 2 : builder Python — installe les dépendances
+# Étape 2 : builder Python  installe les dépendances
 # ─────────────────────────────────────────────
 FROM python:3.12-slim AS builder
 
@@ -21,12 +21,12 @@ FROM python:3.12-slim AS builder
 #   poppler-utils                      : pdf2image (pdftoppm) pour conversion PDF → images
 #   libglib2.0-0 libsm6 libxext6       : dépendances runtime de PyMuPDF
 RUN apt-get update && apt-get install -y --no-install-recommends \
-        tesseract-ocr \
-        tesseract-ocr-fra \
-        poppler-utils \
-        libglib2.0-0 \
-        libsm6 \
-        libxext6 \
+    tesseract-ocr \
+    tesseract-ocr-fra \
+    poppler-utils \
+    libglib2.0-0 \
+    libsm6 \
+    libxext6 \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
@@ -36,9 +36,18 @@ RUN pip install --upgrade pip && \
     pip install --no-cache-dir --prefix=/install -r requirements.txt
 
 # ─────────────────────────────────────────────
-# Étape 3a : dev — API seule, sans frontend (servi séparément)
+# Étape 3a : dev  API seule, sans frontend (servi séparément)
 # ─────────────────────────────────────────────
 FROM python:3.12-slim AS api-dev
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    tesseract-ocr \
+    tesseract-ocr-fra \
+    poppler-utils \
+    libglib2.0-0 \
+    libsm6 \
+    libxext6 \
+    && rm -rf /var/lib/apt/lists/*
 
 RUN addgroup --system appgroup && adduser --system --ingroup appgroup appuser
 WORKDIR /app
@@ -51,7 +60,7 @@ EXPOSE 8000
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
 
 # ─────────────────────────────────────────────
-# Étape 3b : image finale prod — légère, sans outils de build
+# Étape 3b : image finale prod  légère, sans outils de build
 # ─────────────────────────────────────────────
 FROM python:3.12-slim AS final
 

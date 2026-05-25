@@ -3,48 +3,110 @@
     "features": "Features",
     "howItWorks": "How it works",
     "pricing": "Pricing",
-    "access": "Start →"
+    "access": "Get started",
+    "signup": "Sign up"
+  },
+  "landing": {
+    "hero": {
+      "line1": "Win more contracts.",
+      "line2": "Without spending your nights.",
+      "demo": "See the demo"
+    },
+    "features": {
+      "title": "Everything you need",
+      "titleBlue": "to win more contracts.",
+      "cta": "See all features",
+      "analyse": { "title": "DCE Analysis", "desc": "AI extracts every key clause from the tender specification in seconds." },
+      "gen":     { "title": "Real-time generation", "desc": "Every section is drafted and exported to Word in under 2 minutes." },
+      "suivi":   { "title": "Track all your tenders", "desc": "One place to follow every bid, from receipt to victory." },
+      "pipeline":{ "title": "Automated pipeline", "desc": "From DCE receipt to final submission, every step is orchestrated and tracked." }
+    },
+    "how": {
+      "title": "Win more contracts.",
+      "titleBlue": "Every day.",
+      "t1Title": "Intelligent DCE analysis",
+      "t1Desc": "AI reads every page of the tender specification, identifies key clauses and evaluation criteria in seconds.",
+      "t2Title": "Automatic response generation",
+      "t2Desc": "Every section of the technical memo is drafted to match your company profile and the tender's requirements.",
+      "t3Title": "Export and submit in one click",
+      "t3Desc": "Download your complete file in Word or PDF, ready to submit on any public procurement platform.",
+      "t4Title": "Track your performance",
+      "t4Desc": "See your win rate, number of contracts won, and how your results evolve month by month."
+    },
+    "cta": {
+      "title": "Start winning more contracts today.",
+      "subtitle": "Upload your first DCE and get a complete response in under 2 minutes.",
+      "button": "Free trial",
+      "bullet1": "Set up in 2 minutes",
+      "bullet2": "No credit card",
+      "bullet3": "Support included"
+    },
+    "footer": {
+      "tagline": "ADJUJA automates the drafting of your responses to public tenders in Morocco.",
+      "emailPlaceholder": "Your email address",
+      "subscribe": "Subscribe",
+      "navTitle": "Navigation",
+      "legalTitle": "Legal",
+      "contactTitle": "Contact",
+      "navHome": "Home",
+      "navFeatures": "Features",
+      "navPricing": "Pricing",
+      "navBlog": "Blog",
+      "navContact": "Contact",
+      "legalTerms": "Terms of use",
+      "legalPrivacy": "Privacy policy",
+      "legalMentions": "Legal notices",
+      "legalSecurity": "Security",
+      "legalRgpd": "GDPR",
+      "contactEmail": "Email",
+      "contactEmailValue": "support@adjuja.ma",
+      "contactPhone": "Phone",
+      "contactPhoneValue": "+212 5 22 00 00 00",
+      "contactAddress": "Address",
+      "contactAddressValue": "Casablanca, Morocco",
+      "copyright": "© 2025 ADJUJA. All rights reserved."
+    }
   },
   "banner": {
-    "mobile": "🐦 Early Bird — <strong>−30 %</strong> on all plans",
-    "desktop": "🐦 Early Bird offer — <strong>−30 % on all plans</strong> for the first 50 subscribers",
+    "mobile": "Early Bird  <strong>-30 %</strong> on all plans",
+    "desktop": "Early Bird offer  <strong>-30 % on all plans</strong> for the first 50 subscribers",
     "sub": " · Take advantage before the launch ends"
   },
   "hero": {
     "title1": "Win more contracts.",
     "title2": "Without spending your",
     "highlight": "nights.",
-    "subtitle": "OffrIA analyses your tender, drafts every section and delivers a professional response — while you focus on your core business.",
-    "cta": "Try for free →",
-    "catCaption": "Meanwhile…",
+    "subtitle": "ADJUJA analyses your tender, drafts every section and delivers a professional response while you focus on your core business.",
+    "cta": "Try for free",
+    "catCaption": "Meanwhile...",
     "stats": {
       "time": "< 2 min",
       "timeLabel": "per tender response",
-      "scale": "10×",
+      "scale": "10x",
       "scaleLabel": "more tenders handled",
       "llms": "3 LLMs",
       "llmsLabel": "Claude · GPT-4o · Mistral",
-      "market": "€100 Bn",
+      "market": "100 Bn MAD",
       "marketLabel": "public contracts / year"
     }
   },
   "features": {
     "label": "Features",
-    "title": "Why teams choose OffrIA",
+    "title": "Why teams choose ADJUJA",
     "subtitle": "Focus on strategy. We handle the writing.",
     "cards": {
       "speed_title": "2 minutes instead of 2 days",
-      "speed_desc": "A complete, structured response ready to submit in under 2 minutes. Handle 10× more tenders without hiring.",
+      "speed_desc": "A complete, structured response ready to submit in under 2 minutes. Handle 10x more tenders without hiring.",
       "memory_title": "AI learns from your documents",
-      "memory_desc": "Import your past winning responses, client references and certifications. OffrIA reuses them automatically — like an expert who knows your entire history.",
+      "memory_desc": "Import your past winning responses, client references and certifications. ADJUJA reuses them automatically.",
       "complete_title": "No requirement missed",
-      "complete_desc": "Every criterion in the specification is analysed and addressed. Expected documents, response format, selection criteria — nothing slips through the cracks.",
+      "complete_desc": "Every criterion in the specification is analysed and addressed. Expected documents, response format, selection criteria.",
       "winrate_title": "Win more contracts",
-      "winrate_desc": "Better-structured, more compliant responses written in the language public buyers expect. A concrete advantage over your competitors.",
+      "winrate_desc": "Better-structured, more compliant responses written in the language public buyers expect.",
       "privacy_title": "Your data stays with you",
-      "privacy_desc": "European hosting, GDPR compliance. Your confidential documents never leave your perimeter.",
+      "privacy_desc": "Local hosting, GDPR compliance. Your confidential documents never leave your perimeter.",
       "models_title": "Claude, GPT-4o or Mistral",
-      "models_desc": "Choose the best model for each tender: reasoning power, commercial phrasing or data sovereignty. You stay in control."
+      "models_desc": "Choose the best model for each tender. You stay in control."
     }
   },
   "howItWorks": {
@@ -53,36 +115,36 @@
     "subtitle": "Three steps. Zero complexity.",
     "steps": {
       "s1_title": "Import your tender",
-      "s1_desc": "Drop your RFP (PDF or plain text). OffrIA automatically extracts criteria, lots and required documents.",
+      "s1_desc": "Drop your RFP (PDF or plain text). ADJUJA automatically extracts criteria, lots and required documents.",
       "s1_note": "Native PDF · plain text",
       "s2_title": "Response generated in parallel",
-      "s2_desc": "Each section — technical memo, references, timeline — is written simultaneously and tailored to your company profile.",
+      "s2_desc": "Each section is written simultaneously and tailored to your company profile.",
       "s2_note": "~90 seconds on average",
       "s3_title": "Review, adjust, submit",
       "s3_desc": "Export to Word or PDF, add your finishing touches and upload to the platform of your choice.",
       "s3_note": "Word export · editable online"
     },
-    "cta": "Generate my first response →"
+    "cta": "Generate my first response"
   },
   "pricing": {
     "label": "Pricing",
     "title": "Choose your plan",
     "subtitle": "No commitment · Cancel anytime · Invoice within 48h",
-    "footnote1": "† 1 document = PDF file up to 20 A4 pages",
+    "footnote1": "1 document = PDF file up to 20 A4 pages",
     "footnote2": "All prices excl. VAT · VAT applicable · On-premise deployment on request",
     "freeTrial": "Not convinced yet? ",
-    "freeTrialCta": "Try for free — 1 tender, no credit card →",
+    "freeTrialCta": "Try for free 1 tender, no credit card",
     "plans": {
       "starter_name": "Starter",
       "starter_tagline": "For solopreneurs who want to win more tenders",
-      "starter_badge": "Early Bird −30 %",
-      "starter_cta": "Subscribe — €55/month",
+      "starter_badge": "Early Bird -30 %",
+      "starter_cta": "Subscribe",
       "starter_note": "No commitment · cancel anytime",
       "pro_name": "Pro",
       "pro_tagline": "For active sales teams",
       "pro_badge": "Recommended",
       "pro_cta": "Contact the team",
-      "pro_note": "Most chosen by our SME / mid-market clients",
+      "pro_note": "Most chosen by our SME clients",
       "enterprise_name": "Enterprise",
       "enterprise_tagline": "For large groups and consulting firms",
       "enterprise_price": "Custom pricing",
@@ -90,8 +152,8 @@
       "enterprise_note": "Deployed in 5 business days",
       "tag_new": "New",
       "f_unlimited_gen": "Unlimited generation",
-      "f_docs_50": "Ingest up to 50 documents†",
-      "f_docs_200": "Ingest up to 200 documents†",
+      "f_docs_50": "Ingest up to 50 documents",
+      "f_docs_200": "Ingest up to 200 documents",
       "f_chat": "Chat with your documents",
       "f_signatures": "Unlimited instant signatures",
       "f_history": "Full generation history",
@@ -110,10 +172,223 @@
   },
   "ctaBand": {
     "title": "Ready to transform your win rate?",
-    "subtitle": "Join the sales teams saving time and winning more contracts with OffrIA.",
-    "cta": "Get started for free →"
+    "subtitle": "Join the sales teams saving time and winning more contracts with ADJUJA.",
+    "cta": "Get started for free"
   },
   "footer": {
-    "rights": "© 2025 OffrIA. All rights reserved."
+    "rights": "© 2025 ADJUJA. All rights reserved."
+  },
+  "auth": {
+    "login": {
+      "title": "Sign in",
+      "subtitle": "Access your ADJUJA workspace",
+      "email": "Email",
+      "emailPlaceholder": "you@example.com",
+      "password": "Password",
+      "passwordPlaceholder": "••••••••",
+      "submit": "Sign in",
+      "submitting": "Signing in…",
+      "noAccount": "No account yet?",
+      "createAccount": "Create an account",
+      "or": "or",
+      "verified": "Email verified! Sign in to access your free generation."
+    },
+    "register": {
+      "title": "Create an account",
+      "subtitle": "Join ADJUJA for free",
+      "firstName": "First name",
+      "firstNamePlaceholder": "John",
+      "lastName": "Last name",
+      "lastNamePlaceholder": "Smith",
+      "email": "Email",
+      "emailPlaceholder": "you@example.com",
+      "password": "Password",
+      "passwordHint": "min. {{min}} chars.{{digit}}",
+      "passwordDigit": ", 1 digit",
+      "passwordPlaceholder": "••••••••",
+      "submit": "Create my account",
+      "submitting": "Creating…",
+      "hasAccount": "Already have an account?",
+      "loginLink": "Sign in",
+      "or": "or"
+    },
+    "verify": {
+      "title": "Check your email",
+      "sent": "A confirmation link was sent to",
+      "instruction": "Click the link in the email to activate your account and access your free generation.",
+      "goLogin": "Go to sign in"
+    }
+  },
+  "app": {
+    "nav": {
+      "dashboard": "Dashboard",
+      "tenders": "Tenders",
+      "tools": "Tools",
+      "settings": "Settings",
+      "logout": "Sign out",
+      "lightMode": "Light mode",
+      "darkMode": "Dark mode"
+    },
+    "topbar": {
+      "offres": "Dashboard",
+      "marches": "Tenders",
+      "outils": "Tools"
+    }
+  },
+  "dashboard": {
+    "title": "Dashboard",
+    "tabs": {
+      "overview": "Overview",
+      "profile": "Company profile",
+      "generation": "Generation"
+    },
+    "overview": {
+      "total": "Total",
+      "inProgress": "In progress",
+      "completed": "Completed",
+      "errors": "Errors",
+      "recentTitle": "Recent tenders",
+      "noAos": "No tenders created.",
+      "profileWarning": "Incomplete company profile",
+      "profileWarningDesc": "Complete your profile to activate the automated pipeline."
+    },
+    "profile": {
+      "save": "Save",
+      "saving": "Saving...",
+      "saved": "Profile saved.",
+      "incomplete": "Incomplete profile",
+      "incompleteDesc": "Complete your profile to activate the automated pipeline.",
+      "required": "Required fields for the pipeline",
+      "complete": "Profile complete  pipeline is active.",
+      "incompleteProfile": "Incomplete profile  complete required fields (*) to activate the pipeline.",
+      "notConfigured": "Profile not configured  complete required fields (*) to activate the pipeline.",
+      "requiredIncomplete": "Required fields incomplete.",
+      "error": "Error saving.",
+      "sections": {
+        "company": "Company information",
+        "legal": "Legal identifiers",
+        "manager": "Manager",
+        "contact": "Contact"
+      },
+      "fields": {
+        "nom_entreprise": "Company name",
+        "secteur": "Industry",
+        "ice": "ICE",
+        "rc": "RC",
+        "if_fiscal": "Tax ID",
+        "cnss": "CNSS",
+        "gerant_nom": "Manager last name",
+        "gerant_prenom": "Manager first name",
+        "gerant_cin": "Manager CIN",
+        "adresse": "Registered address",
+        "ville": "City",
+        "telephone": "Phone",
+        "email": "Email"
+      }
+    },
+    "generation": {
+      "title": "Generate a response",
+      "desc": "Paste the tender text in the left panel, fill in your company profile, then click Generate."
+    }
+  },
+  "pipeline": {
+    "title": "Tenders",
+    "new": "New tender",
+    "deleteConfirm": "Delete this tender and all its documents?",
+    "upload": "Upload documents",
+    "start": "Start pipeline",
+    "creating": "Creating...",
+    "create": "Create tender",
+    "subtitle": "Automated response pipeline",
+    "noAos": "No tenders",
+    "noAosDesc": "Create your first tender to get started",
+    "createFirst": "Create a tender",
+    "newForm": {
+      "title": "New tender",
+      "reference": "Reference",
+      "referencePlaceholder": "e.g. AO-2026-IT-001",
+      "buyer": "Buyer",
+      "buyerPlaceholder": "e.g. City of Casablanca",
+      "subject": "Subject",
+      "subjectPlaceholder": "Tender subject..."
+    },
+    "detail": {
+      "noRef": "Untitled tender",
+      "progress": "Pipeline progress",
+      "running": "Pipeline running  auto-updating...",
+      "uploadZone": "Drop your documents here",
+      "uploadHint": "CPS, RC and all tender documents (PDF only)",
+      "uploadClick": "Click to select",
+      "uploading": "Uploading...",
+      "startBtn": "Launch automated pipeline",
+      "starting": "Starting...",
+      "waitDocs": "Upload at least one document (CPS or RC) to start the pipeline.",
+      "done": "Complete tender generated",
+      "pdfOnly": "Only PDF files are accepted.",
+      "cancelBtn": "Cancel",
+      "cancelConfirm": "Cancel the running pipeline? You can retry afterwards.",
+      "cancelling": "Cancelling...",
+      "deleteBtn": "Delete",
+      "deleteConfirmDetail": "Delete this tender and all its documents?"
+    },
+    "status": {
+      "brouillon": "Draft",
+      "en_analyse": "Analysing",
+      "en_traitement": "Processing",
+      "termine": "Done",
+      "erreur": "Error"
+    },
+    "docTypes": {
+      "cps": "CPS",
+      "rc": "RC",
+      "note_metho": "Technical note",
+      "acte_engagement": "Commitment act",
+      "bordereau": "Price list",
+      "declaration_honneur": "Declaration of honor",
+      "attestation_fiscale": "Tax certificate",
+      "zip_final": "Complete file (ZIP)",
+      "autre": "Other document",
+      "non_classe": "Unclassified"
+    },
+    "dossiers": {
+      "source": "Source documents",
+      "technique": "Technical file",
+      "financier": "Financial file",
+      "administratif": "Administrative file",
+      "output": "Final output"
+    },
+    "docStatus": {
+      "traite": "Ready",
+      "erreur": "Error",
+      "pending": "Pending"
+    }
+  },
+  "settings": {
+    "tabs": { "general": "General", "utilisation": "Usage" },
+    "provider": "Provider",
+    "model": "Model",
+    "modelHint": "Used for all generations and chat.",
+    "save": "Save",
+    "saved": "Saved",
+    "back": "Back",
+    "providers": {
+      "anthropic": "Anthropic", "anthropicDesc": "Claude  Best for complex writing",
+      "openai": "OpenAI", "openaiDesc": "GPT-4o  Versatile and fast",
+      "mistral": "Mistral", "mistralDesc": "Mistral  European data sovereignty"
+    },
+    "usage": {
+      "tokens": "Generation tokens",
+      "tokensSub": "Strategic brief + AO response + chat included",
+      "calls": "AO responses generated",
+      "callsSub": "Complete calls only",
+      "ocr": "OCR tokens",
+      "ocrSub": "GPT-4o vision, scanned PDFs only",
+      "reset": "Reset counters",
+      "resetSub": "Sets all counters back to zero",
+      "resetBtn": "Reset",
+      "confirm": "Confirm?",
+      "cancel": "Cancel",
+      "refresh": "Refresh"
+    }
   }
 }

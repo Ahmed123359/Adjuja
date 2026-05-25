@@ -22,7 +22,7 @@ from .scheduler import create_scheduler, run_scrape_job
 # ── Logging ──────────────────────────────────────────────────────────────────
 logging.basicConfig(
     level=logging.INFO,
-    format="%(asctime)s [%(levelname)s] %(name)s — %(message)s",
+    format="%(asctime)s [%(levelname)s] %(name)s  %(message)s",
     datefmt="%Y-%m-%dT%H:%M:%S",
     handlers=[logging.StreamHandler(sys.stdout)],
 )
@@ -30,7 +30,7 @@ logger = logging.getLogger(__name__)
 
 
 def main() -> None:
-    logger.info("Worker OffrIA — démarrage")
+    logger.info("Worker OffrIA  démarrage")
 
     settings = WorkerSettings()
     logger.info(
@@ -46,7 +46,7 @@ def main() -> None:
     scheduler = create_scheduler(settings)
 
     def _shutdown(signum: int, _frame: object) -> None:
-        logger.info("Signal %d reçu — arrêt du scheduler...", signum)
+        logger.info("Signal %d reçu  arrêt du scheduler...", signum)
         scheduler.shutdown(wait=False)
         sys.exit(0)
 
@@ -58,9 +58,9 @@ def main() -> None:
     run_scrape_job(settings)
 
     scheduler.start()
-    logger.info("Scheduler démarré — prochain scrape dans %dh", settings.schedule_hours)
+    logger.info("Scheduler démarré  prochain scrape dans %dh", settings.schedule_hours)
 
-    # Boucle principale — le scheduler tourne dans un thread daemon
+    # Boucle principale  le scheduler tourne dans un thread daemon
     while True:
         time.sleep(60)
 

@@ -35,6 +35,21 @@ class CPSContext(BaseModel):
         return _to_str(v)
 
 
+class RCContext(BaseModel):
+    plan_impose:              list[str]  = Field(default_factory=list)
+    criteres:                 list[dict] = Field(default_factory=list)
+    note_eliminatoire_globale: int = 0
+    format_cv:                str = ""
+    format_references:        str = ""
+    nb_pages_max:             dict = Field(default_factory=dict)
+    documents_obligatoires:   list[str]  = Field(default_factory=list)
+
+    @field_validator("format_cv", "format_references", mode="before")
+    @classmethod
+    def coerce_to_str(cls, v: object) -> str:
+        return _to_str(v)
+
+
 class StrategyAngle(BaseModel):
     angle:           str
     narrative:       str
@@ -63,6 +78,7 @@ class OffreTechniqueOutputFile(BaseModel):
     filename:     str
     format:       str
     download_url: str
+    minio_key:    str = ""
 
 
 class OffreTechniqueResult(BaseModel):

@@ -12,7 +12,7 @@ ANTHROPIC_MODELS = [
 
 class AnthropicProvider(AbstractLLMProvider):
     """
-    Provider Anthropic — famille de modèles Claude.
+    Provider Anthropic  famille de modèles Claude.
 
     Utilise le SDK officiel `anthropic` (API Messages).
     Le paramètre `system` est passé au niveau racine (pas dans messages[])

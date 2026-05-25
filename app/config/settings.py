@@ -66,7 +66,56 @@ class Settings(BaseSettings):
     """URL de connexion PostgreSQL async. Format : postgresql+asyncpg://user:pass@host/db"""
 
     # ------------------------------------------------------------------
-    # RAG — base de données vectorielle Qdrant
+    # RAG  base de données vectorielle Qdrant
+    # ------------------------------------------------------------------
+
+    # ------------------------------------------------------------------
+    # Cache  Redis
+    # ------------------------------------------------------------------
+
+    redis_url: str = ""
+    """URL Redis db=0 (ex: redis://localhost:6379/0). Vide = cache desactive, app continue sans erreur."""
+
+    redis_ttl_analysis: int = 86400
+    """TTL en secondes pour le cache CPS/RC (defaut : 24h)."""
+
+    redis_ttl_dedup: int = 7776000
+    """TTL en secondes pour la deduplication MinIO par hash (defaut : 90 jours)."""
+
+    # ------------------------------------------------------------------
+    # Celery  workers asynchrones (Phase 4)
+    # ------------------------------------------------------------------
+
+    celery_broker_url: str = "redis://localhost:6379/1"
+    """URL broker Celery (Redis db=1). En Docker : redis://redis:6379/1."""
+
+    celery_result_backend: str = "redis://localhost:6379/2"
+    """URL result backend Celery (Redis db=2). En Docker : redis://redis:6379/2."""
+
+    # ------------------------------------------------------------------
+    # Stockage fichiers  MinIO
+    # ------------------------------------------------------------------
+
+    minio_endpoint: str = "localhost:9000"
+    """Endpoint MinIO sans scheme (ex: localhost:9000 ou minio:9000 en Docker)."""
+
+    minio_access_key: str = "offria_dev"
+    """Access key MinIO (MINIO_ROOT_USER)."""
+
+    minio_secret_key: str = "offria_dev_secret"
+    """Secret key MinIO (MINIO_ROOT_PASSWORD)."""
+
+    minio_bucket: str = "offria"
+    """Bucket principal pour les fichiers uploadés et générés."""
+
+    minio_secure: bool = False
+    """True = HTTPS. False = HTTP (dev local)."""
+
+    minio_presign_expires: int = 900
+    """Durée de validité des presigned URLs en secondes (défaut : 15 min)."""
+
+    # ------------------------------------------------------------------
+    # RAG  base de données vectorielle Qdrant
     # ------------------------------------------------------------------
 
     qdrant_url: str = ""
@@ -123,7 +172,7 @@ class Settings(BaseSettings):
 
     ao_max_chars: int = 100000
     """Nombre maximum de caractères du texte AO injectés dans le prompt de génération.
-    100 000 chars ≈ 25 000 tokens — couvre 99%+ des AOs réels (max observé ~101k chars).
+    100 000 chars ≈ 25 000 tokens  couvre 99%+ des AOs réels (max observé ~101k chars).
     Réduire pour limiter les coûts (ex: 30000 ≈ 7500 tokens ≈ ~38% de couverture)."""
 
     # ------------------------------------------------------------------
@@ -143,7 +192,7 @@ class Settings(BaseSettings):
     # ------------------------------------------------------------------
 
     # Nombre maximum de requêtes autorisées sur POST /generate par utilisateur.
-    # Syntaxe : "<N>/<période>" — ex: "10/minute", "100/hour", "5/second".
+    # Syntaxe : "<N>/<période>"  ex: "10/minute", "100/hour", "5/second".
     # Dépasse la limite → HTTP 429 Too Many Requests.
     # Valeur par défaut : 10 requêtes par minute par utilisateur.
     # À réduire en production si les coûts LLM sont une préoccupation.
@@ -156,7 +205,7 @@ class Settings(BaseSettings):
         Vérifie la sécurité de jwt_secret_key au démarrage de l'application.
 
         Ce validateur s'exécute UNE SEULE FOIS quand Settings() est instancié,
-        c'est-à-dire au démarrage du serveur — pas à chaque requête.
+        c'est-à-dire au démarrage du serveur  pas à chaque requête.
 
         Deux règles :
         1. En production (APP_ENV=production), la clé par défaut est refusée.

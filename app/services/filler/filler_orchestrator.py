@@ -127,6 +127,39 @@ def _output_filename(
 
 
 # ---------------------------------------------------------------------------
+# Helpers internes  détection encodage corrompu
+# ---------------------------------------------------------------------------
+
+def _pages_have_corrupted_spans(pdf_path: Path, pages: list[int]) -> bool:
+    """
+    Détecte si les pages cibles ont un encodage font corrompu via get_text("dict").
+
+    get_text("dict") retourne les spans bruts du PDF  sur certains PDFs OCR,
+    chaque lettre est un span séparé entouré de tirets (-l- -e- -t-t-r-e-s-).
+    get_text() simple les normalise mais le case_extractor utilise "dict".
+    Si ratio > 5% des chars sont dans ce pattern, forcer le chemin Pixtral.
+    """
+    try:
+        doc       = fitz.open(str(pdf_path))
+        page_text = ""
+        for p in pages:
+            if p < len(doc):
+                for blk in doc[p].get_text("dict")["blocks"]:
+                    if blk.get("type") == 0:
+                        for line in blk.get("lines", []):
+                            for span in line.get("spans", []):
+                                page_text += span.get("text", "")
+        doc.close()
+        if not page_text:
+            return False
+        matches = re.findall(r"-[A-Za-zÀ-ÿ0-9]-", page_text)
+        ratio   = len(matches) * 3 / max(len(page_text), 1)
+        return ratio > 0.05
+    except Exception:
+        return False
+
+
+# ---------------------------------------------------------------------------
 # Handler : remplissage (action = "fill")
 # ---------------------------------------------------------------------------
 
@@ -192,6 +225,13 @@ def _handle_fill(
     dst      = out_dir / filename
 
     try:
+        # Re-check scanned status at page level: get_text("dict") spans may have
+        # corrupted encoding on specific pages even if the full document seems readable.
+        if not is_scanned and case_aware and case_name:
+            is_scanned = _pages_have_corrupted_spans(pdf_path, pages)
+            if is_scanned:
+                print(f"  [WARN] Encodage corrompu détecté sur pages {[p+1 for p in pages]} → Pixtral")
+
         if not is_scanned:
             # ----------------------------------------------------------------
             # Pipeline texte
@@ -249,13 +289,13 @@ def _fill_text_pdf_with_case(
     Remplit un PDF texte en extrayant uniquement le cas sélectionné.
 
     Flux en 2 phases :
-        Phase 1 — Extraction et rédaction :
+        Phase 1  Extraction et rédaction :
             Identifie les limites du cas sélectionné dans les pages cibles,
             copie ces pages dans un nouveau PDF, et rédige (rectangle blanc)
             toutes les sections qui ne font pas partie du cas choisi.
             Les pages entièrement vides après rédaction sont supprimées.
 
-        Phase 2 — Remplissage :
+        Phase 2  Remplissage :
             Délègue le remplissage des placeholders à process_text_pdf(),
             le pipeline éprouvé qui extrait chaque ligne visuelle séparément
             et applique le remplissage chirurgical ligne par ligne.
@@ -340,7 +380,7 @@ def _fill_scanned_with_case(
     print(f"  Conversion pages {first}–{last} en images ({SCAN_DPI} dpi)...")
     images = convert_from_path(str(pdf_path), dpi=SCAN_DPI, first_page=first, last_page=last)
 
-    print(f"  Envoi à Pixtral — cas : {case_label} | lot : {lot_number or 'tous'}...")
+    print(f"  Envoi à Pixtral  cas : {case_label} | lot : {lot_number or 'tous'}...")
     system_prompt = get_vision_prompt_case(doc_type, case_name, case_label, lot_number)
 
     from app.services.filler.filler_llm import _post_with_retry
@@ -417,7 +457,7 @@ def _write_case_outputs(paragraphs: list[dict[str, Any]], dst: Path) -> None:
             print(f"  Reconstruction PDF  -> {dst_pdf.name} (fallback)")
             _build_pdf_from_paragraphs(paragraphs, dst_pdf)
     except Exception as exc:
-        print(f"  [WARN] Génération PDF échouée ({exc}) — DOCX disponible : {dst_docx.name}")
+        print(f"  [WARN] Génération PDF échouée ({exc})  DOCX disponible : {dst_docx.name}")
 
 
 def _normalize_scanned_case_paragraphs(
@@ -773,7 +813,7 @@ def print_summary(results: list[ProcessingResult]) -> None:
     failures  = [r for r in results if not r.success]
 
     for r in successes:
-        print(f"  ✓ [{r.action:13s}] {r.doc_type:25s} → {r.output_path.name if r.output_path else '—'}")
+        print(f"  ✓ [{r.action:13s}] {r.doc_type:25s} → {r.output_path.name if r.output_path else ''}")
 
     for r in failures:
         print(f"  ✗ [{r.action:13s}] {r.doc_type:25s} → ERREUR : {r.message.splitlines()[0]}")

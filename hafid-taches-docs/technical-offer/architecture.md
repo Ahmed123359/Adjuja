@@ -1,332 +1,570 @@
-# Offre Technique : Architecture et Décisions de Conception
+# ADJUJA : Architecture Technique
 
-## 1. Contexte et objectif
-
-L'offre technique est le document soumis par un prestataire en réponse à un appel d'offres public. Elle doit convaincre l'acheteur que l'entreprise a compris les enjeux du projet et que sa solution est la plus robuste. Elle est structurée autour de cinq composantes : la méthodologie, les moyens humains et matériels, le planning d'exécution, la note RSE, et les fiches techniques.
+_Dernière mise à jour : 2026-05-17 Refonte pipeline Phase 4 (décisions architecturales finales)_
 
 ---
 
+## 1. Vision produit
 
+ADJUJA est une plateforme B2B SaaS qui aide les entreprises marocaines à répondre aux appels d'offres publics. Le concept central est le **pipeline "minimal clicks"** : l'utilisateur uploade le CPS + RC (et tout autre document disponible), le système produit automatiquement un dossier complet prêt à soumettre sans autre intervention manuelle.
 
-Le module **Offre Technique** d'OffrIA a pour rôle de générer automatiquement ce document à partir du CPS (Cahier des Prescriptions Spéciales) et du profil de l'entreprise, en produisant un rendu DOCX et PDF téléchargeable.
-
----
-
-## 2. Problèmes à éviter absolument
-
-### 2.1 Homogénéisation des offres
-
-C'est le risque le plus grave. Avec une architecture naïve :
-
-```
-Même CPS + Même prompt + Même modèle = Même squelette d'offre
-```
-
-Si deux entreprises concurrentes utilisent la plateforme pour répondre au même appel d'offres, elles obtiendraient des documents structurellement identiques. Un acheteur public qui reçoit cinq offres avec le même niveau de langage et les mêmes formulations détecte immédiatement la répétition. Cela discrédite les deux entreprises et invalide la valeur du produit.
-
-**Solution :** introduire une couche stratégique qui choisit un angle narratif propre à chaque entreprise avant toute génération de contenu.
-
-### 2.2 Qualité insuffisante
-
-L'offre technique est le miroir du prestataire. Une offre incohérente, incomplète ou générique est pire qu'une offre absente. Trois dimensions de qualité doivent être contrôlées :
-
-| Dimension   | Ce qu'elle mesure                                              |
-| ----------- | -------------------------------------------------------------- |
-| Conformité | Chaque exigence du CPS est-elle adressée ?                    |
-| Cohérence  | L'équipe, la méthodologie et le planning sont-ils alignés ? |
-| Persuasion  | L'angle narratif est-il maintenu de bout en bout ?             |
-
-**Solution :** une porte de qualité automatique après génération, avec score par section et régénération ciblée si le score est insuffisant.
-
-### 2.3 Couplage à OpenAI pour les embeddings
-
-Le RAG actuel utilise `text-embedding-3-small` (OpenAI) et `gpt-4o-mini` pour le reranking. Cela introduit une dépendance externe non nécessaire puisque l'application utilise déjà Mistral pour toutes les autres opérations.
-
-**Solution :** migrer vers `mistral-embed` pour les embeddings et `mistral-small-latest` pour le reranking.
-
-### 2.4 Sécurité LLM
-
-Les systèmes RAG et de génération sont exposés à des classes d'attaques documentées dans l'OWASP LLM Top 10 (2025). Les risques prioritaires pour ce module sont les suivants :
-
-| Risque                            | Description                                                                            | Mesure retenue                                                                |
-| --------------------------------- | -------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------- |
-| LLM01 Injection de prompt         | L'utilisateur insère des instructions dans le texte du CPS pour détourner le modèle | Délimiteurs XML autour du contenu utilisateur, détection de patterns connus |
-| LLM03 Empoisonnement RAG          | Un document malveillant indexé dans Qdrant contamine les réponses générées        | Validation du contenu à l'ingestion, traçabilité de la provenance          |
-| LLM04/LLM10 Déni de portefeuille | Des requêtes répétées ou mal contraintes épuisent le budget API                   | Circuit breaker par utilisateur avec plafond de tokens par appel              |
-| LLM06 Fuite d'information         | Le modèle reproduit le système de prompt ou des données sensibles                   | Le système de prompt ne contient aucune donnée opérationnelle sensible     |
-
-L'approche retenue est la **défense en profondeur** : contrôles distribués sur la couche entrée, la couche prompt, la couche base de connaissances et la couche infrastructure. Pas de solution unique, pas de sur-ingénierie.
+**Différenciation compétitive :** chaque organisation dispose d'une base de connaissance privée (`kb_{org_id}`) qui s'enrichit automatiquement après chaque pipeline réussi. Plus une organisation utilise la plateforme, plus ses offres sont différenciées et alignées sur son propre style. C'est le vrai moat du produit.
 
 ---
 
-## 3. Architecture en cinq couches
-
-| Couche | Nom                         | Entrée                          | Traitement                                                                                                                                                                                                                                        | Sortie                                                                          |
-| ------ | --------------------------- | -------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------- |
-| 0      | Company DNA                 | Données brutes de l'entreprise  | Profil riche : ton d'écriture, certifications, références passées, CVs de l'équipe. Stocké dans une collection Qdrant dédiée par entreprise.                                                                                              | `CompanyDNA` injecté dans toutes les couches suivantes                       |
-| 1      | Analyse CPS                 | PDF du CPS uploadé              | Extraction par PyMuPDF + LLM : scope du projet, délais imposés, plan RC obligatoire, critères de pondération. Score de correspondance entreprise vs exigences.                                                                                | `CPSContext` : objet structuré avec tous les champs extraits                 |
-| 2      | Moteur de stratégie        | `CPSContext` + `CompanyDNA`  | Sélection de l'angle narratif selon le profil de l'entreprise (track record, innovation, proximité locale, etc.). Identification des différenciateurs à mettre en avant section par section.                                                  | `StrategyAngle` : angle choisi + liste de différenciateurs par section       |
-| 3      | Génération différenciée | `StrategyAngle` + contexte RAG | 5 appels Mistral lancés en parallèle via `asyncio.gather`. Chaque appel reçoit le `StrategyAngle`, un prompt spécialisé et les extraits RAG pertinents (mistral-embed + Qdrant).                                                         | 5 sections rédigées : méthodologie, moyens, planning, RSE, fiches techniques |
-| 4      | Porte de qualité           | Les 5 sections +`CPSContext`   | Évaluation automatique sur trois scores : conformité CPS, cohérence interne, différenciation. Si un score est sous le seuil, la section défaillante est renvoyée en couche 3 (max 2 tentatives). Assemblage DOCX + PDF si tout est validé. | `offre_technique.docx` + `offre_technique.pdf`                              |
-
----
-
-## 4. Rôle précis de chaque fichier nouveau/modifié
-
-### Nouveaux fichiers
-
-**`app/db/base.py`**
-Crée l'engine asyncpg et la session factory SQLAlchemy. Point d'entrée unique pour toutes les connexions à PostgreSQL. Remplace les trois `sqlite3.connect()` dispersés dans les services.
-
-**`app/db/models.py`**
-Définit les trois tables ORM : `User`, `Launch`, `Usage`. Remplace les `CREATE TABLE IF NOT EXISTS` écrits à la main dans chaque service.
-
-**`app/db/migrations/versions/001_initial.py`**
-Première migration Alembic : crée les tables en base. Remplace les `ALTER TABLE ADD COLUMN` utilisés comme workaround dans les services existants.
-
-**`app/services/security/input_sanitizer.py`**
-Valide tout contenu utilisateur avant qu'il entre dans un prompt LLM : longueur maximale, délimiteurs XML pour séparer le contenu des instructions, détection de patterns d'injection connus. Couvre LLM01 et LLM06.
-
-**`app/services/security/budget_guard.py`**
-Vérifie le quota de l'utilisateur avant chaque appel LLM. Impose un plafond de tokens par requête. Retourne HTTP 429 si le budget est épuisé sans déclencher d'appel API. Couvre LLM04 et LLM10.
-
-**`app/services/offre_technique/cps_analyzer.py`**
-Reçoit le PDF du CPS, extrait le texte via PyMuPDF, puis appelle Mistral pour structurer le résultat en `CPSContext` (scope, délais, plan RC, critères pondérés).
-
-**`app/services/offre_technique/strategy_engine.py`**
-Compare le `CPSContext` avec le `CompanyDNA` et sélectionne l'angle narratif le plus pertinent. Produit un `StrategyAngle` injecté dans tous les prompts de génération.
-
-**`app/services/offre_technique/section_generator.py`**
-Lance les 5 appels Mistral en parallèle via `asyncio.gather`. Chaque coroutine reçoit le prompt de sa section, le `StrategyAngle` et le contexte RAG récupéré depuis Qdrant.
-
-**`app/services/offre_technique/quality_gate.py`**
-Évalue les sections générées sur trois axes : conformité (exigences CPS couvertes), cohérence (alignement équipe/méthode/planning), différenciation (angle maintenu). Déclenche une régénération ciblée si un score est sous le seuil (max 2 tentatives).
-
-**`app/services/offre_technique/doc_assembler.py`**
-Assemble les sections validées dans un DOCX avec python-docx (Gantt en tableau natif). Convertit ensuite en PDF. Produit les deux fichiers dans `data/offre_technique_tmp/<job_id>/`.
-
-**`app/services/offre_technique/prompts.py`**
-Contient les prompts système spécifiques à chaque section. Séparés du code pour faciliter les ajustements sans toucher à la logique.
-
-**`app/api/routes/offre_technique_routes.py`**
-Expose deux endpoints : `POST /api/v1/offre-technique/run` pour lancer le pipeline et `GET /api/v1/offre-technique/download/{job_id}/{file}` pour récupérer les fichiers produits.
-
-**`app/models/offre_technique.py`**
-Modèles Pydantic partagés entre routes et services : `CPSContext`, `StrategyAngle`, `SectionScore`, `QualityReport`, `OffreTechniqueOutputFile`, `OffreTechniqueResult`.
-
-**`app/services/offre_technique_service.py`**
-Orchestrateur du pipeline complet : crée le job, appelle `_run_pipeline` dans un thread via `asyncio.to_thread`, gère les chemins de fichiers en sortie et retourne le résultat au format `OffreTechniqueResult`.
-
-**`rag_service/ingestion_validator.py`**
-Valide chaque document avant indexation dans Qdrant : détecte les patterns d'injection dans le contenu, impose une taille maximale par chunk, enregistre la provenance (source, date, user_id) dans le payload. Couvre LLM03.
-
-### Fichiers existants modifiés
-
-**`app/config/settings.py`**
-Ajout de `DATABASE_URL` et `POSTGRES_PASSWORD`. Suppression de `OPENAI_API_KEY`.
-
-**`app/services/rag_service.py`**
-Remplacement de l'appel `openai.embeddings.create` par un appel HTTP vers `mistral-embed`. Remplacement de `gpt-4o-mini` par `mistral-small-latest` pour le reranking.
-
-**`app/services/history_service.py`**
-Remplacement de `sqlite3` synchrone par SQLAlchemy async. Suppression du `threading.Lock`.
-
-**`app/services/usage_service.py`**
-Même migration que `history_service.py`.
-
-**`app/services/user_service.py`**
-Même migration que `history_service.py`.
-
-**`app/api/dependencies.py`**
-Câblage des sessions async PostgreSQL. Injection du nouveau `budget_guard` et de `input_sanitizer` dans les routes de génération.
-
-**`rag_service/etl.py`**
-Remplacement de l'appel OpenAI embed par `mistral-embed`.
-
-**`docker-compose.dev.yml`**
-Ajout du service `postgres:16-alpine` avec volume persistant.
-
-**`requirements.txt`**
-Ajout de `asyncpg`, `sqlalchemy[asyncio]`, `alembic`. Suppression de `openai`.
-
----
-
-## 5. Structure des fichiers
-
-### Nouveaux fichiers (à créer)
+## 2. Schéma général : infrastructure complète
 
 ```
-app/
-├── db/
-│   ├── base.py                         # Engine asyncpg + session factory SQLAlchemy
-│   ├── models.py                       # ORM : User, Launch, Usage
-│   └── __init__.py
-│
-├── services/
-│   ├── security/
-│   │   ├── input_sanitizer.py          # Délimiteurs XML, détection injection, longueur max
-│   │   └── budget_guard.py             # Circuit breaker tokens par utilisateur
-│   │
-│   ├── offre_technique/
-│   │   ├── cps_analyzer.py             # Extrait scope, délais, plan RC depuis le PDF
-│   │   ├── strategy_engine.py          # Sélectionne l'angle narratif selon le profil
-│   │   ├── section_generator.py        # 5 appels LLM parallèles (asyncio.gather)
-│   │   ├── quality_gate.py             # Score conformité + cohérence + différenciation
-│   │   ├── doc_assembler.py            # Compose le DOCX et le PDF final
-│   │   └── prompts.py                  # Prompts système par section
-│   │
-│   └── offre_technique_service.py      # Orchestrateur : job runner + asyncio.to_thread bridge
-│
-├── models/
-│   └── offre_technique.py              # Pydantic : CPSContext, StrategyAngle, QualityReport...
-│
-├── api/
-│   └── routes/
-│       └── offre_technique_routes.py   # POST /run, GET /download/{job_id}/{file}
-│
-└── main.py                             # Mise à jour : lifespan async pour init DB
-
-rag_service/
-└── ingestion_validator.py              # Validation anti-empoisonnement à l'ingestion
-
-alembic.ini                             # Configuration Alembic
-alembic/
-├── env.py
-└── versions/
-    └── 001_initial.py
-```
-
-### Fichiers existants à mettre à jour
-
-```
-app/config/settings.py          # Ajout DATABASE_URL, retrait OPENAI_API_KEY
-app/services/rag_service.py     # Remplacement OpenAI embed -> mistral-embed
-app/services/history_service.py # sqlite3 synchrone -> SQLAlchemy async
-app/services/usage_service.py   # idem
-app/services/user_service.py    # idem
-app/api/dependencies.py         # Câblage des nouveaux services async
-rag_service/etl.py              # Remplacement OpenAI embed -> mistral-embed
-docker-compose.dev.yml          # Ajout service PostgreSQL
-requirements.txt                # asyncpg, sqlalchemy[asyncio], alembic
-```
-
-### Frontend ajouté
-
-```
-frontend/src/components/OffreTechniqueTab.tsx   # Upload CPS, progress ring, scores qualité, download cards
-frontend/src/types.ts                            # Ajout : OffreTechniqueResult, QualityReport, SectionScore
-frontend/src/api.ts                              # Ajout : runOffreTechnique(), downloadOffreTechniqueFile()
-frontend/src/components/RightPanel.tsx           # Ajout entrée nav + rendu OffreTechniqueTab
-```
-
-### Ce qui ne change pas
-
-```
-app/services/filler/                # Inchangé
-app/services/generation_service.py  # Mise à jour légère : injection input_sanitizer
-app/api/routes/*                    # Inchangés sauf ajout offre_technique_routes.py
-worker/                             # Non touché
+┌─────────────────────────────────────────────────────────────────────────┐
+│                          NAVIGATEUR (React)                             │
+│                                                                         │
+│  Tab Dashboard   │  Tab Appels d'offres  │  Tab Outils                 │
+│  (stats, histo)  │  (pipeline auto)      │  (signatures standalone)    │
+└──────────────────────────────┬──────────────────────────────────────────┘
+                               │ HTTPS / REST + polling statut
+                               ▼
+┌─────────────────────────────────────────────────────────────────────────┐
+│                             NGINX                                       │
+│                   Reverse proxy + terminaison TLS                       │
+└────────────┬──────────────────────────────────┬─────────────────────────┘
+             │ /api/*                           │ /rag/*
+             ▼                                  ▼
+┌────────────────────────────┐      ┌───────────────────────┐
+│      FastAPI Backend       │      │    RAG ETL Service    │
+│         port 8000          │      │       port 8001       │
+│                            │      │                       │
+│  Auth JWT (login, Google)  │      │  Indexation Qdrant    │
+│  Routes :                  │      │  kb_global +          │
+│  /ao              (Phase 4)│      │  kb_{org_id}          │
+│  /marches                  │      └──────────┬────────────┘
+│  /offre-technique          │                 │ vecteurs
+│  /filler                   │                 ▼
+│  /signing                  │      ┌───────────────────────┐
+│  /history                  │      │        Qdrant         │
+│  /company-profile          │      │  kb_global            │
+└────────────┬───────────────┘      │  kb_{org_id}          │
+             │ dispatch tâches      └───────────────────────┘
+             ▼
+┌─────────────────────────────────────────────────────────────────────────┐
+│                        CELERY WORKERS                                   │
+│                                                                         │
+│  Worker IO  (concurrency=4) : LLM calls, analyse, offre technique       │
+│  Worker CPU (concurrency=2) : filler, signing, compilation ZIP          │
+│                                                                         │
+│  Chaîne principale :                                                    │
+│    task_classify_uploads     ← détection hybride (keywords + LLM)       │
+│    task_analyze_ao_context   ← LLM lit CPS + RC ensemble                │
+│    task_build_pipeline       ← construit le groupe dynamique            │
+│    task_generate_note_metho  ← offre_technique_service + RAG obligatoire│
+│    task_fill_documents       ← filler sur TOUS les docs uploadés        │
+│    task_sign_and_compile     ← signing_service + ZIP final              │
+│    task_index_results        ← enrichissement kb_{org_id} post-pipeline │
+└──────────────────────────────┬──────────────────────────────────────────┘
+                               │
+              ┌────────────────┼──────────────────┐
+              ▼                ▼                  ▼
+┌─────────────────┐ ┌─────────────────┐ ┌─────────────────┐
+│   PostgreSQL    │ │      MinIO      │ │      Redis      │
+│                 │ │                 │ │                 │
+│  users          │ │  ao/{ao_id}/    │ │  db=0 : cache   │
+│  appels_offres  │ │    source/      │ │    CPS/RC       │
+│  ao_documents   │ │    technique/   │ │    dedup SHA256 │
+│  company_profiles│ │    financier/   │ │  db=1 : broker  │
+│  staff_cvs      │ │    administratif│ │    Celery tasks │
+│  marches (legacy)│ │    output/      │ │  db=2 : backend │
+│  *_jobs (legacy) │ │  profile/       │ │    Celery results│
+│  kb_documents   │ │  cvs/           │ └─────────────────┘
+└─────────────────┘ └─────────────────┘
 ```
 
 ---
 
-## 5. Flux complet d'une requête
+## 3. Flux utilisateur : pipeline "Minimal Clicks"
 
 ```
-1.  Utilisateur uploade le CPS (PDF) via le frontend
-2.  input_sanitizer valide la taille et détecte les patterns d'injection
-3.  budget_guard vérifie que le quota utilisateur n'est pas épuisé
-4.  cps_analyzer extrait : scope, délais, plan RC, critères pondérés -> CPSContext
-5.  strategy_engine compare CPSContext + Company DNA -> StrategyAngle (angle narratif)
-6.  section_generator lance 5 appels Mistral en parallèle (asyncio.gather)
-    chaque appel reçoit : angle stratégique + contexte RAG Qdrant (mistral-embed)
-7.  quality_gate évalue les 5 sections : conformité, cohérence, différenciation
-    si une section est défaillante -> régénération ciblée (max 2 tentatives)
-8.  doc_assembler compose le DOCX final avec Gantt en tableau natif python-docx
-9.  Conversion DOCX -> PDF
-10. Les deux fichiers sont disponibles en téléchargement via /api/v1/offre-technique/download/
-```
+ÉTAPE 1 : Authentification
+  POST /auth/login → JWT HS256 (7 jours) → localStorage
 
----
+ÉTAPE 2 : Création de l'AO
+  POST /api/v1/ao
+    Body : { reference, acheteur, objet, custom_instructions? }
+    → INSERT appels_offres (statut: "brouillon")
 
-## 6. Variables d'environnement ajoutées
+ÉTAPE 3 : Upload multi-fichiers
+  POST /api/v1/ao/{id}/upload-multiple (multipart N fichiers)
+  Tous les fichiers → MinIO ao/{ao_id}/source/
+  Chaque fichier → INSERT ao_documents (origine: "upload", doc_type: "non_classe")
 
-```env
-# Base de données PostgreSQL
-DATABASE_URL=postgresql+asyncpg://offria:password@localhost:5432/offria
-POSTGRES_PASSWORD=changeme_en_prod
+ÉTAPE 4 : Lancement du pipeline
+  POST /api/v1/ao/{id}/start-pipeline
+  → Vérification profil complet (company_profiles)
+  → UPDATE statut="en_analyse"
+  → chain(classify → analyze → build_pipeline).delay()
+  → Frontend poll GET /ao/{id}/status toutes les 2s
 
-# RAG (Mistral uniquement, OpenAI retiré)
-QDRANT_URL=http://localhost:6333
-# OPENAI_API_KEY supprimé : mistral-embed remplace text-embedding-3-small
-```
+ÉTAPE 5 : Pipeline Celery (arrière-plan)
 
----
+  ── Séquence complète ──────────────────────────────────────────────────
 
-## 7. Démarrage local (sans Docker complet)
+  chain(
+    task_classify_uploads(ao_id),         ← 5%
+    task_analyze_ao_context(ao_id),       ← 10-20%
+    task_build_pipeline(ao_id),           ← dispatch dynamique
+  )
 
-```bash
-# 1. PostgreSQL
-docker compose -f docker-compose.dev.yml up postgres -d
+  ── Phase B : Traitement parallèle ────────────────────────────────────
 
-# 2. Qdrant
-docker compose up qdrant -d
+  chord(
+    group(
+      task_generate_note_metho(ao_id),    ← 30-50% (LLM ~3 min, RAG obligatoire)
+      task_fill_documents(ao_id),         ← 55-70% (filler sur TOUS les uploads)
+    ),
+    task_sign_and_compile(ao_id)          ← 85-99%
+  )
 
-# 3. Migrations base de données
-alembic upgrade head
+  ── Phase C : Enrichissement ──────────────────────────────────────────
 
-# 4. Backend
-uvicorn app.main:app --reload --port 8000
+  task_index_results(ao_id)              ← 100% + indexation kb_{org_id}
 
-# 5. Frontend
-cd frontend && npm run dev
-
-# 6. ETL RAG (service séparé)
-docker compose --profile rag up rag-etl -d
-curl -X POST http://localhost:8001/index
+ÉTAPE 6 : Résultats
+  GET /api/v1/ao/{id}
+  → Documents par dossier (technique / financier / administratif)
+  → Presigned URLs MinIO valides 15 min
+  → Bouton ZIP : tout en un clic
 ```
 
 ---
 
-## 8. Base de connaissances RAG
+## 4. Modèle de données PostgreSQL
 
-Le dossier `knowledge_base/` est la source de vérité du RAG. Il doit être organisé en sous-dossiers correspondant aux `doc_type` attendus par Qdrant :
+```sql
+appels_offres
+  id                UUID PK
+  org_id            VARCHAR(36)        -- user.id si pas d'org (pas de FK)
+  user_id           UUID FK users.id
+  reference         VARCHAR(255)
+  acheteur          VARCHAR(255)
+  objet             TEXT
+  statut            VARCHAR(50)        -- brouillon | en_analyse | en_traitement | termine | erreur
+  pipeline_pct      INT DEFAULT 0      -- 0 à 100
+  analyse_json      JSONB              -- sortie task_analyze_ao_context
+  custom_instructions TEXT             -- NOUVEAU : instructions spécifiques à cet AO
+                                       -- injectées dans tous les prompts du pipeline
+  created_at        TIMESTAMPTZ
+  updated_at        TIMESTAMPTZ
+  erreur_message    TEXT
+
+ao_documents
+  id          UUID PK
+  ao_id       UUID FK appels_offres.id  ON DELETE CASCADE
+  dossier     VARCHAR(30)    -- source | technique | financier | administratif | output
+  doc_type    VARCHAR(100)   -- cps | rc | note_metho | acte_engagement |
+                             -- bordereau | declaration_honneur | autre | zip_final
+  origine     VARCHAR(20)    -- upload | genere | rempli | signe
+  statut      VARCHAR(20)    -- en_attente | traite | erreur
+  minio_key   VARCHAR(512)
+  nom_fichier VARCHAR(255)
+  taille_octets INT
+  created_at  TIMESTAMPTZ
+
+company_profiles
+  org_id              VARCHAR(36) PK
+  nom_entreprise      VARCHAR(255)
+  forme_juridique     VARCHAR(100)
+  ice                 VARCHAR(50)
+  rc                  VARCHAR(50)
+  gerant_nom          VARCHAR(255)
+  gerant_prenom       VARCHAR(255)
+  gerant_cin          VARCHAR(50)
+  capital_social      VARCHAR(50)
+  adresse             TEXT
+  ville               VARCHAR(100)
+  telephone           VARCHAR(50)
+  cnss                VARCHAR(50)
+  if_fiscal           VARCHAR(50)
+  signature_key       VARCHAR(512)   -- MinIO : image signature
+  cachet_key          VARCHAR(512)   -- MinIO : image cachet
+  logo_key            VARCHAR(512)   -- MinIO : logo
+  custom_instructions TEXT           -- NOUVEAU : style et tonalité globaux de l'org
+                                     -- (toujours injectés, en complément des instructions AO)
+  updated_at          TIMESTAMPTZ
+
+staff_cvs
+  id         UUID PK
+  org_id     VARCHAR(36)
+  nom_prenom VARCHAR(255)
+  poste      VARCHAR(100)
+  cv_key     VARCHAR(512)
+  created_at TIMESTAMPTZ
+```
+
+**Règle d'injection des instructions :**
 
 ```
-knowledge_base/
-├── templates/       # Notes méthodologiques des offres techniques passées
-├── references/      # Attestations de bonne exécution
-├── resources/       # Notes sur les moyens humains et matériels
-├── company/         # Présentation entreprise, statuts
-└── certifications/  # Certifications ISO, agréments
+instructions_finales = [
+  company_profiles.custom_instructions,   ← style global de l'org (toujours)
+  appels_offres.custom_instructions,      ← instructions spécifiques à cet AO
+]
+→ concaténées et injectées dans TOUS les prompts LLM du pipeline
 ```
-
-Le cycle de mise à jour est simple : ajouter un nouveau document dans le bon sous-dossier, puis appeler `POST /index`. L'ETL détecte les fichiers nouveaux via SHA256 (manifest), n'indexe que ce qui a changé, et supprime les anciennes versions automatiquement.
-
-Points techniques importants :
-- Le lecteur PDF utilise `pymupdf` en priorité (gère les PDFs scannés et corrompus), avec `pypdf` en fallback.
-- Les `QDRANT_URL` et `RAG_ETL_URL` doivent pointer vers `localhost` en dev local, et vers les noms de services Docker (`qdrant`, `rag-etl`) en production Docker.
-- La collection Qdrant s'appelle `offria_kb`, dimension vectorielle 1024 (mistral-embed).
-
-**Vérification via dashboard :** `http://localhost:6333/dashboard` > Collections > `offria_kb` > Browse.
 
 ---
 
-## 9. Ordre d'implémentation
+## 5. task_analyze_ao_context Coeur du pipeline
+
+Lit **CPS et RC ensemble**. Le RC est prioritaire pour la liste des documents requis.
+
+**Sortie : `analyse_json` (JSONB)**
+
+```json
+{
+  "type_marche": "services",
+  "lots": [{ "numero": 1, "intitule": "...", "montant_estimatif": 500000 }],
+
+  "source_cps": {
+    "contexte_technique": "...",
+    "exigences_techniques": ["ISO 9001", "3 références similaires"],
+    "methodologie_attendue": "Diagnostic + Plan + Suivi"
+  },
+
+  "source_rc": {
+    "date_limite": "2026-06-15T12:00:00",
+    "langue": "fr",
+    "caution_provisoire": "1%",
+    "presentation": "technique_financier_separes"
+  },
+
+  "criteres_ponderation": {
+    "methodologie": { "poids": 50, "source": "rc" },
+    "prix": { "poids": 30, "source": "rc" },
+    "experience": { "poids": 20, "source": "rc" }
+  },
+
+  "documents_requis": [
+    {
+      "type": "note_metho",
+      "dossier": "technique",
+      "obligatoire": true,
+      "a_signer": false
+    },
+    {
+      "type": "acte_engagement",
+      "dossier": "financier",
+      "obligatoire": true,
+      "a_signer": true
+    },
+    {
+      "type": "bordereau",
+      "dossier": "financier",
+      "obligatoire": true,
+      "a_signer": false
+    },
+    {
+      "type": "declaration_honneur",
+      "dossier": "administratif",
+      "obligatoire": true,
+      "a_signer": true
+    },
+    {
+      "type": "attestation_fiscale",
+      "dossier": "administratif",
+      "obligatoire": true,
+      "externe": true
+    },
+    {
+      "type": "attestation_cnss",
+      "dossier": "administratif",
+      "obligatoire": true,
+      "externe": true
+    }
+  ],
+
+  "strategie_offre_technique": {
+    "angle_principal": "méthodologie structurée en 3 phases",
+    "points_forts_a_valoriser": ["expérience sectorielle", "équipe dédiée"],
+    "note_guidance": "Insister sur méthodo  critère pondéré à 50%"
+  }
+}
+```
+
+---
+
+## 6. Classification des documents (task_classify_uploads)
+
+**Stratégie hybride en deux passes :**
 
 ```
-Étape 1 : Migration PostgreSQL
-          db/base.py, db/models.py, alembic, mise à jour des 3 services
+Passe 1  Keywords (gratuite, < 50ms par doc)
+  detect_document_type(text) depuis filler_settings.DOCUMENT_TYPE_KEYWORDS
+  → score élevé et non-ambigu → classifié directement
 
-Étape 2 : RAG Mistral Embed
-          rag_service.py, etl.py, ingestion_validator.py
+Passe 2  LLM (seulement si ambigu ou score faible)
+  Mistral + filename + 3 premières pages
+  → classification robuste pour PDFs complexes
 
-Étape 3 : Sécurité entrée et budget
-          input_sanitizer.py, budget_guard.py, câblage dans generation_service
-
-Étape 4 : Offre technique
-          cps_analyzer -> strategy_engine -> section_generator -> quality_gate -> doc_assembler
-
-Étape 5 : Frontend
-          OffreTechniqueTab (même pattern que FillerTab)
+Mapping classification → dossier :
+  cps / rc          → source/
+  acte_engagement   → financier/
+  bordereau         → financier/
+  declaration_honneur → administratif/
+  attestation_*     → administratif/
+  autre             → source/ (par défaut)
 ```
+
+La classification sert à l'organisation MinIO et à l'affichage. Elle ne bloque pas le filler qui re-segmente lui-même chaque document.
+
+---
+
+## 7. Remplissage des documents (task_fill_documents)
+
+**Principe fondamental :** passer TOUS les documents uploadés au filler, pas seulement les templates pré-classifiés. Le `filler_orchestrator.run()` segmente chaque PDF et détecte lui-même ce qui est remplissable dedans.
+
+```python
+# Correct : tous les uploads passent au filler
+docs = SELECT * FROM ao_documents
+       WHERE ao_id = ? AND origine = 'upload' AND minio_key IS NOT NULL
+
+for doc in docs:
+    pdf_bytes = mc.get_file_bytes(doc.minio_key)
+    result = await run_filler(
+        pdf_bytes=pdf_bytes,
+        filename=doc.nom_fichier,
+        company_info=build_company_info(profile),  # depuis DB
+        lots=lots,
+        api_key=settings.mistral_api_key,
+        org_id=org_id,
+        ao_id=ao_id,               # MinIO → ao/{ao_id}/financier/ ou /administratif/
+    )
+```
+
+**Cas couverts par le filler :**
+
+- Templates séparés uploadés (acte d'engagement .docx, bordereau .pdf)
+- Templates en annexe du CPS (le segmenter les trouve sur les bonnes pages)
+- Templates en annexe du RC (idem)
+- PDFs scannés (Pixtral vision)
+- PDFs texte natif (Mistral texte)
+
+**company_adapter.py migration JSON → DB :**
+
+```python
+# Avant (à supprimer) : lit company_defaults.json
+def get_company_info() -> dict
+
+# Après : accepte le profil DB directement
+def get_company_info(profile: CompanyProfile | None = None) -> dict
+    # Si profile fourni → construit depuis DB
+    # Sinon → fallback JSON (compatibilité legacy filler standalone)
+```
+
+---
+
+## 8. Génération note méthodologique (task_generate_note_metho)
+
+**RAG obligatoire.** Aucune section ne se génère sans RAG.
+
+```
+Requête RAG pour chaque section :
+  search(kb_global)    ← CPS publics marocains, modèles sectoriels
+  search(kb_{org_id})  ← offres passées de l'org (enrichi après chaque pipeline)
+  merge scores → top-k → injecté dans les prompts
+
+Instructions injectées dans l'ordre :
+  1. strategie_offre_technique depuis analyse_json
+  2. criteres_ponderation (poids exacts → adapter l'emphase)
+  3. company_profiles.custom_instructions (style global org)
+  4. appels_offres.custom_instructions (spécifique à cet AO)
+  5. Contextes RAG par section
+```
+
+**Fix MinIO (bug actuel) :** `offre_technique_service._upload_outputs()` doit retourner la `minio_key` en plus de l'URL presigned. La tâche utilise la clé directement pour re-copier vers `ao/{ao_id}/technique/` sans parser d'URL.
+
+---
+
+## 9. Enrichissement RAG (task_index_results)
+
+Tâche finale, après `task_sign_and_compile`. Lance l'indexation dans `kb_{org_id}` :
+
+**Ce qui est indexé :**
+
+- Sections de la note méthodologique générée (chunked par section)
+- Résumé de l'analyse CPS + RC (`analyse_json.strategie_offre_technique`)
+- Métadonnées : secteur, type marché, critères pondération
+
+**Ce qui n'est pas indexé :**
+
+- Documents remplis (AE, bordereau, DSH) données de formulaire, pas de connaissance
+- ZIP final
+- Sources originales (CPS/RC de l'acheteur)
+
+**Impact :**
+
+| Nb AOs traités | Effet sur les prochaines générations                      |
+| -------------- | --------------------------------------------------------- |
+| 0              | kb_global uniquement, résultat générique                  |
+| 3-5            | Style émergent, sections plus pertinentes pour le secteur |
+| 10+            | Différenciation forte, ton et angle propres à l'org       |
+
+---
+
+## 10. Différenciation par organisation
+
+**Problème fondamental :** sans mécanisme de différenciation, deux organisations qui soumettent au même AO obtiendraient la même note méthodologique. Inacceptable pour un produit B2B.
+
+**Solution en trois couches (ordre de priorité) :**
+
+```
+Couche 1  kb_{org_id} (long terme, auto-enrichi)
+  → Différenciation basée sur l'historique réel des offres de l'org
+  → Neutre au départ, puissant après 5+ AOs
+
+Couche 2  company_profiles.custom_instructions (immédiat, global)
+  → Renseigné une seule fois dans le profil
+  → Ex: "Toujours insister sur ISO 9001, notre proximité Casablanca,
+         notre équipe senior dédiée (jamais junior), planning en 3 phases"
+  → Injecté dans TOUS les pipelines de l'org
+
+Couche 3  appels_offres.custom_instructions (immédiat, par AO)
+  → Renseigné à la création ou avant lancement du pipeline
+  → Ex: "Pour ce marché, mettre en avant notre expérience ANEF 2023,
+         insister sur la formation présentielle, budget serré"
+  → Remplace et complète les instructions globales pour cet AO précis
+```
+
+---
+
+## 11. Structure MinIO
+
+```
+{org_id}/
+  profile/
+    signature.png
+    cachet.png
+    logo.png
+  cvs/
+    {staff_id}_{nom}.pdf
+
+  ao/{ao_id}/
+    source/           ← bruts uploadés par l'user (CPS, RC, templates, etc.)
+    technique/        ← note_methodologique.docx + .pdf, DSH signée, CVs
+    financier/        ← bordereau.xlsx + .pdf, acte_engagement_signe.pdf
+    administratif/    ← CPS signé, RC, slots attestations externes
+    output/           ← dossier_complet.zip
+
+  marches/{marche_id}/  ← legacy Phase 3, inchangé
+```
+
+---
+
+## 12. Cache Redis
+
+```
+db=0  cache applicatif
+  cache:cps:{sha256}    TTL 24h    CPSContext JSON
+  cache:rc:{sha256}     TTL 24h    RCContext JSON
+  minio:dedup:{sha256}  TTL 90j    clé MinIO (déduplication)
+
+db=1  Celery broker (critique)
+db=2  Celery result backend (critique)
+```
+
+---
+
+## 13. Base de connaissance Qdrant
+
+```
+kb_global            ← CPS publics marocains, modèles sectoriels (seedé offline)
+kb_{org_id}          ← offres passées de l'org (enrichi par task_index_results)
+
+Requête lors de task_generate_note_metho :
+  merge(search(kb_global), search(kb_{org_id})) → top-k → prompts sections
+```
+
+---
+
+## 14. Authentification
+
+JWT HS256, bcrypt, Google OAuth. `org_id = current_user.org_id or current_user.id`. Jamais `"default"`. Pas de FK de `org_id` vers `organizations`.
+
+---
+
+## 15. Infrastructure Docker
+
+```yaml
+services:
+  nginx        # reverse proxy, TLS
+  api          # FastAPI backend (8000)
+  celery-io    # worker IO : LLM, analyse, note métho (concurrency=4)
+  celery-cpu   # worker CPU : filler, signing, ZIP, indexation (concurrency=2)
+  rag-etl      # indexation Qdrant (8001)
+  postgres
+  minio
+  qdrant
+  redis
+```
+
+---
+
+## 16. Réutilisation code existant
+
+| Service                         | Changement requis                                                                   |
+| ------------------------------- | ----------------------------------------------------------------------------------- |
+| `filler_service.py`             | Ajouter param `company_info` (dict), passer `ao_id` pour chemin MinIO               |
+| `filler/company_adapter.py`     | `get_company_info(profile=None)` : DB si profile fourni, JSON sinon                 |
+| `offre_technique_service.py`    | Retourner `minio_key` dans `OffreTechniqueOutputFile`, passer `custom_instructions` |
+| `signing_service.py`            | Zéro changement                                                                     |
+| `rag_service.py`                | Ajouter méthode `index_document(org_id, text, metadata)`                            |
+| `task_classify_uploads`         | Ajouter passe LLM si score keywords ambigu                                          |
+| `task_fill_documents`           | Passer TOUS les uploads (plus de filtre par doc_type)                               |
+| `task_generate_note_metho`      | Injecter custom_instructions (org + AO)                                             |
+| Nouvelle : `task_index_results` | Indexer note métho dans kb\_{org_id}                                                |
+
+---
+
+## 17. Ordre d'implémentation (état 2026-05-17)
+
+```
+Phase 4a  Socle Celery                              [TERMINE]
+Phase 4b  Upload + Classification                   [TERMINE]
+Phase 4c  Analyse CPS + RC (task_analyze_ao_context)[TERMINE]
+Phase 4d  Note métho + Filler                       [PARTIEL  bugs identifiés]
+
+  PROCHAINS CORRECTIFS :
+  [ ] Fix task_fill_documents : filler sur TOUS uploads (pas que templates classifiés)
+  [ ] Fix company_adapter : get_company_info(profile) depuis DB
+  [ ] Fix task_generate_note_metho : retourner minio_key, pas URL presigned
+  [ ] Fix task_classify_uploads : ajouter passe LLM si score ambigu
+  [ ] Ajouter custom_instructions sur AppelOffre (migration DB)
+  [ ] Injecter custom_instructions (org + AO) dans task_generate_note_metho
+  [ ] Injecter custom_instructions dans task_fill_documents (prompts filler)
+  [ ] Nouvelle tâche task_index_results (enrichissement kb_{org_id})
+
+Phase 4e  Signature + Compilation                   [TERMINE  fonctionnel]
+Phase 4f  Frontend                                  [PARTIEL]
+
+  [ ] Champ custom_instructions dans formulaire création AO
+  [ ] Champ custom_instructions dans company_profiles (onglet profil)
+  [ ] Vue résultats : 3 dossiers organisés + download individuel + ZIP
+  [ ] Slots documents externes (attestation fiscale, CNSS)
+```
+
+---
+
+## 18. Décisions techniques
+
+| Problème                                    | Solution retenue                                               |
+| ------------------------------------------- | -------------------------------------------------------------- |
+| Pas de différenciation entre orgs           | kb\_{org_id} enrichi + custom_instructions (2 niveaux)         |
+| Templates parfois dans CPS, parfois séparés | Filler sur TOUS les uploads (segmentation auto)                |
+| company_adapter lisait JSON                 | get_company_info(profile) depuis DB company_profiles           |
+| MinIO copy fragile (URL presigned parsée)   | Retourner minio_key directement depuis offre_technique_service |
+| Classification ambiguë sur PDFs complexes   | Hybride : keywords → LLM si score faible                       |
+| RAG optionnel → offres génériques           | RAG obligatoire dans task_generate_note_metho                  |
+| 429 Mistral                                 | Retry 10/30/60s                                                |
+| Planning vide DOCX                          | json_mode + \_DEFAULT_PHASES fallback                          |
+| Récomputing inutile                         | Cache Redis SHA256 TTL 24h                                     |
+| Déduplication fichiers                      | upload_dedup() hash SHA256 MinIO                               |
+| org_id FK violation                         | Pas de FK, fallback user.id (migration 004)                    |
+| Traitement lourd sous charge                | Celery workers IO + CPU                                        |
+| asyncio loop conflict Celery                | engine.dispose() dans \_run_async() finally                    |
+| Postgres hors réseau workers                | ao_network sur tous les services docker                        |

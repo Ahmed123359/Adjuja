@@ -1,5 +1,5 @@
 """
-Scraper — Dossiers de consultation ONCF (marchespublics.gov.ma)
+Scraper  Dossiers de consultation ONCF (marchespublics.gov.ma)
 ===============================================================
 Lance depuis la racine du projet :
     python rd/scrapper/scraper_oncf.py
@@ -35,7 +35,7 @@ from typing import Optional
 from playwright.async_api import async_playwright, Page
 
 # ═══════════════════════════════════════════════════════════════════════════════
-# CONFIGURATION — modifier ici avant de lancer
+# CONFIGURATION  modifier ici avant de lancer
 # ═══════════════════════════════════════════════════════════════════════════════
 
 # Identité fictive utilisée dans le formulaire de retrait du dossier.
@@ -63,7 +63,7 @@ SLOW_MO = 300
 OUTPUT_DIR = Path("rd/scrapper/output/oncf")   # ZIPs téléchargés
 DEBUG_DIR  = OUTPUT_DIR / "debug"               # Screenshots + HTML de debug
 
-# Base de données SQLite locale (R&D uniquement — sera remplacée par PostgreSQL en prod).
+# Base de données SQLite locale (R&D uniquement  sera remplacée par PostgreSQL en prod).
 DB_PATH = Path("rd/scrapper/ao_catalog.db")
 
 # URL de la recherche avancée sur marchespublics.gov.ma
@@ -266,7 +266,7 @@ def save_debug(page_content: str, name: str) -> None:
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
-# ÉTAPE 1 — RECHERCHE ET EXTRACTION DES LIENS
+# ÉTAPE 1  RECHERCHE ET EXTRACTION DES LIENS
 # ═══════════════════════════════════════════════════════════════════════════════
 
 async def get_ao_links(page: Page) -> list[dict]:
@@ -422,7 +422,7 @@ async def get_ao_links(page: Page) -> list[dict]:
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
-# ÉTAPE 2 — TÉLÉCHARGEMENT DU DOSSIER POUR UN AO
+# ÉTAPE 2  TÉLÉCHARGEMENT DU DOSSIER POUR UN AO
 # ═══════════════════════════════════════════════════════════════════════════════
 
 async def download_dossier(page: Page, ao: dict, idx: int) -> AOResult:
@@ -686,7 +686,7 @@ async def main() -> None:
     print(f"  {'-'*12} {'-'*15} {'-'*55} {'-'*20}")
     for row in rows:
         ref, titre, statut, zip_path, scraped_at = row
-        zip_name = Path(zip_path).name[:20] if zip_path else "—"
+        zip_name = Path(zip_path).name[:20] if zip_path else ""
         print(f"  {ref:<12} {statut:<15} {scraped_at[:16]:<18} {(titre or '')[:45]:<45} {zip_name}")
 
     # ── Sauvegarde du rapport JSON ─────────────────────────────────────────────

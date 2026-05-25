@@ -3,117 +3,396 @@
     "features": "Fonctionnalités",
     "howItWorks": "Comment ça marche",
     "pricing": "Tarifs",
-    "access": "Accéder →"
+    "access": "Accéder",
+    "signup": "Inscription"
+  },
+  "landing": {
+    "hero": {
+      "badge": "Nouveau",
+      "badgeText": "Réponse AO automatisée par l'IA",
+      "line1": "Remportez plus de marchés.",
+      "line2": "Sans y passer vos nuits.",
+      "demo": "Voir la démo"
+    },
+    "features": {
+      "title": "Tout ce dont vous avez besoin",
+      "titleBlue": "pour remporter plus de marchés.",
+      "cta": "Voir toutes les fonctionnalités",
+      "analyse": { "title": "Analyse du DCE", "desc": "L'IA extrait chaque clause clé du dossier de consultation en quelques secondes." },
+      "gen":     { "title": "Génération en temps réel", "desc": "Chaque section est rédigée et exportée en Word en moins de 2 minutes." },
+      "suivi":   { "title": "Suivi de tous vos AOs", "desc": "Un seul endroit pour suivre chaque dossier, de la réception à la victoire." },
+      "pipeline":{ "title": "Pipeline automatisé", "desc": "De la réception du DCE à la soumission finale, chaque étape est orchestrée et tracée." }
+    },
+    "how": {
+      "title": "Gagnez plus de marchés.",
+      "titleBlue": "Chaque jour.",
+      "t1Title": "Analyse intelligente du DCE",
+      "t1Desc": "L'IA parcourt chaque page du dossier de consultation, identifie les clauses clés et les critères d'évaluation en quelques secondes.",
+      "t2Title": "Génération automatique de la réponse",
+      "t2Desc": "Chaque section du mémoire technique est rédigée sur mesure selon votre profil entreprise et les exigences du marché.",
+      "t3Title": "Export et soumission en un clic",
+      "t3Desc": "Téléchargez votre dossier complet en Word ou PDF, prêt à soumettre sur la plateforme d'achat public.",
+      "t4Title": "Suivi de vos performances",
+      "t4Desc": "Visualisez votre taux de réussite, le nombre d'AOs remportés et l'évolution de vos résultats mois par mois."
+    },
+    "cta": {
+      "title": "Commencez à remporter plus de marchés dès aujourd'hui.",
+      "subtitle": "Déposez votre premier DCE et obtenez une réponse complète en moins de 2 minutes.",
+      "button": "Essai gratuit",
+      "bullet1": "Configuration en 2 minutes",
+      "bullet2": "Sans carte bancaire",
+      "bullet3": "Support inclus"
+    },
+    "footer": {
+      "tagline": "ADJUJA automatise la rédaction de vos réponses aux appels d'offres publics au Maroc.",
+      "emailPlaceholder": "Votre adresse email",
+      "subscribe": "S'abonner",
+      "navTitle": "Navigation",
+      "legalTitle": "Légal",
+      "contactTitle": "Contact",
+      "navHome": "Accueil",
+      "navFeatures": "Fonctionnalités",
+      "navPricing": "Tarifs",
+      "navBlog": "Blog",
+      "navContact": "Contact",
+      "legalTerms": "Conditions d'utilisation",
+      "legalPrivacy": "Confidentialité",
+      "legalMentions": "Mentions légales",
+      "legalSecurity": "Sécurité",
+      "legalRgpd": "RGPD",
+      "contactEmail": "Email",
+      "contactEmailValue": "support@adjuja.ma",
+      "contactPhone": "Téléphone",
+      "contactPhoneValue": "+212 5 22 00 00 00",
+      "contactAddress": "Adresse",
+      "contactAddressValue": "Casablanca, Maroc",
+      "copyright": "© 2025 ADJUJA. Tous droits réservés."
+    }
   },
   "banner": {
-    "mobile": "🐦 Early Bird — <strong>−30 %</strong> sur tous les plans",
-    "desktop": "🐦 Offre Early Bird — <strong>−30 % sur tous les plans</strong> pour les 50 premiers abonnés",
+    "mobile": "Early Bird  <strong>-30 %</strong> sur tous les plans",
+    "desktop": "Early Bird  <strong>-30 % sur tous les plans</strong> pour les 50 premiers abonnes",
     "sub": " · Profitez-en avant la fin du lancement"
   },
   "hero": {
-    "title1": "Remportez plus de marchés.",
+    "title1": "Remportez plus de marches.",
     "title2": "Sans y passer vos",
     "highlight": "nuits.",
-    "subtitle": "OffrIA analyse votre appel d'offres, rédige chaque section et vous livre une réponse professionnelle — pendant que vous vous concentrez sur votre cœur de métier.",
-    "cta": "Essayer gratuitement →",
-    "catCaption": "Pendant ce temps…",
+    "subtitle": "ADJUJA analyse votre appel d'offres, redige chaque section et vous livre une reponse professionnelle pendant que vous vous concentrez sur votre coeur de metier.",
+    "cta": "Essayer gratuitement",
+    "catCaption": "Pendant ce temps...",
     "stats": {
       "time": "< 2 min",
-      "timeLabel": "par réponse AO",
-      "scale": "10×",
-      "scaleLabel": "plus d'AOs traités",
+      "timeLabel": "par reponse AO",
+      "scale": "10x",
+      "scaleLabel": "plus d'AOs traites",
       "llms": "3 LLMs",
       "llmsLabel": "Claude · GPT-4o · Mistral",
-      "market": "100 Md€",
-      "marketLabel": "marchés publics / an"
+      "market": "100 Md MAD",
+      "marketLabel": "marches publics / an"
     }
   },
   "features": {
-    "label": "Fonctionnalités",
-    "title": "Pourquoi les équipes choisissent OffrIA",
-    "subtitle": "Concentrez-vous sur la stratégie. Nous nous occupons de la rédaction.",
+    "label": "Fonctionnalites",
+    "title": "Pourquoi les equipes choisissent ADJUJA",
+    "subtitle": "Concentrez-vous sur la strategie. Nous nous occupons de la redaction.",
     "cards": {
       "speed_title": "2 minutes au lieu de 2 jours",
-      "speed_desc": "Une réponse complète, structurée et prête à soumettre en moins de 2 minutes. Traitez 10× plus d'AOs sans recruter.",
+      "speed_desc": "Une reponse complete, structuree et prete a soumettre en moins de 2 minutes. Traitez 10x plus d'AOs sans recruter.",
       "memory_title": "L'IA apprend de vos documents",
-      "memory_desc": "Importez vos anciennes réponses gagnantes, références clients et certifications. OffrIA les réutilise automatiquement — comme un expert qui connaît tout votre historique.",
-      "complete_title": "Aucune exigence oubliée",
-      "complete_desc": "Chaque critère du cahier des charges est analysé et traité. Pièces attendues, format de réponse, critères de sélection — rien ne passe à travers les mailles.",
-      "winrate_title": "Remportez plus de marchés",
-      "winrate_desc": "Des réponses mieux structurées, plus conformes et rédigées dans le langage attendu par les acheteurs publics. Un avantage concret sur vos concurrents.",
-      "privacy_title": "Vos données restent chez vous",
-      "privacy_desc": "Hébergement européen, conformité RGPD. Vos documents confidentiels ne quittent jamais votre périmètre.",
+      "memory_desc": "Importez vos anciennes reponses gagnantes, references clients et certifications. ADJUJA les reutilise automatiquement.",
+      "complete_title": "Aucune exigence oubliee",
+      "complete_desc": "Chaque critere du cahier des charges est analyse et traite. Pieces attendues, format de reponse, criteres de selection.",
+      "winrate_title": "Remportez plus de marches",
+      "winrate_desc": "Des reponses mieux structurees, plus conformes et redigees dans le langage attendu par les acheteurs publics.",
+      "privacy_title": "Vos donnees restent chez vous",
+      "privacy_desc": "Hebergement local, conformite RGPD. Vos documents confidentiels ne quittent jamais votre perimetre.",
       "models_title": "Claude, GPT-4o ou Mistral",
-      "models_desc": "Choisissez le meilleur modèle selon l'AO : puissance de raisonnement, formulation commerciale ou souveraineté des données. Vous gardez le contrôle."
+      "models_desc": "Choisissez le meilleur modele selon l'AO. Vous gardez le controle."
     }
   },
   "howItWorks": {
     "label": "Processus",
-    "title": "Comment ça marche",
-    "subtitle": "Trois étapes. Zéro complexité.",
+    "title": "Comment ca marche",
+    "subtitle": "Trois etapes. Zero complexite.",
     "steps": {
       "s1_title": "Importez votre AO",
-      "s1_desc": "Glissez votre DCE (PDF ou texte brut). OffrIA extrait automatiquement les critères, les lots et les pièces demandées.",
+      "s1_desc": "Glissez votre DCE (PDF ou texte brut). ADJUJA extrait automatiquement les criteres, les lots et les pieces demandees.",
       "s1_note": "PDF natif · texte brut",
-      "s2_title": "Réponse générée en parallèle",
-      "s2_desc": "Chaque section — mémoire technique, références, planning — est rédigée simultanément et adaptée à votre profil entreprise.",
+      "s2_title": "Reponse generee en parallele",
+      "s2_desc": "Chaque section est redigee simultanement et adaptee a votre profil entreprise.",
       "s2_note": "~90 secondes en moyenne",
       "s3_title": "Relisez, ajustez, soumettez",
-      "s3_desc": "Exportez en Word ou PDF, apportez vos touches finales et déposez sur la plateforme de votre choix.",
-      "s3_note": "Export Word · éditable en ligne"
+      "s3_desc": "Exportez en Word ou PDF, apportez vos touches finales et deposez sur la plateforme de votre choix.",
+      "s3_note": "Export Word · editable en ligne"
     },
-    "cta": "Générer ma première réponse →"
+    "cta": "Generer ma premiere reponse"
   },
   "pricing": {
     "label": "Tarifs",
     "title": "Choisissez votre plan",
-    "subtitle": "Sans engagement · Annulez à tout moment · Facture sous 48h",
-    "footnote1": "† 1 document = fichier PDF jusqu'à 20 pages A4",
-    "footnote2": "Tous les prix sont HT · TVA applicable · Déploiement on-premise sur devis",
+    "subtitle": "Sans engagement · Annulez a tout moment · Facture sous 48h",
+    "footnote1": "1 document = fichier PDF jusqu'a 20 pages A4",
+    "footnote2": "Tous les prix sont HT · TVA applicable · Deploiement on-premise sur devis",
     "freeTrial": "Pas encore convaincu ? ",
-    "freeTrialCta": "Essayez gratuitement — 1 AO sans CB →",
+    "freeTrialCta": "Essayez gratuitement 1 AO sans CB",
     "plans": {
       "starter_name": "Starter",
       "starter_tagline": "Pour les solopreneurs qui veulent gagner plus d'AOs",
-      "starter_badge": "Early Bird −30 %",
-      "starter_cta": "S'abonner — 55€/mois",
-      "starter_note": "Sans engagement · résiliable à tout moment",
+      "starter_badge": "Early Bird -30 %",
+      "starter_cta": "S'abonner  55 MAD/mois",
+      "starter_note": "Sans engagement · resiliable a tout moment",
       "pro_name": "Pro",
-      "pro_tagline": "Pour les équipes commerciales actives",
-      "pro_badge": "Recommandé",
-      "pro_cta": "Contacter l'équipe",
+      "pro_tagline": "Pour les equipes commerciales actives",
+      "pro_badge": "Recommande",
+      "pro_cta": "Contacter l'equipe",
       "pro_note": "Le plus choisi par nos clients PME / ETI",
       "enterprise_name": "Entreprise",
       "enterprise_tagline": "Pour les grands groupes et cabinets",
       "enterprise_price": "Sur devis",
-      "enterprise_cta": "Contacter l'équipe",
-      "enterprise_note": "Déploiement en 5 jours ouvrés",
+      "enterprise_cta": "Contacter l'equipe",
+      "enterprise_note": "Deploiement en 5 jours ouvres",
       "tag_new": "Nouveau",
-      "f_unlimited_gen": "Génération illimitée",
-      "f_docs_50": "Digestion jusqu'à 50 documents†",
-      "f_docs_200": "Digestion jusqu'à 200 documents†",
+      "f_unlimited_gen": "Generation illimitee",
+      "f_docs_50": "Digestion jusqu'a 50 documents",
+      "f_docs_200": "Digestion jusqu'a 200 documents",
       "f_chat": "Chat avec vos documents",
-      "f_signatures": "Signatures instantanées illimitées",
-      "f_history": "Historique complet des générations",
+      "f_signatures": "Signatures instantanees illimitees",
+      "f_history": "Historique complet des generations",
       "f_users_1": "1 utilisateur",
       "f_users_5": "5 utilisateurs",
-      "f_users_unlimited": "Utilisateurs illimités",
+      "f_users_unlimited": "Utilisateurs illimites",
       "f_support_email": "Support e-mail (48h)",
       "f_support_priority": "Support prioritaire (4h)",
       "f_sso": "SSO / Active Directory",
       "f_sla": "SLA 99,9 % garanti",
-      "f_onboarding": "Accompagnement dédié",
+      "f_onboarding": "Accompagnement dedie",
       "f_export": "Export Word (.docx)",
       "f_providers": "3 providers LLM (GPT-4o, Claude, Mistral)",
-      "f_50_ao": "50 AOs générés / mois"
+      "f_50_ao": "50 AOs generes / mois"
     }
   },
   "ctaBand": {
-    "title": "Prêt à transformer votre taux de réussite ?",
-    "subtitle": "Rejoignez les équipes commerciales qui gagnent du temps et remportent plus de marchés avec OffrIA.",
-    "cta": "Commencer gratuitement →"
+    "title": "Pret a transformer votre taux de reussite ?",
+    "subtitle": "Rejoignez les equipes commerciales qui gagnent du temps et remportent plus de marches avec ADJUJA.",
+    "cta": "Commencer gratuitement"
   },
   "footer": {
-    "rights": "© 2025 OffrIA. Tous droits réservés."
+    "rights": "© 2025 ADJUJA. Tous droits reserves."
+  },
+  "auth": {
+    "login": {
+      "title": "Connexion",
+      "subtitle": "Accédez à votre espace ADJUJA",
+      "email": "Email",
+      "emailPlaceholder": "vous@exemple.com",
+      "password": "Mot de passe",
+      "passwordPlaceholder": "••••••••",
+      "submit": "Se connecter",
+      "submitting": "Connexion…",
+      "noAccount": "Pas encore de compte ?",
+      "createAccount": "Créer un compte",
+      "or": "ou",
+      "verified": "Email vérifié ! Connectez-vous pour accéder à votre génération gratuite."
+    },
+    "register": {
+      "title": "Créer un compte",
+      "subtitle": "Rejoignez ADJUJA gratuitement",
+      "firstName": "Prénom",
+      "firstNamePlaceholder": "Jean",
+      "lastName": "Nom",
+      "lastNamePlaceholder": "Dupont",
+      "email": "Email",
+      "emailPlaceholder": "vous@exemple.com",
+      "password": "Mot de passe",
+      "passwordHint": "min. {{min}} car.{{digit}}",
+      "passwordDigit": ", 1 chiffre",
+      "passwordPlaceholder": "••••••••",
+      "submit": "Créer mon compte",
+      "submitting": "Création…",
+      "hasAccount": "Déjà un compte ?",
+      "loginLink": "Se connecter",
+      "or": "ou"
+    },
+    "verify": {
+      "title": "Vérifiez votre email",
+      "sent": "Un lien de confirmation a été envoyé à",
+      "instruction": "Cliquez sur le lien dans l'email pour activer votre compte et accéder à votre génération gratuite.",
+      "goLogin": "Aller à la connexion"
+    }
+  },
+  "app": {
+    "nav": {
+      "dashboard": "Tableau de bord",
+      "tenders": "Appels d'offres",
+      "tools": "Outils",
+      "settings": "Paramètres",
+      "logout": "Déconnexion",
+      "lightMode": "Mode clair",
+      "darkMode": "Mode sombre"
+    },
+    "topbar": {
+      "offres": "Tableau de bord",
+      "marches": "Appels d'offres",
+      "outils": "Outils"
+    }
+  },
+  "dashboard": {
+    "title": "Tableau de bord",
+    "tabs": {
+      "overview": "Vue d'ensemble",
+      "profile": "Profil entreprise",
+      "generation": "Génération"
+    },
+    "overview": {
+      "total": "Total",
+      "inProgress": "En cours",
+      "completed": "Terminés",
+      "errors": "Erreurs",
+      "recentTitle": "Derniers appels d'offres",
+      "noAos": "Aucun appel d'offres créé.",
+      "profileWarning": "Profil entreprise incomplet",
+      "profileWarningDesc": "Complétez votre profil pour activer le pipeline automatisé."
+    },
+    "profile": {
+      "save": "Enregistrer",
+      "saving": "Enregistrement...",
+      "saved": "Profil enregistré.",
+      "incomplete": "Profil incomplet",
+      "incompleteDesc": "Complétez votre profil pour activer le pipeline automatisé.",
+      "required": "Champs requis pour le pipeline",
+      "complete": "Profil complet  le pipeline est actif.",
+      "incompleteProfile": "Profil incomplet  complétez les champs obligatoires (*) pour activer le pipeline.",
+      "notConfigured": "Profil non configuré  complétez les champs obligatoires (*) pour activer le pipeline.",
+      "requiredIncomplete": "Champs obligatoires incomplets.",
+      "error": "Erreur lors de la sauvegarde.",
+      "sections": {
+        "company": "Informations de l'entreprise",
+        "legal": "Identifiants légaux",
+        "manager": "Gérant",
+        "contact": "Contact"
+      },
+      "fields": {
+        "nom_entreprise": "Raison sociale",
+        "secteur": "Secteur d'activité",
+        "ice": "ICE",
+        "rc": "RC",
+        "if_fiscal": "Identifiant fiscal",
+        "cnss": "CNSS",
+        "gerant_nom": "Nom du gérant",
+        "gerant_prenom": "Prénom du gérant",
+        "gerant_cin": "CIN du gérant",
+        "adresse": "Adresse du siège",
+        "ville": "Ville",
+        "telephone": "Téléphone",
+        "email": "Email"
+      }
+    },
+    "generation": {
+      "title": "Génération de réponse AO",
+      "desc": "Collez le texte de l'appel d'offres dans le panneau gauche, renseignez votre profil entreprise, puis cliquez sur Générer."
+    }
+  },
+  "pipeline": {
+    "title": "Appels d'offres",
+    "new": "Nouvel AO",
+    "deleteConfirm": "Supprimer cet appel d'offres et tous ses documents ?",
+    "upload": "Déposer les documents",
+    "start": "Lancer le pipeline",
+    "creating": "Création...",
+    "create": "Créer le dossier",
+    "subtitle": "Pipeline automatisé de réponse aux AOs",
+    "noAos": "Aucun appel d'offres",
+    "noAosDesc": "Créez votre premier dossier pour démarrer",
+    "createFirst": "Créer un dossier",
+    "newForm": {
+      "title": "Nouveau dossier AO",
+      "reference": "Référence",
+      "referencePlaceholder": "ex : AO-2026-IT-001",
+      "buyer": "Acheteur",
+      "buyerPlaceholder": "ex : Commune de Casablanca",
+      "subject": "Objet",
+      "subjectPlaceholder": "Objet du marché..."
+    },
+    "detail": {
+      "noRef": "AO sans référence",
+      "progress": "Progression du pipeline",
+      "running": "Pipeline en cours  mise à jour automatique...",
+      "uploadZone": "Glissez vos documents ici",
+      "uploadHint": "CPS, RC et tous les documents du marché (PDF uniquement)",
+      "uploadClick": "Cliquer pour sélectionner",
+      "uploading": "Upload en cours...",
+      "startBtn": "Lancer le pipeline automatique",
+      "starting": "Démarrage...",
+      "waitDocs": "Uploadez au moins un document (CPS ou RC) pour lancer le pipeline.",
+      "done": "Dossier complet généré",
+      "pdfOnly": "Seuls les fichiers PDF sont acceptés.",
+      "cancelBtn": "Annuler",
+      "cancelConfirm": "Annuler le pipeline en cours ? Vous pourrez relancer ensuite.",
+      "cancelling": "Annulation...",
+      "deleteBtn": "Supprimer",
+      "deleteConfirmDetail": "Supprimer ce dossier AO et tous ses documents ?"
+    },
+    "status": {
+      "brouillon": "Brouillon",
+      "en_analyse": "En analyse",
+      "en_traitement": "En traitement",
+      "termine": "Terminé",
+      "erreur": "Erreur"
+    },
+    "docTypes": {
+      "cps": "CPS",
+      "rc": "RC",
+      "note_metho": "Note méthodologique",
+      "acte_engagement": "Acte d'engagement",
+      "bordereau": "Bordereau des prix",
+      "bordereau_prix": "Bordereau des prix",
+      "declaration_honneur": "Déclaration sur l'honneur",
+      "attestation_fiscale": "Attestation fiscale",
+      "attestation_cnss": "Attestation CNSS",
+      "zip_final": "Dossier complet (ZIP)",
+      "autre": "Autre document",
+      "non_classe": "Non classifié"
+    },
+    "dossiers": {
+      "source": "Documents sources",
+      "technique": "Dossier technique",
+      "financier": "Dossier financier",
+      "administratif": "Dossier administratif",
+      "output": "Sortie finale"
+    },
+    "docStatus": {
+      "traite": "Prêt",
+      "erreur": "Erreur",
+      "pending": "En attente"
+    }
+  },
+  "settings": {
+    "tabs": { "general": "Général", "utilisation": "Utilisation" },
+    "provider": "Fournisseur",
+    "model": "Modèle",
+    "modelHint": "Utilisé pour toutes les générations et le chat.",
+    "save": "Enregistrer",
+    "saved": "Enregistré",
+    "back": "Retour",
+    "providers": {
+      "anthropic": "Anthropic", "anthropicDesc": "Claude  Meilleur pour la rédaction complexe",
+      "openai": "OpenAI", "openaiDesc": "GPT-4o  Polyvalent et rapide",
+      "mistral": "Mistral", "mistralDesc": "Mistral  Souveraineté européenne des données"
+    },
+    "usage": {
+      "tokens": "Tokens de génération",
+      "tokensSub": "Brief stratégique + réponse AO + chat inclus",
+      "calls": "Réponses AO générées",
+      "callsSub": "Appels complets uniquement",
+      "ocr": "Tokens OCR",
+      "ocrSub": "GPT-4o vision, PDFs scannés uniquement",
+      "reset": "Réinitialiser les compteurs",
+      "resetSub": "Remet tous les compteurs à zéro",
+      "resetBtn": "Réinitialiser",
+      "confirm": "Confirmer ?",
+      "cancel": "Annuler",
+      "refresh": "Actualiser"
+    }
   }
 }

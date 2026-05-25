@@ -12,8 +12,13 @@ from app.api.routes import (
     generation_router, models_router, rag_router,
     defaults_router, usage_router, history_router, auth_router, pdf_router, brief_router,
     signing_router, bordereau_router, acte_engagement_router, chat_router, export_router,
-    filler_router, offre_technique_router,
+    filler_router, offre_technique_router, marche_router, ao_router, company_profile_router,
+    staff_cvs_router, company_documents_router,
 )
+try:
+    from app.celery_app import celery_app as _celery_app  # noqa: F401  initialise le broker/task_routes pour les shared_tasks
+except ModuleNotFoundError:
+    _celery_app = None
 from app.config.settings import get_settings
 from app.limiter import limiter
 
@@ -40,10 +45,10 @@ async def lifespan(app: FastAPI):
 #   - INFO  en prod → seulement les événements importants
 #
 # Format : timestamp | niveau | module | message
-# Exemple : 2024-01-15 03:42:11 INFO  app.services.generation_service — Génération démarrée
+# Exemple : 2024-01-15 03:42:11 INFO  app.services.generation_service  Génération démarrée
 logging.basicConfig(
     level=logging.DEBUG if settings.app_debug else logging.INFO,
-    format="%(asctime)s %(levelname)-8s %(name)s — %(message)s",
+    format="%(asctime)s %(levelname)-8s %(name)s  %(message)s",
     datefmt="%Y-%m-%d %H:%M:%S",
 )
 # Réduire le bruit des bibliothèques tierces (httpx, uvicorn, etc.)
@@ -66,7 +71,7 @@ app = FastAPI(
     redoc_url="/redoc",
 )
 
-# Rate limiting — limite le nombre de requêtes par utilisateur sur POST /generate.
+# Rate limiting  limite le nombre de requêtes par utilisateur sur POST /generate.
 # Le limiter stocke les compteurs en mémoire (dict Python).
 # SlowAPIMiddleware intercepte chaque requête pour incrémenter les compteurs.
 # _rate_limit_exceeded_handler renvoie HTTP 429 avec un message clair si la limite est dépassée.
@@ -74,7 +79,7 @@ app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 app.add_middleware(SlowAPIMiddleware)
 
-# CORS — contrôle des origines cross-origin autorisées.
+# CORS  contrôle des origines cross-origin autorisées.
 #
 # En développement (APP_DEBUG=true) :
 #   → ["*"] : tout est autorisé, pratique pour travailler avec Vite (port 5173)
@@ -85,7 +90,7 @@ app.add_middleware(SlowAPIMiddleware)
 #     Exemple : ["https://monsite.com"]
 #     Si vide, le navigateur bloquera toutes les requêtes cross-origin
 #     (note : en prod le frontend est souvent servi par le même domaine via un proxy,
-#      donc CORS peut ne pas être nécessaire — mais mieux vaut le configurer.)
+#      donc CORS peut ne pas être nécessaire  mais mieux vaut le configurer.)
 #
 # Note technique : ["*"] est incompatible avec allow_credentials=True selon la spec CORS.
 # Le navigateur refuse cette combinaison. On doit donc lister les origines explicitement
@@ -117,6 +122,11 @@ app.include_router(chat_router,             prefix="/api/v1")
 app.include_router(export_router,           prefix="/api/v1")
 app.include_router(filler_router,            prefix="/api/v1")
 app.include_router(offre_technique_router,   prefix="/api/v1")
+app.include_router(marche_router,            prefix="/api/v1")
+app.include_router(ao_router,               prefix="/api/v1")
+app.include_router(company_profile_router,  prefix="/api/v1")
+app.include_router(staff_cvs_router,         prefix="/api/v1")
+app.include_router(company_documents_router, prefix="/api/v1")
 
 
 @app.get("/", include_in_schema=False)
@@ -153,11 +163,11 @@ async def health(response: Response):
     Vérifie l'état de santé de l'application.
 
     Effectue trois vérifications :
-    1. SQLite — une requête SELECT 1 sur la base de données.
+    1. SQLite  une requête SELECT 1 sur la base de données.
        Si elle échoue, l'app est inutilisable → HTTP 503.
-    2. Clés API — vérifie qu'au moins un provider LLM est configuré.
+    2. Clés API  vérifie qu'au moins un provider LLM est configuré.
        Sans clé, aucune génération n'est possible → HTTP 503.
-    3. Qdrant — ping optionnel, uniquement si QDRANT_URL est défini.
+    3. Qdrant  ping optionnel, uniquement si QDRANT_URL est défini.
        Un échec Qdrant dégrade le RAG mais pas la génération de base.
 
     Retourne HTTP 200 si tout est opérationnel, HTTP 503 sinon.
@@ -179,7 +189,7 @@ async def health(response: Response):
         tout_ok = False
 
     # ── 2. Clés API ──────────────────────────────────────────────────────
-    # On ne renvoie jamais les clés elles-mêmes — juste leur présence.
+    # On ne renvoie jamais les clés elles-mêmes  juste leur présence.
     # Si aucune clé n'est configurée, aucune génération ne peut aboutir.
     cles_presentes = [
         p for p, k in {
@@ -195,7 +205,7 @@ async def health(response: Response):
         tout_ok = False
 
     # ── 3. Qdrant (optionnel) ────────────────────────────────────────────
-    # Si QDRANT_URL n'est pas défini, le RAG est simplement désactivé —
+    # Si QDRANT_URL n'est pas défini, le RAG est simplement désactivé 
     # ce n'est pas une erreur. On ping seulement si l'URL est configurée.
     if settings.qdrant_url:
         try:

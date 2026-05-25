@@ -3,7 +3,7 @@ from pydantic import BaseModel, Field, EmailStr, field_validator
 # ── Règles de mot de passe ─────────────────────────────────────────────────────
 # Source unique de vérité : ces constantes sont utilisées par le validateur Pydantic
 # ET exposées via GET /api/v1/auth/password-rules pour que le frontend se synchronise
-# automatiquement. Modifier ici suffit — le frontend s'adapte sans aucune retouche.
+# automatiquement. Modifier ici suffit  le frontend s'adapte sans aucune retouche.
 PASSWORD_MIN_LENGTH:   int  = 8
 PASSWORD_REQUIRE_DIGIT: bool = True
 # ──────────────────────────────────────────────────────────────────────────────
@@ -37,13 +37,14 @@ class UserCreate(BaseModel):
 
 class UserPublic(BaseModel):
     id:               str
+    org_id:           str | None = None
     nom:              str
     prenom:           str
     email:            str
     created_at:       str
     email_verified:   bool = True
     generations_used: int  = 0
-    max_generations:  int  = 0   # 0 = illimité
+    max_generations:  int  = 0
 
 
 class Token(BaseModel):

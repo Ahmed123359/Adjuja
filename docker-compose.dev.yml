@@ -1,12 +1,11 @@
-# docker-compose.dev.yml — surcharges pour le développement local
+# docker-compose.dev.yml  surcharges pour le développement local
 # Usage : docker compose -f docker-compose.yml -f docker-compose.dev.yml up
 services:
-
   postgres:
     image: postgres:16-alpine
     environment:
-      POSTGRES_DB:       offria
-      POSTGRES_USER:     offria
+      POSTGRES_DB: offria
+      POSTGRES_USER: offria
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-offria_dev}
     volumes:
       - postgres_data:/var/lib/postgresql/data
@@ -17,6 +16,27 @@ services:
       interval: 5s
       timeout: 3s
       retries: 10
+    networks:
+      - ao_network
+
+  minio:
+    image: minio/minio:latest
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ACCESS_KEY:-offria_dev}
+      MINIO_ROOT_PASSWORD: ${MINIO_SECRET_KEY:-offria_dev_secret}
+    volumes:
+      - minio_data:/data
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    networks:
+      - ao_network
 
   # api:
   #   build:
@@ -48,8 +68,99 @@ services:
   #   networks:
   #     - ao_network
 
+  redis:
+    image: redis:7-alpine
+    command: redis-server --save 60 1 --loglevel warning
+    volumes:
+      - redis_data:/data
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    networks:
+      - ao_network
+
+  # Worker Celery  appels LLM, analyse CPS/RC, génération note métho
+  # concurrency=4 : 4 tâches LLM en parallèle (I/O bound)
+  celery-io:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: api-dev
+    command: >
+      celery -A app.celery_app.celery_app worker
+      --queues=celery_io
+      --concurrency=4
+      --loglevel=info
+      --hostname=celery-io@%h
+    environment:
+      DATABASE_URL: postgresql+asyncpg://offria:${POSTGRES_PASSWORD:-offria_dev}@postgres:5432/offria
+      REDIS_URL: redis://redis:6379/0
+      CELERY_BROKER_URL: redis://redis:6379/1
+      CELERY_RESULT_BACKEND: redis://redis:6379/2
+      MINIO_ENDPOINT: minio:9000
+      MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY:-offria_dev}
+      MINIO_SECRET_KEY: ${MINIO_SECRET_KEY:-offria_dev_secret}
+      MISTRAL_API_KEY: ${MISTRAL_API_KEY:-}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY:-change-me-in-production-32chars!!}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+    networks:
+      - ao_network
+    volumes:
+      - ./app:/app/app
+
+  # Worker Celery  filler (CPU), signing, compilation ZIP
+  # concurrency=2 : traitement lourd fichiers PDF
+  celery-cpu:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: api-dev
+    command: >
+      celery -A app.celery_app.celery_app worker
+      --queues=celery_cpu
+      --concurrency=2
+      --loglevel=info
+      --hostname=celery-cpu@%h
+    environment:
+      DATABASE_URL: postgresql+asyncpg://offria:${POSTGRES_PASSWORD:-offria_dev}@postgres:5432/offria
+      REDIS_URL: redis://redis:6379/0
+      CELERY_BROKER_URL: redis://redis:6379/1
+      CELERY_RESULT_BACKEND: redis://redis:6379/2
+      MINIO_ENDPOINT: minio:9000
+      MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY:-offria_dev}
+      MINIO_SECRET_KEY: ${MINIO_SECRET_KEY:-offria_dev_secret}
+      MISTRAL_API_KEY: ${MISTRAL_API_KEY:-}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY:-change-me-in-production-32chars!!}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+    networks:
+      - ao_network
+    volumes:
+      - ./app:/app/app
+
 volumes:
   postgres_data:
+  minio_data:
+  redis_data:
 
 networks:
   ao_network:

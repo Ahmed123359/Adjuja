@@ -1,15 +1,14 @@
 import logging
-from pathlib import Path
 from typing import Optional
 
 from fastapi import APIRouter, Depends, Form, HTTPException, UploadFile, status
-from fastapi.responses import FileResponse
+from fastapi.responses import RedirectResponse
 
 from app.api.dependencies import get_current_user
 from app.config.settings import get_settings
 from app.models.offre_technique import OffreTechniqueResult
 from app.models.user import UserPublic
-from app.services.offre_technique_service import get_output_file_path, run_offre_technique
+from app.services.offre_technique_service import get_presigned_url, run_offre_technique
 from app.services.security.input_sanitizer import (
     sanitize_custom_instructions, validate_logo, validate_upload_size,
 )
@@ -27,15 +26,17 @@ _ALLOWED_MIME = {"application/pdf", "application/octet-stream"}
 )
 async def run(
     file:                 UploadFile,
-    brand_color:          Optional[str]      = Form(default=None),
-    custom_instructions:  Optional[str]      = Form(default=None),
+    brand_color:          Optional[str]        = Form(default=None),
+    custom_instructions:  Optional[str]        = Form(default=None),
+    marche_id:            Optional[str]        = Form(default=None),
     logo:                 Optional[UploadFile] = None,
-    current_user:         UserPublic         = Depends(get_current_user),
+    rc:                   Optional[UploadFile] = None,
+    current_user:         UserPublic           = Depends(get_current_user),
 ) -> OffreTechniqueResult:
     if file.content_type not in _ALLOWED_MIME and not file.filename.endswith(".pdf"):
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail="Le fichier doit être un PDF.",
+            detail="Le fichier doit etre un PDF.",
         )
 
     pdf_bytes = await file.read()
@@ -69,30 +70,39 @@ async def run(
             detail="MISTRAL_API_KEY non configurée.",
         )
 
-    logger.info("OffreTechnique run — user=%s file=%s size=%d", current_user.id, file.filename, len(pdf_bytes))
+    rc_bytes: bytes | None = None
+    if rc and rc.filename and rc.filename.endswith(".pdf"):
+        rc_bytes = await rc.read()
+        validate_upload_size(rc_bytes, "RC")
+
+    org_id = current_user.org_id or current_user.id
+    logger.info("OffreTechnique run - user=%s org=%s marche=%s file=%s rc=%s", current_user.id, org_id, marche_id, file.filename, bool(rc_bytes))
     return await run_offre_technique(
         pdf_bytes, file.filename or "cps.pdf", api_key,
+        org_id=org_id,
         logo_bytes=logo_bytes, logo_filename=logo_filename,
         brand_color=clean_color, custom_instructions=clean_instructions,
+        rc_bytes=rc_bytes,
+        marche_id=marche_id or None,
+        user_id=current_user.id,
     )
 
 
 @router.get(
     "/download/{job_id}/{filename}",
-    summary="Télécharger un fichier produit",
+    summary="Obtenir une URL de telechargement (presigned MinIO)",
 )
 async def download(
     job_id:       str,
     filename:     str,
     current_user: UserPublic = Depends(get_current_user),
-) -> FileResponse:
+) -> RedirectResponse:
     if "/" in filename or "\\" in filename or ".." in filename:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Nom de fichier invalide.")
 
-    path = get_output_file_path(job_id, filename)
-    if path is None:
+    org_id = current_user.org_id or current_user.id
+    url = get_presigned_url(org_id, job_id, filename)
+    if url is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Fichier introuvable.")
 
-    media_types = {".pdf": "application/pdf", ".docx": "application/vnd.openxmlformats-officedocument.wordprocessingml.document"}
-    media_type  = media_types.get(Path(filename).suffix, "application/octet-stream")
-    return FileResponse(path=str(path), media_type=media_type, filename=filename)
+    return RedirectResponse(url=url, status_code=302)

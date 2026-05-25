@@ -1,5 +1,5 @@
 """
-Route POST /chat — Chat conversationnel avec RAG.
+Route POST /chat  Chat conversationnel avec RAG.
 
 Endpoint protégé par JWT. Chaque appel reçoit l'historique complet
 de la conversation et retourne la réponse du LLM enrichie par la
@@ -51,7 +51,7 @@ async def chat(
     - ``502`` : erreur du provider LLM
     """
     logger.info(
-        "Chat — user=%s provider=%s messages=%d",
+        "Chat  user=%s provider=%s messages=%d",
         current_user.id, body.provider.value, len(body.messages),
     )
 
@@ -68,7 +68,7 @@ async def chat(
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
     except Exception as e:
-        logger.error("Erreur chat — user=%s erreur=%s", current_user.id, e, exc_info=True)
+        logger.error("Erreur chat  user=%s erreur=%s", current_user.id, e, exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_502_BAD_GATEWAY,
             detail=f"Erreur lors de la génération de la réponse : {e}",

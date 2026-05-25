@@ -39,6 +39,7 @@ class FillerOutputFile(BaseModel):
     filename:    str  = Field(..., description="Nom du fichier produit")
     format:      str  = Field(..., description="Format du fichier (pdf, docx, xlsx)")
     download_url: str = Field(..., description="URL de téléchargement")
+    minio_key:   str  = Field(default="", description="Clé MinIO directe")
 
 
 class FillerResult(BaseModel):

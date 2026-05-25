@@ -1,32 +1,114 @@
 from sqlalchemy import Boolean, ForeignKey, Index, Integer, String, Text
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
+from typing import Any, Optional
 
 from app.db.base import Base
+
+
+class Marche(Base):
+    __tablename__ = "marches"
+    __table_args__ = (
+        Index("idx_marches_org_id", "org_id"),
+        Index("idx_marches_user_id", "user_id"),
+    )
+
+    id: Mapped[str]               = mapped_column(String(36), primary_key=True)
+    org_id: Mapped[str]           = mapped_column(String(36), index=True)
+    user_id: Mapped[str]          = mapped_column(String(36), ForeignKey("users.id"))
+    created_at: Mapped[str]       = mapped_column(String(50))
+    reference: Mapped[str]        = mapped_column(String(255), default="")
+    acheteur: Mapped[str]         = mapped_column(String(255), default="")
+    objet: Mapped[str]            = mapped_column(Text, default="")
+    statut: Mapped[str]           = mapped_column(String(50), default="en_cours")
+    cps_key: Mapped[str | None]   = mapped_column(String(512), nullable=True)
+    rc_key: Mapped[str | None]    = mapped_column(String(512), nullable=True)
+
+    offre_technique_jobs: Mapped[list["OffreTechniqueJob"]] = relationship(back_populates="marche", cascade="all, delete-orphan")
+    filler_jobs: Mapped[list["FillerJob"]]                  = relationship(back_populates="marche", cascade="all, delete-orphan")
+    signing_jobs: Mapped[list["SigningJob"]]                 = relationship(back_populates="marche", cascade="all, delete-orphan")
+
+
+class OffreTechniqueJob(Base):
+    __tablename__ = "offre_technique_jobs"
+
+    id: Mapped[str]         = mapped_column(String(36), primary_key=True)
+    marche_id: Mapped[str]  = mapped_column(String(36), ForeignKey("marches.id"), index=True)
+    org_id: Mapped[str]     = mapped_column(String(36))
+    created_at: Mapped[str] = mapped_column(String(50))
+    job_id: Mapped[str]     = mapped_column(String(36))
+    statut: Mapped[str]     = mapped_column(String(50), default="termine")
+
+    marche: Mapped["Marche"] = relationship(back_populates="offre_technique_jobs")
+
+
+class FillerJob(Base):
+    __tablename__ = "filler_jobs"
+
+    id: Mapped[str]         = mapped_column(String(36), primary_key=True)
+    marche_id: Mapped[str]  = mapped_column(String(36), ForeignKey("marches.id"), index=True)
+    org_id: Mapped[str]     = mapped_column(String(36))
+    created_at: Mapped[str] = mapped_column(String(50))
+    job_id: Mapped[str]     = mapped_column(String(36))
+    statut: Mapped[str]     = mapped_column(String(50), default="termine")
+
+    marche: Mapped["Marche"] = relationship(back_populates="filler_jobs")
+
+
+class SigningJob(Base):
+    __tablename__ = "signing_jobs"
+
+    id: Mapped[str]         = mapped_column(String(36), primary_key=True)
+    marche_id: Mapped[str]  = mapped_column(String(36), ForeignKey("marches.id"), index=True)
+    org_id: Mapped[str]     = mapped_column(String(36))
+    created_at: Mapped[str] = mapped_column(String(50))
+    job_id: Mapped[str]     = mapped_column(String(36))
+    statut: Mapped[str]     = mapped_column(String(50), default="termine")
+
+    marche: Mapped["Marche"] = relationship(back_populates="signing_jobs")
+
+
+class Organization(Base):
+    __tablename__ = "organizations"
+
+    id: Mapped[str]           = mapped_column(String(36), primary_key=True)
+    name: Mapped[str]         = mapped_column(String(255))
+    slug: Mapped[str]         = mapped_column(String(100), unique=True, index=True)
+    created_at: Mapped[str]   = mapped_column(String(50))
+
+    users: Mapped[list["User"]]    = relationship(back_populates="org", cascade="all, delete-orphan")
+    launches: Mapped[list["Launch"]] = relationship(back_populates="org", cascade="all, delete-orphan")
 
 
 class User(Base):
     __tablename__ = "users"
 
-    id: Mapped[str]                    = mapped_column(String(36), primary_key=True)
-    nom: Mapped[str]                   = mapped_column(String(255))
-    prenom: Mapped[str]                = mapped_column(String(255))
-    email: Mapped[str]                 = mapped_column(String(255), unique=True, index=True)
-    hashed_pwd: Mapped[str]            = mapped_column(Text)
-    created_at: Mapped[str]            = mapped_column(String(50))
-    email_verified: Mapped[bool]       = mapped_column(Boolean, default=True)
+    id: Mapped[str]                      = mapped_column(String(36), primary_key=True)
+    org_id: Mapped[str | None]           = mapped_column(String(36), ForeignKey("organizations.id"), nullable=True, index=True)
+    nom: Mapped[str]                     = mapped_column(String(255))
+    prenom: Mapped[str]                  = mapped_column(String(255))
+    email: Mapped[str]                   = mapped_column(String(255), unique=True, index=True)
+    hashed_pwd: Mapped[str]              = mapped_column(Text)
+    created_at: Mapped[str]              = mapped_column(String(50))
+    email_verified: Mapped[bool]         = mapped_column(Boolean, default=True)
     verification_token: Mapped[str | None] = mapped_column(String(36), nullable=True)
-    generations_used: Mapped[int]      = mapped_column(Integer, default=0)
-    max_generations: Mapped[int]       = mapped_column(Integer, default=0)
+    generations_used: Mapped[int]        = mapped_column(Integer, default=0)
+    max_generations: Mapped[int]         = mapped_column(Integer, default=0)
 
-    launches: Mapped[list["Launch"]]   = relationship(back_populates="user", cascade="all, delete-orphan")
+    org: Mapped["Organization | None"]   = relationship(back_populates="users")
+    launches: Mapped[list["Launch"]]     = relationship(back_populates="user", cascade="all, delete-orphan")
 
 
 class Launch(Base):
     __tablename__ = "launches"
-    __table_args__ = (Index("idx_launches_user_id", "user_id"),)
+    __table_args__ = (
+        Index("idx_launches_user_id", "user_id"),
+        Index("idx_launches_org_id", "org_id"),
+    )
 
     id: Mapped[str]              = mapped_column(String(36), primary_key=True)
     user_id: Mapped[str]         = mapped_column(String(36), ForeignKey("users.id"))
+    org_id: Mapped[str | None]   = mapped_column(String(36), ForeignKey("organizations.id"), nullable=True)
     created_at: Mapped[str]      = mapped_column(String(50))
     ao_excerpt: Mapped[str]      = mapped_column(Text, default="")
     company_nom: Mapped[str]     = mapped_column(String(255), default="")
@@ -35,8 +117,10 @@ class Launch(Base):
     tokens_utilises: Mapped[int] = mapped_column(Integer, default=0)
     langue: Mapped[str]          = mapped_column(String(10), default="fr")
     result_json: Mapped[str]     = mapped_column(Text, default="{}")
+    minio_job_id: Mapped[str | None] = mapped_column(String(36), nullable=True)
 
-    user: Mapped["User"]         = relationship(back_populates="launches")
+    user: Mapped["User"]              = relationship(back_populates="launches")
+    org: Mapped["Organization | None"] = relationship(back_populates="launches")
 
 
 class Usage(Base):
@@ -46,3 +130,161 @@ class Usage(Base):
     total_tokens: Mapped[int]      = mapped_column(Integer, default=0)
     total_appels: Mapped[int]      = mapped_column(Integer, default=0)
     total_tokens_ocr: Mapped[int]  = mapped_column(Integer, default=0)
+
+
+# ---------------------------------------------------------------------------
+# Phase 4  Pipeline AO automatisé
+# ---------------------------------------------------------------------------
+
+class AppelOffre(Base):
+    """Dossier AO principal. Un dossier par appel d'offres soumis par l'entreprise."""
+    __tablename__ = "appels_offres"
+    __table_args__ = (
+        Index("idx_ao_org_id", "org_id"),
+        Index("idx_ao_user_id", "user_id"),
+        Index("idx_ao_statut", "statut"),
+    )
+
+    id: Mapped[str]                   = mapped_column(String(36), primary_key=True)
+    org_id: Mapped[str]               = mapped_column(String(36), nullable=False)
+    user_id: Mapped[str]              = mapped_column(String(36), ForeignKey("users.id"), nullable=False)
+    created_at: Mapped[str]           = mapped_column(String(50), nullable=False)
+    updated_at: Mapped[str]           = mapped_column(String(50), nullable=False)
+
+    reference: Mapped[str]            = mapped_column(String(255), default="")
+    acheteur: Mapped[str]             = mapped_column(String(255), default="")
+    objet: Mapped[str]                = mapped_column(Text, default="")
+
+    # Statut pipeline : brouillon → en_analyse → en_traitement → termine → erreur
+    statut: Mapped[str]               = mapped_column(String(50), default="brouillon")
+    pipeline_pct: Mapped[int]         = mapped_column(Integer, default=0)
+    erreur_message: Mapped[str | None] = mapped_column(Text, nullable=True)
+
+    # Résultat de task_analyze_ao_context  structure définie dans architecture.md §5
+    analyse_json: Mapped[dict[str, Any] | None] = mapped_column(JSONB, nullable=True)
+    # Instructions spécifiques à cet AO, injectées dans tous les prompts LLM du pipeline
+    custom_instructions: Mapped[str | None] = mapped_column(Text, nullable=True)
+
+    documents: Mapped[list["AoDocument"]] = relationship(back_populates="ao", cascade="all, delete-orphan")
+
+
+class AoDocument(Base):
+    """Un fichier associé à un dossier AO (source uploadé ou généré)."""
+    __tablename__ = "ao_documents"
+    __table_args__ = (
+        Index("idx_aodoc_ao_id", "ao_id"),
+        Index("idx_aodoc_doc_type", "doc_type"),
+    )
+
+    id: Mapped[str]            = mapped_column(String(36), primary_key=True)
+    ao_id: Mapped[str]         = mapped_column(String(36), ForeignKey("appels_offres.id"), nullable=False)
+    created_at: Mapped[str]    = mapped_column(String(50), nullable=False)
+
+    # Dossier : source | technique | financier | administratif | output
+    dossier: Mapped[str]       = mapped_column(String(50), nullable=False)
+    # Type : cps | rc | note_metho | acte_engagement | bordereau | declaration_honneur | zip_final | autre
+    doc_type: Mapped[str]      = mapped_column(String(100), nullable=False)
+    # Origine : upload (utilisateur) | genere (LLM) | rempli (filler) | signe (signing)
+    origine: Mapped[str]       = mapped_column(String(50), nullable=False, default="upload")
+    # Statut : en_attente | traite | erreur
+    statut: Mapped[str]        = mapped_column(String(50), nullable=False, default="en_attente")
+
+    minio_key: Mapped[str | None]   = mapped_column(String(512), nullable=True)
+    nom_fichier: Mapped[str]        = mapped_column(String(255), default="")
+    taille_octets: Mapped[int]      = mapped_column(Integer, default=0)
+
+    ao: Mapped["AppelOffre"] = relationship(back_populates="documents")
+
+
+class CompanyProfile(Base):
+    """Profil de l'entreprise par org. Remplace la saisie manuelle à chaque génération."""
+    __tablename__ = "company_profiles"
+
+    id: Mapped[str]              = mapped_column(String(36), primary_key=True)
+    org_id: Mapped[str]          = mapped_column(String(36), nullable=False, unique=True, index=True)
+    created_at: Mapped[str]      = mapped_column(String(50), nullable=False)
+    updated_at: Mapped[str]      = mapped_column(String(50), nullable=False)
+
+    nom_entreprise: Mapped[str]  = mapped_column(String(255), default="")
+    ice: Mapped[str]             = mapped_column(String(50), default="")
+    rc: Mapped[str]              = mapped_column(String(50), default="")
+    if_fiscal: Mapped[str]       = mapped_column(String(50), default="")
+    cnss: Mapped[str]            = mapped_column(String(50), default="")
+    adresse: Mapped[str]         = mapped_column(Text, default="")
+    ville: Mapped[str]           = mapped_column(String(100), default="")
+    telephone: Mapped[str]       = mapped_column(String(20), default="")
+    email: Mapped[str]           = mapped_column(String(255), default="")
+    gerant_nom: Mapped[str]      = mapped_column(String(255), default="")
+    gerant_prenom: Mapped[str]   = mapped_column(String(255), default="")
+    gerant_cin: Mapped[str]      = mapped_column(String(20), default="")
+    secteur: Mapped[str]         = mapped_column(String(255), default="")
+    # Style et tonalité globaux de l'org, injectés dans tous les pipelines
+    custom_instructions: Mapped[str | None] = mapped_column(Text, nullable=True)
+    # Données supplémentaires libres (capital, garanties, références, etc.)
+    extra: Mapped[dict[str, Any] | None] = mapped_column(JSONB, nullable=True)
+    # Images signature et cachet spécifiques à l'org (MinIO)
+    signature_minio_key: Mapped[str | None] = mapped_column(String(512), nullable=True)
+    cachet_minio_key:    Mapped[str | None] = mapped_column(String(512), nullable=True)
+
+
+class StaffCv(Base):
+    """CV d'un intervenant pour la constitution du dossier technique."""
+    __tablename__ = "staff_cvs"
+    __table_args__ = (
+        Index("idx_staffcv_org_id", "org_id"),
+    )
+
+    id: Mapped[str]            = mapped_column(String(36), primary_key=True)
+    org_id: Mapped[str]        = mapped_column(String(36), nullable=False)
+    created_at: Mapped[str]    = mapped_column(String(50), nullable=False)
+    updated_at: Mapped[str]    = mapped_column(String(50), nullable=False)
+
+    nom: Mapped[str]           = mapped_column(String(255), default="")
+    prenom: Mapped[str]        = mapped_column(String(255), default="")
+    poste: Mapped[str]         = mapped_column(String(255), default="")
+    diplome: Mapped[str]       = mapped_column(String(255), default="")
+    annees_experience: Mapped[int]  = mapped_column(Integer, default=0)
+    specialite:        Mapped[str]  = mapped_column(String(255), default="")
+    actif:             Mapped[bool] = mapped_column(Boolean, default=True)
+    # Compétences, expériences, références, etc.
+    details: Mapped[dict[str, Any] | None] = mapped_column(JSONB, nullable=True)
+    # Clé MinIO du PDF CV si uploadé
+    cv_minio_key: Mapped[str | None] = mapped_column(String(512), nullable=True)
+
+
+class CompanyDocument(Base):
+    """Document permanent de l'entreprise (attestations, gérance, diplômes...)."""
+    __tablename__ = "company_documents"
+    __table_args__ = (
+        Index("idx_companydoc_org_id",   "org_id"),
+        Index("idx_companydoc_doc_type", "doc_type"),
+    )
+
+    id:            Mapped[str]           = mapped_column(String(36), primary_key=True)
+    org_id:        Mapped[str]           = mapped_column(String(36), nullable=False)
+    created_at:    Mapped[str]           = mapped_column(String(50), nullable=False)
+    updated_at:    Mapped[str]           = mapped_column(String(50), nullable=False)
+    # Types: pouvoir_gerance | attestation_fiscale | attestation_cnas | attestation_casnos
+    #        reference_realisation | diplome | autre
+    doc_type:      Mapped[str]           = mapped_column(String(100), nullable=False)
+    nom_fichier:   Mapped[str]           = mapped_column(String(255), default="")
+    minio_key:     Mapped[str | None]    = mapped_column(String(512), nullable=True)
+    description:   Mapped[str | None]    = mapped_column(Text, nullable=True)
+    date_validite: Mapped[str | None]    = mapped_column(String(50), nullable=True)
+
+
+class AoTeamMember(Base):
+    """Membre de l'équipe affecté à un AO spécifique (lien AO <-> StaffCv)."""
+    __tablename__ = "ao_team_members"
+    __table_args__ = (
+        Index("idx_aoteam_ao_id", "ao_id"),
+    )
+
+    id:                Mapped[str]        = mapped_column(String(36), primary_key=True)
+    ao_id:             Mapped[str]        = mapped_column(String(36), ForeignKey("appels_offres.id"), nullable=False)
+    staff_cv_id:       Mapped[Optional[str]] = mapped_column(String(36), ForeignKey("staff_cvs.id"), nullable=True)
+    created_at:        Mapped[str]        = mapped_column(String(50), nullable=False)
+    role_dans_offre:   Mapped[str]        = mapped_column(String(255), default="")
+    profil_requis_ref: Mapped[str | None] = mapped_column(Text, nullable=True)
+    # True si aucun CV de l'org ne couvre ce profil requis
+    warning:           Mapped[bool]       = mapped_column(Boolean, default=False)

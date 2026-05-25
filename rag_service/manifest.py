@@ -1,5 +1,5 @@
 """
-Manifest — suivi des fichiers indexés.
+Manifest  suivi des fichiers indexés.
 
 Le manifest est un fichier JSON stocké dans knowledge_base/.rag_manifest.json.
 Il persiste entre les redémarrages du service ETL et permet de n'indexer

@@ -26,6 +26,16 @@ def extract_text(pdf_path: Path) -> str:
 
 
 def analyze(pdf_path: Path, api_key: str) -> CPSContext:
+    from app.cache import cache
+    from app.config.settings import get_settings
+
+    raw_bytes = pdf_path.read_bytes()
+    cache_key = f"cache:cps:{cache.sha256(raw_bytes)}"
+    cached = cache.get(cache_key)
+    if cached:
+        logger.info("CPS cache hit: %s", cache_key[:24])
+        return CPSContext(**cached)
+
     text = extract_text(pdf_path)
 
     payload = {
@@ -46,7 +56,7 @@ def analyze(pdf_path: Path, api_key: str) -> CPSContext:
         )
         if resp.status_code != 429 or delay is None:
             break
-        logger.warning("CPS analyzer 429 — attente %ds (tentative %d)", delay, attempt)
+        logger.warning("CPS analyzer 429  attente %ds (tentative %d)", delay, attempt)
         time.sleep(delay)
     resp.raise_for_status()
     raw = resp.json()["choices"][0]["message"]["content"]
@@ -57,7 +67,7 @@ def analyze(pdf_path: Path, api_key: str) -> CPSContext:
         m = re.search(r"\{.*\}", raw, re.DOTALL)
         data = json.loads(m.group(0)) if m else {}
 
-    return CPSContext(
+    ctx = CPSContext(
         scope=data.get("scope", ""),
         acheteur=data.get("acheteur", ""),
         reference=data.get("reference", ""),
@@ -72,3 +82,5 @@ def analyze(pdf_path: Path, api_key: str) -> CPSContext:
         planning_note=data.get("planning_note", ""),
         sous_traitance=data.get("sous_traitance", ""),
     )
+    cache.set(cache_key, ctx.model_dump())
+    return ctx

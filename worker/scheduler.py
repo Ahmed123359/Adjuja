@@ -43,7 +43,7 @@ def run_scrape_job(settings: WorkerSettings) -> None:
             row["ref_consultation"]
             for row in conn.execute("SELECT ref_consultation FROM appels_offre")
         }
-        logger.info("%d AO(s) déjà en base — seules les nouvelles seront téléchargées", len(known_refs))
+        logger.info("%d AO(s) déjà en base  seules les nouvelles seront téléchargées", len(known_refs))
 
         results = asyncio.run(run_scrape(settings, known_refs=known_refs))
 
@@ -52,7 +52,7 @@ def run_scrape_job(settings: WorkerSettings) -> None:
 
         ok  = sum(1 for r in results if r.fichier_path)
         nok = sum(1 for r in results if not r.fichier_path)
-        logger.info("Job terminé : %d nouveaux AOs — %d OK, %d échec(s)", len(results), ok, nok)
+        logger.info("Job terminé : %d nouveaux AOs  %d OK, %d échec(s)", len(results), ok, nok)
 
     except Exception as exc:
         logger.exception("Erreur inattendue dans le job de scraping : %s", exc)

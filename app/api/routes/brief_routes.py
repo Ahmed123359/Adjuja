@@ -45,7 +45,7 @@ async def generate_brief(
     - ``500`` : erreur interne inattendue
     """
     logger.info(
-        "Brief stratégique demandé — user=%s provider=%s model=%s",
+        "Brief stratégique demandé  user=%s provider=%s model=%s",
         current_user.id, body.provider.value, body.model,
     )
 
@@ -56,7 +56,7 @@ async def generate_brief(
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
     except Exception as e:
-        logger.error("Erreur brief — user=%s erreur=%s", current_user.id, e, exc_info=True)
+        logger.error("Erreur brief  user=%s erreur=%s", current_user.id, e, exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_502_BAD_GATEWAY,
             detail=f"Erreur lors de la génération du brief : {e}",
@@ -64,7 +64,7 @@ async def generate_brief(
 
     tokens = result["tokens_utilises"]
     logger.info(
-        "Brief généré — user=%s provider=%s tokens=%d",
+        "Brief généré  user=%s provider=%s tokens=%d",
         current_user.id, result["provider_utilise"], tokens,
     )
     await usage.add_tokens(tokens)

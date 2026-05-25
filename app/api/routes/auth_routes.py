@@ -74,7 +74,7 @@ async def register(
     settings: Settings    = Depends(get_settings),
 ) -> RegisterResponse:
     if settings.allowed_emails and data.email.lower() not in [e.lower() for e in settings.allowed_emails]:
-        logger.warning("Inscription refusée (hors liste blanche) — email=%s", data.email)
+        logger.warning("Inscription refusée (hors liste blanche)  email=%s", data.email)
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Inscription sur invitation uniquement. Contactez l'administrateur.",
@@ -89,7 +89,7 @@ async def register(
         code = status.HTTP_409_CONFLICT if "déjà utilisée" in msg else status.HTTP_500_INTERNAL_SERVER_ERROR
         raise HTTPException(status_code=code, detail=msg)
 
-    logger.info("Inscription réussie — user_id=%s email=%s admin=%s", user.id, user.email, is_admin)
+    logger.info("Inscription réussie  user_id=%s email=%s admin=%s", user.id, user.email, is_admin)
 
     # Admins : vérification email non requise → JWT direct
     if is_admin:
@@ -122,7 +122,7 @@ async def verify_email(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Lien de vérification invalide ou déjà utilisé.",
         )
-    logger.info("Email vérifié — user_id=%s email=%s", user.id, user.email)
+    logger.info("Email vérifié  user_id=%s email=%s", user.id, user.email)
     frontend_url = settings.app_frontend_url.rstrip("/")
     return RedirectResponse(url=f"{frontend_url}/login?verified=true", status_code=302)
 
@@ -141,13 +141,13 @@ async def login(
     if user is None:
         # WARNING : tentative de connexion échouée. Plusieurs WARNING consécutifs
         # sur le même email = signal potentiel de brute-force.
-        logger.warning("Échec de connexion — email=%s", data.email)
+        logger.warning("Échec de connexion  email=%s", data.email)
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Email ou mot de passe incorrect.",
         )
 
-    logger.info("Connexion réussie — user_id=%s email=%s", user.id, user.email)
+    logger.info("Connexion réussie  user_id=%s email=%s", user.id, user.email)
     return Token(access_token=_make_token(user.id, settings))
 
 
@@ -185,11 +185,11 @@ async def login_google(
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Email manquant dans le token Google.")
 
     if settings.allowed_emails and email.lower() not in [e.lower() for e in settings.allowed_emails]:
-        logger.warning("Connexion Google refusée (hors liste blanche) — email=%s", email)
+        logger.warning("Connexion Google refusée (hors liste blanche)  email=%s", email)
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Accès sur invitation uniquement.")
 
     user = await users.get_or_create_google_user(email=email, prenom=prenom, nom=nom)
-    logger.info("Connexion Google réussie — user_id=%s email=%s", user.id, email)
+    logger.info("Connexion Google réussie  user_id=%s email=%s", user.id, email)
     return Token(access_token=_make_token(user.id, settings))
 
 

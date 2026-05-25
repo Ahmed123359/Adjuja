@@ -24,12 +24,12 @@ class PdfExtractService:
     """
     Extrait le texte d'un AO au format PDF en deux phases :
 
-    Phase 1 — pymupdf :
+    Phase 1  pymupdf :
         Tente d'extraire le texte embarqué directement.
         Rapide, 0 token LLM consommé.
         Couvre ~95% des AOs (vrais PDFs avec texte).
 
-    Phase 2 — OpenAI GPT-4o vision (fallback) :
+    Phase 2  OpenAI GPT-4o vision (fallback) :
         Activée si le PDF est scanné (texte embarqué < 50 car/page en moyenne).
         Rend chaque page en PNG (150 DPI) puis envoie à GPT-4o vision pour transcription.
     """
@@ -56,7 +56,7 @@ class PdfExtractService:
         is_scanned = avg_chars < _SCAN_THRESHOLD_CHARS_PER_PAGE
 
         logger.info(
-            "PDF reçu — pages=%d avg_chars/page=%.0f scanned=%s",
+            "PDF reçu  pages=%d avg_chars/page=%.0f scanned=%s",
             n_pages, avg_chars, is_scanned,
         )
 
@@ -136,7 +136,7 @@ class PdfExtractService:
                         "You are an OCR (Optical Character Recognition) assistant. "
                         "Your sole task is to accurately transcribe all visible text from document images. "
                         "Always transcribe the full text exactly as it appears, preserving structure, "
-                        "numbering, and formatting. Never summarize or refuse — just transcribe."
+                        "numbering, and formatting. Never summarize or refuse  just transcribe."
                     ),
                 },
                 {"role": "user", "content": content},

@@ -171,6 +171,105 @@ export interface ChatApiResponse {
   provider_utilise: string;
   model_utilise:    string;
 }
+// ── Marchés ─────────────────────────────────────────────────────────────────
+
+export interface JobSummary {
+  id:         string;
+  job_id:     string;
+  created_at: string;
+  statut:     string;
+}
+
+export interface MarcheSummary {
+  id:           string;
+  reference:    string;
+  acheteur:     string;
+  objet:        string;
+  statut:       string;
+  created_at:   string;
+  cps_uploaded: boolean;
+  rc_uploaded:  boolean;
+}
+
+export interface MarcheDetail extends MarcheSummary {
+  offre_technique_jobs: JobSummary[];
+  filler_jobs:          JobSummary[];
+  signing_jobs:         JobSummary[];
+}
+
+// ── Profil entreprise ────────────────────────────────────────────────────────
+
+export interface CompanyProfile {
+  id:             string;
+  org_id:         string;
+  created_at:     string;
+  updated_at:     string;
+  nom_entreprise: string;
+  ice:            string;
+  rc:             string;
+  if_fiscal:      string;
+  cnss:           string;
+  adresse:        string;
+  ville:          string;
+  telephone:      string;
+  email:          string;
+  gerant_nom:     string;
+  gerant_prenom:  string;
+  gerant_cin:     string;
+  secteur:        string;
+  extra:               Record<string, unknown> | null;
+  complet:             boolean;
+  signature_minio_key: string | null;
+  cachet_minio_key:    string | null;
+  signature_url:       string | null;
+  cachet_url:          string | null;
+}
+
+export type CompanyProfileForm = Omit<CompanyProfile, "id" | "org_id" | "created_at" | "updated_at" | "complet" | "signature_minio_key" | "cachet_minio_key" | "signature_url" | "cachet_url">;
+
+export interface ProfileCheck {
+  complet:          boolean;
+  champs_manquants: string[];
+  message:          string | null;
+}
+
+// ── Pipeline Appel d'offres (Phase 4) ────────────────────────────────────────
+
+export interface AoDocumentOut {
+  id:            string;
+  dossier:       string;
+  doc_type:      string;
+  origine:       string;
+  statut:        string;
+  nom_fichier:   string;
+  taille_octets: number;
+  minio_key:     string | null;
+}
+
+export interface AoSummary {
+  id:           string;
+  reference:    string;
+  acheteur:     string;
+  objet:        string;
+  statut:       string;
+  pipeline_pct: number;
+  created_at:   string;
+  updated_at:   string;
+}
+
+export interface AoResponse extends AoSummary {
+  erreur_message: string | null;
+  analyse_json:   Record<string, unknown> | null;
+  documents:      AoDocumentOut[];
+}
+
+export interface AoStatus {
+  id:             string;
+  statut:         string;
+  pipeline_pct:   number;
+  erreur_message: string | null;
+}
+
 // ── Offre Technique ──────────────────────────────────────────────────────────
 
 export interface OffreTechniqueOutputFile {
@@ -199,4 +298,49 @@ export interface OffreTechniqueResult {
   quality:  QualityReport | null;
   erreurs:  string[];
   message:  string;
+}
+
+// ── Phase 5  Documents entreprise + Equipe CVs ──────────────────────────────
+
+export interface StaffCv {
+  id:                string;
+  org_id:            string;
+  created_at:        string;
+  updated_at:        string;
+  nom:               string;
+  prenom:            string;
+  poste:             string;
+  specialite:        string;
+  diplome:           string;
+  annees_experience: number;
+  actif:             boolean;
+  details:           Record<string, unknown> | null;
+  cv_minio_key:      string | null;
+  cv_url:            string | null;
+}
+
+export type StaffCvForm = Omit<StaffCv, "id" | "org_id" | "created_at" | "updated_at" | "cv_minio_key" | "cv_url">;
+
+export interface AoTeamMember {
+  id:                string;
+  ao_id:             string;
+  staff_cv_id:       string | null;
+  created_at:        string;
+  role_dans_offre:   string;
+  profil_requis_ref: string | null;
+  warning:           boolean;
+  cv:                StaffCv | null;
+}
+
+export interface CompanyDocument {
+  id:            string;
+  org_id:        string;
+  created_at:    string;
+  updated_at:    string;
+  doc_type:      string;
+  nom_fichier:   string;
+  minio_key:     string | null;
+  file_url:      string | null;
+  description:   string | null;
+  date_validite: string | null;
 }

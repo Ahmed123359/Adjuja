@@ -80,7 +80,7 @@ class RagService:
 
         try:
             self._client = AsyncQdrantClient(url=qdrant_url)
-            logger.info("RAG initialisé — Qdrant: %s, embed: %s", qdrant_url, _EMBED_MODEL)
+            logger.info("RAG initialisé  Qdrant: %s, embed: %s", qdrant_url, _EMBED_MODEL)
         except Exception as exc:
             logger.warning("Impossible d'initialiser le client RAG : %s", exc)
 
@@ -125,7 +125,7 @@ class RagService:
                 label    = DOCUMENT_TYPES.get(payload.get("doc_type", ""), "")
                 doc_name = payload.get("doc_name", "")
                 content  = payload.get("content", "")
-                lines.append(f"**[{label} — {doc_name}]**")
+                lines.append(f"**[{label}  {doc_name}]**")
                 lines.append(content)
                 lines.append("")
 
@@ -162,7 +162,7 @@ class RagService:
                 payload  = r.payload or {}
                 label    = DOCUMENT_TYPES.get(payload.get("doc_type", ""), "")
                 doc_name = payload.get("doc_name", "")
-                lines.append(f"**[{label} — {doc_name}]**")
+                lines.append(f"**[{label}  {doc_name}]**")
                 lines.append(payload.get("content", ""))
                 lines.append("")
             return "\n".join(lines)
@@ -181,11 +181,11 @@ class RagService:
             return resp.json()["data"][0]["embedding"]
 
     def _build_query(self, section_title: str, ao_text: str) -> str:
-        """Build embedding query with no LLM call — saves rate-limit budget."""
+        """Build embedding query with no LLM call  saves rate-limit budget."""
         return f"{section_title} {ao_text[:400]}"
 
     def _rerank(self, candidates: list, top_k: int) -> list:
-        """Return top-k by Qdrant score — no LLM reranking."""
+        """Return top-k by Qdrant score  no LLM reranking."""
         return sorted(candidates, key=lambda r: r.score, reverse=True)[:top_k]
 
     async def get_collection_stats(self) -> dict:
@@ -196,3 +196,76 @@ class RagService:
             return {"available": True, "vectors_count": info.vectors_count or 0}
         except Exception:
             return {"available": False, "vectors_count": 0}
+
+    async def index_document(
+        self,
+        org_id: str,
+        text: str,
+        metadata: dict,
+        doc_id: str,
+        chunk_size: int = 1000,
+    ) -> int:
+        """Indexe un texte dans kb_{org_id} par chunks. Retourne le nombre de chunks indexés."""
+        if not self.is_ready:
+            return 0
+
+        try:
+            from qdrant_client.models import PointStruct, VectorParams, Distance
+        except ImportError:
+            return 0
+
+        collection = f"offria_kb_{org_id}"
+
+        # Créer la collection si elle n'existe pas
+        try:
+            await self._client.get_collection(collection)  # type: ignore[union-attr]
+        except Exception:
+            try:
+                await self._client.create_collection(  # type: ignore[union-attr]
+                    collection_name=collection,
+                    vectors_config=VectorParams(size=1024, distance=Distance.COSINE),
+                )
+            except Exception as exc:
+                logger.error("[rag] impossible de créer la collection %s: %s", collection, exc)
+                return 0
+
+        # Chunking simple par paragraphes
+        paragraphs = [p.strip() for p in text.split("\n\n") if len(p.strip()) > 50]
+        chunks: list[str] = []
+        current = ""
+        for p in paragraphs:
+            if len(current) + len(p) < chunk_size:
+                current = f"{current}\n\n{p}".strip()
+            else:
+                if current:
+                    chunks.append(current)
+                current = p
+        if current:
+            chunks.append(current)
+
+        if not chunks:
+            return 0
+
+        points = []
+        for i, chunk in enumerate(chunks):
+            try:
+                vector = await self._embed(chunk)
+                payload = {**metadata, "content": chunk, "org_id": org_id, "doc_type": "note_metho"}
+                points.append(PointStruct(
+                    id=abs(hash(f"{doc_id}_{i}")) % (2**63),
+                    vector=vector,
+                    payload=payload,
+                ))
+            except Exception as exc:
+                logger.warning("[rag] embed chunk %d échoué: %s", i, exc)
+
+        if not points:
+            return 0
+
+        try:
+            await self._client.upsert(collection_name=collection, points=points)  # type: ignore[union-attr]
+            logger.info("[rag] %d chunks indexés dans %s (doc_id=%s)", len(points), collection, doc_id)
+            return len(points)
+        except Exception as exc:
+            logger.error("[rag] upsert échoué collection=%s: %s", collection, exc)
+            return 0

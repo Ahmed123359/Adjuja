@@ -3,7 +3,7 @@ Tests unitaires pour les fonctions pures de worker/scraper.py.
 
 On teste uniquement les fonctions sans Playwright (_normalize_url, _extract_ref).
 Le scraping réel (run_scrape, _download_dossier) n'est pas testé ici car
-il nécessite un vrai navigateur — c'est du périmètre des tests end-to-end.
+il nécessite un vrai navigateur  c'est du périmètre des tests end-to-end.
 """
 import pytest
 

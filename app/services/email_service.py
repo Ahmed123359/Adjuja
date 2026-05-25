@@ -23,7 +23,7 @@ async def send_verification_email(
     verify_url = f"{base}/api/v1/auth/verify-email?token={token}"
 
     if not resend_api_key:
-        logger.info("DEV — lien de vérification email : %s", verify_url)
+        logger.info("DEV  lien de vérification email : %s", verify_url)
         return
 
     html = f"""
@@ -59,7 +59,7 @@ async def send_verification_email(
                 json={
                     "from":    _FROM,
                     "to":      [to_email],
-                    "subject": "Confirmez votre adresse email — OffrIA",
+                    "subject": "Confirmez votre adresse email  OffrIA",
                     "html":    html,
                 },
             )

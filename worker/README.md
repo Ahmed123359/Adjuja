@@ -1,10 +1,10 @@
-# Worker — Scraper marchespublics.gov.ma
+# Worker Scraper marchespublics.gov.ma
 
 Worker silencieux qui enrichit la base de données `appels_offre` en scrappant
 le portail [marchespublics.gov.ma](https://www.marchespublics.gov.ma) à intervalle régulier.
 
 Il tourne **indépendamment** du service API et de l'interface utilisateur.
-Aucun appel entrant, aucun port exposé — il écrit, l'API lit.
+Aucun appel entrant, aucun port exposé il écrit, l'API lit.
 
 ---
 
@@ -16,7 +16,7 @@ worker/
   models.py      ← Dataclass AOResult
   db.py          ← Schema SQLite, migration, upsert (zéro scraping)
   scraper.py     ← Logique Playwright (get_ao_links, download_dossier)
-  scheduler.py   ← APScheduler — job périodique
+  scheduler.py   ← APScheduler  job périodique
   main.py        ← Point d'entrée, arrêt propre SIGTERM/SIGINT
   Dockerfile
   requirements.txt
@@ -24,6 +24,7 @@ worker/
 ```
 
 **Principe de séparation des responsabilités :**
+
 - `db.py` ne sait pas scraper
 - `scraper.py` ne sait pas persister
 - `scheduler.py` orchestre les deux
@@ -35,18 +36,18 @@ worker/
 
 Toutes les variables sont préfixées `WORKER_`.
 
-| Variable | Défaut | Description |
-|---|---|---|
-| `WORKER_ACHETEUR` | `OFFICE NATIONAL DES CHEMINS DE FER` | Nom exact dans l'autocomplete |
-| `WORKER_FAKE_NOM` | `Dupont` | Nom pour le formulaire de retrait |
-| `WORKER_FAKE_PRENOM` | `Jean` | Prénom pour le formulaire de retrait |
-| `WORKER_FAKE_EMAIL` | `jean.dupont@exemple.ma` | Email pour le formulaire de retrait |
-| `WORKER_MAX_AOS` | `20` | Nombre max d'AOs par scrape |
-| `WORKER_HEADLESS` | `true` | Mode sans interface (obligatoire en prod) |
-| `WORKER_SLOW_MO` | `200` | Délai ms entre actions Playwright |
-| `WORKER_SCHEDULE_HOURS` | `6` | Intervalle entre deux scrapes (heures) |
-| `WORKER_DB_PATH` | `/app/data/ao_catalog.db` | Chemin de la base SQLite |
-| `WORKER_OUTPUT_DIR` | `/app/output` | Dossier de stockage des ZIPs |
+| Variable                | Défaut                               | Description                               |
+| ----------------------- | ------------------------------------ | ----------------------------------------- |
+| `WORKER_ACHETEUR`       | `OFFICE NATIONAL DES CHEMINS DE FER` | Nom exact dans l'autocomplete             |
+| `WORKER_FAKE_NOM`       | `Dupont`                             | Nom pour le formulaire de retrait         |
+| `WORKER_FAKE_PRENOM`    | `Jean`                               | Prénom pour le formulaire de retrait      |
+| `WORKER_FAKE_EMAIL`     | `jean.dupont@exemple.ma`             | Email pour le formulaire de retrait       |
+| `WORKER_MAX_AOS`        | `20`                                 | Nombre max d'AOs par scrape               |
+| `WORKER_HEADLESS`       | `true`                               | Mode sans interface (obligatoire en prod) |
+| `WORKER_SLOW_MO`        | `200`                                | Délai ms entre actions Playwright         |
+| `WORKER_SCHEDULE_HOURS` | `6`                                  | Intervalle entre deux scrapes (heures)    |
+| `WORKER_DB_PATH`        | `/app/data/ao_catalog.db`            | Chemin de la base SQLite                  |
+| `WORKER_OUTPUT_DIR`     | `/app/output`                        | Dossier de stockage des ZIPs              |
 
 Ajouter dans le `.env` à la racine du projet :
 
@@ -136,7 +137,7 @@ manquantes sont ajoutées silencieusement au démarrage (`db.py:init_db`).
 - Aucun port exposé (service interne uniquement)
 - Les identités du formulaire (`FAKE_*`) doivent être définies dans `.env`
   (jamais commitées)
-- Le volume `./data` est partagé en lecture-écriture avec l'API — ne pas
+- Le volume `./data` est partagé en lecture-écriture avec l'API ne pas
   monter en `:ro` côté worker
 
 ---

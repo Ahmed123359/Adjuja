@@ -13,7 +13,7 @@ if config.config_file_name is not None:
 
 from app.config.settings import get_settings
 from app.db.base import Base
-import app.db.models  # noqa: F401 — registers models with Base.metadata
+import app.db.models  # noqa: F401  registers models with Base.metadata
 
 settings = get_settings()
 config.set_main_option("sqlalchemy.url", settings.database_url)

@@ -1,5 +1,5 @@
 # ─────────────────────────────────────────────────────────────────────────────
-# Worker — Scraper marchespublics.gov.ma
+# Worker  Scraper marchespublics.gov.ma
 # Image multi-stage : build (deps) → final (runtime)
 # ─────────────────────────────────────────────────────────────────────────────
 
@@ -19,20 +19,20 @@ FROM python:3.12-slim AS final
 # (liste minimale, évite apt-get install --no-install-recommends chromium
 #  car playwright installe sa propre version)
 RUN apt-get update && apt-get install -y --no-install-recommends \
-        wget \
-        ca-certificates \
-        fonts-liberation \
-        libnss3 \
-        libatk-bridge2.0-0 \
-        libgtk-3-0 \
-        libx11-xcb1 \
-        libxcomposite1 \
-        libxdamage1 \
-        libxrandr2 \
-        libgbm1 \
-        libasound2 \
-        libpango-1.0-0 \
-        libpangocairo-1.0-0 \
+    wget \
+    ca-certificates \
+    fonts-liberation \
+    libnss3 \
+    libatk-bridge2.0-0 \
+    libgtk-3-0 \
+    libx11-xcb1 \
+    libxcomposite1 \
+    libxdamage1 \
+    libxrandr2 \
+    libgbm1 \
+    libasound2 \
+    libpango-1.0-0 \
+    libpangocairo-1.0-0 \
     && rm -rf /var/lib/apt/lists/*
 
 # Copier les dépendances Python depuis le stage builder
@@ -42,12 +42,12 @@ WORKDIR /app
 
 # Installer Playwright + télécharger Chromium (dans l'image, pas au runtime)
 RUN playwright install chromium \
- && playwright install-deps chromium
+    && playwright install-deps chromium
 
 # Créer un utilisateur non-root (sécurité)
 RUN useradd --create-home --uid 1000 worker \
- && mkdir -p /app/data /app/output \
- && chown -R worker:worker /app
+    && mkdir -p /app/data /app/output \
+    && chown -R worker:worker /app
 
 # Copier le code du worker
 COPY --chown=worker:worker . /app/worker/

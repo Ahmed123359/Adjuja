@@ -1,5 +1,5 @@
 repos:
-  # 1. Ruff — lint + imports inutilisés (même config que la CI)
+  # 1. Ruff  lint + imports inutilisés (même config que la CI)
   - repo: https://github.com/astral-sh/ruff-pre-commit
     rev: v0.9.0
     hooks:
@@ -7,7 +7,7 @@ repos:
         args: [--fix]
         files: ^(app|tests)/
 
-  # 2. Bandit — sécurité (même config que la CI : medium+high, exclut providers/)
+  # 2. Bandit  sécurité (même config que la CI : medium+high, exclut providers/)
   - repo: https://github.com/PyCQA/bandit
     rev: 1.8.0
     hooks:
@@ -25,7 +25,7 @@ repos:
       - id: no-commit-to-branch
         args: [--branch, main]
 
-  # 4. pytest — lance les tests (sans couverture pour rester rapide en local)
+  # 4. pytest  lance les tests (sans couverture pour rester rapide en local)
   - repo: local
     hooks:
       - id: pytest

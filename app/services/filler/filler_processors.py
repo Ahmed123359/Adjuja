@@ -56,7 +56,7 @@ SAFE_FONTS = {"helv", "Helvetica", "Times-Roman", "Courier", "Times", "Symbol", 
 def _pdf_safe_text(text: str) -> str:
     replacements = {
         "’": "'", "‘": "'", "“": '"', "”": '"',
-        "–": "-", "—": "-", "•": "-", " ": " ",
+        "–": "-", "": "-", "•": "-", " ": " ",
         "…": "...", "°": "°",
     }
     for src, dst in replacements.items():
@@ -99,10 +99,15 @@ def is_scanned_pdf(pdf_path: Path) -> bool:
     whitespace_ratio  = whitespace_chars  / text_length
     readable_ratio    = len(readable_words) / max(len(words), 1)
 
+    # Detect hyphenated-letter encoding (OCR font corruption): "-l-e- -t-e-x-t-e-"
+    hyphenated_matches = re.findall(r"-[A-Za-zÀ-ÿ0-9]-", full_text)
+    hyphenated_ratio = len(hyphenated_matches) * 3 / text_length
+
     return (
         suspicious_ratio > SCANNED_MAX_SUSPICIOUS_RATIO
         or whitespace_ratio  < SCANNED_MIN_WHITESPACE_RATIO
         or readable_ratio    < SCANNED_MIN_READABLE_WORD_RATIO
+        or hyphenated_ratio  > 0.05
     )
 
 
@@ -228,7 +233,7 @@ def process_text_pdf(
 
     fill_ops = build_fill_operations(filled_lines, line_meta)
     if not fill_ops:
-        print("  Aucun remplacement extrait — document inchangé.")
+        print("  Aucun remplacement extrait  document inchangé.")
         shutil.copy(src, dst)
         return
 
@@ -503,7 +508,7 @@ def process_scanned_pdf(
         print(f"  Conversion de toutes les pages en images ({SCAN_DPI} dpi)...")
         images = convert_from_path(str(src), dpi=SCAN_DPI)
 
-    print(f"  {len(images)} page(s) — envoi à Pixtral...")
+    print(f"  {len(images)} page(s)  envoi à Pixtral...")
     paragraphs = call_pixtral_vision(images, api_key, doc_type=doc_type, company_info=company_info)
 
     if not paragraphs:

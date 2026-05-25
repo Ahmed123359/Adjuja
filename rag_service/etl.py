@@ -1,5 +1,5 @@
 """
-Pipeline ETL RAG — charge, découpe, embed et stocke les documents.
+Pipeline ETL RAG  charge, découpe, embed et stocke les documents.
 
 Flux :
 1. Scan knowledge_base/ par type de dossier
@@ -92,7 +92,7 @@ def _load_pdf(path: Path) -> str:
         except Exception as exc:
             logger.debug("pymupdf fallback pour %s : %s", path.name, exc)
     if not _PYPDF_OK:
-        logger.warning("Aucun lecteur PDF disponible — skip %s", path.name)
+        logger.warning("Aucun lecteur PDF disponible  skip %s", path.name)
         return ""
     try:
         reader = _pypdf.PdfReader(str(path))
@@ -104,7 +104,7 @@ def _load_pdf(path: Path) -> str:
 
 def _load_docx(path: Path) -> str:
     if not _DOCX_OK:
-        logger.warning("python-docx absent — skip %s", path.name)
+        logger.warning("python-docx absent  skip %s", path.name)
         return ""
     try:
         doc = _DocxDocument(str(path))
@@ -225,18 +225,18 @@ class ETLPipeline:
                 logger.info("[SKIP]  %s (déjà indexé, inchangé)", rel_path)
                 continue
 
-            logger.info("[INDEX] %s — chargement...", rel_path)
+            logger.info("[INDEX] %s  chargement...", rel_path)
             try:
                 with ThreadPoolExecutor(max_workers=1) as executor:
                     future = executor.submit(self._process_file, rel_path, path, doc_type, file_hash)
                     n_chunks = future.result(timeout=_FILE_TIMEOUT_SECONDS)
                 report["indexed"] += 1
                 if n_chunks == 0:
-                    logger.warning("[VIDE]  %s — texte vide, non indexé (PDF scanné ?)", rel_path)
+                    logger.warning("[VIDE]  %s  texte vide, non indexé (PDF scanné ?)", rel_path)
                 else:
-                    logger.info("[OK]    %s — %d chunk(s) indexé(s)", rel_path, n_chunks)
+                    logger.info("[OK]    %s  %d chunk(s) indexé(s)", rel_path, n_chunks)
             except FuturesTimeoutError:
-                logger.error("[TIMEOUT] %s — dépasse %ds, fichier ignoré", rel_path, _FILE_TIMEOUT_SECONDS)
+                logger.error("[TIMEOUT] %s  dépasse %ds, fichier ignoré", rel_path, _FILE_TIMEOUT_SECONDS)
                 report["errors"].append(f"{rel_path}: timeout ({_FILE_TIMEOUT_SECONDS}s)")
             except Exception as exc:
                 logger.error("[ERROR] %s : %s", rel_path, exc, exc_info=True)
@@ -324,7 +324,7 @@ class ETLPipeline:
                 ),
             )
         except Exception:
-            pass  # La collection n'existe pas encore — ignoré
+            pass  # La collection n'existe pas encore  ignoré
 
     def _embed_batch(self, texts: list[str]) -> list[list[float]]:
         """Génère les embeddings pour une liste de textes via Mistral Embed."""

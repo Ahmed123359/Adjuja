@@ -1,57 +1,70 @@
 /** @type {import('tailwindcss').Config} */
 export default {
-  content: ['./index.html', './src/**/*.{ts,tsx}'],
+  content: ["./index.html", "./src/**/*.{ts,tsx}"],
+  darkMode: "class",
   theme: {
     extend: {
       fontFamily: {
-        sans:    ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
-        display: ['Plus Jakarta Sans', 'system-ui', 'sans-serif'],
-        serif:   ['Source Serif 4', 'Georgia', 'serif'],
+        sans: ["DM Sans", "system-ui", "sans-serif"],
       },
       colors: {
-        border:     "hsl(var(--border))",
-        input:      "hsl(var(--input))",
-        ring:       "hsl(var(--ring))",
+        border: "hsl(var(--border))",
+        input: "hsl(var(--input))",
+        ring: "hsl(var(--ring))",
         background: "hsl(var(--background))",
         foreground: "hsl(var(--foreground))",
         primary: {
-          DEFAULT:    "hsl(var(--primary))",
+          DEFAULT: "hsl(var(--primary))",
           foreground: "hsl(var(--primary-foreground))",
         },
         muted: {
-          DEFAULT:    "hsl(var(--muted))",
+          DEFAULT: "hsl(var(--muted))",
           foreground: "hsl(var(--muted-foreground))",
         },
         accent: {
-          DEFAULT:    "hsl(var(--accent))",
+          DEFAULT: "hsl(var(--accent))",
           foreground: "hsl(var(--accent-foreground))",
         },
         card: {
-          DEFAULT:    "hsl(var(--card))",
+          DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
         },
         destructive: {
-          DEFAULT:    "hsl(var(--destructive))",
+          DEFAULT: "hsl(var(--destructive))",
           foreground: "hsl(var(--destructive-foreground))",
+        },
+        /* Landing tokens  use these in landing components */
+        l: {
+          bg: "var(--l-bg)",
+          "bg-alt": "var(--l-bg-alt)",
+          card: "var(--l-card)",
+          "card-border": "var(--l-card-border)",
+          "mk-bg": "var(--l-mk-bg)",
+          "mk-surf": "var(--l-mk-surf)",
+          "mk-border": "var(--l-mk-border)",
+          text: "var(--l-text)",
+          sub: "var(--l-sub)",
+          dim: "var(--l-dim)",
+          blue: "var(--l-blue)",
         },
       },
       borderRadius: {
         lg: "var(--radius)",
-        md: "calc(var(--radius) - 2px)",
-        sm: "calc(var(--radius) - 4px)",
+        md: "calc(var(--radius) - 1px)",
+        sm: "calc(var(--radius) - 2px)",
       },
       keyframes: {
         "fade-in": {
           from: { opacity: "0", transform: "translateY(8px)" },
-          to:   { opacity: "1", transform: "translateY(0)" },
+          to: { opacity: "1", transform: "translateY(0)" },
         },
         "slide-in": {
           from: { opacity: "0", transform: "translateX(-8px)" },
-          to:   { opacity: "1", transform: "translateX(0)" },
+          to: { opacity: "1", transform: "translateX(0)" },
         },
       },
       animation: {
-        "fade-in":  "fade-in 0.4s ease-out",
+        "fade-in": "fade-in 0.4s ease-out",
         "slide-in": "slide-in 0.3s ease-out",
       },
     },

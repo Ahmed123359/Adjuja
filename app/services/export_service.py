@@ -1,5 +1,5 @@
 """
-Export service — génère un vrai fichier .docx à partir d'un GenerationResult.
+Export service  génère un vrai fichier .docx à partir d'un GenerationResult.
 
 Convertit le Markdown des sections en styles Word natifs (titres, listes,
 gras, italique) pour un rendu correct sur desktop et mobile.

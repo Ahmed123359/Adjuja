@@ -1,4 +1,4 @@
-# OffrIA — Générateur de Réponses aux Appels d'Offres
+# OffrIA Générateur de Réponses aux Appels d'Offres
 
 Plateforme IA qui génère automatiquement des réponses aux appels d'offres marocains et internationaux,
 en utilisant des modèles de langage (LLM) de votre choix : **Anthropic Claude**, **OpenAI GPT** ou **Mistral AI**.
@@ -36,15 +36,15 @@ en utilisant des modèles de langage (LLM) de votre choix : **Anthropic Claude**
 
 Une fois l'application démarrée (`docker compose up` ou `uvicorn`), ces URLs sont disponibles :
 
-| Interface | URL | Description |
-|-----------|-----|-------------|
-| **Interface web** | [http://localhost:8000/ui/](http://localhost:8000/ui/) | Interface graphique React pour générer vos réponses AO |
-| **Swagger UI** | [http://localhost:8000/docs](http://localhost:8000/docs) | Documentation interactive — tester les endpoints directement |
-| **ReDoc** | [http://localhost:8000/redoc](http://localhost:8000/redoc) | Documentation lisible, idéale pour explorer les schémas |
-| **Healthcheck** | [http://localhost:8000/health](http://localhost:8000/health) | Vérifie que l'API est bien démarrée |
-| **Liste des modèles** | [http://localhost:8000/api/v1/models](http://localhost:8000/api/v1/models) | Tous les modèles LLM disponibles en JSON |
-| **Statut RAG** | [http://localhost:8000/api/v1/rag/status](http://localhost:8000/api/v1/rag/status) | Stats Qdrant + disponibilité du service ETL |
-| **ETL direct** | [http://localhost:8001/](http://localhost:8001/) | API du microservice rag-etl (si démarré) |
+| Interface             | URL                                                                                | Description                                                |
+| --------------------- | ---------------------------------------------------------------------------------- | ---------------------------------------------------------- |
+| **Interface web**     | [http://localhost:8000/ui/](http://localhost:8000/ui/)                             | Interface graphique React pour générer vos réponses AO     |
+| **Swagger UI**        | [http://localhost:8000/docs](http://localhost:8000/docs)                           | Documentation interactive tester les endpoints directement |
+| **ReDoc**             | [http://localhost:8000/redoc](http://localhost:8000/redoc)                         | Documentation lisible, idéale pour explorer les schémas    |
+| **Healthcheck**       | [http://localhost:8000/health](http://localhost:8000/health)                       | Vérifie que l'API est bien démarrée                        |
+| **Liste des modèles** | [http://localhost:8000/api/v1/models](http://localhost:8000/api/v1/models)         | Tous les modèles LLM disponibles en JSON                   |
+| **Statut RAG**        | [http://localhost:8000/api/v1/rag/status](http://localhost:8000/api/v1/rag/status) | Stats Qdrant + disponibilité du service ETL                |
+| **ETL direct**        | [http://localhost:8001/](http://localhost:8001/)                                   | API du microservice rag-etl (si démarré)                   |
 
 > **Point de départ recommandé :** ouvrez [http://localhost:8000/ui/](http://localhost:8000/ui/)
 > pour accéder à l'interface graphique. Elle permet de déposer votre AO, choisir le modèle
@@ -58,21 +58,21 @@ Une fois l'application démarrée (`docker compose up` ou `uvicorn`), ces URLs s
 
 Le Maroc dispose d'une réglementation structurée des marchés publics :
 
-- **Décret n° 2-22-431** du 8 mars 2023 relatif aux marchés publics — texte de référence
-- **Portail des marchés publics** : [portailmp.gov.ma](https://www.portailmp.gov.ma) — publication officielle des AO
-- **Commission nationale de la commande publique (CNCP)** — organe de régulation
+- **Décret n° 2-22-431** du 8 mars 2023 relatif aux marchés publics texte de référence
+- **Portail des marchés publics** : [portailmp.gov.ma](https://www.portailmp.gov.ma) publication officielle des AO
+- **Commission nationale de la commande publique (CNCP)** organe de régulation
 
 ### Acteurs typiques émetteurs d'AO au Maroc
 
-| Secteur | Exemples d'organismes |
-|---------|----------------------|
-| Énergie & eau | ONEE, MASEN, ONHYM |
-| Industrie & mines | OCP, Reminex |
-| Transport & logistique | RAM, ONCF, ANP, TMSA |
-| Finance & investissement | CDG, CIH, MAMDA |
-| Télécoms | Maroc Telecom, IAM |
-| Collectivités | Communes, Régions, Wilayas |
-| Ministères | MEF, MTNRA, MHU, MS… |
+| Secteur                  | Exemples d'organismes      |
+| ------------------------ | -------------------------- |
+| Énergie & eau            | ONEE, MASEN, ONHYM         |
+| Industrie & mines        | OCP, Reminex               |
+| Transport & logistique   | RAM, ONCF, ANP, TMSA       |
+| Finance & investissement | CDG, CIH, MAMDA            |
+| Télécoms                 | Maroc Telecom, IAM         |
+| Collectivités            | Communes, Régions, Wilayas |
+| Ministères               | MEF, MTNRA, MHU, MS…       |
 
 ### Adapter vos prompts au contexte marocain
 
@@ -89,7 +89,7 @@ Mentionner les références CNSS et ICE de l'entreprise.
 
 ## Fonctionnement général
 
-OffrIA génère **9 appels LLM en parallèle** pour chaque réponse AO — un brief stratégique suivi de
+OffrIA génère **9 appels LLM en parallèle** pour chaque réponse AO un brief stratégique suivi de
 8 sections rédigées simultanément. Chaque section est enrichie de contexte documentaire via RAG (Qdrant).
 
 ```
@@ -129,7 +129,8 @@ OffrIA génère **9 appels LLM en parallèle** pour chaque réponse AO — un br
 
 ## Cycle de vie d'une requête
 
-### Étape 1 — La route reçoit la requête
+### Étape 1 La route reçoit la requête
+
 **Fichier :** [app/api/routes/generation_routes.py](app/api/routes/generation_routes.py)
 
 ```python
@@ -140,27 +141,32 @@ POST /api/v1/generate
 result = await service.generate(request)
 ```
 
-### Étape 2 — Le parser structure l'AO
+### Étape 2 Le parser structure l'AO
+
 **Fichier :** [app/services/ao_parser_service.py](app/services/ao_parser_service.py)
 
 Le texte brut de l'AO est analysé par regex pour en extraire :
+
 - titre, référence, acheteur
 - type de marché (services / travaux / fournitures)
 - sections thématiques
 - critères de sélection avec pondérations
 - budget estimé et date limite
 
-### Étape 3 — Brief stratégique (appel LLM #1)
+### Étape 3 Brief stratégique (appel LLM #1)
+
 **Fichier :** [app/services/generation_service.py](app/services/generation_service.py)
 
 Un premier appel LLM génère un brief synthétique :
+
 - analyse des enjeux de l'AO
 - points de différenciation à valoriser
 - stratégie argumentaire
 
 Ce brief est réinjecté dans chaque prompt de section pour garantir la cohérence.
 
-### Étape 4 — Sections en parallèle (8 appels LLM simultanés)
+### Étape 4 Sections en parallèle (8 appels LLM simultanés)
+
 **Fichier :** [app/services/generation_service.py](app/services/generation_service.py)
 
 ```python
@@ -172,7 +178,7 @@ sections = await asyncio.gather(
 Pour chaque section, dans cet ordre :
 
 ```python
-# a) Récupération RAG (Qdrant) — optionnel, dégradation gracieuse
+# a) Récupération RAG (Qdrant)  optionnel, dégradation gracieuse
 rag_context = await self._rag.retrieve_for_section(section_title, ao_context)
 
 # b) Construction du prompt avec brief + contexte entreprise + extraits RAG
@@ -184,18 +190,18 @@ section_text = await provider.generate_section(request, prompt)
 
 Les 8 sections générées :
 
-| # | Section |
-|---|---------|
-| 1 | Présentation de notre entreprise |
-| 2 | Compréhension de vos besoins |
-| 3 | Notre approche méthodologique |
-| 4 | Moyens humains et techniques mobilisés |
-| 5 | Références similaires |
-| 6 | Planning prévisionnel |
-| 7 | Proposition financière |
-| 8 | Conclusion et engagements |
+| #   | Section                                |
+| --- | -------------------------------------- |
+| 1   | Présentation de notre entreprise       |
+| 2   | Compréhension de vos besoins           |
+| 3   | Notre approche méthodologique          |
+| 4   | Moyens humains et techniques mobilisés |
+| 5   | Références similaires                  |
+| 6   | Planning prévisionnel                  |
+| 7   | Proposition financière                 |
+| 8   | Conclusion et engagements              |
 
-### Étape 5 — Assemblage et réponse
+### Étape 5 Assemblage et réponse
 
 Les sections sont triées par ordre, assemblées en Markdown et retournées dans un `GenerationResult`.
 
@@ -310,12 +316,13 @@ reponse_ao_generation/
 ## Design patterns et principes POO
 
 ### Abstract Base Class + Strategy Pattern
+
 `AbstractLLMProvider` définit une **interface commune** pour tous les LLMs.
 Chaque provider concret implémente cette interface indépendamment.
 Le reste de l'application ne dépend jamais d'un provider en particulier.
 
 ```python
-# Interface commune — app/providers/base.py
+# Interface commune  app/providers/base.py
 class AbstractLLMProvider(ABC):
     async def generate(self, request, prompt) -> GenerationResult: ...
     def get_available_models(self) -> list[ModeleDisponible]: ...
@@ -327,6 +334,7 @@ class MistralProvider(AbstractLLMProvider): ...    # Mistral
 ```
 
 ### Factory Pattern
+
 `ProviderFactory` centralise la création des providers.
 Ajouter un nouveau provider ne nécessite **aucune modification** du reste du code.
 
@@ -335,6 +343,7 @@ provider = ProviderFactory.create("anthropic", api_key="...", model_name="claude
 ```
 
 ### Dependency Injection
+
 FastAPI injecte automatiquement les services via `Depends()`.
 Cela permet de remplacer les vrais services par des mocks dans les tests.
 
@@ -346,6 +355,7 @@ async def generate_response(
 ```
 
 ### Singleton via @lru_cache
+
 Les services sans état (`AOParserService`, `PromptBuilderService`, `Settings`)
 sont instanciés une seule fois au démarrage grâce à `@lru_cache`.
 
@@ -377,7 +387,7 @@ cp .env.example .env
 ```
 
 ```dotenv
-# .env — clés LLM (seule la clé du provider utilisé est requise)
+# .env  clés LLM (seule la clé du provider utilisé est requise)
 ANTHROPIC_API_KEY=sk-ant-...
 OPENAI_API_KEY=sk-...
 MISTRAL_API_KEY=...
@@ -395,7 +405,7 @@ JWT_SECRET_KEY=offria-super-secret-change-me-in-production
 JWT_ALGORITHM=HS256
 JWT_EXPIRE_MINUTES=10080          # 7 jours
 
-# RAG (optionnel — dégradation gracieuse si absent)
+# RAG (optionnel  dégradation gracieuse si absent)
 QDRANT_URL=http://qdrant:6333      # URL de la base vectorielle Qdrant
 RAG_ETL_URL=http://rag-etl:8001   # URL du microservice ETL (pour proxy /index)
 ```
@@ -410,7 +420,7 @@ RAG_ETL_URL=http://rag-etl:8001   # URL du microservice ETL (pour proxy /index)
 ## Authentification
 
 OffrIA utilise des **tokens JWT Bearer** pour protéger les routes de génération et d'historique.
-L'inscription est libre — n'importe qui peut créer un compte.
+L'inscription est libre n'importe qui peut créer un compte.
 
 ### Flux utilisateur
 
@@ -435,32 +445,34 @@ Déconnexion → token supprimé → page Login
 
 ### Endpoints auth
 
-| Méthode | Route | Corps | Description |
-|---------|-------|-------|-------------|
-| `POST` | `/api/v1/auth/register` | `{ nom, prenom, email, password }` | Crée un compte + retourne un token |
-| `POST` | `/api/v1/auth/login` | `{ email, password }` | Connexion + retourne un token |
-| `GET` | `/api/v1/auth/me` | — (Bearer requis) | Profil de l'utilisateur connecté |
+| Méthode | Route                   | Corps                              | Description                        |
+| ------- | ----------------------- | ---------------------------------- | ---------------------------------- |
+| `POST`  | `/api/v1/auth/register` | `{ nom, prenom, email, password }` | Crée un compte + retourne un token |
+| `POST`  | `/api/v1/auth/login`    | `{ email, password }`              | Connexion + retourne un token      |
+| `GET`   | `/api/v1/auth/me`       | (Bearer requis)                    | Profil de l'utilisateur connecté   |
 
 **Réponse token :**
+
 ```json
 { "access_token": "eyJhbGci...", "token_type": "bearer" }
 ```
 
 **Utilisation dans les requêtes protégées :**
+
 ```http
 Authorization: Bearer eyJhbGci...
 ```
 
 ### Routes protégées (Bearer requis)
 
-| Route | Remarque |
-|-------|----------|
-| `POST /api/v1/generate` | L'historique est automatiquement lié à l'utilisateur connecté |
-| `GET  /api/v1/history` | Retourne uniquement les lancements de l'utilisateur connecté |
-| `GET  /api/v1/history/{id}` | Accessible uniquement si l'entrée appartient à l'utilisateur |
-| `DELETE /api/v1/history/{id}` | Idem |
-| `DELETE /api/v1/history` | Vide uniquement l'historique de l'utilisateur connecté |
-| `GET  /api/v1/usage` | Compteur global (non isolé par user) |
+| Route                         | Remarque                                                      |
+| ----------------------------- | ------------------------------------------------------------- |
+| `POST /api/v1/generate`       | L'historique est automatiquement lié à l'utilisateur connecté |
+| `GET  /api/v1/history`        | Retourne uniquement les lancements de l'utilisateur connecté  |
+| `GET  /api/v1/history/{id}`   | Accessible uniquement si l'entrée appartient à l'utilisateur  |
+| `DELETE /api/v1/history/{id}` | Idem                                                          |
+| `DELETE /api/v1/history`      | Vide uniquement l'historique de l'utilisateur connecté        |
+| `GET  /api/v1/usage`          | Compteur global (non isolé par user)                          |
 
 ### Routes publiques (sans token)
 
@@ -506,14 +518,15 @@ CREATE INDEX IF NOT EXISTS idx_launches_user_id ON launches(user_id);
 ### Accès à la base
 
 **Via Docker :**
+
 ```bash
 docker exec -it ao_api sqlite3 /app/data/offria.db ".tables"
 docker exec -it ao_api sqlite3 /app/data/offria.db "SELECT id, prenom, email FROM users;"
 ```
 
-**Via GUI :** [DB Browser for SQLite](https://sqlitebrowser.org/) — ouvrir `data/offria.db`
+**Via GUI :** [DB Browser for SQLite](https://sqlitebrowser.org/) ouvrir `data/offria.db`
 
-**Via VS Code :** extension *SQLite Viewer* (qwtel.sqlite-viewer)
+**Via VS Code :** extension _SQLite Viewer_ (qwtel.sqlite-viewer)
 
 ### Volume Docker
 
@@ -533,7 +546,7 @@ volumes:
 ## Base de connaissances (RAG)
 
 Le RAG (Retrieval-Augmented Generation) permet d'injecter automatiquement des extraits de vos
-documents internes dans chaque section générée — références clients, méthodologies, certifications…
+documents internes dans chaque section générée références clients, méthodologies, certifications…
 
 ### Architecture RAG
 
@@ -554,13 +567,13 @@ knowledge_base/           ←  vos documents (PDF, DOCX, TXT)
 
 1. Déposez vos fichiers (`.pdf`, `.docx`, `.txt`) dans le dossier correspondant :
 
-   | Dossier | Contenu |
-   |---------|---------|
-   | `knowledge_base/references/` | Réalisations clients, cas d'usage |
-   | `knowledge_base/methodologies/` | Approches projets, frameworks |
-   | `knowledge_base/certifications/` | ISO, qualifications, agréments |
-   | `knowledge_base/company/` | Présentation entreprise, organigramme |
-   | `knowledge_base/templates/` | Modèles de réponses AO |
+   | Dossier                          | Contenu                               |
+   | -------------------------------- | ------------------------------------- |
+   | `knowledge_base/references/`     | Réalisations clients, cas d'usage     |
+   | `knowledge_base/methodologies/`  | Approches projets, frameworks         |
+   | `knowledge_base/certifications/` | ISO, qualifications, agréments        |
+   | `knowledge_base/company/`        | Présentation entreprise, organigramme |
+   | `knowledge_base/templates/`      | Modèles de réponses AO                |
 
 2. Déclenchez l'indexation :
 
@@ -579,7 +592,7 @@ Si un fichier est supprimé, ses vecteurs sont automatiquement retirés de Qdran
 
 ### Lancer la chaîne RAG (première fois)
 
-**Étape 1 — Vérifier le `.env`**
+**Étape 1 Vérifier le `.env`**
 
 ```dotenv
 OPENAI_API_KEY=sk-...           # requis pour les embeddings
@@ -587,7 +600,7 @@ QDRANT_URL=http://qdrant:6333
 RAG_ETL_URL=http://rag-etl:8001
 ```
 
-**Étape 2 — Démarrer la stack complète**
+**Étape 2 Démarrer la stack complète**
 
 Le microservice `rag-etl` ne démarre **pas** automatiquement avec `docker compose up`.
 Il faut l'activer via le profil `rag` :
@@ -597,7 +610,7 @@ Il faut l'activer via le profil `rag` :
 docker compose --profile rag up -d
 ```
 
-**Étape 3 — Déclencher l'indexation**
+**Étape 3 Déclencher l'indexation**
 
 ```bash
 curl -X POST http://localhost:8001/index
@@ -605,7 +618,7 @@ curl -X POST http://localhost:8001/index
 
 Ou via l'interface OffrIA : bouton **"Réindexer"** dans l'en-tête (actif seulement si rag-etl tourne).
 
-**Étape 4 — Vérifier**
+**Étape 4 Vérifier**
 
 ```bash
 # Statut du microservice ETL
@@ -620,7 +633,7 @@ curl http://localhost:8000/api/v1/rag/status
 **Pour les indexations suivantes** (après ajout de fichiers) :
 
 ```bash
-# L'ETL est incrémental — saute les fichiers déjà indexés (SHA256)
+# L'ETL est incrémental  saute les fichiers déjà indexés (SHA256)
 curl -X POST http://localhost:8001/index
 ```
 
@@ -643,7 +656,7 @@ L'API est disponible sur `http://localhost:8000`.
 ### Avec Docker (recommandé)
 
 ```bash
-# Production — démarre Qdrant + API
+# Production  démarre Qdrant + API
 docker compose up -d
 
 # Logs
@@ -655,7 +668,7 @@ docker compose --profile rag up -d
 # Déclencher une indexation
 curl -X POST http://localhost:8001/index
 
-# Développement — hot-reload Python + Vite dev server
+# Développement  hot-reload Python + Vite dev server
 docker compose -f docker-compose.yml -f docker-compose.dev.yml up
 ```
 
@@ -718,9 +731,10 @@ Si non, la page de connexion s'affiche.
 ```
 
 **Fonctionnalités :**
+
 - Inscription libre (nom, prénom, email, mot de passe) + connexion JWT
 - En-tête : prénom de l'utilisateur connecté + bouton de déconnexion
-- Dépôt de fichier AO par glisser-déposer (`.txt` / `.pdf`) — PDF scannés supportés via OCR GPT-4o
+- Dépôt de fichier AO par glisser-déposer (`.txt` / `.pdf`) PDF scannés supportés via OCR GPT-4o
 - Sélection du provider LLM par cartes cliquables
 - Modèles disponibles chargés dynamiquement depuis l'API
 - Résultats en deux onglets : **Document** (8 sections) + **Brief stratégique**
@@ -736,67 +750,92 @@ Si non, la page de connexion s'affiche.
 ### Routes publiques
 
 #### `GET /health`
+
 Healthcheck minimal.
 
 #### `GET /api/v1/models`
+
 Liste tous les modèles disponibles, tous providers confondus.
 
 #### `GET /api/v1/models/providers`
+
 Liste les identifiants des providers enregistrés.
 **Réponse :** `["openai", "anthropic", "mistral"]`
 
 #### `GET /api/v1/models/{provider}`
+
 Liste les modèles d'un provider spécifique.
 
 ### Authentification
 
 #### `POST /api/v1/auth/register`
+
 Crée un compte utilisateur et retourne un token JWT.
 
 **Corps :**
+
 ```json
-{ "nom": "Alami", "prenom": "Youssef", "email": "y.alami@example.com", "password": "motdepasse" }
+{
+  "nom": "Alami",
+  "prenom": "Youssef",
+  "email": "y.alami@example.com",
+  "password": "motdepasse"
+}
 ```
-**Réponse :** `{ "access_token": "eyJ...", "token_type": "bearer" }` — HTTP 201
+
+**Réponse :** `{ "access_token": "eyJ...", "token_type": "bearer" }` HTTP 201
 
 **Erreurs :**
-- `409 Conflict` — email déjà utilisé
-- `422 Unprocessable Entity` — email invalide ou champs manquants
+
+- `409 Conflict` email déjà utilisé
+- `422 Unprocessable Entity` email invalide ou champs manquants
 
 #### `POST /api/v1/auth/login`
+
 Connexion et retour d'un token JWT.
 
 **Corps :** `{ "email": "...", "password": "..." }`
 **Réponse :** `{ "access_token": "eyJ...", "token_type": "bearer" }`
-**Erreur :** `401` — email ou mot de passe incorrect
+**Erreur :** `401` email ou mot de passe incorrect
 
 #### `GET /api/v1/auth/me` 🔒
+
 Retourne le profil de l'utilisateur authentifié.
 
 **Réponse :**
+
 ```json
-{ "id": "uuid", "nom": "Alami", "prenom": "Youssef", "email": "...", "created_at": "2024-..." }
+{
+  "id": "uuid",
+  "nom": "Alami",
+  "prenom": "Youssef",
+  "email": "...",
+  "created_at": "2024-..."
+}
 ```
 
 ### Routes protégées (🔒 Bearer requis)
 
 #### `POST /api/v1/brief` 🔒
+
 Génère **uniquement le brief stratégique** (phase 1, 1 appel LLM) sans déclencher les 8 sections.
 Utile pour valider l'angle stratégique avant une génération complète.
 
 **Corps :** identique à `/generate`
 
 **Réponse :**
+
 ```json
 {
   "brief_strategique": "# Analyse stratégique\n...",
-  "provider_utilise":  "anthropic",
-  "model_utilise":     "claude-opus-4-6",
-  "tokens_utilises":   420
+  "provider_utilise": "anthropic",
+  "model_utilise": "claude-opus-4-6",
+  "tokens_utilises": 420
 }
 ```
 
 #### `POST /api/v1/pdf/extract` 🔒
+
 Extrait le texte d'un PDF d'appel d'offres (multipart/form-data).
 
 - **PDF avec texte embarqué** : extraction directe via pymupdf (rapide, 0 token LLM)
@@ -805,20 +844,23 @@ Extrait le texte d'un PDF d'appel d'offres (multipart/form-data).
 **Corps :** `file` (PDF, max 20 MB)
 
 **Réponse :**
+
 ```json
 {
-  "text":       "ARTICLE 10: OFFRE TECHNIQUE...",
-  "method":     "pymupdf",
-  "pages":      5,
+  "text": "ARTICLE 10: OFFRE TECHNIQUE...",
+  "method": "pymupdf",
+  "pages": 5,
   "is_scanned": false
 }
 ```
 
 #### `POST /api/v1/generate`
+
 **Point d'entrée principal.** Génère une réponse à un appel d'offres (9 appels LLM).
 Le lancement est automatiquement sauvegardé dans l'historique de l'utilisateur connecté.
 
 **Corps de la requête :**
+
 ```json
 {
   "ao_texte": "Appel d'offres ouvert n° 12/2024...",
@@ -827,8 +869,15 @@ Le lancement est automatiquement sauvegardé dans l'historique de l'utilisateur 
   "contexte_entreprise": {
     "nom": "DataTech Maroc SARL",
     "description": "Société de conseil en transformation digitale",
-    "expertises": ["développement web", "cloud AWS", "intelligence artificielle"],
-    "references": ["SI RH – Région Souss-Massa", "Portail citoyen – Commune de Marrakech"],
+    "expertises": [
+      "développement web",
+      "cloud AWS",
+      "intelligence artificielle"
+    ],
+    "references": [
+      "SI RH – Région Souss-Massa",
+      "Portail citoyen – Commune de Marrakech"
+    ],
     "effectif": 45,
     "chiffre_affaires": "12M DH"
   },
@@ -839,6 +888,7 @@ Le lancement est automatiquement sauvegardé dans l'historique de l'utilisateur 
 ```
 
 **Réponse :**
+
 ```json
 {
   "succes": true,
@@ -846,8 +896,12 @@ Le lancement est automatiquement sauvegardé dans l'historique de l'utilisateur 
   "model_utilise": "claude-opus-4-6",
   "texte_complet": "## Présentation de notre entreprise\n...",
   "sections": [
-    { "titre": "Présentation de notre entreprise", "contenu": "...", "ordre": 0 },
-    { "titre": "Compréhension de vos besoins",     "contenu": "...", "ordre": 1 }
+    {
+      "titre": "Présentation de notre entreprise",
+      "contenu": "...",
+      "ordre": 0
+    },
+    { "titre": "Compréhension de vos besoins", "contenu": "...", "ordre": 1 }
   ],
   "tokens_utilises": 8247,
   "erreur": null
@@ -855,23 +909,29 @@ Le lancement est automatiquement sauvegardé dans l'historique de l'utilisateur 
 ```
 
 #### `GET /api/v1/history` 🔒
+
 Liste les lancements de l'utilisateur connecté (résumés, sans le texte complet).
 
 **Réponse :** `[ { "id": "uuid", "created_at": "...", "company_nom": "...", "provider": "...", "model": "...", "tokens_utilises": 8247, "ao_excerpt": "..." }, ... ]`
 
 #### `GET /api/v1/history/{id}` 🔒
+
 Retourne une entrée complète (avec le `GenerationResult` complet).
 
 #### `DELETE /api/v1/history/{id}` 🔒
+
 Supprime une entrée. Retourne `404` si l'entrée n'appartient pas à l'utilisateur.
 
 #### `DELETE /api/v1/history` 🔒
+
 Vide tout l'historique de l'utilisateur connecté.
 
 #### `GET /api/v1/rag/status`
+
 Statut de la base de connaissances RAG.
 
 **Réponse :**
+
 ```json
 {
   "ready": true,
@@ -889,35 +949,36 @@ Statut de la base de connaissances RAG.
 ```
 
 #### `POST /api/v1/rag/index`
+
 Déclenche l'indexation ETL (proxie vers rag-etl).
 Retourne `503` si le service rag-etl n'est pas démarré.
 
 **Codes d'erreur :**
 
-| Code | Cause |
-|------|-------|
-| `401` | Token manquant ou expiré |
+| Code  | Cause                                              |
+| ----- | -------------------------------------------------- |
+| `401` | Token manquant ou expiré                           |
 | `400` | Clé API manquante, provider inconnu, AO trop court |
-| `409` | Email déjà utilisé (register) |
-| `422` | Corps de requête invalide (validation Pydantic) |
-| `502` | Échec de l'appel LLM (auth, quota, timeout) |
-| `503` | Service rag-etl non disponible (pour /rag/index) |
-| `500` | Erreur interne inattendue |
+| `409` | Email déjà utilisé (register)                      |
+| `422` | Corps de requête invalide (validation Pydantic)    |
+| `502` | Échec de l'appel LLM (auth, quota, timeout)        |
+| `503` | Service rag-etl non disponible (pour /rag/index)   |
+| `500` | Erreur interne inattendue                          |
 
 ---
 
 ## Choisir son modèle LLM
 
-| Provider | Modèle | Usage recommandé |
-|----------|--------|------------------|
-| `anthropic` | `claude-opus-4-6` | AO complexes, réponses très structurées (**défaut**) |
-| `anthropic` | `claude-sonnet-4-6` | Bon équilibre qualité/coût |
-| `anthropic` | `claude-haiku-4-5-20251001` | AO simples, génération rapide |
-| `openai` | `gpt-4o` | Polyvalent, multimodal (**défaut**) |
-| `openai` | `gpt-4o-mini` | Économique et rapide |
-| `openai` | `o1` | AO très techniques nécessitant un raisonnement approfondi |
-| `mistral` | `mistral-large-latest` | Alternative souveraine européenne (**défaut**) |
-| `mistral` | `mistral-small-latest` | Version économique |
+| Provider    | Modèle                      | Usage recommandé                                          |
+| ----------- | --------------------------- | --------------------------------------------------------- |
+| `anthropic` | `claude-opus-4-6`           | AO complexes, réponses très structurées (**défaut**)      |
+| `anthropic` | `claude-sonnet-4-6`         | Bon équilibre qualité/coût                                |
+| `anthropic` | `claude-haiku-4-5-20251001` | AO simples, génération rapide                             |
+| `openai`    | `gpt-4o`                    | Polyvalent, multimodal (**défaut**)                       |
+| `openai`    | `gpt-4o-mini`               | Économique et rapide                                      |
+| `openai`    | `o1`                        | AO très techniques nécessitant un raisonnement approfondi |
+| `mistral`   | `mistral-large-latest`      | Alternative souveraine européenne (**défaut**)            |
+| `mistral`   | `mistral-small-latest`      | Version économique                                        |
 
 ---
 
@@ -1015,22 +1076,23 @@ docker compose down
 # Arrêt avec suppression du volume Qdrant (⚠ efface les vecteurs)
 docker compose down -v
 
-# Développement — hot-reload Python + Vite dev server (port 5173)
+# Développement  hot-reload Python + Vite dev server (port 5173)
 docker compose -f docker-compose.yml -f docker-compose.dev.yml up
 ```
 
 ### Volumes montés
 
-| Volume | Description |
-|--------|-------------|
-| `./data:/app/data` | Base SQLite `offria.db` (users + launches) — persistée entre les redémarrages |
-| `./company_defaults.json:/app/company_defaults.json:ro` | Données entreprise par défaut (lecture seule) |
-| `qdrant_data` | Volume Docker nommé pour les vecteurs Qdrant |
+| Volume                                                  | Description                                                                 |
+| ------------------------------------------------------- | --------------------------------------------------------------------------- |
+| `./data:/app/data`                                      | Base SQLite `offria.db` (users + launches) persistée entre les redémarrages |
+| `./company_defaults.json:/app/company_defaults.json:ro` | Données entreprise par défaut (lecture seule)                               |
+| `qdrant_data`                                           | Volume Docker nommé pour les vecteurs Qdrant                                |
 
 > **Important :** monter un répertoire (`./data`) et non un fichier évite le comportement Docker
-> qui crée un *dossier* lorsque la cible n'existe pas encore sur l'hôte.
+> qui crée un _dossier_ lorsque la cible n'existe pas encore sur l'hôte.
 
 Le Dockerfile utilise un **build multi-stage** :
+
 - Étape `frontend-builder` : build React avec Node.js
 - Étape `builder` : installe les dépendances Python
 - Étape `final` : image légère sans outils de build, utilisateur non-root

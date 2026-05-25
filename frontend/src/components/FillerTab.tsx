@@ -1,31 +1,37 @@
-import { useEffect, useRef, useState } from 'react';
-import { runFiller, downloadFillerFile } from '../api';
-import type { CompanyCase, FillerOutputFile, FillerResult } from '../types';
+import { useEffect, useRef, useState } from "react";
+import { runFiller, downloadFillerFile } from "../api";
+import type { CompanyCase, FillerOutputFile, FillerResult } from "../types";
 
 const CASE_OPTIONS: { value: CompanyCase; label: string }[] = [
-  { value: 'societe',            label: 'Société / SARL' },
-  { value: 'personne_physique',  label: 'Personne physique' },
-  { value: 'auto_entrepreneur',  label: 'Auto-entrepreneur' },
-  { value: 'groupement',         label: 'Groupement' },
-  { value: 'cooperative',        label: 'Coopérative' },
-  { value: 'etablissement_public', label: 'Établissement public' },
+  { value: "societe", label: "Société / SARL" },
+  { value: "personne_physique", label: "Personne physique" },
+  { value: "auto_entrepreneur", label: "Auto-entrepreneur" },
+  { value: "groupement", label: "Groupement" },
+  { value: "cooperative", label: "Coopérative" },
+  { value: "etablissement_public", label: "Établissement public" },
 ];
 
 const FORMAT_LABELS: Record<string, string> = {
-  pdf:   'PDF',
-  docx:  'Word',
-  excel: 'Excel',
+  pdf: "PDF",
+  docx: "Word",
+  excel: "Excel",
 };
 
 const FORMAT_COLORS: Record<string, string> = {
-  pdf:   'text-red-600   bg-red-50   border-red-200',
-  docx:  'text-blue-600  bg-blue-50  border-blue-200',
-  excel: 'text-green-600 bg-green-50 border-green-200',
+  pdf: "text-red-600   bg-red-50   border-red-200",
+  docx: "text-blue-600  bg-blue-50  border-blue-200",
+  excel: "text-green-600 bg-green-50 border-green-200",
 };
 
-function DownloadCard({ file, index }: { file: FillerOutputFile; index: number }) {
+function DownloadCard({
+  file,
+  index,
+}: {
+  file: FillerOutputFile;
+  index: number;
+}) {
   const [downloading, setDownloading] = useState(false);
-  const [done,        setDone]        = useState(false);
+  const [done, setDone] = useState(false);
 
   async function handleDownload() {
     setDownloading(true);
@@ -33,13 +39,15 @@ function DownloadCard({ file, index }: { file: FillerOutputFile; index: number }
       await downloadFillerFile(file.download_url, file.filename);
       setDone(true);
     } catch {
-      // silently fail — user can retry
+      // silently fail  user can retry
     } finally {
       setDownloading(false);
     }
   }
 
-  const colorClass = FORMAT_COLORS[file.format] ?? 'text-muted-foreground bg-muted border-border';
+  const colorClass =
+    FORMAT_COLORS[file.format] ??
+    "text-muted-foreground bg-muted border-border";
   const formatLabel = FORMAT_LABELS[file.format] ?? file.format.toUpperCase();
 
   return (
@@ -48,16 +56,22 @@ function DownloadCard({ file, index }: { file: FillerOutputFile; index: number }
       style={{ animationDelay: `${index * 60}ms` }}
     >
       {/* Format badge */}
-      <div className={`flex-shrink-0 h-10 w-10 rounded-lg border flex items-center justify-center text-[11px] font-bold ${colorClass}`}>
+      <div
+        className={`flex-shrink-0 h-10 w-10 rounded-lg border flex items-center justify-center text-[11px] font-bold ${colorClass}`}
+      >
         {formatLabel}
       </div>
 
       {/* Info */}
       <div className="flex-1 min-w-0">
         <p className="text-sm font-semibold text-foreground truncate">
-          {file.doc_type.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}
+          {file.doc_type
+            .replace(/_/g, " ")
+            .replace(/\b\w/g, (c) => c.toUpperCase())}
         </p>
-        <p className="text-xs text-muted-foreground truncate mt-0.5">{file.filename}</p>
+        <p className="text-xs text-muted-foreground truncate mt-0.5">
+          {file.filename}
+        </p>
       </div>
 
       {/* Download button */}
@@ -66,61 +80,104 @@ function DownloadCard({ file, index }: { file: FillerOutputFile; index: number }
         disabled={downloading}
         className={`flex-shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-medium transition-all disabled:opacity-50 ${
           done
-            ? 'border-emerald-300/50 bg-emerald-500/10 text-emerald-700'
-            : 'border-border text-muted-foreground hover:border-primary/40 hover:text-primary bg-background'
+            ? "border-emerald-300/50 bg-emerald-500/10 text-emerald-700"
+            : "border-border text-muted-foreground hover:border-primary/40 hover:text-primary bg-background"
         }`}
       >
         {downloading ? (
-          <svg className="h-3.5 w-3.5 animate-spin" fill="none" viewBox="0 0 24 24">
-            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
-            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
+          <svg
+            className="h-3.5 w-3.5 animate-spin"
+            fill="none"
+            viewBox="0 0 24 24"
+          >
+            <circle
+              className="opacity-25"
+              cx="12"
+              cy="12"
+              r="10"
+              stroke="currentColor"
+              strokeWidth="4"
+            />
+            <path
+              className="opacity-75"
+              fill="currentColor"
+              d="M4 12a8 8 0 018-8v8z"
+            />
           </svg>
         ) : done ? (
-          <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+          <svg
+            className="h-3.5 w-3.5"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            strokeWidth={2}
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M5 13l4 4L19 7"
+            />
           </svg>
         ) : (
-          <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+          <svg
+            className="h-3.5 w-3.5"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            strokeWidth={2}
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
+            />
           </svg>
         )}
-        {done ? 'Téléchargé' : 'Télécharger'}
+        {done ? "Téléchargé" : "Télécharger"}
       </button>
     </div>
   );
 }
 
-export default function FillerTab() {
-  const [pdf,         setPdf]         = useState<File | null>(null);
-  const [companyCase, setCompanyCase] = useState<CompanyCase>('societe');
-  const [lots,        setLots]        = useState('');
-  const [loading,     setLoading]     = useState(false);
-  const [elapsed,     setElapsed]     = useState(0);
-  const [error,       setError]       = useState('');
-  const [result,      setResult]      = useState<FillerResult | null>(null);
-  const [isDragging,  setIsDragging]  = useState(false);
+export default function FillerTab({ marcheId }: { marcheId?: string } = {}) {
+  const [pdf, setPdf] = useState<File | null>(null);
+  const [companyCase, setCompanyCase] = useState<CompanyCase>("societe");
+  const [lots, setLots] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [elapsed, setElapsed] = useState(0);
+  const [error, setError] = useState("");
+  const [result, setResult] = useState<FillerResult | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
 
-  const pdfRef    = useRef<HTMLInputElement>(null);
-  const timerRef  = useRef<ReturnType<typeof setInterval> | null>(null);
+  const pdfRef = useRef<HTMLInputElement>(null);
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   // Start/stop elapsed timer during loading
   useEffect(() => {
     if (loading) {
       setElapsed(0);
-      timerRef.current = setInterval(() => setElapsed(s => s + 1), 1000);
+      timerRef.current = setInterval(() => setElapsed((s) => s + 1), 1000);
     } else {
       if (timerRef.current) clearInterval(timerRef.current);
     }
-    return () => { if (timerRef.current) clearInterval(timerRef.current); };
+    return () => {
+      if (timerRef.current) clearInterval(timerRef.current);
+    };
   }, [loading]);
 
   function parseLots(): number[] {
     if (!lots.trim()) return [];
-    return lots.split(',').map(s => parseInt(s.trim(), 10)).filter(n => !isNaN(n) && n > 0);
+    return lots
+      .split(",")
+      .map((s) => parseInt(s.trim(), 10))
+      .filter((n) => !isNaN(n) && n > 0);
   }
 
   async function handleSubmit() {
-    if (!pdf) { setError('Veuillez sélectionner un fichier PDF.'); return; }
+    if (!pdf) {
+      setError("Veuillez sélectionner un fichier PDF.");
+      return;
+    }
 
     const lotsRaw = lots.trim();
     if (lotsRaw) {
@@ -132,16 +189,16 @@ export default function FillerTab() {
     }
 
     setLoading(true);
-    setError('');
+    setError("");
     setResult(null);
     try {
-      const res = await runFiller(pdf, companyCase, parseLots());
+      const res = await runFiller(pdf, companyCase, parseLots(), marcheId);
       setResult(res);
       if (!res.succes && res.erreurs.length > 0) {
-        setError(res.erreurs.join(' · '));
+        setError(res.erreurs.join(" · "));
       }
     } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : 'Erreur inattendue.');
+      setError(e instanceof Error ? e.message : "Erreur inattendue.");
     } finally {
       setLoading(false);
     }
@@ -149,8 +206,8 @@ export default function FillerTab() {
 
   function reset() {
     setPdf(null);
-    setLots('');
-    setError('');
+    setLots("");
+    setError("");
     setResult(null);
   }
 
@@ -159,31 +216,48 @@ export default function FillerTab() {
 
   return (
     <div className="space-y-4">
-
       {/* ── Hero ──────────────────────────────────────────────── */}
       <div className="space-y-1 animate-fade-in">
         <h1 className="text-2xl font-bold text-foreground tracking-tight">
           Remplissage dossier AO
         </h1>
         <p className="text-sm text-muted-foreground max-w-xl">
-          Déposez le dossier PDF complet : l'IA détecte chaque document (acte d'engagement,
-          déclaration sur l'honneur, bordereau des prix…) et remplit les champs avec les données de l'entreprise.
+          Déposez le dossier PDF complet : l'IA détecte chaque document (acte
+          d'engagement, déclaration sur l'honneur, bordereau des prix…) et
+          remplit les champs avec les données de l'entreprise.
         </p>
       </div>
 
       {/* ── Étapes ────────────────────────────────────────────── */}
       <div className="grid grid-cols-3 gap-2">
         {[
-          { n: '01', title: 'Déposez le PDF dossier', desc: 'Le dossier complet fourni par le maître d\'ouvrage' },
-          { n: '02', title: 'Paramétrez',              desc: 'Type de soumissionnaire et numéros de lots' },
-          { n: '03', title: 'Téléchargez',             desc: 'Chaque document rempli en PDF, Word ou Excel' },
+          {
+            n: "01",
+            title: "Déposez le PDF dossier",
+            desc: "Le dossier complet fourni par le maître d'ouvrage",
+          },
+          {
+            n: "02",
+            title: "Paramétrez",
+            desc: "Type de soumissionnaire et numéros de lots",
+          },
+          {
+            n: "03",
+            title: "Téléchargez",
+            desc: "Chaque document rempli en PDF, Word ou Excel",
+          },
         ].map(({ n, title, desc }) => (
-          <div key={n} className="flex flex-col gap-1.5 p-3 rounded-xl border border-border bg-card hover:shadow-card-hover hover:border-primary/20 transition-all group">
+          <div
+            key={n}
+            className="flex flex-col gap-1.5 p-3 rounded-xl border border-border bg-card hover:shadow-card-hover hover:border-primary/20 transition-all group"
+          >
             <div className="h-7 w-7 rounded-lg gradient-primary flex items-center justify-center text-primary-foreground text-xs font-bold">
               {n}
             </div>
             <div>
-              <p className="text-sm font-semibold text-foreground group-hover:text-primary transition-colors">{title}</p>
+              <p className="text-sm font-semibold text-foreground group-hover:text-primary transition-colors">
+                {title}
+              </p>
               <p className="text-xs text-muted-foreground mt-0.5">{desc}</p>
             </div>
           </div>
@@ -192,55 +266,103 @@ export default function FillerTab() {
 
       {/* ── Upload PDF ────────────────────────────────────────── */}
       <div
-        onDragOver={e => { e.preventDefault(); setIsDragging(true); }}
+        onDragOver={(e) => {
+          e.preventDefault();
+          setIsDragging(true);
+        }}
         onDragLeave={() => setIsDragging(false)}
-        onDrop={e => {
-          e.preventDefault(); setIsDragging(false);
+        onDrop={(e) => {
+          e.preventDefault();
+          setIsDragging(false);
           const f = e.dataTransfer.files?.[0];
-          if (f?.type === 'application/pdf') { setPdf(f); setResult(null); setError(''); }
+          if (f?.type === "application/pdf") {
+            setPdf(f);
+            setResult(null);
+            setError("");
+          }
         }}
         onClick={() => pdfRef.current?.click()}
         className={`border-2 border-dashed rounded-xl p-4 flex items-center gap-4 transition-all cursor-pointer ${
           isDragging
-            ? 'border-primary bg-accent/50 scale-[1.01]'
+            ? "border-primary bg-accent/50 scale-[1.01]"
             : pdf
-              ? 'border-emerald-500/40 bg-emerald-500/5'
-              : 'border-border hover:border-primary/40 hover:bg-accent/20'
+              ? "border-emerald-500/40 bg-emerald-500/5"
+              : "border-border hover:border-primary/40 hover:bg-accent/20"
         }`}
       >
-        <div className={`h-10 w-10 rounded-xl flex-shrink-0 flex items-center justify-center ${pdf ? 'bg-emerald-500/10' : 'bg-accent'}`}>
+        <div
+          className={`h-10 w-10 rounded-xl flex-shrink-0 flex items-center justify-center ${pdf ? "bg-emerald-500/10" : "bg-accent"}`}
+        >
           {pdf ? (
-            <svg className="h-5 w-5 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+            <svg
+              className="h-5 w-5 text-emerald-600"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              strokeWidth={2}
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M5 13l4 4L19 7"
+              />
             </svg>
           ) : (
-            <svg className="h-5 w-5 text-accent-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+            <svg
+              className="h-5 w-5 text-accent-foreground"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              strokeWidth={1.8}
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"
+              />
             </svg>
           )}
         </div>
         <div className="flex-1 min-w-0">
           {pdf ? (
             <>
-              <p className="text-sm font-semibold text-foreground truncate">{pdf.name}</p>
+              <p className="text-sm font-semibold text-foreground truncate">
+                {pdf.name}
+              </p>
               <p className="text-xs text-muted-foreground mt-0.5">
-                {(pdf.size / (1024 * 1024)).toFixed(1)} Mo · Cliquer pour changer
+                {(pdf.size / (1024 * 1024)).toFixed(1)} Mo · Cliquer pour
+                changer
               </p>
             </>
           ) : (
             <>
-              <p className="text-sm font-semibold text-foreground">Glissez le PDF dossier ici</p>
+              <p className="text-sm font-semibold text-foreground">
+                Glissez le PDF dossier ici
+              </p>
               <p className="text-xs text-muted-foreground mt-0.5">
-                ou <span className="text-primary font-medium">parcourez vos fichiers</span> · .pdf uniquement · max 50 Mo
+                ou{" "}
+                <span className="text-primary font-medium">
+                  parcourez vos fichiers
+                </span>{" "}
+                · .pdf uniquement · max 50 Mo
               </p>
             </>
           )}
         </div>
-        <input ref={pdfRef} type="file" accept=".pdf" className="hidden"
-          onChange={e => {
+        <input
+          ref={pdfRef}
+          type="file"
+          accept=".pdf"
+          className="hidden"
+          onChange={(e) => {
             const f = e.target.files?.[0];
-            if (f) { setPdf(f); setResult(null); setError(''); }
-          }} />
+            if (f) {
+              setPdf(f);
+              setResult(null);
+              setError("");
+            }
+          }}
+        />
       </div>
 
       {/* ── Type de soumissionnaire ───────────────────────────── */}
@@ -255,8 +377,8 @@ export default function FillerTab() {
               onClick={() => setCompanyCase(value)}
               className={`px-3.5 py-1.5 text-sm rounded-lg border transition-all ${
                 companyCase === value
-                  ? 'bg-primary text-primary-foreground border-primary shadow-sm'
-                  : 'border-border text-muted-foreground hover:border-primary hover:text-foreground'
+                  ? "bg-primary text-primary-foreground border-primary shadow-sm"
+                  : "border-border text-muted-foreground hover:border-primary hover:text-foreground"
               }`}
             >
               {label}
@@ -271,12 +393,14 @@ export default function FillerTab() {
           <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
             Numéros de lots
           </h3>
-          <span className="text-[11px] text-muted-foreground/70 italic">optionnel — vide = tous les lots</span>
+          <span className="text-[11px] text-muted-foreground/70 italic">
+            optionnel vide = tous les lots
+          </span>
         </div>
         <input
           type="text"
           value={lots}
-          onChange={e => setLots(e.target.value)}
+          onChange={(e) => setLots(e.target.value)}
           placeholder="ex : 1,2,3"
           className="w-full px-3 py-2 text-sm rounded-lg border border-border bg-background text-foreground
                      placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-primary/40"
@@ -288,20 +412,36 @@ export default function FillerTab() {
         <div className="border border-primary/20 rounded-xl bg-primary/5 p-5 flex items-center gap-4 animate-fade-in">
           <div className="flex-shrink-0 relative h-12 w-12">
             <svg className="h-12 w-12 -rotate-90" viewBox="0 0 48 48">
-              <circle cx="24" cy="24" r="20" fill="none" stroke="currentColor" strokeWidth="3"
-                className="text-primary/20" />
-              <circle cx="24" cy="24" r="20" fill="none" stroke="currentColor" strokeWidth="3"
+              <circle
+                cx="24"
+                cy="24"
+                r="20"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="3"
+                className="text-primary/20"
+              />
+              <circle
+                cx="24"
+                cy="24"
+                r="20"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="3"
                 strokeDasharray="125.66"
-                strokeDashoffset={125.66 - (125.66 * Math.min(elapsed / 90, 1))}
+                strokeDashoffset={125.66 - 125.66 * Math.min(elapsed / 90, 1)}
                 strokeLinecap="round"
-                className="text-primary transition-[stroke-dashoffset] duration-1000" />
+                className="text-primary transition-[stroke-dashoffset] duration-1000"
+              />
             </svg>
             <span className="absolute inset-0 flex items-center justify-center text-[10px] font-bold text-primary">
               {formatElapsed(elapsed)}
             </span>
           </div>
           <div>
-            <p className="text-sm font-semibold text-foreground">Traitement en cours…</p>
+            <p className="text-sm font-semibold text-foreground">
+              Traitement en cours…
+            </p>
             <p className="text-xs text-muted-foreground mt-0.5">
               Analyse du dossier, extraction des champs et remplissage par IA.
               Comptez 30–90 secondes selon la taille du PDF.
@@ -313,8 +453,18 @@ export default function FillerTab() {
       {/* ── Erreur ────────────────────────────────────────────── */}
       {error && !loading && (
         <div className="flex items-start gap-3 p-3 rounded-xl border border-destructive/20 bg-destructive/5">
-          <svg className="h-4 w-4 text-destructive mt-0.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
+          <svg
+            className="h-4 w-4 text-destructive mt-0.5 flex-shrink-0"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            strokeWidth={2}
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"
+            />
           </svg>
           <p className="text-sm text-destructive">{error}</p>
         </div>
@@ -329,7 +479,9 @@ export default function FillerTab() {
             </h3>
             {result.fichiers.length > 0 && (
               <span className="text-[11px] px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-300/40 text-emerald-700">
-                {result.fichiers.length} fichier{result.fichiers.length > 1 ? 's' : ''} disponible{result.fichiers.length > 1 ? 's' : ''}
+                {result.fichiers.length} fichier
+                {result.fichiers.length > 1 ? "s" : ""} disponible
+                {result.fichiers.length > 1 ? "s" : ""}
               </span>
             )}
           </div>
@@ -342,15 +494,20 @@ export default function FillerTab() {
             </div>
           ) : (
             <div className="p-4 rounded-xl border border-amber-300/40 bg-amber-500/5 text-sm text-amber-700">
-              Aucun document détecté dans ce PDF. Vérifiez que le fichier contient bien un dossier de candidature AO.
+              Aucun document détecté dans ce PDF. Vérifiez que le fichier
+              contient bien un dossier de candidature AO.
             </div>
           )}
 
           {result.erreurs.length > 0 && (
             <div className="p-3 rounded-xl border border-amber-300/40 bg-amber-500/5 space-y-1">
-              <p className="text-xs font-semibold text-amber-700 uppercase tracking-wide">Avertissements</p>
+              <p className="text-xs font-semibold text-amber-700 uppercase tracking-wide">
+                Avertissements
+              </p>
               {result.erreurs.map((e, i) => (
-                <p key={i} className="text-xs text-amber-600">· {e}</p>
+                <p key={i} className="text-xs text-amber-600">
+                  · {e}
+                </p>
               ))}
             </div>
           )}
@@ -367,9 +524,9 @@ export default function FillerTab() {
             </h2>
             <p className="text-sm text-primary-foreground/80 max-w-md">
               {result?.succes
-                ? 'Traitement terminé — déposez un nouveau fichier pour relancer.'
+                ? "Traitement terminé  déposez un nouveau fichier pour relancer."
                 : loading
-                  ? 'Analyse IA en cours, veuillez patienter…'
+                  ? "Analyse IA en cours, veuillez patienter…"
                   : "L'IA analyse le dossier et remplit chaque formulaire avec les données de l'entreprise."}
             </p>
           </div>
@@ -379,8 +536,18 @@ export default function FillerTab() {
                 onClick={reset}
                 className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl border border-primary-foreground/30 bg-primary-foreground/10 text-primary-foreground text-sm font-medium hover:bg-primary-foreground/20 transition-colors"
               >
-                <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                <svg
+                  className="h-3.5 w-3.5"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  strokeWidth={2}
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                  />
                 </svg>
                 Nouveau
               </button>
@@ -393,16 +560,41 @@ export default function FillerTab() {
             >
               {loading ? (
                 <>
-                  <svg className="h-4 w-4 animate-spin" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
+                  <svg
+                    className="h-4 w-4 animate-spin"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                  >
+                    <circle
+                      className="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                    />
+                    <path
+                      className="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8v8z"
+                    />
                   </svg>
                   Traitement…
                 </>
               ) : (
                 <>
-                  <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                  <svg
+                    className="h-4 w-4"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                    strokeWidth={2}
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                    />
                   </svg>
                   Lancer le remplissage
                 </>
@@ -411,7 +603,6 @@ export default function FillerTab() {
           </div>
         </div>
       </div>
-
     </div>
   );
 }

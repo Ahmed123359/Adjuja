@@ -1,14 +1,14 @@
 """
-Service RAG ETL — microservice indépendant de l'application principale.
+Service RAG ETL  microservice indépendant de l'application principale.
 
 Responsabilité : uniquement l'indexation (écriture dans Qdrant).
 La lecture (query) est gérée directement par le service principal.
 
 Routes :
-  GET  /health   — liveness probe
-  GET  /status   — état de l'index (manifest + collection Qdrant)
-  POST /index    — déclenche l'ETL (n'indexe que les nouveaux fichiers)
-  DELETE /reset  — vide complètement la collection et le manifest
+  GET  /health    liveness probe
+  GET  /status    état de l'index (manifest + collection Qdrant)
+  POST /index     déclenche l'ETL (n'indexe que les nouveaux fichiers)
+  DELETE /reset   vide complètement la collection et le manifest
 
 Démarrage :
   uvicorn main:app --host 0.0.0.0 --port 8001
@@ -37,7 +37,7 @@ logger = logging.getLogger(__name__)
 settings = get_settings()
 
 if not settings.mistral_api_key:
-    logger.error("MISTRAL_API_KEY manquante — le service ETL ne peut pas générer d'embeddings.")
+    logger.error("MISTRAL_API_KEY manquante  le service ETL ne peut pas générer d'embeddings.")
 
 qdrant   = QdrantClient(host=settings.qdrant_host, port=settings.qdrant_port)
 manifest = Manifest(Path(settings.knowledge_base_path) / ".rag_manifest.json")
@@ -45,7 +45,7 @@ manifest = Manifest(Path(settings.knowledge_base_path) / ".rag_manifest.json")
 etl = ETLPipeline(settings=settings, qdrant=qdrant, manifest=manifest)
 
 app = FastAPI(
-    title="OffrIA — RAG ETL Service",
+    title="OffrIA  RAG ETL Service",
     description="Microservice d'indexation de la base de connaissances via Mistral Embed + Qdrant.",
     version="2.0.0",
 )

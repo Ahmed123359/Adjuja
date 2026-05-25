@@ -75,13 +75,13 @@ _PAYLOAD = {
 class TestHealthRoutes:
 
     def test_root_redirige(self, client):
-        # GET / redirige vers /ui/ — on vérifie la redirection sans la suivre
+        # GET / redirige vers /ui/  on vérifie la redirection sans la suivre
         response = client.get("/", follow_redirects=False)
         assert response.status_code in (301, 302, 307, 308)
 
     def test_health(self, client):
         response = client.get("/health")
-        # 200 = tout ok, 503 = dégradé (ex: pas de clé API en CI) — les deux sont valides.
+        # 200 = tout ok, 503 = dégradé (ex: pas de clé API en CI)  les deux sont valides.
         # Ce qui compte : l'endpoint répond et retourne la bonne structure JSON.
         assert response.status_code in (200, 503)
         data = response.json()
@@ -209,7 +209,7 @@ class TestRateLimiting:
             r = client.post("/api/v1/generate", json=_PAYLOAD, headers=self._auth("user-a"))
             assert r.status_code == 429
 
-            # User B a son propre compteur — pas encore touché
+            # User B a son propre compteur  pas encore touché
             app.dependency_overrides[get_current_user] = lambda: user_b
             r = client.post("/api/v1/generate", json=_PAYLOAD, headers=self._auth("user-b"))
             assert r.status_code == 200

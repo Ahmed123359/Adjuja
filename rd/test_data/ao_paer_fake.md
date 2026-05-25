@@ -1,6 +1,6 @@
-# Appel d'Offres — Évaluation à mi-parcours du Programme d'Appui à l'Entrepreneuriat Rural (PAER)
+# Appel d'Offres Évaluation à mi-parcours du Programme d'Appui à l'Entrepreneuriat Rural (PAER)
 
-**Commanditaire :** Agence de Développement Agricole (ADA) — Maroc
+**Commanditaire :** Agence de Développement Agricole (ADA) Maroc
 
 ## Contexte
 

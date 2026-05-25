@@ -61,7 +61,7 @@ async def extract_pdf(
         )
 
     logger.info(
-        "Extraction PDF — user=%s fichier=%s taille=%.1fMB",
+        "Extraction PDF  user=%s fichier=%s taille=%.1fMB",
         current_user.id, file.filename, size_mb,
     )
 
@@ -73,7 +73,7 @@ async def extract_pdf(
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(e))
     except Exception as e:
-        logger.error("Erreur extraction PDF — user=%s erreur=%s", current_user.id, e, exc_info=True)
+        logger.error("Erreur extraction PDF  user=%s erreur=%s", current_user.id, e, exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Impossible d'extraire le texte du PDF : {e}",
@@ -82,12 +82,12 @@ async def extract_pdf(
     if result.tokens_ocr > 0:
         await usage.add_ocr_tokens(result.tokens_ocr)
         logger.info(
-            "OCR GPT-4o — user=%s pages=%d tokens_ocr=%d",
+            "OCR GPT-4o  user=%s pages=%d tokens_ocr=%d",
             current_user.id, result.pages, result.tokens_ocr,
         )
     else:
         logger.info(
-            "Extraction PDF réussie — user=%s méthode=%s pages=%d",
+            "Extraction PDF réussie  user=%s méthode=%s pages=%d",
             current_user.id, result.method, result.pages,
         )
 

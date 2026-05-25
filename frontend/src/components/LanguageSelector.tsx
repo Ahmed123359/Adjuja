@@ -1,55 +1,49 @@
 import { useState, useRef, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ChevronDown, Check } from 'lucide-react';
+import { useTheme } from '../hooks/useTheme';
 
 const LANGUAGES = [
-  { code: 'fr', label: 'Français' },
-  { code: 'en', label: 'English' },
+  { code: 'fr', label: 'Français', short: 'FR' },
+  { code: 'en', label: 'English',  short: 'EN' },
 ] as const;
 
 export default function LanguageSelector() {
   const { i18n } = useTranslation();
+  const { theme } = useTheme();
+  const dark = theme === 'dark';
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
-
   const current = LANGUAGES.find(l => l.code === i18n.language) ?? LANGUAGES[0];
 
   useEffect(() => {
-    function handleClickOutside(e: MouseEvent) {
-      if (ref.current && !ref.current.contains(e.target as Node)) {
-        setOpen(false);
-      }
-    }
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    const fn = (e: MouseEvent) => { if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false); };
+    document.addEventListener('mousedown', fn);
+    return () => document.removeEventListener('mousedown', fn);
   }, []);
 
   return (
-    <div className="relative inline-block" ref={ref}>
-      <button
-        onClick={() => setOpen(o => !o)}
-        className="flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-sm transition-all hover:bg-gray-50"
-        style={{ borderColor: '#e2e8f0', color: '#64748b', background: 'rgba(255,255,255,0.6)', backdropFilter: 'blur(8px)' }}
+    <div style={{ position: 'relative', display: 'inline-block' }} ref={ref}>
+      <button onClick={() => setOpen(o => !o)}
+        style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'none', border: '1px solid var(--l-card-border)', borderRadius: 7, padding: '7px 12px', fontSize: 13, fontWeight: 500, color: 'var(--l-sub)', cursor: 'pointer', fontFamily: 'inherit', transition: 'border-color .12s' }}
+        onMouseEnter={e => e.currentTarget.style.borderColor = 'var(--l-blue)'}
+        onMouseLeave={e => e.currentTarget.style.borderColor = 'var(--l-card-border)'}
       >
-        <span className="hidden md:inline">{current.label}</span>
-        <span className="md:hidden">{current.code.toUpperCase()}</span>
-        <ChevronDown className="h-3.5 w-3.5" />
+        <span>{current.short}</span>
+        <svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" /></svg>
       </button>
 
       {open && (
-        <div
-          className="absolute left-0 mt-2 w-36 rounded-xl overflow-hidden shadow-lg border"
-          style={{ background: 'rgba(255,255,255,0.95)', backdropFilter: 'blur(16px)', borderColor: '#e2e8f0', animation: 'fade-in-down 0.15s ease both' }}
-        >
+        <div style={{ position: 'absolute', top: 'calc(100% + 6px)', left: 0, background: 'var(--l-card)', border: '1px solid var(--l-card-border)', borderRadius: 8, overflow: 'hidden', minWidth: 120, boxShadow: dark ? '0 8px 24px rgba(0,0,0,0.4)' : '0 8px 24px rgba(0,0,0,0.08)', zIndex: 200 }}>
           {LANGUAGES.map(lang => (
-            <button
-              key={lang.code}
-              onClick={() => { i18n.changeLanguage(lang.code); setOpen(false); }}
-              className="flex items-center gap-2 w-full px-3 py-2 text-sm text-left transition-colors hover:bg-gray-50"
-              style={{ color: lang.code === current.code ? '#3b82f6' : '#475569' }}
+            <button key={lang.code} onClick={() => { i18n.changeLanguage(lang.code); setOpen(false); }}
+              style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', padding: '9px 14px', background: 'none', border: 'none', cursor: 'pointer', fontSize: 13, fontWeight: 500, fontFamily: 'inherit', color: lang.code === current.code ? 'var(--l-blue)' : 'var(--l-sub)', transition: 'background .1s' }}
+              onMouseEnter={e => e.currentTarget.style.background = dark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)'}
+              onMouseLeave={e => e.currentTarget.style.background = 'none'}
             >
-              <span className="flex-1">{lang.label}</span>
-              {lang.code === current.code && <Check className="h-3.5 w-3.5 text-blue-500" />}
+              {lang.label}
+              {lang.code === current.code && (
+                <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="var(--l-blue)" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
+              )}
             </button>
           ))}
         </div>

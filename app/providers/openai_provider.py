@@ -13,7 +13,7 @@ OPENAI_MODELS = [
 
 class OpenAIProvider(AbstractLLMProvider):
     """
-    Provider OpenAI — famille de modèles GPT et o1.
+    Provider OpenAI  famille de modèles GPT et o1.
 
     Utilise le SDK officiel `openai` via l'API Chat Completions.
     """

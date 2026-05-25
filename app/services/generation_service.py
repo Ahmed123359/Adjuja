@@ -61,14 +61,14 @@ class GenerationService:
     Service d'orchestration de la génération multi-appels.
 
     Architecture en 2 phases :
-    1. Brief stratégique (1 appel) — établit le fil rouge de la réponse
+    1. Brief stratégique (1 appel)  établit le fil rouge de la réponse
     2. Sections en parallèle (8 appels simultanés via asyncio.gather)
        chaque section reçoit un prompt spécialisé + le brief + contexte RAG
 
     Le RAG (Retrieval-Augmented Generation) enrichit chaque section avec
     des extraits pertinents issus de la base de connaissances interne.
 
-    Pattern : injection de dépendances — chaque dépendance est passée
+    Pattern : injection de dépendances  chaque dépendance est passée
     au constructeur pour faciliter les tests unitaires.
     """
 
@@ -139,7 +139,7 @@ class GenerationService:
         ao_context = f"{ao_parse.titre} {ao_parse.description_globale}"
 
         async def _gen_section(cfg):
-            # Section statique — contenu fixe depuis un fichier, sans LLM ni RAG
+            # Section statique  contenu fixe depuis un fichier, sans LLM ni RAG
             static_path = _STATIC_SECTIONS.get(cfg.titre)
             if static_path and static_path.exists():
                 return (static_path.read_text(encoding="utf-8").strip(), 0)
@@ -276,11 +276,11 @@ class GenerationService:
 
             data = json.loads(raw.strip())
             ao = self._json_to_appel_offre(data, request.ao_texte)
-            logger.info("AO parsé via LLM — titre=%r critères=%d", ao.titre, len(ao.criteres))
+            logger.info("AO parsé via LLM  titre=%r critères=%d", ao.titre, len(ao.criteres))
             return ao
 
         except Exception as e:
-            logger.warning("LLM parse échoué (%s) — fallback regex", e)
+            logger.warning("LLM parse échoué (%s)  fallback regex", e)
             return self._parser.parse(request.ao_texte, max_chars=self._settings.ao_max_chars)
 
     def _json_to_appel_offre(self, data: dict, texte_brut: str) -> AppelOffre:

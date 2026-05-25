@@ -1,4 +1,4 @@
-# Service ETL RAG — dépendances indépendantes du service principal
+# Service ETL RAG  dépendances indépendantes du service principal
 
 # Framework HTTP
 fastapi==0.115.0
