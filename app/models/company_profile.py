@@ -8,6 +8,9 @@ class CompanyProfileUpsert(BaseModel):
     rc:             str = ""
     if_fiscal:      str = ""
     cnss:           str = ""
+    capital_social: str = ""
+    rib:            str = ""
+    forme_juridique: str = ""
     adresse:        str = ""
     ville:          str = ""
     telephone:      str = ""
@@ -25,10 +28,14 @@ class CompanyProfileResponse(CompanyProfileUpsert):
     created_at:          str
     updated_at:          str
     complet:             bool
-    signature_minio_key: str | None = None
-    cachet_minio_key:    str | None = None
-    signature_url:       str | None = None
-    cachet_url:          str | None = None
+    signature_minio_key:           str | None = None
+    cachet_minio_key:              str | None = None
+    lu_et_accepte_minio_key:       str | None = None
+    signature_url:                 str | None = None
+    cachet_url:                    str | None = None
+    lu_et_accepte_url:             str | None = None
+    template_note_metho_minio_key: str | None = None
+    template_note_metho_url:       str | None = None
 
 
 class ProfileCompletenessCheck(BaseModel):

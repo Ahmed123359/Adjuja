@@ -42,21 +42,32 @@ def get_company_info(profile: "CompanyProfile | None" = None) -> dict[str, str]:
 
     if profile is not None:
         address = f"{profile.adresse}, {profile.ville}".strip(", ") if (profile.adresse or profile.ville) else ""
+        gerant  = f"{profile.gerant_prenom} {profile.gerant_nom}".strip()
         return {
+            # Identité
             "company_name":    profile.nom_entreprise,
-            "manager_name":    f"{profile.gerant_prenom} {profile.gerant_nom}".strip(),
-            "manager_quality": "Gérant",
+            "forme_juridique": getattr(profile, "forme_juridique", "") or "",
+            "secteur":         profile.secteur,
+            # Gérant
+            "manager_name":    gerant,
+            "manager_quality": getattr(profile, "forme_juridique", "Gérant") or "Gérant",
+            "manager_cin":     profile.gerant_cin,
+            # Contact
             "phone":           profile.telephone,
             "fax":             "",
             "email":           profile.email,
             "address":         address,
             "city":            profile.ville,
-            "cnss":            profile.cnss,
+            # Identifiants légaux
+            "ice":             profile.ice,
             "rc_number":       profile.rc,
             "tp_number":       profile.if_fiscal,
-            "ice":             profile.ice,
-            "rib":             "",
+            "cnss":            profile.cnss,
+            "capital_social":  getattr(profile, "capital_social", "") or "",
+            # Bancaire
+            "rib":             getattr(profile, "rib", "") or "",
             "bank_type":       "bancaire",
+            # Financiers (extraits du document par le filler)
             "amount_ht":       "",
             "tva_rate":        "20%",
             "amount_tva":      "",

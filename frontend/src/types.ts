@@ -209,6 +209,9 @@ export interface CompanyProfile {
   rc:             string;
   if_fiscal:      string;
   cnss:           string;
+  capital_social:  string;
+  rib:             string;
+  forme_juridique: string;
   adresse:        string;
   ville:          string;
   telephone:      string;
@@ -222,10 +225,14 @@ export interface CompanyProfile {
   signature_minio_key: string | null;
   cachet_minio_key:    string | null;
   signature_url:       string | null;
-  cachet_url:          string | null;
+  cachet_url:                    string | null;
+  template_note_metho_minio_key: string | null;
+  template_note_metho_url:       string | null;
+  lu_et_accepte_minio_key:       string | null;
+  lu_et_accepte_url:             string | null;
 }
 
-export type CompanyProfileForm = Omit<CompanyProfile, "id" | "org_id" | "created_at" | "updated_at" | "complet" | "signature_minio_key" | "cachet_minio_key" | "signature_url" | "cachet_url">;
+export type CompanyProfileForm = Omit<CompanyProfile, "id" | "org_id" | "created_at" | "updated_at" | "complet" | "signature_minio_key" | "cachet_minio_key" | "signature_url" | "cachet_url" | "template_note_metho_minio_key" | "template_note_metho_url" | "lu_et_accepte_minio_key" | "lu_et_accepte_url">;
 
 export interface ProfileCheck {
   complet:          boolean;

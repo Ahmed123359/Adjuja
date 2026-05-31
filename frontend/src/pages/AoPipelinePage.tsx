@@ -316,6 +316,7 @@ function AoDetailView({ aoId, onBack }: { aoId: string; onBack: () => void }) {
   const [cancelling, setCancelling] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [confirmModal, setConfirmModal] = useState<{ message: string; onConfirm: () => void } | null>(null);
   const [dragOver, setDragOver] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const pollingRef = useRef<number | null>(null);
@@ -410,7 +411,8 @@ function AoDetailView({ aoId, onBack }: { aoId: string; onBack: () => void }) {
   };
 
   const handleCancel = async () => {
-    if (!confirm(t("pipeline.detail.cancelConfirm"))) return;
+    setConfirmModal({ message: t("pipeline.detail.cancelConfirm"), onConfirm: async () => {
+    setConfirmModal(null);
     setCancelling(true);
     setError(null);
     try {
@@ -434,19 +436,22 @@ function AoDetailView({ aoId, onBack }: { aoId: string; onBack: () => void }) {
     } finally {
       setCancelling(false);
     }
+  } });
   };
 
-  const handleDelete = async () => {
-    if (!confirm(t("pipeline.detail.deleteConfirmDetail"))) return;
-    setDeleting(true);
-    setError(null);
-    try {
-      await deleteAo(aoId);
-      onBack();
-    } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : "Erreur suppression.");
-      setDeleting(false);
-    }
+  const handleDelete = () => {
+    setConfirmModal({ message: t("pipeline.detail.deleteConfirmDetail"), onConfirm: async () => {
+      setConfirmModal(null);
+      setDeleting(true);
+      setError(null);
+      try {
+        await deleteAo(aoId);
+        onBack();
+      } catch (e: unknown) {
+        setError(e instanceof Error ? e.message : "Erreur suppression.");
+        setDeleting(false);
+      }
+    }});
   };
 
   if (!ao)
@@ -978,6 +983,7 @@ export default function AoPipelinePage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [form, setForm] = useState({ reference: "", acheteur: "", objet: "" });
+  const [confirmModal, setConfirmModal] = useState<{ message: string; onConfirm: () => void } | null>(null);
 
   const loadAos = useCallback(async () => {
     setLoading(true);
@@ -1444,11 +1450,13 @@ export default function AoPipelinePage() {
                   <button
                     onClick={async (e) => {
                       e.stopPropagation();
-                      if (!confirm(t("pipeline.deleteConfirm"))) return;
-                      try {
-                        await deleteAo(ao.id);
-                        await loadAos();
-                      } catch {}
+                      setConfirmModal({ message: t("pipeline.deleteConfirm"), onConfirm: async () => {
+                          setConfirmModal(null);
+                          try {
+                            await deleteAo(ao.id);
+                            await loadAos();
+                          } catch {}
+                        }});
                     }}
                     style={{
                       ...btnBase,
@@ -1490,6 +1498,35 @@ export default function AoPipelinePage() {
           )}
         </div>
       </div>
+
+      {/* ConfirmModal — remplace window.confirm() */}
+      {confirmModal && (
+        <div style={{
+          position: 'fixed', inset: 0, zIndex: 1000,
+          background: 'rgba(0,0,0,0.55)', display: 'flex',
+          alignItems: 'center', justifyContent: 'center',
+        }} onClick={() => setConfirmModal(null)}>
+          <div style={{
+            background: 'var(--l-card)', border: '1px solid var(--l-card-border)',
+            borderRadius: 14, padding: '24px 28px', maxWidth: 400, width: '90%',
+            boxShadow: '0 20px 60px rgba(0,0,0,0.4)',
+          }} onClick={e => e.stopPropagation()}>
+            <p style={{ margin: '0 0 20px', fontSize: 14, color: 'var(--l-text)', lineHeight: 1.6 }}>
+              {confirmModal.message}
+            </p>
+            <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
+              <button onClick={() => setConfirmModal(null)}
+                style={{ padding: '8px 18px', borderRadius: 8, border: '1px solid var(--l-card-border)', background: 'transparent', color: 'var(--l-sub)', fontSize: 13, cursor: 'pointer', fontFamily: 'inherit' }}>
+                Annuler
+              </button>
+              <button onClick={() => confirmModal.onConfirm()}
+                style={{ padding: '8px 18px', borderRadius: 8, border: 'none', background: '#dc2626', color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
+                Confirmer
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

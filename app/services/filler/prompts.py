@@ -116,7 +116,7 @@ _VISION_BASE_PROMPT = textwrap.dedent("""\
       Contexte mentionne RIB / releve bancaire        -> rib
       Contexte mentionne type de compte (postal/bancaire/TGR) -> bank_type
       Contexte mentionne raison sociale / titulaire   -> company_name
-      Contexte mentionne capital social               -> laisser en points (pas de donnee)
+      Contexte mentionne capital social               -> capital_social
       Contexte mentionne montant hors TVA             -> amount_ht
       Contexte mentionne taux de la TVA               -> tva_rate
       Contexte mentionne montant de la TVA            -> amount_tva

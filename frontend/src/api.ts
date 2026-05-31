@@ -647,6 +647,44 @@ export async function uploadCachet(file: File): Promise<import('./types').Compan
   return json;
 }
 
+export async function deleteSignature(): Promise<import('./types').CompanyProfile> {
+  const res = await fetch('/api/v1/company-profile/signature', {
+    method: 'DELETE', headers: authHeaders(),
+  });
+  const json = await res.json();
+  if (!res.ok) throw new Error(json.detail ?? 'Erreur suppression signature.');
+  return json;
+}
+
+export async function deleteCachet(): Promise<import('./types').CompanyProfile> {
+  const res = await fetch('/api/v1/company-profile/cachet', {
+    method: 'DELETE', headers: authHeaders(),
+  });
+  const json = await res.json();
+  if (!res.ok) throw new Error(json.detail ?? 'Erreur suppression cachet.');
+  return json;
+}
+
+export async function uploadLuEtAccepte(file: File): Promise<import('./types').CompanyProfile> {
+  const form = new FormData();
+  form.append('file', file);
+  const res = await fetch('/api/v1/company-profile/lu-et-accepte', {
+    method: 'POST', headers: authHeaders(), body: form,
+  });
+  const json = await res.json();
+  if (!res.ok) throw new Error(json.detail ?? 'Erreur upload lu et accepté.');
+  return json;
+}
+
+export async function deleteLuEtAccepte(): Promise<import('./types').CompanyProfile> {
+  const res = await fetch('/api/v1/company-profile/lu-et-accepte', {
+    method: 'DELETE', headers: authHeaders(),
+  });
+  const json = await res.json();
+  if (!res.ok) throw new Error(json.detail ?? 'Erreur suppression lu et accepté.');
+  return json;
+}
+
 // ── Phase 5  Documents permanents ───────────────────────────────────────────
 
 export async function fetchCompanyDocuments(): Promise<import('./types').CompanyDocument[]> {
@@ -754,5 +792,25 @@ export async function extractCvFromPdf(file: File): Promise<CvExtractResult> {
   });
   const json = await res.json();
   if (!res.ok) throw new Error(json.detail ?? "Erreur extraction CV.");
+  return json;
+}
+
+export async function uploadTemplateNoteMetho(file: File): Promise<import('./types').CompanyProfile> {
+  const form = new FormData();
+  form.append('file', file);
+  const res = await fetch('/api/v1/company-profile/template-note-metho', {
+    method: 'POST', headers: authHeaders(), body: form,
+  });
+  const json = await res.json();
+  if (!res.ok) throw new Error(json.detail ?? 'Erreur upload template.');
+  return json;
+}
+
+export async function deleteTemplateNoteMetho(): Promise<import('./types').CompanyProfile> {
+  const res = await fetch('/api/v1/company-profile/template-note-metho', {
+    method: 'DELETE', headers: authHeaders(),
+  });
+  const json = await res.json();
+  if (!res.ok) throw new Error(json.detail ?? 'Erreur suppression template.');
   return json;
 }

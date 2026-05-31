@@ -210,6 +210,9 @@ class CompanyProfile(Base):
     rc: Mapped[str]              = mapped_column(String(50), default="")
     if_fiscal: Mapped[str]       = mapped_column(String(50), default="")
     cnss: Mapped[str]            = mapped_column(String(50), default="")
+    capital_social: Mapped[str]  = mapped_column(String(100), default="")
+    rib: Mapped[str]             = mapped_column(String(100), default="")
+    forme_juridique: Mapped[str] = mapped_column(String(100), default="")
     adresse: Mapped[str]         = mapped_column(Text, default="")
     ville: Mapped[str]           = mapped_column(String(100), default="")
     telephone: Mapped[str]       = mapped_column(String(20), default="")
@@ -222,9 +225,12 @@ class CompanyProfile(Base):
     custom_instructions: Mapped[str | None] = mapped_column(Text, nullable=True)
     # Données supplémentaires libres (capital, garanties, références, etc.)
     extra: Mapped[dict[str, Any] | None] = mapped_column(JSONB, nullable=True)
-    # Images signature et cachet spécifiques à l'org (MinIO)
-    signature_minio_key: Mapped[str | None] = mapped_column(String(512), nullable=True)
-    cachet_minio_key:    Mapped[str | None] = mapped_column(String(512), nullable=True)
+    # Images signature, cachet, lu_et_accepte (MinIO)
+    signature_minio_key:           Mapped[str | None] = mapped_column(String(512), nullable=True)
+    cachet_minio_key:              Mapped[str | None] = mapped_column(String(512), nullable=True)
+    lu_et_accepte_minio_key:       Mapped[str | None] = mapped_column(String(512), nullable=True)
+    # Template DOCX pour la note méthodologique (branding org)
+    template_note_metho_minio_key: Mapped[str | None] = mapped_column(String(512), nullable=True)
 
 
 class StaffCv(Base):

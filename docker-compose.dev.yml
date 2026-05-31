@@ -68,6 +68,22 @@ services:
   #   networks:
   #     - ao_network
 
+  qdrant:
+    image: qdrant/qdrant:v1.12.1
+    ports:
+      - "6333:6333"
+      - "6334:6334"
+    volumes:
+      - ./data/qdrant:/qdrant/storage
+    healthcheck:
+      test: ["CMD-SHELL", "bash -c '</dev/tcp/localhost/6333' 2>/dev/null && exit 0 || exit 1"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 5s
+    networks:
+      - ao_network
+
   redis:
     image: redis:7-alpine
     command: redis-server --save 60 1 --loglevel warning
@@ -108,12 +124,15 @@ services:
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}
       JWT_SECRET_KEY: ${JWT_SECRET_KEY:-change-me-in-production-32chars!!}
+      QDRANT_URL: http://qdrant:6333
     depends_on:
       postgres:
         condition: service_healthy
       redis:
         condition: service_healthy
       minio:
+        condition: service_healthy
+      qdrant:
         condition: service_healthy
     networks:
       - ao_network
@@ -145,12 +164,15 @@ services:
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}
       JWT_SECRET_KEY: ${JWT_SECRET_KEY:-change-me-in-production-32chars!!}
+      QDRANT_URL: http://qdrant:6333
     depends_on:
       postgres:
         condition: service_healthy
       redis:
         condition: service_healthy
       minio:
+        condition: service_healthy
+      qdrant:
         condition: service_healthy
     networks:
       - ao_network

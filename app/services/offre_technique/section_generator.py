@@ -1,15 +1,32 @@
+"""
+Générateur de sections pour l'offre technique.
+Structure : 6 sections générées par LLM (sections 3, 4, 5, 6, 7-planning, 8-RSE).
+Sections structurées (équipe, chronogramme) sont assemblées dans doc_assembler.
+"""
 import asyncio
 import json
+import logging
 import httpx
 
 from app.models.offre_technique import CPSContext, RCContext, StrategyAngle
 from app.services.offre_technique.prompts import SECTION_SYSTEMS
 
-_MISTRAL_URL = "https://api.mistral.ai/v1/chat/completions"
-_MODEL       = "mistral-medium-latest"
-_TIMEOUT     = 90
+logger = logging.getLogger(__name__)
 
-SECTION_NAMES = ["methodologie", "moyens", "planning", "rse", "references"]
+_MISTRAL_URL = "https://api.mistral.ai/v1/chat/completions"
+_MODEL       = "mistral-large-latest"
+_TIMEOUT     = 120
+_RETRY_DELAYS = (15, 45, 90)
+
+# Sections générées par LLM (dans l'ordre du document)
+SECTION_NAMES = [
+    "presentation_cabinet",   # Section 3 — Cabinet + références
+    "comprehension_contexte", # Section 4 — Contexte national/sectoriel
+    "comprehension_mission",  # Section 5 — Objectifs, livrables, périmètre
+    "methodologie",           # Section 6 — Approche méthodologique
+    "planning",               # Section 8 — Planning JSON (phases, Gantt)
+    "rse",                    # Démarche RSE
+]
 
 
 def _build_rc_block(section: str, rc: RCContext | None) -> str:
@@ -17,19 +34,20 @@ def _build_rc_block(section: str, rc: RCContext | None) -> str:
         return ""
 
     section_map = {
-        "methodologie": ["methodologie", "méthode", "approche"],
-        "moyens":       ["moyens", "humains", "equipe", "équipe", "materiels", "matériels"],
-        "planning":     ["planning", "calendrier", "delai", "délai"],
-        "rse":          ["rse", "développement durable", "environnement"],
-        "references":   ["reference", "référence", "experience", "expérience"],
+        "methodologie":           ["methodologie", "méthode", "approche", "technique"],
+        "presentation_cabinet":   ["reference", "référence", "experience", "expérience", "cabinet"],
+        "comprehension_contexte": ["contexte", "compréhension", "diagnostic"],
+        "comprehension_mission":  ["mission", "compréhension", "objectif"],
+        "planning":               ["planning", "calendrier", "delai", "délai", "chronogramme"],
+        "rse":                    ["rse", "développement durable", "environnement", "social"],
     }
 
-    lines = ["", "Grille de notation du jury (RC) :"]
+    lines = ["", "Grille de notation du jury (RC) — optimise le contenu pour maximiser le score :"]
     for c in rc.criteres:
         nom   = c.get("nom", "")
         pts   = c.get("points", 0)
         elim  = c.get("eliminatoire", 0)
-        elim_txt = f" (note eliminatoire : {elim})" if elim else ""
+        elim_txt = f" (note éliminatoire : {elim})" if elim else ""
         lines.append(f"- {nom} : {pts} points{elim_txt}")
 
     keywords = section_map.get(section, [])
@@ -39,21 +57,18 @@ def _build_rc_block(section: str, rc: RCContext | None) -> str:
         0,
     )
     if section_pts:
-        lines.append(f"\nCette section est notee sur {section_pts} points. Optimise le contenu pour maximiser ce score.")
+        lines.append(f"\nCette section est notée sur {section_pts} points.")
 
-    if rc.plan_impose:
-        lines += ["", "Plan impose par le RC (respecter cet ordre) :"]
+    if rc.plan_impose and section == "methodologie":
+        lines += ["", "Plan imposé par le RC (respecter cet ordre) :"]
         lines += [f"  {i+1}. {s}" for i, s in enumerate(rc.plan_impose)]
 
     nb_pages = rc.nb_pages_max.get(section)
     if nb_pages:
-        lines.append(f"\nNombre de pages maximum pour cette section : {nb_pages}.")
+        lines.append(f"Nombre de pages maximum : {nb_pages}.")
 
-    if section == "moyens" and rc.format_cv:
-        lines += ["", f"Format CV impose par le RC : {rc.format_cv}"]
-
-    if section == "references" and rc.format_references:
-        lines += ["", f"Format fiches references impose par le RC : {rc.format_references}"]
+    if section == "presentation_cabinet" and rc.format_references:
+        lines += ["", f"Format fiches références imposé par le RC : {rc.format_references}"]
 
     return "\n".join(lines)
 
@@ -64,49 +79,73 @@ def _build_user_prompt(
     angle: StrategyAngle,
     company_info: dict,
     rag_context: str,
+    team_members: list[dict] | None = None,
     rc: RCContext | None = None,
+    custom_instructions: str | None = None,
 ) -> str:
     parts = [
-        f"Angle narratif : {angle.angle} - {angle.narrative}",
-        f"Differenciateurs cles : {', '.join(angle.differentiators)}",
+        f"ANGLE NARRATIF : {angle.angle} — {angle.narrative}",
+        f"Différenciateurs clés : {', '.join(angle.differentiators)}",
         "",
-        "Contexte du projet :",
-        f"- Scope : {cps.scope}",
-        f"- Acheteur : {cps.acheteur}",
-        f"- Delais : {cps.delais}",
-        f"- Nombre de sessions : {cps.nb_sessions}",
-        f"- Horaire journalier : {cps.horaire}",
-        f"- Criteres d'evaluation : {json.dumps(cps.criteres, ensure_ascii=False)}",
+        "=== INFORMATIONS DU CPS (vocabulaire à réutiliser tel quel) ===",
+        f"Intitulé exact du marché : {getattr(cps, 'intitule', cps.scope)}",
+        f"Maître d'Ouvrage : {cps.acheteur}",
+        f"Référence AO : {cps.reference or 'non précisée'}",
+        f"Objet / Scope : {cps.scope}",
+        f"Délai d'exécution : {cps.delais}",
+        f"Contexte national : {getattr(cps, 'contexte_national', '')}",
+        f"Objectifs spécifiques : {', '.join(getattr(cps, 'objectifs_specifiques', []))}",
+        f"Livrables obligatoires : {', '.join(cps.livrables) if cps.livrables else 'non précisés'}",
+        f"Exigences intervenants : {cps.exigences_formateurs}",
+        f"Vocabulaire clé du MO : {', '.join(getattr(cps, 'vocabulaire_cle', []))}",
         "",
-        "Obligations contractuelles OBLIGATOIRES a mentionner dans l'offre :",
-        f"- Livrables : {', '.join(cps.livrables) if cps.livrables else 'non specifies'}",
-        f"- Formateurs : {cps.exigences_formateurs}",
-        f"- Planning : {cps.planning_note}",
-        f"- Sous-traitance : {cps.sous_traitance}",
-        "",
-        "Profil entreprise :",
+        "=== PROFIL DU CABINET ===",
         json.dumps(company_info, ensure_ascii=False, indent=2),
     ]
+
+    if team_members:
+        lines = [
+            "",
+            "=== ÉQUIPE AFFECTÉE À CETTE MISSION ===",
+            "Expert | Poste | Spécialité | Diplôme | Expérience",
+        ]
+        for m in team_members:
+            cv = m.get("cv") or {}
+            nom = f"{cv.get('nom', '')} {cv.get('prenom', '')}".strip() or "Expert"
+            lines.append(
+                f"- {nom} | {m.get('role_dans_offre', cv.get('poste', ''))} "
+                f"| {cv.get('specialite', '')} | {cv.get('diplome', '')} "
+                f"| {cv.get('annees_experience', '')} ans"
+            )
+            if m.get("warning"):
+                lines.append(f"  [ATTENTION: profil requis '{m.get('profil_requis_ref', '')}' sans CV associé]")
+        parts.extend(lines)
+
     rc_block = _build_rc_block(section, rc)
     if rc_block:
         parts.append(rc_block)
+
     if rag_context:
-        parts += ["", rag_context]
+        parts += ["", "=== RÉFÉRENCES ET CONTEXTE RAG (utiliser ces données réelles) ===", rag_context]
+
+    if custom_instructions:
+        parts += [
+            "",
+            "=== INSTRUCTIONS SPÉCIFIQUES DU SOUMISSIONNAIRE ===",
+            f"<instructions>\n{custom_instructions}\n</instructions>",
+        ]
+
     return "\n".join(parts)
 
 
-_RETRY_DELAYS = (10, 30, 60)
-
-
-async def _call_mistral(system: str, user: str, api_key: str,
-                        json_mode: bool = False) -> str:
+async def _call_mistral(system: str, user: str, api_key: str, json_mode: bool = False) -> str:
     payload: dict = {
         "model":       _MODEL,
         "messages":    [
             {"role": "system", "content": system},
             {"role": "user",   "content": user},
         ],
-        "temperature": 0.7,
+        "temperature": 0.65,
     }
     if json_mode:
         payload["response_format"] = {"type": "json_object"}
@@ -120,6 +159,7 @@ async def _call_mistral(system: str, user: str, api_key: str,
             )
             if resp.status_code != 429 or delay is None:
                 break
+            logger.warning("Rate limit Mistral (attempt %d), waiting %ds", attempt, delay)
             await asyncio.sleep(delay)
         resp.raise_for_status()
         return resp.json()["choices"][0]["message"]["content"].strip()
@@ -133,18 +173,39 @@ async def generate_all(
     rag_contexts: dict[str, str] | None = None,
     custom_instructions: str | None = None,
     rc: RCContext | None = None,
+    team_members: list[dict] | None = None,
+    existing: dict[str, str] | None = None,
 ) -> dict[str, str]:
     rag_contexts = rag_contexts or {}
+    existing     = existing or {}
+
+    missing = [s for s in SECTION_NAMES if s not in existing]
+    if not missing:
+        return {}
 
     async def gen(section: str) -> tuple[str, str]:
-        user = _build_user_prompt(section, cps, angle, company_info, rag_contexts.get(section, ""), rc)
-        if custom_instructions:
-            user += f"\n\nInstructions spécifiques du soumissionnaire :\n<user_instructions>\n{custom_instructions}\n</user_instructions>"
-        text = await _call_mistral(SECTION_SYSTEMS[section], user, api_key,
-                                   json_mode=(section == "planning"))
+        user = _build_user_prompt(
+            section, cps, angle, company_info,
+            rag_context=rag_contexts.get(section, ""),
+            team_members=team_members,
+            rc=rc,
+            custom_instructions=custom_instructions,
+        )
+        is_json = section == "planning"
+        text = await _call_mistral(
+            SECTION_SYSTEMS[section], user, api_key, json_mode=is_json
+        )
+        logger.info("Section '%s' générée (%d chars)", section, len(text))
         return section, text
 
-    results = await asyncio.gather(*[gen(s) for s in SECTION_NAMES], return_exceptions=True)
+    # Limiter la concurrence à 2 appels simultanés pour éviter le rate limit Mistral
+    sem = asyncio.Semaphore(2)
+
+    async def gen_limited(section: str) -> tuple[str, str]:
+        async with sem:
+            return await gen(section)
+
+    results = await asyncio.gather(*[gen_limited(s) for s in missing], return_exceptions=True)
 
     sections: dict[str, str] = {}
     for r in results:

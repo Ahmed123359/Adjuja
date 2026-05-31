@@ -38,7 +38,7 @@ class CPSContext(BaseModel):
 class RCContext(BaseModel):
     plan_impose:              list[str]  = Field(default_factory=list)
     criteres:                 list[dict] = Field(default_factory=list)
-    note_eliminatoire_globale: int = 0
+    note_eliminatoire_globale: int | None = 0
     format_cv:                str = ""
     format_references:        str = ""
     nb_pages_max:             dict = Field(default_factory=dict)

@@ -27,10 +27,12 @@ def _run_pipeline(
     logo_bytes: bytes | None, logo_filename: str | None,
     brand_color: str | None, custom_instructions: str | None,
     rc_pdf_path: Path | None = None,
+    team_members: list[dict] | None = None,
+    template_bytes: bytes | None = None,
 ) -> dict:
     from app.services.filler.company_adapter import get_company_info
-    from app.services.offre_technique.cps_analyzer   import analyze
-    from app.services.offre_technique.rc_analyzer    import analyze as analyze_rc
+    from app.services.offre_technique.cps_analyzer    import analyze
+    from app.services.offre_technique.rc_analyzer     import analyze as analyze_rc
     from app.services.offre_technique.strategy_engine import choose_angle
     from app.services.offre_technique.quality_gate    import evaluate, find_weakest_section
     from app.services.offre_technique.doc_assembler   import build_docx, build_pdf
@@ -45,7 +47,7 @@ def _run_pipeline(
 
     for attempt in range(_MAX_REGEN_ATTEMPTS + 1):
         new_sections = asyncio.run(
-            _generate_sections(cps, angle, company_info, api_key, sections, custom_instructions, rc)
+            _generate_sections(cps, angle, company_info, api_key, sections, custom_instructions, rc, team_members)
         )
         sections.update(new_sections)
 
@@ -64,6 +66,8 @@ def _run_pipeline(
         sections, cps, company_info, docx_path,
         logo_bytes=logo_bytes, logo_filename=logo_filename,
         brand_color=brand_color,
+        team_members=team_members,
+        template_bytes=template_bytes,
     )
     pdf_path_out = build_pdf(docx_path)
 
@@ -78,6 +82,7 @@ async def _generate_sections(
     cps, angle, company_info, api_key, existing: dict,
     custom_instructions: str | None = None,
     rc: RCContext | None = None,
+    team_members: list[dict] | None = None,
 ) -> dict[str, str]:
     from app.services.offre_technique.section_generator import SECTION_NAMES
     from app.services.offre_technique import section_generator
@@ -100,7 +105,12 @@ async def _generate_sections(
             rag_contexts[section] = ctx if isinstance(ctx, str) else ""
 
     result = await section_generator.generate_all(
-        cps, angle, company_info, api_key, rag_contexts, custom_instructions, rc
+        cps, angle, company_info, api_key,
+        rag_contexts=rag_contexts,
+        custom_instructions=custom_instructions,
+        rc=rc,
+        team_members=team_members,
+        existing=existing,
     )
     return {k: v for k, v in result.items() if k in missing}
 
@@ -113,6 +123,8 @@ async def run_offre_technique(
     rc_bytes: bytes | None = None,
     marche_id: str | None = None,
     user_id: str | None = None,
+    team_members: list[dict] | None = None,
+    template_bytes: bytes | None = None,
 ) -> OffreTechniqueResult:
     job_id = uuid.uuid4().hex
     logger.info("OffreTechnique job=%s org=%s marche=%s file=%s", job_id, org_id, marche_id, filename)
@@ -133,7 +145,7 @@ async def run_offre_technique(
             result = await asyncio.to_thread(
                 _run_pipeline, pdf_path, out_dir, api_key,
                 logo_bytes, logo_filename, brand_color, custom_instructions,
-                rc_pdf_path,
+                rc_pdf_path, team_members, template_bytes,
             )
         except Exception as exc:
             logger.error("OffreTechnique job=%s failed: %s", job_id, exc, exc_info=True)

@@ -334,8 +334,10 @@ def task_build_pipeline(self, ao_id: str) -> None:
     analyse_json = ao.analyse_json or {} if ao else {}
     docs_requis  = analyse_json.get("documents_requis", [])
 
-    _NOTE_METHO_NOMS = {"note_metho", "note_methodologique", "note_méthodologique", "offre_technique", "note_technique"}
-    needs_note_metho = any(d.get("nom") in _NOTE_METHO_NOMS for d in docs_requis)
+    # La note métho est déclenchée dès qu'il y a au moins un document à générer.
+    # L'IA varie les noms (note_metho, note_moyens_humains_techniques, cv_animateurs, etc.)
+    # mais ADJUJA génère toujours une offre technique complète dans ce cas.
+    needs_note_metho = any(d.get("source") == "generer" for d in docs_requis)
     needs_fill       = any(d.get("source") == "remplir" for d in docs_requis)
 
     from celery import group, chord, chain
@@ -363,7 +365,7 @@ def task_build_pipeline(self, ao_id: str) -> None:
 # Phase 4d  Génération note métho + remplissage documents
 # ---------------------------------------------------------------------------
 
-@shared_task(bind=True, name="app.tasks.ao_tasks.task_match_team", max_retries=1)
+@shared_task(bind=True, name="app.tasks.ao_tasks.task_match_team", max_retries=1, queue="celery_io")
 def task_match_team(self, ao_id: str) -> dict:
     """
     Lit profils_requis depuis analyse_json, charge le pool de CVs de l'org,
@@ -541,38 +543,37 @@ def task_generate_note_metho(self, ao_id: str) -> dict:
             profile = profile_res.scalar_one_or_none()
             org_id = ao.org_id
 
-            # Charger l'équipe matchée pour cet AO
+            # Charger l'équipe matchée pour cet AO (format dict pour le service)
             team_res = await session.execute(
                 select(AoTeamMember).where(AoTeamMember.ao_id == ao_id)
             )
-            team_members = team_res.scalars().all()
-            team_lines = []
-            for tm in team_members:
+            team_orm = team_res.scalars().all()
+            team_dicts: list[dict] = []
+            for tm in team_orm:
+                cv_dict = None
                 if tm.staff_cv_id:
                     cv_res = await session.execute(
                         select(StaffCv).where(StaffCv.id == tm.staff_cv_id)
                     )
                     cv = cv_res.scalar_one_or_none()
                     if cv:
-                        team_lines.append(
-                            f"- {tm.role_dans_offre} : {cv.nom} {cv.prenom}, "
-                            f"{cv.diplome}, {cv.annees_experience} ans d'expérience"
-                        )
-                elif tm.warning:
-                    team_lines.append(
-                        f"- {tm.role_dans_offre} : PROFIL MANQUANT (aucun CV disponible)"
-                    )
+                        cv_dict = {
+                            "nom": cv.nom, "prenom": cv.prenom,
+                            "poste": cv.poste, "specialite": cv.specialite,
+                            "diplome": cv.diplome, "annees_experience": cv.annees_experience,
+                            "cv_url": None,
+                        }
+                team_dicts.append({
+                    "role_dans_offre": tm.role_dans_offre,
+                    "profil_requis_ref": tm.profil_requis_ref,
+                    "warning": tm.warning,
+                    "cv": cv_dict,
+                })
 
-            team_context = (
-                "\n\nEQUIPE AFFECTEE A CET AO :\n" + "\n".join(team_lines)
-                if team_lines else ""
-            )
-
-            # Instructions injectées dans les prompts : org global + AO spécifique + équipe
+            # Instructions injectées dans les prompts : org global + AO spécifique
             parts = [p for p in [
                 profile.custom_instructions if profile else None,
                 ao.custom_instructions,
-                team_context if team_context else None,
             ] if p]
             custom_instructions = "\n\n".join(parts) or None
 
@@ -589,6 +590,40 @@ def task_generate_note_metho(self, ao_id: str) -> dict:
             logger.warning("[note_metho] CPS manquant ao_id=%s, skip", ao_id)
             return {"ao_id": ao_id, "skipped": True}
 
+        # Charger le template DOCX de l'org si disponible
+        template_bytes: bytes | None = None
+        if profile and profile.template_note_metho_minio_key:
+            try:
+                template_bytes = mc.get_file_bytes(profile.template_note_metho_minio_key)
+                logger.info("[note_metho] Template org chargé : %s", profile.template_note_metho_minio_key)
+            except Exception as exc:
+                logger.warning("[note_metho] Template non chargeable, fallback défaut : %s", exc)
+
+        # Attendre que task_match_team peuple ao_team_members (max 90s, polling 15s)
+        if not team_dicts:
+            for attempt in range(6):
+                await asyncio.sleep(15)
+                async with AsyncSessionLocal() as s2:
+                    tr = await s2.execute(select(AoTeamMember).where(AoTeamMember.ao_id == ao_id))
+                    fresh_orm = tr.scalars().all()
+                    if fresh_orm:
+                        for tm in fresh_orm:
+                            cv_dict = None
+                            if tm.staff_cv_id:
+                                cr = await s2.execute(select(StaffCv).where(StaffCv.id == tm.staff_cv_id))
+                                cv = cr.scalar_one_or_none()
+                                if cv:
+                                    cv_dict = {"nom": cv.nom, "prenom": cv.prenom, "poste": cv.poste,
+                                               "specialite": cv.specialite, "diplome": cv.diplome,
+                                               "annees_experience": cv.annees_experience, "cv_url": None}
+                            team_dicts.append({"role_dans_offre": tm.role_dans_offre,
+                                               "profil_requis_ref": tm.profil_requis_ref,
+                                               "warning": tm.warning, "cv": cv_dict})
+                        logger.info("[note_metho] team_members chargés après %ds : %d membres", (attempt+1)*15, len(team_dicts))
+                        break
+            else:
+                logger.warning("[note_metho] task_match_team non terminée après 90s, équipe vide")
+
         settings = get_settings()
         result   = await run_offre_technique(
             pdf_bytes=cps_bytes,
@@ -597,6 +632,8 @@ def task_generate_note_metho(self, ao_id: str) -> dict:
             org_id=org_id,
             rc_bytes=rc_bytes,
             custom_instructions=custom_instructions,
+            team_members=team_dicts if team_dicts else None,
+            template_bytes=template_bytes,
         )
 
         created_docs: list[str] = []
@@ -814,9 +851,10 @@ def task_sign_and_compile(self, ao_id: str) -> dict:
             )
             company_docs = company_docs_res.scalars().all()
 
-        # Charger les bytes de signature/cachet depuis MinIO (ou fallback défaut)
+        # Charger les bytes de signature/cachet/lu_et_accepte depuis MinIO
         sig_bytes = None
         cac_bytes = None
+        lea_bytes = None  # lu_et_accepte image
         if profile:
             if profile.signature_minio_key:
                 try:
@@ -828,9 +866,15 @@ def task_sign_and_compile(self, ao_id: str) -> dict:
                     cac_bytes = mc.get_file_bytes(profile.cachet_minio_key)
                 except Exception:
                     pass
+            if profile.lu_et_accepte_minio_key:
+                try:
+                    lea_bytes = mc.get_file_bytes(profile.lu_et_accepte_minio_key)
+                except Exception:
+                    pass
 
         zip_buffer = io.BytesIO()
         signed_count = 0
+        signed_updates: list[tuple[str, str]] = []  # (doc_id, new_minio_key)
 
         with zipfile.ZipFile(zip_buffer, "w", zipfile.ZIP_DEFLATED) as zf:
             # 1. Documents générés / remplis / uploadés pour cet AO
@@ -849,13 +893,25 @@ def task_sign_and_compile(self, ao_id: str) -> dict:
                         to_sign       = doc.doc_type in _DOCS_TO_SIGN or lu_et_accepte
                         if to_sign:
                             try:
+                                from datetime import date
+                                ville     = profile.ville if profile and profile.ville else ""
+                                date_str  = date.today().strftime("%d/%m/%Y")
                                 file_bytes = sign_pdf(
                                     file_bytes,
                                     signature_bytes=sig_bytes,
                                     cachet_bytes=cac_bytes,
+                                    lu_et_accepte_bytes=lea_bytes,
                                     lu_et_accepte=lu_et_accepte,
+                                    fait_a_lieu=ville,
+                                    fait_a_date=date_str,
+                                    paraphe=lu_et_accepte,
+                                    cachet_seulement=not lu_et_accepte,  # acte/déclaration/note_metho : cachet uniquement
                                 )
                                 signed_count += 1
+                                # Uploader la version signée et mettre à jour la DB
+                                signed_key = f"{org_id}/ao/{ao_id}/signed/{doc.dossier}/{doc.nom_fichier or doc.id + '.pdf'}"
+                                mc.upload_bytes(signed_key, file_bytes, "application/pdf")
+                                signed_updates.append((doc.id, signed_key))
                             except Exception as exc:
                                 logger.warning("[sign_compile] signature échouée doc=%s: %s", doc.id, exc)
 
@@ -886,6 +942,17 @@ def task_sign_and_compile(self, ao_id: str) -> dict:
         zip_bytes = zip_buffer.getvalue()
         zip_key   = f"{org_id}/ao/{ao_id}/output/dossier_complet.zip"
         mc.upload_bytes(zip_key, zip_bytes, "application/zip")
+
+        # Mettre à jour les minio_key des docs signés pour que l'UI serve la version signée
+        if signed_updates:
+            async with AsyncSessionLocal() as session:
+                for doc_id, signed_key in signed_updates:
+                    doc_res = await session.execute(select(AoDocument).where(AoDocument.id == doc_id))
+                    doc_obj = doc_res.scalar_one_or_none()
+                    if doc_obj:
+                        doc_obj.minio_key = signed_key
+                await session.commit()
+            logger.info("[sign_compile] %d minio_key mis à jour vers versions signées", len(signed_updates))
 
         async with AsyncSessionLocal() as session:
             # Supprimer les anciens ZIPs pour éviter les doublons

@@ -285,6 +285,7 @@ def sign_pdf(
     pdf_bytes: bytes,
     signature_bytes: Optional[bytes] = None,
     cachet_bytes: Optional[bytes] = None,
+    lu_et_accepte_bytes: Optional[bytes] = None,
     sig_w: int = 120,
     sig_h: int = 50,
     sig_mx: int = 50,
@@ -296,6 +297,8 @@ def sign_pdf(
     fait_a_lieu: str = "",
     fait_a_date: str = "",
     lu_et_accepte: bool = False,
+    paraphe: bool = False,
+    cachet_seulement: bool = False,
 ) -> bytes:
     """
     Traite un PDF en trois étapes :
@@ -350,13 +353,15 @@ def sign_pdf(
             zone = _find_zone_below(page, fait_rect.y1)
             if zone is not None:
                 _place_image_below(page, zone, cac, cac_w, cac_h)
-                _place_image_below(page, zone, sig, sig_w, sig_h)
+                if not cachet_seulement:
+                    _place_image_below(page, zone, sig, sig_w, sig_h)
 
         elif is_last:
             # Dernière page sans "Fait à" → logique mots-clés + cachet
             if last_kw_rect is not None:
                 _place_image_below(page, last_kw_rect, cac, cac_w, cac_h)
-                _place_image_below(page, last_kw_rect, sig, sig_w, sig_h)
+                if not cachet_seulement:
+                    _place_image_below(page, last_kw_rect, sig, sig_w, sig_h)
             else:
                 # Fallback absolu : cachet en bas à gauche uniquement
                 page.insert_image(
@@ -364,15 +369,23 @@ def sign_pdf(
                     stream=cac, keep_proportion=True,
                 )
 
-        # Tampon "Lu et accepté" sur toutes les pages si demandé
-        if lu_et_accepte:
-            _stamp_lu_et_accepte(page)
+        # Tampon "Lu et accepté" uniquement sur la dernière page
+        if lu_et_accepte and is_last:
+            if lu_et_accepte_bytes:
+                lea_w, lea_h = 110, 45
+                page.insert_image(
+                    fitz.Rect(20, ph - sig_my - lea_h - 5, 20 + lea_w, ph - sig_my - 5),
+                    stream=lu_et_accepte_bytes, keep_proportion=True,
+                )
+            else:
+                _stamp_lu_et_accepte(page)
 
-        # Signature en bas à droite sur TOUTES les pages (paraphe)
-        page.insert_image(
-            fitz.Rect(pw - sig_mx - sig_w, ph - sig_my - sig_h, pw - sig_mx, ph - sig_my),
-            stream=sig, keep_proportion=True,
-        )
+        # Paraphe (signature bas droite sur chaque page) uniquement pour CPS/RC
+        if paraphe:
+            page.insert_image(
+                fitz.Rect(pw - sig_mx - sig_w, ph - sig_my - sig_h, pw - sig_mx, ph - sig_my),
+                stream=sig, keep_proportion=True,
+            )
 
     output = io.BytesIO()
     doc.save(output)

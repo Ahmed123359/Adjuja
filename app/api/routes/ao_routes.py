@@ -412,6 +412,9 @@ async def delete_ao(
             raise HTTPException(status_code=404, detail="Appel d'offres introuvable.")
 
         from app.storage import minio_client as mc
+        from app.db.models import AoTeamMember
+        from sqlalchemy import delete as sa_delete
+
         for doc in ao.documents:
             if doc.minio_key:
                 try:
@@ -422,6 +425,7 @@ async def delete_ao(
                 except Exception:
                     pass
 
+        await session.execute(sa_delete(AoTeamMember).where(AoTeamMember.ao_id == ao_id))
         await session.delete(ao)
         await session.commit()
 
