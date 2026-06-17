@@ -351,3 +351,48 @@ export interface CompanyDocument {
   description:   string | null;
   date_validite: string | null;
 }
+
+// ── AO Watcher ───────────────────────────────────────────────────────────────
+
+export type ScrapedAoStatus = 'new' | 'seen' | 'favorited' | 'imported';
+
+export interface ScrapedAo {
+  id:               number;
+  source:           string;
+  external_id:      string;
+  url_source:       string;
+  acheteur:         string | null;
+  titre:            string;
+  date_publication: string | null;
+  date_limite:      string | null;
+  categorie:        string | null;
+  secteur:          string | null;
+  region:           string | null;
+  ville:            string | null;
+  budget_estime:    string | null;
+  caution:          string | null;
+  status:           ScrapedAoStatus;
+  scraped_at:       string;
+  zip_url:          string | null;
+  zip_minio_key:    string | null;
+  zip_downloaded_at: string | null;
+  zip_error:        string | null;
+  classified_docs:  Record<string, string> | null;
+  description:      string | null;
+}
+
+export interface ScrapedAoList {
+  items: ScrapedAo[];
+  total: number;
+  page:  number;
+  limit: number;
+}
+
+export interface WatcherFilters {
+  status:           'all' | ScrapedAoStatus;
+  search:           string;
+  categorie:        string;
+  region:           string;
+  date_limite_from: string;
+  page:             number;
+}

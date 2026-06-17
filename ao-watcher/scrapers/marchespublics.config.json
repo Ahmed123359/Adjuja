@@ -1,0 +1,48 @@
+{
+  "name": "marchespublics",
+  "platform": "mpe",
+  "base_url": "https://www.marchespublics.gov.ma",
+  "listing_path": "/index.php?page=entreprise.EntrepriseAdvancedSearch&AllCons&EnCours&searchAnnCons",
+  "detail_path": "/index.php?page=entreprise.EntrepriseDetailConsultation&refConsultation={ref_id}&orgAcronyme={org}",
+  "download_path": "/index.php?page=entreprise.EntrepriseDemandeTelechargementDce&refConsultation={ref_id}&orgAcronyme={org}",
+  "auth": null,
+  "listing": {
+    "search_button": "#ctl0_CONTENU_PAGE_AdvancedSearch_lancerRecherche",
+    "results_ready_selector": "a[href*='EntrepriseDetailConsultation']",
+    "table": "table.table-results",
+    "rows": "table.table-results tbody tr",
+    "nbelem_select": "#ctl0_CONTENU_PAGE_resultSearch_listePageSizeTop",
+    "nbelem_value": "500",
+    "next_page_btn": "#ctl0_CONTENU_PAGE_resultSearch_PagerTop_ctl3",
+    "cols": {
+      "detail_link": "td.actions a[href*='EntrepriseDetailConsultation']",
+      "categorie": "td.col-90 div[id*='panelBlocCategorie']",
+      "date_publication": "td.col-90 div[id*='panelBlocTypesProc']",
+      "date_limite": "td.col-60 div.cloture-line",
+      "acheteur": "td.col-450 div[id*='panelBlocDenomination']",
+      "titre": "td.col-450 div[id*='panelBlocObjet']",
+      "lieu": "td.col-90 div[id*='panelBlocLieuxExec']"
+    }
+  },
+  "detail": {
+    "summary_prefix": "ctl0_CONTENU_PAGE_idEntrepriseConsultationSummary_",
+    "fields": {
+      "titre": "objet",
+      "acheteur": "entiteAchat",
+      "reference_human": "reference",
+      "date_limite": "dateHeureLimiteRemisePlis",
+      "categorie": "categoriePrincipale",
+      "lieu": "lieuxExecutions",
+      "caution": "cautionProvisoire",
+      "secteur": "domainesActivite",
+      "procedure": "typeProcedure"
+    },
+    "budget_selector": "[id$='_labelReferentielZoneText']",
+    "zip_link_id": "ctl0_CONTENU_PAGE_linkDownloadDce"
+  },
+  "delays": {
+    "between_pages_s": [3, 6],
+    "after_click_ms": [2000, 4000],
+    "between_detail_requests_s": [1, 2]
+  }
+}

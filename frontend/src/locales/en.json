@@ -412,5 +412,80 @@
       "cancel": "Cancel",
       "refresh": "Refresh"
     }
+  },
+  "veille": {
+    "title": "Public procurement watch",
+    "tabs": {
+      "all": "All",
+      "new": "New",
+      "favorited": "Favorites",
+      "imported": "Imported"
+    },
+    "filters": {
+      "search": "Search a tender, a buyer...",
+      "categorie": "Category",
+      "categoriePh": "E.g. Works",
+      "region": "Region",
+      "regionPh": "E.g. Casablanca",
+      "dateLimite": "Deadline after",
+      "reset": "Reset",
+      "hide": "Hide filters",
+      "show": "Filters"
+    },
+    "table": {
+      "acheteur": "Buyer",
+      "titre": "Title",
+      "datePub": "Published",
+      "dateLimite": "Deadline",
+      "categorie": "Category",
+      "region": "Region",
+      "budget": "Budget",
+      "caution": "Deposit"
+    },
+    "status": {
+      "new": "New",
+      "seen": "Seen",
+      "favorited": "Favorite",
+      "imported": "Imported"
+    },
+    "detail": {
+      "markSeen": "Mark as seen",
+      "addFavorite": "Add to favorites",
+      "favorited": "In favorites",
+      "importing": "Importing...",
+      "importBtn": "Import to pipeline",
+      "importDone": "Successfully imported",
+      "downloadingZip": "Downloading tender documents...",
+      "zipReady": "Documents available",
+      "zipError": "Download error",
+      "openSource": "View on portal",
+      "tabResume": "Summary",
+      "tabDocs": "Documents",
+      "noDesc": "No description available.",
+      "budget": "Budget",
+      "caution": "Deposit",
+      "datePub": "Published",
+      "dateLimite": "Deadline",
+      "location": "Location",
+      "source": "Source"
+    },
+    "empty": {
+      "allTitle": "No tenders found",
+      "allDesc": "Scraping has not run yet, or no results match the current filters.",
+      "newTitle": "No new tenders",
+      "newDesc": "All tenders have already been viewed.",
+      "favTitle": "No favorites",
+      "favDesc": "Mark tenders as favorites to find them here and trigger document download."
+    },
+    "error": {
+      "loadFailed": "Failed to load tenders."
+    },
+    "pagination": {
+      "prev": "Previous",
+      "next": "Next",
+      "of": "of"
+    },
+    "total": "results",
+    "totalSingle": "result"
   }
 }

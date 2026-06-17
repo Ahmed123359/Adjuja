@@ -15,6 +15,7 @@ import type {
 import { exportDocx } from "../api";
 import AoPipelinePage from "../pages/AoPipelinePage";
 import DashboardPage from "../pages/DashboardPage";
+import VeillePage from "../pages/VeillePage";
 import DocumentsTab from "./DocumentsTab";
 import { useTheme } from "../hooks/useTheme";
 import LanguageSelector from "./LanguageSelector";
@@ -206,7 +207,7 @@ ${sep}
 }
 
 // ── Content top bar ──────────────────────────────────────────
-function ContentTopBar({ mainTab, onOpenSidebar }: { mainTab: "offres" | "marches" | "outils"; onOpenSidebar?: () => void }) {
+function ContentTopBar({ mainTab, onOpenSidebar }: { mainTab: "offres" | "marches" | "outils" | "veille"; onOpenSidebar?: () => void }) {
   const { t } = useTranslation();
   const { theme, toggle } = useTheme();
   return (
@@ -810,8 +811,8 @@ type Props = {
   user: User;
   onLogout: () => void;
   onGoSettings: () => void;
-  mainTab: "offres" | "marches" | "outils";
-  onMainTabChange: (tab: "offres" | "marches" | "outils") => void;
+  mainTab: "offres" | "marches" | "outils" | "veille";
+  onMainTabChange: (tab: "offres" | "marches" | "outils" | "veille") => void;
   outilSection: Outil;
   onOpenSidebar?: () => void;
 };
@@ -926,6 +927,13 @@ export default function RightPanel({
       {mainTab === "marches" && (
         <div className="flex-1 flex flex-col overflow-hidden">
           <AoPipelinePage />
+        </div>
+      )}
+
+      {/* Veille AO tab */}
+      {mainTab === "veille" && (
+        <div className="flex-1 flex flex-col overflow-hidden">
+          <VeillePage />
         </div>
       )}
 

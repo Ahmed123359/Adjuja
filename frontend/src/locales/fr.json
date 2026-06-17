@@ -416,5 +416,80 @@
       "cancel": "Annuler",
       "refresh": "Actualiser"
     }
+  },
+  "veille": {
+    "title": "Veille marchés publics",
+    "tabs": {
+      "all": "Tout",
+      "new": "Nouveaux",
+      "favorited": "Favoris",
+      "imported": "Importés"
+    },
+    "filters": {
+      "search": "Rechercher un AO, un acheteur...",
+      "categorie": "Catégorie",
+      "categoriePh": "Ex: Travaux",
+      "region": "Région",
+      "regionPh": "Ex: Casablanca",
+      "dateLimite": "Date limite après",
+      "reset": "Réinitialiser",
+      "hide": "Cacher les filtres",
+      "show": "Filtres"
+    },
+    "table": {
+      "acheteur": "Acheteur",
+      "titre": "Titre",
+      "datePub": "Publié le",
+      "dateLimite": "Date limite",
+      "categorie": "Catégorie",
+      "region": "Région",
+      "budget": "Budget",
+      "caution": "Caution"
+    },
+    "status": {
+      "new": "Nouveau",
+      "seen": "Vu",
+      "favorited": "Favori",
+      "imported": "Importé"
+    },
+    "detail": {
+      "markSeen": "Marquer comme vu",
+      "addFavorite": "Ajouter aux favoris",
+      "favorited": "En favori",
+      "importing": "Importation...",
+      "importBtn": "Importer dans le pipeline",
+      "importDone": "Importé avec succès",
+      "downloadingZip": "Téléchargement du DCE en cours...",
+      "zipReady": "DCE disponible",
+      "zipError": "Erreur téléchargement DCE",
+      "openSource": "Voir sur le portail",
+      "tabResume": "Résumé",
+      "tabDocs": "Documents",
+      "noDesc": "Aucune description disponible.",
+      "budget": "Budget",
+      "caution": "Caution",
+      "datePub": "Publié le",
+      "dateLimite": "Date limite",
+      "location": "Localisation",
+      "source": "Source"
+    },
+    "empty": {
+      "allTitle": "Aucun appel d'offres",
+      "allDesc": "Le scraping n'a pas encore été lancé, ou aucun résultat ne correspond aux filtres.",
+      "newTitle": "Aucun nouvel AO",
+      "newDesc": "Tous les appels d'offres ont déjà été consultés.",
+      "favTitle": "Aucun favori",
+      "favDesc": "Marquez des AOs comme favoris pour les retrouver ici et lancer le téléchargement du DCE."
+    },
+    "error": {
+      "loadFailed": "Impossible de charger les appels d'offres."
+    },
+    "pagination": {
+      "prev": "Précédent",
+      "next": "Suivant",
+      "of": "sur"
+    },
+    "total": "résultats",
+    "totalSingle": "résultat"
   }
 }

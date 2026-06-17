@@ -179,6 +179,83 @@ services:
     volumes:
       - ./app:/app/app
 
+  # AO Watcher — scraping service (isolated, same DB)
+  ao-watcher-api:
+    build:
+      context: ./ao-watcher
+      dockerfile: Dockerfile
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8001 --reload
+    ports:
+      - "8001:8001"
+    environment:
+      DATABASE_URL: postgresql+asyncpg://offria:${POSTGRES_PASSWORD:-offria_dev}@postgres:5432/offria
+      REDIS_URL: redis://redis:6379/3
+      MINIO_ENDPOINT: minio:9000
+      MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY:-offria_dev}
+      MINIO_SECRET_KEY: ${MINIO_SECRET_KEY:-offria_dev_secret}
+      MINIO_BUCKET: offria
+      MAIN_APP_PORT: 8000
+    volumes:
+      - ./ao-watcher/app:/app/app
+      - ./ao-watcher/scrapers:/app/scrapers
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+    networks:
+      - ao_network
+
+  ao-watcher-worker:
+    build:
+      context: ./ao-watcher
+      dockerfile: Dockerfile
+    command: >
+      celery -A app.workers.celery_app.celery_app worker
+      --pool=prefork
+      --concurrency=2
+      --loglevel=info
+      --hostname=ao-watcher-worker@%h
+    environment:
+      DATABASE_URL: postgresql+asyncpg://offria:${POSTGRES_PASSWORD:-offria_dev}@postgres:5432/offria
+      REDIS_URL: redis://redis:6379/3
+      MINIO_ENDPOINT: minio:9000
+      MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY:-offria_dev}
+      MINIO_SECRET_KEY: ${MINIO_SECRET_KEY:-offria_dev_secret}
+      MINIO_BUCKET: offria
+    volumes:
+      - ./ao-watcher/app:/app/app
+      - ./ao-watcher/scrapers:/app/scrapers
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+    networks:
+      - ao_network
+
+  ao-watcher-beat:
+    build:
+      context: ./ao-watcher
+      dockerfile: Dockerfile
+    command: >
+      celery -A app.workers.celery_app.celery_app beat
+      --loglevel=info
+    environment:
+      DATABASE_URL: postgresql+asyncpg://offria:${POSTGRES_PASSWORD:-offria_dev}@postgres:5432/offria
+      REDIS_URL: redis://redis:6379/3
+    volumes:
+      - ./ao-watcher/app:/app/app
+      - ./ao-watcher/scrapers:/app/scrapers
+    depends_on:
+      - redis
+    networks:
+      - ao_network
+
 volumes:
   postgres_data:
   minio_data:
