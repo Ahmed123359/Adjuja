@@ -69,7 +69,7 @@ export default function RegisterPage({ onSuccess, onGoLogin }: Props) {
   const pageStyle: React.CSSProperties = {
     minHeight: '100vh', display: 'flex', flexDirection: 'column',
     alignItems: 'center', justifyContent: 'center', padding: '24px',
-    background: 'var(--l-bg-alt)', fontFamily: 'DM Sans, system-ui, sans-serif',
+    background: 'var(--l-bg-alt)',
   };
 
   // Email verification screen

@@ -492,7 +492,6 @@ function AoDetailView({ aoId, onBack }: { aoId: string; onBack: () => void }) {
   const btnBase: React.CSSProperties = {
     border: "none",
     cursor: "pointer",
-    fontFamily: "DM Sans, system-ui, sans-serif",
     transition: "opacity .15s",
     borderRadius: 9,
     fontWeight: 600,
@@ -504,7 +503,6 @@ function AoDetailView({ aoId, onBack }: { aoId: string; onBack: () => void }) {
         display: "flex",
         flexDirection: "column",
         height: "100%",
-        fontFamily: "DM Sans, system-ui, sans-serif",
       }}
     >
       {/* Header */}
@@ -1019,7 +1017,6 @@ export default function AoPipelinePage() {
   const btnBase: React.CSSProperties = {
     border: "none",
     cursor: "pointer",
-    fontFamily: "DM Sans, system-ui, sans-serif",
     transition: "opacity .15s",
     borderRadius: 9,
     fontWeight: 600,
@@ -1057,7 +1054,6 @@ export default function AoPipelinePage() {
           maxWidth: 520,
           margin: "0 auto",
           padding: "28px 24px",
-          fontFamily: "DM Sans, system-ui, sans-serif",
         }}
       >
         <div
@@ -1204,7 +1200,6 @@ export default function AoPipelinePage() {
         display: "flex",
         flexDirection: "column",
         height: "100%",
-        fontFamily: "DM Sans, system-ui, sans-serif",
       }}
     >
       {/* Header */}

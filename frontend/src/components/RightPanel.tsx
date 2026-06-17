@@ -214,7 +214,6 @@ function ContentTopBar({ mainTab, onOpenSidebar }: { mainTab: "offres" | "marche
       display: 'flex', alignItems: 'center', justifyContent: 'space-between',
       height: 58, padding: '0 24px', background: 'var(--l-card)',
       borderBottom: '1px solid var(--l-card-border)', flexShrink: 0,
-      fontFamily: 'DM Sans, system-ui, sans-serif',
     }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
         {onOpenSidebar && (
@@ -844,6 +843,7 @@ export default function RightPanel({
 }: Props) {
   const wordRef = useRef<HTMLDivElement>(null);
   const [copied, setCopied] = useState(false);
+  const [wordError, setWordError] = useState<string | null>(null);
   const [tab, setTab] = useState<"document" | "brief">("document");
   const [docFile, setDocFile] = useState<"reponse" | "equipe" | "references">(
     "reponse",
@@ -896,7 +896,8 @@ export default function RightPanel({
       a.click();
       URL.revokeObjectURL(url);
     } catch {
-      alert("Erreur lors de la génération du fichier Word.");
+      setWordError("Erreur lors de la génération du fichier Word.");
+      setTimeout(() => setWordError(null), 4000);
     }
   }
 
@@ -986,6 +987,9 @@ export default function RightPanel({
                 <div className="flex items-center gap-2">
                   {tab === "document" && (
                     <>
+                      {wordError && (
+                        <span style={{ fontSize: 11, color: '#dc2626', alignSelf: 'center' }}>{wordError}</span>
+                      )}
                       <button
                         onClick={downloadWord}
                         className="text-xs px-3 py-1.5 rounded-lg border border-border text-muted-foreground hover:border-primary/30 hover:text-primary bg-card transition-all"

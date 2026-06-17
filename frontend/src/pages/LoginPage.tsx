@@ -50,7 +50,7 @@ export default function LoginPage({ onSuccess, onGoRegister }: Props) {
   }
 
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '24px', background: 'var(--l-bg-alt)', fontFamily: 'DM Sans, system-ui, sans-serif' }}>
+    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '24px', background: 'var(--l-bg-alt)' }}>
 
       {/* Logo */}
       <div style={{ marginBottom: 32 }}>

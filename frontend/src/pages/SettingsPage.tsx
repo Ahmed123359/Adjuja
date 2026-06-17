@@ -69,7 +69,7 @@ export default function SettingsPage({ provider, setProvider, model, setModel, m
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden', background: 'var(--l-bg-alt)', fontFamily: 'DM Sans, system-ui, sans-serif' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden', background: 'var(--l-bg-alt)' }}>
 
       {/* Tab bar */}
       <div style={{ padding: '0 28px', borderBottom: '1px solid var(--l-card-border)', flexShrink: 0, display: 'flex', alignItems: 'center', gap: 2, background: 'var(--l-card)' }}>

@@ -16,20 +16,32 @@
       "title": "Everything you need",
       "titleBlue": "to win more contracts.",
       "cta": "See all features",
-      "analyse": { "title": "DCE Analysis", "desc": "AI extracts every key clause from the tender specification in seconds." },
-      "gen":     { "title": "Real-time generation", "desc": "Every section is drafted and exported to Word in under 2 minutes." },
-      "suivi":   { "title": "Track all your tenders", "desc": "One place to follow every bid, from receipt to victory." },
-      "pipeline":{ "title": "Automated pipeline", "desc": "From DCE receipt to final submission, every step is orchestrated and tracked." }
+      "analyse": {
+        "title": "DCE Analysis",
+        "desc": "AI extracts every key clause from the tender specification in seconds."
+      },
+      "gen": {
+        "title": "Real-time generation",
+        "desc": "Every section is drafted and exported to Word in under 2 minutes."
+      },
+      "suivi": {
+        "title": "Track all your tenders",
+        "desc": "One place to follow every bid, from receipt to victory."
+      },
+      "pipeline": {
+        "title": "Automated pipeline",
+        "desc": "From DCE receipt to final submission, every step is orchestrated and tracked."
+      }
     },
     "how": {
-      "title": "Win more contracts.",
-      "titleBlue": "Every day.",
-      "t1Title": "Intelligent DCE analysis",
-      "t1Desc": "AI reads every page of the tender specification, identifies key clauses and evaluation criteria in seconds.",
-      "t2Title": "Automatic response generation",
-      "t2Desc": "Every section of the technical memo is drafted to match your company profile and the tender's requirements.",
-      "t3Title": "Export and submit in one click",
-      "t3Desc": "Download your complete file in Word or PDF, ready to submit on any public procurement platform.",
+      "title": "Three steps.",
+      "titleBlue": "A complete tender file.",
+      "t1Title": "Upload your DCE",
+      "t1Desc": "Drop the PDF into ADJUJA. The AI extracts in seconds the award criteria, required documents, and technical constraints. You read nothing, configure nothing.",
+      "t2Title": "AI writes. You review.",
+      "t2Desc": "While you get on with your day, ADJUJA generates your full technical memo, section by section, tailored to your profile and the tender's exact criteria. Zero manual writing.",
+      "t3Title": "Submit. Win.",
+      "t3Desc": "Download your dossier as a ZIP: technical memo, engagement act, declaration of honour, initialled CPS. Every document signed, every box ticked. Ready to submit.",
       "t4Title": "Track your performance",
       "t4Desc": "See your win rate, number of contracts won, and how your results evolve month by month."
     },
@@ -45,6 +57,7 @@
       "tagline": "ADJUJA automates the drafting of your responses to public tenders in Morocco.",
       "emailPlaceholder": "Your email address",
       "subscribe": "Subscribe",
+      "newsletterTitle": "Stay updated",
       "navTitle": "Navigation",
       "legalTitle": "Legal",
       "contactTitle": "Contact",
@@ -64,7 +77,7 @@
       "contactPhoneValue": "+212 5 22 00 00 00",
       "contactAddress": "Address",
       "contactAddressValue": "Casablanca, Morocco",
-      "copyright": "© 2025 ADJUJA. All rights reserved."
+      "copyright": "© 2026 ADJUJA. All rights reserved."
     }
   },
   "banner": {
@@ -128,7 +141,7 @@
   },
   "pricing": {
     "label": "Pricing",
-    "title": "Choose your plan",
+    "title": "Win more tenders. From 55 MAD/month.",
     "subtitle": "No commitment · Cancel anytime · Invoice within 48h",
     "footnote1": "1 document = PDF file up to 20 A4 pages",
     "footnote2": "All prices excl. VAT · VAT applicable · On-premise deployment on request",
@@ -136,17 +149,17 @@
     "freeTrialCta": "Try for free 1 tender, no credit card",
     "plans": {
       "starter_name": "Starter",
-      "starter_tagline": "For solopreneurs who want to win more tenders",
+      "starter_tagline": "For a freelancer responding to several tenders a month",
       "starter_badge": "Early Bird -30 %",
       "starter_cta": "Subscribe",
       "starter_note": "No commitment · cancel anytime",
       "pro_name": "Pro",
-      "pro_tagline": "For active sales teams",
+      "pro_tagline": "For SMEs handling multiple tenders every week",
       "pro_badge": "Recommended",
       "pro_cta": "Contact the team",
       "pro_note": "Most chosen by our SME clients",
       "enterprise_name": "Enterprise",
-      "enterprise_tagline": "For large groups and consulting firms",
+      "enterprise_tagline": "For large organisations automating their commercial approach",
       "enterprise_price": "Custom pricing",
       "enterprise_cta": "Contact the team",
       "enterprise_note": "Deployed in 5 business days",
@@ -283,7 +296,10 @@
         "adresse": "Registered address",
         "ville": "City",
         "telephone": "Phone",
-        "email": "Email"
+        "email": "Email",
+        "capital_social": "Share capital",
+        "rib": "Bank account (RIB)",
+        "forme_juridique": "Legal form"
       }
     },
     "generation": {
@@ -364,7 +380,10 @@
     }
   },
   "settings": {
-    "tabs": { "general": "General", "utilisation": "Usage" },
+    "tabs": {
+      "general": "General",
+      "utilisation": "Usage"
+    },
     "provider": "Provider",
     "model": "Model",
     "modelHint": "Used for all generations and chat.",
@@ -372,9 +391,12 @@
     "saved": "Saved",
     "back": "Back",
     "providers": {
-      "anthropic": "Anthropic", "anthropicDesc": "Claude  Best for complex writing",
-      "openai": "OpenAI", "openaiDesc": "GPT-4o  Versatile and fast",
-      "mistral": "Mistral", "mistralDesc": "Mistral  European data sovereignty"
+      "anthropic": "Anthropic",
+      "anthropicDesc": "Claude  Best for complex writing",
+      "openai": "OpenAI",
+      "openaiDesc": "GPT-4o  Versatile and fast",
+      "mistral": "Mistral",
+      "mistralDesc": "Mistral  European data sovereignty"
     },
     "usage": {
       "tokens": "Generation tokens",

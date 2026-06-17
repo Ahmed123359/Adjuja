@@ -5,7 +5,8 @@ export default {
   theme: {
     extend: {
       fontFamily: {
-        sans: ["DM Sans", "system-ui", "sans-serif"],
+        sans: ["Sora", "system-ui", "sans-serif"],
+        display: ["Sora", "system-ui", "sans-serif"],
       },
       colors: {
         border: "hsl(var(--border))",
@@ -33,19 +34,29 @@ export default {
           DEFAULT: "hsl(var(--destructive))",
           foreground: "hsl(var(--destructive-foreground))",
         },
-        /* Landing tokens  use these in landing components */
+        /* Landing tokens — use these in landing components */
         l: {
-          bg: "var(--l-bg)",
-          "bg-alt": "var(--l-bg-alt)",
-          card: "var(--l-card)",
-          "card-border": "var(--l-card-border)",
-          "mk-bg": "var(--l-mk-bg)",
-          "mk-surf": "var(--l-mk-surf)",
-          "mk-border": "var(--l-mk-border)",
-          text: "var(--l-text)",
-          sub: "var(--l-sub)",
-          dim: "var(--l-dim)",
-          blue: "var(--l-blue)",
+          bg:             "var(--l-bg)",
+          "bg-alt":       "var(--l-bg-alt)",
+          surface:        "var(--l-surface)",
+          "surface-2":    "var(--l-surface-2)",
+          card:           "var(--l-card)",
+          "card-border":  "var(--l-card-border)",
+          "mk-bg":        "var(--l-mk-bg)",
+          "mk-surf":      "var(--l-mk-surf)",
+          "mk-border":    "var(--l-mk-border)",
+          border:         "var(--l-border)",
+          "border-strong":"var(--l-border-strong)",
+          "border-focus": "var(--l-border-focus)",
+          text:           "var(--l-text)",
+          "text-muted":   "var(--l-text-muted)",
+          "text-dim":     "var(--l-text-dim)",
+          sub:            "var(--l-sub)",
+          dim:            "var(--l-dim)",
+          blue:           "var(--l-blue)",
+          indigo:         "var(--l-indigo)",
+          teal:           "var(--l-teal)",
+          "input-bg":     "var(--l-input-bg)",
         },
       },
       borderRadius: {

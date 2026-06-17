@@ -1,512 +1,509 @@
-import React, { useState, useEffect } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useTheme } from "../../hooks/useTheme";
+import gsap from "gsap";
+import ScrollTrigger from "gsap/ScrollTrigger";
 
-const HOW_CSS = `
-.how-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 64px; align-items: center; }
-@media (max-width: 820px) { .how-grid { grid-template-columns: 1fr; gap: 40px; } }
-`;
+gsap.registerPlugin(ScrollTrigger);
 
-/* Mockups are always dark  they sit inside a dark card regardless of page theme */
-function MockupAnalyse() {
+/* ------------------------------------------------------------------ */
+/* Card 1 -- Analyse DCE                                                */
+/* ------------------------------------------------------------------ */
+
+function CardAnalyse() {
+  const lines = [
+    { w: "92%", lit: false },
+    { w: "78%", lit: true  },
+    { w: "85%", lit: false },
+    { w: "60%", lit: true  },
+    { w: "88%", lit: false },
+    { w: "72%", lit: false },
+    { w: "95%", lit: true  },
+    { w: "55%", lit: false },
+    { w: "80%", lit: false },
+    { w: "66%", lit: false },
+  ];
+
+  const stats = [
+    { value: "2.4M", unit: "MAD",   label: "Budget estimatif"    },
+    { value: "90",   unit: "jours", label: "Délai d'exécution"   },
+    { value: "60",   unit: "%",     label: "Pondération qualité" },
+  ];
+
   return (
     <div
+      className="w-full rounded-[14px] overflow-hidden"
       style={{
-        background: "#0C1829",
-        border: "1px solid #1A2E4A",
-        borderRadius: 10,
-        overflow: "hidden",
-        fontSize: 11,
+        display: "grid",
+        gridTemplateColumns: "1fr 1px 1fr",
+        background: "rgba(8,12,27,0.9)",
+        border: "1px solid rgba(43,121,232,0.18)",
+        boxShadow: "inset 0 1px 0 rgba(255,255,255,0.05)",
       }}
     >
-      <div
-        style={{
-          background: "#0A1422",
-          padding: "8px 14px",
-          borderBottom: "1px solid #1A2E4A",
-          display: "flex",
-          justifyContent: "space-between",
-        }}
-      >
-        <span style={{ color: "#3D5278" }}>DCE-ONCF-2025.pdf</span>
-        <span style={{ color: "#22c55e", fontWeight: 600, fontSize: 10 }}>
-          Analyse complète
-        </span>
-      </div>
-      {[
-        { label: "Objet du marché", hit: true },
-        { label: "Critères d'attribution", hit: true },
-        { label: "Montant estimatif", hit: true },
-        { label: "Clauses techniques", hit: false },
-        { label: "Délai d'exécution", hit: false },
-      ].map((r) => (
-        <div
-          key={r.label}
-          style={{
-            padding: "9px 14px",
-            borderBottom: "1px solid #1A2E4A",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            background: r.hit ? "rgba(30,136,229,0.08)" : "transparent",
-          }}
-        >
-          <span style={{ color: r.hit ? "#EEF4FF" : "#3D5278" }}>
-            {r.label}
+      {/* Gauche -- document abstrait */}
+      <div className="p-9 flex flex-col">
+        <div className="flex items-center gap-2 mb-8">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+            stroke="var(--l-blue)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+            <polyline points="14 2 14 8 20 8" />
+          </svg>
+          <span className="text-[12px] font-medium tracking-wide" style={{ color: "var(--l-text-muted)" }}>
+            DCE-ONCF-2025.pdf
           </span>
-          {r.hit && (
-            <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
-              <div
-                style={{
-                  width: 5,
-                  height: 5,
-                  borderRadius: "50%",
-                  background: "var(--l-blue)",
-                }}
-              />
-              <span
-                style={{ color: "var(--l-blue)", fontSize: 9, fontWeight: 600 }}
-              >
-                Extrait
-              </span>
-            </div>
-          )}
+          <span
+            className="ml-auto text-[10px] font-bold uppercase tracking-[.14em]"
+            style={{ color: "var(--l-teal)", textShadow: "0 0 12px rgba(27,201,168,0.6)" }}
+          >
+            Analyse
+          </span>
         </div>
-      ))}
-    </div>
-  );
-}
 
-function MockupGeneration() {
-  return (
-    <div
-      style={{
-        background: "#0C1829",
-        border: "1px solid #1A2E4A",
-        borderRadius: 10,
-        overflow: "hidden",
-        fontSize: 11,
-      }}
-    >
-      <div
-        style={{
-          background: "#0A1422",
-          padding: "8px 14px",
-          borderBottom: "1px solid #1A2E4A",
-          display: "flex",
-          justifyContent: "space-between",
-        }}
-      >
-        <span style={{ color: "#3D5278" }}>memoire_technique.docx</span>
-        <span style={{ color: "var(--l-blue)", fontWeight: 600, fontSize: 10 }}>
-          72% généré
-        </span>
-      </div>
-      {[
-        { title: "Présentation de la société", pct: 100 },
-        { title: "Méthodologie et approche", pct: 100 },
-        { title: "Références similaires", pct: 72 },
-        { title: "Plan qualité", pct: 30 },
-      ].map((s) => (
-        <div
-          key={s.title}
-          style={{ padding: "9px 14px", borderBottom: "1px solid #1A2E4A" }}
-        >
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              marginBottom: 6,
-            }}
-          >
-            <span style={{ color: s.pct === 100 ? "#EEF4FF" : "#7B93BC" }}>
-              {s.title}
-            </span>
-            <span
-              style={{
-                color: s.pct === 100 ? "#22c55e" : "var(--l-blue)",
-                fontSize: 10,
-              }}
-            >
-              {s.pct}%
-            </span>
-          </div>
-          <div
-            style={{
-              height: 3,
-              background: "#1A2E4A",
-              borderRadius: 2,
-              overflow: "hidden",
-            }}
-          >
+        <div className="flex flex-col gap-[10px] flex-1">
+          {lines.map((l, i) => (
             <div
+              key={i}
+              className="h-[6px] rounded-full"
               style={{
-                height: "100%",
-                width: `${s.pct}%`,
-                background: s.pct === 100 ? "#22c55e" : "var(--l-blue)",
-                borderRadius: 2,
+                width: l.w,
+                background: l.lit ? "var(--l-blue)" : "rgba(255,255,255,0.06)",
+                boxShadow: l.lit ? "0 0 10px rgba(43,121,232,0.55)" : "none",
               }}
             />
-          </div>
+          ))}
         </div>
-      ))}
+
+        <div
+          className="mt-8 pt-6 flex items-center gap-2"
+          style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}
+        >
+          <div
+            className="w-[8px] h-[8px] rounded-full"
+            style={{ background: "var(--l-teal)", boxShadow: "0 0 8px rgba(27,201,168,0.7)" }}
+          />
+          <span className="text-[12px]" style={{ color: "var(--l-text-muted)" }}>
+            3 criteres mis en evidence
+          </span>
+        </div>
+      </div>
+
+      <div style={{ background: "rgba(255,255,255,0.06)" }} />
+
+      {/* Droite -- grands chiffres */}
+      <div className="p-9 flex flex-col gap-9">
+        <span
+          className="text-[10px] font-bold uppercase tracking-[.16em]"
+          style={{ color: "var(--l-teal)", textShadow: "0 0 14px rgba(27,201,168,0.5)" }}
+        >
+          Intelligence extraite
+        </span>
+        {stats.map((s) => (
+          <div key={s.label} className="flex flex-col gap-[4px]">
+            <span className="text-[12px]" style={{ color: "var(--l-text-muted)" }}>{s.label}</span>
+            <div className="flex items-baseline gap-[8px]">
+              <span
+                className="font-black leading-none tracking-[-0.04em]"
+                style={{
+                  fontSize: "clamp(2.6rem,4.5vw,4rem)",
+                  background: "linear-gradient(135deg,#fff 30%,var(--l-teal) 100%)",
+                  WebkitBackgroundClip: "text",
+                  WebkitTextFillColor: "transparent",
+                  backgroundClip: "text",
+                }}
+              >
+                {s.value}
+              </span>
+              <span className="text-[16px] font-medium" style={{ color: "var(--l-text-muted)" }}>{s.unit}</span>
+            </div>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
 
-function MockupExport() {
+/* ------------------------------------------------------------------ */
+/* Card 2 -- Génération                                                  */
+/* ------------------------------------------------------------------ */
+
+function CardGeneration() {
+  const sections = [
+    { title: "Présentation de la société", lines: ["92%", "76%", "62%"], done: true,  active: false },
+    { title: "Méthodologie et approche",   lines: ["88%", "68%"],        done: true,  active: false },
+    { title: "Références similaires",      lines: ["50%"],               done: false, active: true  },
+    { title: "Plan qualité",               lines: ["80%", "55%"],        done: false, active: false },
+  ];
+
   return (
     <div
+      className="w-full rounded-[14px] overflow-hidden"
       style={{
-        background: "#0C1829",
-        border: "1px solid #1A2E4A",
-        borderRadius: 10,
-        overflow: "hidden",
-        fontSize: 11,
+        background: "rgba(8,12,27,0.9)",
+        border: "1px solid rgba(43,121,232,0.18)",
+        boxShadow: "inset 0 1px 0 rgba(255,255,255,0.05)",
       }}
     >
       <div
-        style={{
-          background: "#0A1422",
-          padding: "8px 14px",
-          borderBottom: "1px solid #1A2E4A",
-        }}
+        className="px-9 py-5 flex items-center justify-between"
+        style={{ borderBottom: "1px solid rgba(255,255,255,0.06)", background: "rgba(255,255,255,0.03)" }}
       >
-        <span style={{ color: "#3D5278" }}>
-          AO-2025-041 Export et soumission
+        <span className="text-[12px] font-medium" style={{ color: "var(--l-text-muted)" }}>
+          memoire_technique.docx
+        </span>
+        <div className="flex items-center gap-[8px]">
+          <div
+            className="w-[7px] h-[7px] rounded-full"
+            style={{ background: "var(--l-teal)", boxShadow: "0 0 8px rgba(27,201,168,0.8)", animation: "pulse 2s infinite" }}
+          />
+          <span
+            className="text-[10px] font-bold uppercase tracking-[.14em]"
+            style={{ color: "var(--l-teal)", textShadow: "0 0 12px rgba(27,201,168,0.5)" }}
+          >
+            Génération en cours
+          </span>
+        </div>
+      </div>
+
+      <div className="p-9 flex flex-col gap-9">
+        {sections.map((sec) => (
+          <div key={sec.title}>
+            <div className="flex items-center gap-3 mb-4">
+              <div
+                className="w-[18px] h-[18px] rounded-[5px] flex items-center justify-center shrink-0"
+                style={{
+                  background: sec.done ? "var(--l-blue)" : "transparent",
+                  border: sec.done ? "none" : "1.5px solid rgba(255,255,255,0.12)",
+                  boxShadow: sec.done ? "0 0 10px rgba(43,121,232,0.5)" : "none",
+                }}
+              >
+                {sec.done && (
+                  <svg width="9" height="9" viewBox="0 0 10 10" fill="none">
+                    <path d="M1.5 5l2.5 2.5 4.5-5" stroke="#fff" strokeWidth="2.2"
+                      strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                )}
+              </div>
+              <span
+                className="text-[15px] font-semibold tracking-[-0.01em]"
+                style={{
+                  color: sec.done
+                    ? "rgba(168,196,232,0.55)"
+                    : sec.active
+                    ? "#EEF4FF"
+                    : "rgba(168,196,232,0.3)",
+                }}
+              >
+                {sec.title}
+              </span>
+              {sec.done && (
+                <span
+                  className="ml-auto text-[11px] font-bold"
+                  style={{ color: "var(--l-teal)", textShadow: "0 0 10px rgba(27,201,168,0.5)" }}
+                >
+                  100%
+                </span>
+              )}
+              {sec.active && (
+                <span
+                  className="ml-auto text-[11px] font-bold"
+                  style={{ color: "var(--l-blue)", textShadow: "0 0 10px rgba(43,121,232,0.5)" }}
+                >
+                  En cours
+                </span>
+              )}
+            </div>
+
+            <div className="pl-[30px] flex flex-col gap-[10px]">
+              {sec.lines.map((w, li) => (
+                <div
+                  key={li}
+                  className="h-[5px] rounded-full relative overflow-hidden"
+                  style={{ width: w, background: "rgba(255,255,255,0.06)" }}
+                >
+                  {sec.active && li === 0 && (
+                    <div
+                      className="absolute inset-y-0 left-0 rounded-full"
+                      style={{
+                        width: "46%",
+                        background: "var(--l-blue)",
+                        boxShadow: "0 0 8px rgba(43,121,232,0.8)",
+                      }}
+                    />
+                  )}
+                </div>
+              ))}
+              {sec.active && (
+                <div className="flex items-center gap-[7px] mt-[2px]">
+                  <div
+                    className="w-[2px] h-[14px] rounded-sm"
+                    style={{
+                      background: "var(--l-blue)",
+                      boxShadow: "0 0 6px rgba(43,121,232,0.9)",
+                      animation: "blink 1.1s step-end infinite",
+                    }}
+                  />
+                  <span className="text-[11px]" style={{ color: "rgba(168,196,232,0.4)" }}>
+                    en cours de redaction...
+                  </span>
+                </div>
+              )}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/* Card 3 -- Export                                                      */
+/* ------------------------------------------------------------------ */
+
+function CardExport() {
+  const files = [
+    { label: "Note méthodologique",   size: "2.4 MB", done: true  },
+    { label: "Acte d'engagement",     size: "0.6 MB", done: true  },
+    { label: "Déclaration d'honneur", size: "0.4 MB", done: true  },
+    { label: "CPS paraphé",           size: "1.8 MB", done: true  },
+    { label: "Bordereau des prix",    size: "0.8 MB", done: false },
+  ];
+
+  return (
+    <div
+      className="w-full rounded-[14px] overflow-hidden"
+      style={{
+        background: "rgba(8,12,27,0.9)",
+        border: "1px solid rgba(43,121,232,0.18)",
+        boxShadow: "inset 0 1px 0 rgba(255,255,255,0.05)",
+      }}
+    >
+      <div
+        className="px-9 py-5 flex items-center justify-between"
+        style={{ borderBottom: "1px solid rgba(255,255,255,0.06)", background: "rgba(255,255,255,0.03)" }}
+      >
+        <span className="text-[12px] font-medium" style={{ color: "var(--l-text-muted)" }}>
+          AO-2025-041 · Dossier final
+        </span>
+        <span
+          className="text-[10px] font-bold uppercase tracking-[.14em]"
+          style={{ color: "#22c55e", textShadow: "0 0 12px rgba(34,197,94,0.6)" }}
+        >
+          Prêt a soumettre
         </span>
       </div>
-      <div style={{ padding: "14px" }}>
-        {[
-          { label: "Mémoire technique", size: "2.4 MB" },
-          { label: "Offre financière", size: "0.8 MB" },
-          { label: "Pièces admin.", size: "1.1 MB" },
-        ].map((f) => (
-          <div
-            key={f.label}
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 10,
-              padding: "8px 10px",
-              borderRadius: 7,
-              marginBottom: 6,
-              background: "#0A1422",
-              border: "1px solid #1A2E4A",
-            }}
-          >
+
+      <div className="px-9 pt-7 pb-8 flex flex-col gap-[15px]">
+        {files.map((f) => (
+          <div key={f.label} className="flex items-center gap-4">
             <div
+              className="w-11 h-11 rounded-[9px] flex items-center justify-center shrink-0"
               style={{
-                width: 28,
-                height: 28,
-                borderRadius: 6,
-                background: "rgba(30,136,229,0.15)",
-                border: "1px solid rgba(30,136,229,0.3)",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
+                background: f.done ? "rgba(43,121,232,0.15)" : "rgba(255,255,255,0.03)",
+                border: f.done ? "none" : "1px solid rgba(255,255,255,0.07)",
+                boxShadow: f.done ? "0 0 12px rgba(43,121,232,0.2)" : "none",
               }}
             >
-              <svg
-                width="12"
-                height="12"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="var(--l-blue)"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+                stroke={f.done ? "var(--l-blue)" : "rgba(168,196,232,0.3)"}
+                strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
                 <polyline points="14 2 14 8 20 8" />
               </svg>
             </div>
-            <div style={{ flex: 1 }}>
-              <p style={{ margin: 0, color: "#EEF4FF", fontWeight: 500 }}>
-                {f.label}
-              </p>
-              <p style={{ margin: 0, color: "#3D5278", fontSize: 9 }}>
-                {f.size}
-              </p>
-            </div>
-            <svg width="14" height="14" viewBox="0 0 10 10" fill="none">
-              <path
-                d="M1.5 5l2.5 2.5 4.5-5"
-                stroke="#22c55e"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </svg>
+            <span
+              className="flex-1 text-[14px] font-medium"
+              style={{ color: f.done ? "#EEF4FF" : "rgba(168,196,232,0.3)" }}
+            >
+              {f.label}
+            </span>
+            <span className="text-[12px]" style={{ color: "var(--l-text-muted)" }}>{f.size}</span>
+            {f.done ? (
+              <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                <circle cx="10" cy="10" r="10" fill="rgba(34,197,94,0.12)" />
+                <path d="M6 10.2l2.5 2.5 5.5-6"
+                  stroke="#22c55e" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            ) : (
+              <span className="text-[10px] font-bold uppercase tracking-[.08em]"
+                style={{ color: "rgba(168,196,232,0.3)" }}>
+                En attente
+              </span>
+            )}
           </div>
         ))}
-        <div
-          style={{
-            marginTop: 10,
-            background: "var(--l-blue)",
-            borderRadius: 8,
-            padding: "10px 0",
-            textAlign: "center",
-          }}
-        >
-          <span style={{ color: "#fff", fontWeight: 600, fontSize: 12 }}>
-            Soumettre le dossier →
-          </span>
+
+        <div className="mt-4 pt-6" style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}>
+          <button
+            className="w-full py-[16px] rounded-[10px] flex items-center justify-center gap-[11px] cursor-pointer border-0 font-bold text-[15px] text-white tracking-[-0.01em]"
+            style={{
+              background: "linear-gradient(135deg,var(--l-indigo),var(--l-blue))",
+              boxShadow: "0 8px 36px rgba(43,121,232,0.45), 0 0 0 1px rgba(43,121,232,0.3)",
+            }}
+          >
+            Télécharger le dossier complet
+            <svg width="15" height="15" fill="none" viewBox="0 0 24 24"
+              stroke="white" strokeWidth={2.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M5 12h14M12 5l7 7-7 7" />
+            </svg>
+          </button>
         </div>
       </div>
     </div>
   );
 }
 
-function MockupPerf() {
-  const months = ["Jan", "Fév", "Mar", "Avr", "Mai", "Juin"];
-  const vals = [2, 4, 3, 6, 5, 8];
-  return (
-    <div
-      style={{
-        background: "#0C1829",
-        border: "1px solid #1A2E4A",
-        borderRadius: 10,
-        overflow: "hidden",
-        fontSize: 11,
-      }}
-    >
-      <div
-        style={{
-          background: "#0A1422",
-          padding: "8px 14px",
-          borderBottom: "1px solid #1A2E4A",
-          display: "flex",
-          justifyContent: "space-between",
-        }}
-      >
-        <span style={{ color: "#3D5278" }}>Performances 2025</span>
-        <span style={{ color: "#22c55e", fontWeight: 600, fontSize: 10 }}>
-          +42% vs 2024
-        </span>
-      </div>
-      <div style={{ padding: "14px" }}>
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "1fr 1fr 1fr",
-            gap: 8,
-            marginBottom: 14,
-          }}
-        >
-          {[
-            ["26", "AOs gagnés"],
-            ["89%", "Taux succès"],
-            ["1.8j", "Délai moyen"],
-          ].map(([v, l]) => (
-            <div
-              key={l}
-              style={{
-                background: "#0A1422",
-                border: "1px solid #1A2E4A",
-                borderRadius: 7,
-                padding: "8px 10px",
-              }}
-            >
-              <p
-                style={{
-                  margin: 0,
-                  color: "#EEF4FF",
-                  fontWeight: 700,
-                  fontSize: 15,
-                }}
-              >
-                {v}
-              </p>
-              <p style={{ margin: "3px 0 0", color: "#3D5278", fontSize: 9 }}>
-                {l}
-              </p>
-            </div>
-          ))}
-        </div>
-        <div
-          style={{
-            display: "flex",
-            alignItems: "flex-end",
-            gap: 6,
-            height: 50,
-          }}
-        >
-          {months.map((m, i) => (
-            <div
-              key={m}
-              style={{
-                flex: 1,
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "center",
-                gap: 4,
-              }}
-            >
-              <div
-                style={{
-                  width: "100%",
-                  height: `${(vals[i] / 8) * 40}px`,
-                  background: i === 5 ? "var(--l-blue)" : "#1A2E4A",
-                  borderRadius: "3px 3px 0 0",
-                }}
-              />
-              <span style={{ color: "#3D5278", fontSize: 8 }}>{m}</span>
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
-}
+/* ------------------------------------------------------------------ */
+/* Section principale                                                    */
+/* ------------------------------------------------------------------ */
 
 export default function HowItWorksSection() {
   const { t } = useTranslation();
-  const { theme } = useTheme();
-  const dark = theme === "dark";
+  const outerRef = useRef<HTMLElement>(null);
+  const pinRef   = useRef<HTMLDivElement>(null);
+  const cardsRef = useRef<HTMLDivElement[]>([]);
   const [active, setActive] = useState(0);
 
   useEffect(() => {
-    const id = "how-css";
-    let s = document.getElementById(id) as HTMLStyleElement | null;
-    if (!s) {
-      s = document.createElement("style");
-      s.id = id;
-      document.head.appendChild(s);
-    }
-    s.textContent = HOW_CSS;
+    const cards = cardsRef.current;
+    if (!cards.length || !outerRef.current || !pinRef.current) return;
+
+    gsap.set(cards[0], { opacity: 1, scale: 1 });
+    cards.slice(1).forEach(c => gsap.set(c, { opacity: 0, scale: 0.97 }));
+
+    const tl = gsap.timeline();
+
+    cards.forEach((card, i) => {
+      tl.to({}, { duration: 2.5, onComplete: () => setActive(i) });
+      if (i < cards.length - 1) {
+        tl.to(card,         { opacity: 0, scale: 0.97, duration: 1.6, ease: "power2.inOut" }, ">");
+        tl.to(cards[i + 1], { opacity: 1, scale: 1,    duration: 1.6, ease: "power2.inOut" }, "<");
+      }
+    });
+
+    tl.to({}, { duration: 1 });
+
+    ScrollTrigger.create({
+      trigger: outerRef.current,
+      start: "top top",
+      end: "+=700vh",
+      pin: pinRef.current,
+      pinSpacing: true,
+      scrub: 1.8,
+      animation: tl,
+    });
+
+    return () => ScrollTrigger.getAll().forEach(st => st.kill());
   }, []);
 
-  const FEATURES = [
-    {
-      key: "analyse",
-      title: t("landing.how.t1Title"),
-      desc: t("landing.how.t1Desc"),
-    },
-    {
-      key: "generation",
-      title: t("landing.how.t2Title"),
-      desc: t("landing.how.t2Desc"),
-    },
-    {
-      key: "export",
-      title: t("landing.how.t3Title"),
-      desc: t("landing.how.t3Desc"),
-    },
-    {
-      key: "perf",
-      title: t("landing.how.t4Title"),
-      desc: t("landing.how.t4Desc"),
-    },
+  const steps = [
+    { num: "01", title: t("landing.how.t1Title"), desc: t("landing.how.t1Desc"), card: <CardAnalyse /> },
+    { num: "02", title: t("landing.how.t2Title"), desc: t("landing.how.t2Desc"), card: <CardGeneration /> },
+    { num: "03", title: t("landing.how.t3Title"), desc: t("landing.how.t3Desc"), card: <CardExport /> },
   ];
 
-  const mockups: Record<string, React.ReactNode> = {
-    analyse: <MockupAnalyse />,
-    generation: <MockupGeneration />,
-    export: <MockupExport />,
-    perf: <MockupPerf />,
-  };
-
   return (
-    <section
-      id="how-it-works"
-      style={{ background: "var(--l-bg)", padding: "100px 24px 120px" }}
-    >
-      <div style={{ maxWidth: 1100, margin: "0 auto" }}>
-        <div className="how-grid">
-          {/* Left */}
-          <div>
-            <h2
+    <section ref={outerRef} id="how-it-works" className="relative bg-[#090D1C] rounded-t-[32px] -mt-8">
+      <div ref={pinRef} className="relative h-screen overflow-hidden flex items-center justify-center">
+
+        {/* Halo d'ambiance derriere les cartes */}
+        <div
+          className="pointer-events-none absolute inset-0"
+          style={{
+            background: "radial-gradient(ellipse 70% 55% at 50% 52%, rgba(43,121,232,0.1) 0%, transparent 70%)",
+          }}
+        />
+
+        {steps.map((step, i) => (
+          <div
+            key={i}
+            ref={el => { if (el) cardsRef.current[i] = el; }}
+            className="absolute w-[min(1320px,96vw)] rounded-[22px] p-[1.5px]"
+            style={{
+              background: "linear-gradient(135deg,rgba(50,72,206,0.7) 0%,rgba(43,121,232,0.55) 50%,rgba(27,201,168,0.55) 100%)",
+              boxShadow: "0 0 60px rgba(43,121,232,0.18), 0 40px 100px rgba(0,0,0,0.7)",
+              zIndex: i + 1,
+            }}
+          >
+            <div
+              className="rounded-[21px] overflow-hidden max-sm:px-5 max-sm:pt-5 max-sm:pb-6"
               style={{
-                fontSize: "clamp(1.7rem, 3vw, 2.5rem)",
-                fontWeight: 700,
-                lineHeight: 1.15,
-                letterSpacing: "-0.02em",
-                color: "var(--l-text)",
-                margin: "0 0 40px",
+                background: "#090D1E",
+                padding: "clamp(24px,3vw,44px) clamp(20px,4vw,56px) clamp(28px,3vw,48px)",
               }}
             >
-              {t("landing.how.title")}
-              <br />
-              <span style={{ color: "var(--l-blue)" }}>
-                {t("landing.how.titleBlue")}
-              </span>
-            </h2>
-            <div style={{ display: "flex", flexDirection: "column" }}>
-              {FEATURES.map((f, i) => (
-                <button
-                  key={f.key}
-                  onClick={() => setActive(i)}
+              {/* Chrome bar */}
+              <div className="flex items-center gap-[8px] mb-10 max-sm:mb-6">
+                <div className="w-[11px] h-[11px] rounded-full bg-[#ff5f57]" />
+                <div className="w-[11px] h-[11px] rounded-full bg-[#febc2e]" />
+                <div className="w-[11px] h-[11px] rounded-full bg-[#28c840]" />
+                <span
+                  className="ml-auto text-[10px] font-bold tracking-[.16em] uppercase"
+                  style={{ color: "rgba(168,196,232,0.35)" }}
+                >
+                  Etape {step.num} / 03
+                </span>
+              </div>
+
+              {/* Badge + titre */}
+              <div className="flex items-center gap-5 mb-5">
+                <div
+                  className="flex shrink-0 items-center justify-center rounded-[16px] max-sm:rounded-[12px]"
                   style={{
-                    background: "none",
-                    border: "none",
-                    cursor: "pointer",
-                    textAlign: "left",
-                    padding: "16px 0 16px 20px",
-                    borderLeft: `2px solid ${i === active ? "var(--l-blue)" : "var(--l-card-border)"}`,
-                    transition: "border-color .2s",
-                    fontFamily: "inherit",
+                    width: "clamp(52px,6vw,72px)",
+                    height: "clamp(52px,6vw,72px)",
+                    background: "linear-gradient(135deg,var(--l-indigo),var(--l-blue))",
+                    boxShadow: "0 0 32px rgba(43,121,232,0.55), 0 8px 24px rgba(43,121,232,0.35)",
                   }}
                 >
-                  <p
-                    style={{
-                      margin: "0 0 6px",
-                      fontSize: 15,
-                      fontWeight: 600,
-                      color: i === active ? "var(--l-text)" : "var(--l-sub)",
-                      transition: "color .2s",
-                    }}
+                  <span
+                    className="font-black tracking-[-0.02em] text-white"
+                    style={{ fontSize: "clamp(1.3rem,2.5vw,1.8rem)" }}
                   >
-                    {f.title}
-                  </p>
-                  {i === active && (
-                    <p
-                      style={{
-                        margin: 0,
-                        fontSize: 13.5,
-                        lineHeight: 1.65,
-                        color: "var(--l-sub)",
-                      }}
-                    >
-                      {f.desc}
-                    </p>
-                  )}
-                </button>
-              ))}
-            </div>
-          </div>
+                    {step.num}
+                  </span>
+                </div>
+                <h2
+                  className="font-bold tracking-[-0.03em] leading-[1.15] m-0"
+                  style={{
+                    fontSize: "clamp(1.4rem,2.6vw,2.1rem)",
+                    color: "#EEF4FF",
+                  }}
+                >
+                  {step.title}
+                </h2>
+              </div>
 
-          {/* Right  always dark card */}
-          <div>
-            <div
-              style={{
-                background: "#080F1C",
-                border: "1px solid rgba(255,255,255,0.07)",
-                borderRadius: 20,
-                padding: "28px",
-                boxShadow: dark
-                  ? "0 0 80px var(--l-blue-glow), 0 32px 80px rgba(0,0,0,0.6)"
-                  : "0 20px 60px rgba(13,27,62,0.15)",
-                position: "relative",
-              }}
-            >
-              <div
+              <p
+                className="mt-0 mb-9 max-w-[720px] max-sm:mb-5"
                 style={{
-                  position: "absolute",
-                  top: -40,
-                  left: "50%",
-                  transform: "translateX(-50%)",
-                  width: "70%",
-                  height: 80,
-                  background:
-                    "radial-gradient(ellipse, var(--l-blue-glow) 0%, transparent 70%)",
-                  filter: "blur(24px)",
-                  pointerEvents: "none",
+                  fontSize: "clamp(13px,1.4vw,15.5px)",
+                  lineHeight: 1.8,
+                  color: "rgba(168,196,232,0.65)",
                 }}
-              />
-              {mockups[FEATURES[active].key]}
+              >
+                {step.desc}
+              </p>
+
+              {step.card}
             </div>
           </div>
+        ))}
+
+        {/* Points de progression */}
+        <div className="absolute bottom-8 left-1/2 z-20 flex -translate-x-1/2 items-center gap-[10px]">
+          {steps.map((s, i) => (
+            <div
+              key={s.num}
+              className="h-[5px] rounded-full transition-all duration-400"
+              style={{
+                width: i === active ? 32 : 6,
+                background: i === active
+                  ? "linear-gradient(90deg,var(--l-indigo),var(--l-teal))"
+                  : "rgba(168,196,232,0.2)",
+                boxShadow: i === active ? "0 0 10px rgba(43,121,232,0.6)" : "none",
+              }}
+            />
+          ))}
         </div>
       </div>
     </section>

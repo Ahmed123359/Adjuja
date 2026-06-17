@@ -18,20 +18,32 @@
       "title": "Tout ce dont vous avez besoin",
       "titleBlue": "pour remporter plus de marchés.",
       "cta": "Voir toutes les fonctionnalités",
-      "analyse": { "title": "Analyse du DCE", "desc": "L'IA extrait chaque clause clé du dossier de consultation en quelques secondes." },
-      "gen":     { "title": "Génération en temps réel", "desc": "Chaque section est rédigée et exportée en Word en moins de 2 minutes." },
-      "suivi":   { "title": "Suivi de tous vos AOs", "desc": "Un seul endroit pour suivre chaque dossier, de la réception à la victoire." },
-      "pipeline":{ "title": "Pipeline automatisé", "desc": "De la réception du DCE à la soumission finale, chaque étape est orchestrée et tracée." }
+      "analyse": {
+        "title": "Analyse du DCE",
+        "desc": "L'IA extrait chaque clause clé du dossier de consultation en quelques secondes."
+      },
+      "gen": {
+        "title": "Génération en temps réel",
+        "desc": "Chaque section est rédigée et exportée en Word en moins de 2 minutes."
+      },
+      "suivi": {
+        "title": "Suivi de tous vos AOs",
+        "desc": "Un seul endroit pour suivre chaque dossier, de la réception à la victoire."
+      },
+      "pipeline": {
+        "title": "Pipeline automatisé",
+        "desc": "De la réception du DCE à la soumission finale, chaque étape est orchestrée et tracée."
+      }
     },
     "how": {
-      "title": "Gagnez plus de marchés.",
-      "titleBlue": "Chaque jour.",
-      "t1Title": "Analyse intelligente du DCE",
-      "t1Desc": "L'IA parcourt chaque page du dossier de consultation, identifie les clauses clés et les critères d'évaluation en quelques secondes.",
-      "t2Title": "Génération automatique de la réponse",
-      "t2Desc": "Chaque section du mémoire technique est rédigée sur mesure selon votre profil entreprise et les exigences du marché.",
-      "t3Title": "Export et soumission en un clic",
-      "t3Desc": "Téléchargez votre dossier complet en Word ou PDF, prêt à soumettre sur la plateforme d'achat public.",
+      "title": "Trois étapes.",
+      "titleBlue": "Un dossier complet.",
+      "t1Title": "Déposez votre DCE",
+      "t1Desc": "Glissez le PDF du dossier dans ADJUJA. L'IA extrait en quelques secondes les critères d'attribution, les pièces exigées et les contraintes techniques. Vous ne lisez rien, vous ne configurez rien.",
+      "t2Title": "L'IA rédige. Vous validez.",
+      "t2Desc": "Pendant que vous continuez votre journée, ADJUJA génère votre mémoire technique complet, section par section, adapté à votre profil et aux critères exacts du marché. Aucune rédaction manuelle.",
+      "t3Title": "Soumettez. Gagnez.",
+      "t3Desc": "Téléchargez votre dossier en ZIP : mémoire technique, acte d'engagement, déclaration d'honneur, CPS paraphé. Chaque document signé, chaque case cochée. Prêt à déposer.",
       "t4Title": "Suivi de vos performances",
       "t4Desc": "Visualisez votre taux de réussite, le nombre d'AOs remportés et l'évolution de vos résultats mois par mois."
     },
@@ -47,6 +59,7 @@
       "tagline": "ADJUJA automatise la rédaction de vos réponses aux appels d'offres publics au Maroc.",
       "emailPlaceholder": "Votre adresse email",
       "subscribe": "S'abonner",
+      "newsletterTitle": "Restez informé",
       "navTitle": "Navigation",
       "legalTitle": "Légal",
       "contactTitle": "Contact",
@@ -66,7 +79,7 @@
       "contactPhoneValue": "+212 5 22 00 00 00",
       "contactAddress": "Adresse",
       "contactAddressValue": "Casablanca, Maroc",
-      "copyright": "© 2025 ADJUJA. Tous droits réservés."
+      "copyright": "© 2026 ADJUJA. Tous droits réservés."
     }
   },
   "banner": {
@@ -130,25 +143,25 @@
   },
   "pricing": {
     "label": "Tarifs",
-    "title": "Choisissez votre plan",
-    "subtitle": "Sans engagement · Annulez a tout moment · Facture sous 48h",
+    "title": "Remportez plus de marchés. Dès 55 MAD/mois.",
+    "subtitle": "Sans engagement · Annulez à tout moment · Facture sous 48h",
     "footnote1": "1 document = fichier PDF jusqu'a 20 pages A4",
     "footnote2": "Tous les prix sont HT · TVA applicable · Deploiement on-premise sur devis",
     "freeTrial": "Pas encore convaincu ? ",
     "freeTrialCta": "Essayez gratuitement 1 AO sans CB",
     "plans": {
       "starter_name": "Starter",
-      "starter_tagline": "Pour les solopreneurs qui veulent gagner plus d'AOs",
+      "starter_tagline": "Pour un indépendant qui répond à plusieurs AOs par mois",
       "starter_badge": "Early Bird -30 %",
       "starter_cta": "S'abonner  55 MAD/mois",
       "starter_note": "Sans engagement · resiliable a tout moment",
       "pro_name": "Pro",
-      "pro_tagline": "Pour les equipes commerciales actives",
+      "pro_tagline": "Pour les PME qui traitent plusieurs AOs par semaine",
       "pro_badge": "Recommande",
       "pro_cta": "Contacter l'equipe",
       "pro_note": "Le plus choisi par nos clients PME / ETI",
       "enterprise_name": "Entreprise",
-      "enterprise_tagline": "Pour les grands groupes et cabinets",
+      "enterprise_tagline": "Pour les grandes structures qui automatisent leur démarche commerciale",
       "enterprise_price": "Sur devis",
       "enterprise_cta": "Contacter l'equipe",
       "enterprise_note": "Deploiement en 5 jours ouvres",
@@ -285,7 +298,10 @@
         "adresse": "Adresse du siège",
         "ville": "Ville",
         "telephone": "Téléphone",
-        "email": "Email"
+        "email": "Email",
+        "capital_social": "Capital social",
+        "rib": "RIB bancaire",
+        "forme_juridique": "Forme juridique"
       }
     },
     "generation": {
@@ -368,7 +384,10 @@
     }
   },
   "settings": {
-    "tabs": { "general": "Général", "utilisation": "Utilisation" },
+    "tabs": {
+      "general": "Général",
+      "utilisation": "Utilisation"
+    },
     "provider": "Fournisseur",
     "model": "Modèle",
     "modelHint": "Utilisé pour toutes les générations et le chat.",
@@ -376,9 +395,12 @@
     "saved": "Enregistré",
     "back": "Retour",
     "providers": {
-      "anthropic": "Anthropic", "anthropicDesc": "Claude  Meilleur pour la rédaction complexe",
-      "openai": "OpenAI", "openaiDesc": "GPT-4o  Polyvalent et rapide",
-      "mistral": "Mistral", "mistralDesc": "Mistral  Souveraineté européenne des données"
+      "anthropic": "Anthropic",
+      "anthropicDesc": "Claude  Meilleur pour la rédaction complexe",
+      "openai": "OpenAI",
+      "openaiDesc": "GPT-4o  Polyvalent et rapide",
+      "mistral": "Mistral",
+      "mistralDesc": "Mistral  Souveraineté européenne des données"
     },
     "usage": {
       "tokens": "Tokens de génération",

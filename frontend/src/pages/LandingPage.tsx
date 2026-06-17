@@ -1,10 +1,15 @@
-import React from "react";
-import { useTheme } from "../hooks/useTheme";
+import { lazy, Suspense, useEffect } from "react";
 import LandingNav from "../components/landing/LandingNav";
-import HeroSection from "../components/landing/HeroSection";
-import FeaturesSection from "../components/landing/FeaturesSection";
 import HowItWorksSection from "../components/landing/HowItWorksSection";
+import PricingSection from "../components/landing/PricingSection";
 import LandingFooter from "../components/landing/LandingFooter";
+
+/* Three.js chargé en lazy pour ne pas bloquer le LCP */
+const HeroSection = lazy(() => import("../components/landing/HeroSection"));
+
+function HeroFallback() {
+  return <div style={{ height: "100svh", minHeight: 640, background: "#050818" }} />;
+}
 
 export default function LandingPage({
   onEnterApp,
@@ -13,17 +18,24 @@ export default function LandingPage({
   onEnterApp: () => void;
   onGoRegister: () => void;
 }) {
-  const { theme } = useTheme();
-  const dark = theme === "dark";
-  const bg = dark ? "#05090F" : "#FFFFFF";
+  useEffect(() => {
+    const els = document.querySelectorAll(".animate-on-scroll");
+    const io = new IntersectionObserver(
+      entries => entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add("is-visible"); io.unobserve(e.target); } }),
+      { threshold: 0.08 }
+    );
+    els.forEach(el => io.observe(el));
+    return () => io.disconnect();
+  }, []);
 
   return (
-    <div style={{ background: bg, minHeight: "100vh", fontFamily: "DM Sans, system-ui, sans-serif", overflowX: "hidden" }}>
+    <div className="landing-dark">
       <LandingNav onEnterApp={onEnterApp} onGoRegister={onGoRegister} />
-      <HeroSection onEnterApp={onEnterApp} onGoRegister={onGoRegister} />
-      <FeaturesSection />
+      <Suspense fallback={<HeroFallback />}>
+        <HeroSection onEnterApp={onEnterApp} onGoRegister={onGoRegister} />
+      </Suspense>
       <HowItWorksSection />
-      <section id="pricing" style={{ minHeight: 40 }} />
+      <PricingSection onEnterApp={onEnterApp} />
       <LandingFooter onEnterApp={onEnterApp} />
     </div>
   );

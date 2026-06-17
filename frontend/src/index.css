@@ -1,4 +1,4 @@
-@import url("https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;0,9..40,800;1,9..40,400&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&display=swap");
 
 @tailwind base;
 @tailwind components;
@@ -112,12 +112,18 @@
 }
 
 @layer base {
+  html {
+    scroll-behavior: smooth;
+  }
   * {
     @apply border-border;
   }
   body {
     @apply bg-background text-foreground antialiased;
-    font-family: "DM Sans", system-ui, sans-serif;
+    font-family: "Sora", system-ui, sans-serif;
+    font-size: 16px;
+    line-height: 1.6;
+    letter-spacing: 0.015em;
     overflow-x: hidden;
   }
 }
@@ -153,6 +159,10 @@
   50% {
     opacity: 0.4;
   }
+}
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0; }
 }
 
 ::-webkit-scrollbar {
@@ -243,13 +253,83 @@
   background: #eef2f9;
 }
 
+/* =============================================
+   Landing page — dark-only token system
+   Source unique de vérité pour tous les composants /landing
+   ============================================= */
+.landing-dark {
+  /* Backgrounds */
+  --l-bg:            #080B1C;
+  --l-surface:       #0C1020;
+  --l-surface-2:     #101525;
+  --l-surface-3:     #151C30;
+
+  /* Borders */
+  --l-border:        rgba(255, 255, 255, 0.07);
+  --l-border-strong: rgba(255, 255, 255, 0.13);
+  --l-border-focus:  rgba(30, 136, 229, 0.5);
+
+  /* Text */
+  --l-text:          #EEF4FF;
+  --l-text-muted:    #6B8BB3;
+  --l-text-dim:      #3D5278;
+
+  /* Brand */
+  --l-blue:          #2B79E8;
+  --l-indigo:        #3248CE;
+  --l-teal:          #1BC9A8;
+  --l-gradient:      linear-gradient(135deg, #3248CE 0%, #2B79E8 100%);
+  --l-glow-blue:     rgba(43, 121, 232, 0.22);
+  --l-glow-teal:     rgba(18, 201, 170, 0.12);
+
+  /* Layout */
+  --l-radius:        6px;
+  --l-nav-height:    64px;
+  --l-nav-bg:        rgba(6, 11, 24, 0.9);
+
+  /* Backward-compat aliases (ne pas utiliser dans de nouveaux composants) */
+  --l-card:          var(--l-surface);
+  --l-card-border:   var(--l-border);
+  --l-bg-alt:        var(--l-bg);
+  --l-mk-bg:         #08101F;
+  --l-mk-surf:       var(--l-surface);
+  --l-mk-border:     rgba(255, 255, 255, 0.08);
+  --l-sub:           var(--l-text-muted);
+  --l-dim:           var(--l-text-dim);
+  --l-blue-a:        rgba(30, 136, 229, 0.1);
+  --l-blue-glow:     var(--l-glow-blue);
+  --l-card-shadow:   0 24px 64px rgba(0, 0, 0, 0.5);
+  --l-footer-bg:     var(--l-bg);
+  --l-cta-bg:        var(--l-surface);
+  --l-input-bg:      rgba(255, 255, 255, 0.04);
+
+  background: var(--l-bg);
+  color: var(--l-text);
+  font-family: "Sora", system-ui, sans-serif;
+  overflow-x: hidden;
+}
+
+.landing-dark h1,
+.landing-dark h2,
+.landing-dark h3,
+.landing-dark .font-display {
+  font-family: "Sora", system-ui, sans-serif;
+}
+
+/* Focus visible global pour tous les éléments interactifs landing */
+.landing-dark :focus-visible {
+  outline: 2px solid var(--l-blue);
+  outline-offset: 3px;
+  border-radius: var(--l-radius);
+}
+
 /* Scroll animations */
 .animate-on-scroll {
   opacity: 0;
-  transform: translateY(20px);
+  transform: translateY(36px);
   transition:
-    opacity 0.5s ease,
-    transform 0.5s ease;
+    opacity 0.7s cubic-bezier(0.22, 1, 0.36, 1),
+    transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
 }
 .animate-on-scroll.is-visible {
   opacity: 1;

@@ -1597,7 +1597,6 @@ export default function DashboardPage() {
         flexDirection: "column",
         height: "100%",
         overflow: "hidden",
-        fontFamily: "DM Sans, system-ui, sans-serif",
       }}
     >
       {/* Tab bar */}

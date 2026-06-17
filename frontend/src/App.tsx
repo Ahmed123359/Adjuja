@@ -223,7 +223,7 @@ export default function App({
   const { theme, toggle } = useTheme();
 
   return (
-    <div style={{ display: 'flex', height: '100vh', width: '100%', overflow: 'hidden', fontFamily: 'DM Sans, system-ui, sans-serif' }}>
+    <div style={{ display: 'flex', height: '100vh', width: '100%', overflow: 'hidden' }}>
 
       {/* Sidebar desktop */}
       {!isMobile && (
@@ -233,6 +233,7 @@ export default function App({
           user={user}
           onLogout={onLogout}
           onGoSettings={() => navigate("/app/settings")}
+          isSettings={isSettings}
           apiStatus={apiStatus}
           onGoLanding={onGoLanding}
         />
@@ -250,6 +251,7 @@ export default function App({
             user={user}
             onLogout={onLogout}
             onGoSettings={() => { navigate("/app/settings"); setSidebarOpen(false); }}
+            isSettings={isSettings}
             apiStatus={apiStatus}
             onGoLanding={onGoLanding}
           />
@@ -280,7 +282,7 @@ export default function App({
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', minWidth: 0 }}>
         {isSettings ? (
           <>
-            <header style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', height: 58, padding: '0 24px', background: 'var(--l-card)', borderBottom: '1px solid var(--l-card-border)', flexShrink: 0, fontFamily: 'DM Sans, system-ui, sans-serif' }}>
+            <header style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', height: 58, padding: '0 24px', background: 'var(--l-card)', borderBottom: '1px solid var(--l-card-border)', flexShrink: 0 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                 {isMobile && (
                   <button onClick={() => setSidebarOpen(true)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--l-sub)', padding: 6, display: 'flex', borderRadius: 7 }}>
