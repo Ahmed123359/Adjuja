@@ -14,6 +14,7 @@ class Settings(BaseSettings):
     minio_secure: bool = False
 
     watcher_api_port: int = 8001
+    main_app_host: str = "host.docker.internal"
     main_app_port: int = 8000
     scrape_interval_hours: int = 6
 

@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
@@ -8,6 +8,15 @@ from app.modules.ao_scraper.schemas import AoListOut, AoOut, ImportResult, Statu
 router = APIRouter(prefix="/aos", tags=["ao-watcher"])
 
 VALID_STATUSES = {"new", "seen", "favorited", "imported"}
+
+
+def _require_auth_header(request: Request) -> str:
+    """Le watcher ne valide pas le JWT lui-même : il le relaie vers l'app principale,
+    qui fait la vérification habituelle et résout l'org_id."""
+    auth = request.headers.get("authorization")
+    if not auth:
+        raise HTTPException(status_code=401, detail="Authentification requise.")
+    return auth
 
 
 @router.get("", response_model=AoListOut)
@@ -54,6 +63,7 @@ async def update_status(
     ao_id: int,
     body: StatusUpdate,
     db: AsyncSession = Depends(get_db),
+    _auth: str = Depends(_require_auth_header),
 ):
     if body.status not in VALID_STATUSES:
         raise HTTPException(status_code=400, detail=f"Invalid status. Must be one of {VALID_STATUSES}")
@@ -74,7 +84,11 @@ async def update_status(
 
 
 @router.post("/{ao_id}/import", response_model=ImportResult)
-async def import_to_pipeline(ao_id: int, db: AsyncSession = Depends(get_db)):
+async def import_to_pipeline(
+    ao_id: int,
+    db: AsyncSession = Depends(get_db),
+    auth: str = Depends(_require_auth_header),
+):
     """
     Copy a favorited AO into the main app pipeline.
     Creates appels_offres + ao_documents from classified_docs.
@@ -90,11 +104,12 @@ async def import_to_pipeline(ao_id: int, db: AsyncSession = Depends(get_db)):
             detail="Documents not yet downloaded. Favorite the AO first and wait for download to complete.",
         )
 
-    # Bridge: call the main app's import endpoint
+    # Bridge: call the main app's import endpoint, relaying the caller's JWT
+    # so the main app can resolve org_id via its own auth (get_current_user).
     import httpx
     from app.core.config import settings
 
-    main_app_url = f"http://app:{settings.main_app_port}/api/v1/pipeline/from-watcher"
+    main_app_url = f"http://{settings.main_app_host}:{settings.main_app_port}/api/v1/ao/from-watcher"
     payload = {
         "scraped_ao_id": ao_id,
         "titre": ao.titre,
@@ -107,11 +122,13 @@ async def import_to_pipeline(ao_id: int, db: AsyncSession = Depends(get_db)):
 
     try:
         async with httpx.AsyncClient(timeout=10) as client:
-            resp = await client.post(main_app_url, json=payload)
+            resp = await client.post(main_app_url, json=payload, headers={"Authorization": auth})
             resp.raise_for_status()
             data = resp.json()
+    except httpx.HTTPStatusError as e:
+        raise HTTPException(status_code=502, detail=f"Main app rejected import: {e.response.text}")
     except Exception as e:
         raise HTTPException(status_code=502, detail=f"Main app unreachable: {e}")
 
     await repo.update_status(ao_id, "imported")
-    return ImportResult(ao_id=data["ao_id"], message="AO imported successfully")
+    return ImportResult(ao_id=data["id"], message="AO imported successfully")

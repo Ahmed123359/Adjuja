@@ -1350,6 +1350,7 @@ export default function AoPipelinePage() {
                     display: "flex",
                     alignItems: "stretch",
                     gap: 0,
+                    minWidth: 0,
                   }}
                 >
                   <button
@@ -1360,6 +1361,7 @@ export default function AoPipelinePage() {
                     style={{
                       ...btnBase,
                       flex: 1,
+                      minWidth: 0,
                       textAlign: "left",
                       padding: "14px 18px",
                       background: "var(--l-card)",

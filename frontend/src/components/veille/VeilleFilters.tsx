@@ -1,10 +1,12 @@
 import { useTranslation } from 'react-i18next';
 import type { WatcherFilters } from '../../types';
+import { useIsMobile } from '../../hooks/useIsMobile';
 
 type Props = {
   filters: WatcherFilters;
   onChange: (patch: Partial<WatcherFilters>) => void;
   onReset: () => void;
+  onClose?: () => void;
 };
 
 const inputStyle: React.CSSProperties = {
@@ -40,25 +42,50 @@ function FilterSection({ label, children }: { label: string; children: React.Rea
   );
 }
 
-export default function VeilleFilters({ filters, onChange, onReset }: Props) {
+export default function VeilleFilters({ filters, onChange, onReset, onClose }: Props) {
   const { t } = useTranslation();
+  const isMobile = useIsMobile();
 
   const hasActiveFilters =
     filters.search || filters.categorie || filters.region || filters.date_limite_from;
 
   return (
-    <aside
-      style={{
-        width:          240,
-        flexShrink:     0,
-        display:        'flex',
-        flexDirection:  'column',
-        background:     'var(--l-card)',
-        borderRight:    '1px solid var(--l-card-border)',
-        height:         '100%',
-        overflowY:      'auto',
-      }}
-    >
+    <>
+      {isMobile && (
+        <div
+          onClick={onClose}
+          style={{ position: 'fixed', inset: 0, zIndex: 55, background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(4px)' }}
+        />
+      )}
+      <aside
+        style={
+          isMobile
+            ? {
+                position:      'fixed',
+                top:           0,
+                left:          0,
+                bottom:        0,
+                zIndex:        56,
+                width:         280,
+                maxWidth:      '85vw',
+                display:       'flex',
+                flexDirection: 'column',
+                background:    'var(--l-card)',
+                borderRight:   '1px solid var(--l-card-border)',
+                overflowY:     'auto',
+              }
+            : {
+                width:          240,
+                flexShrink:     0,
+                display:        'flex',
+                flexDirection:  'column',
+                background:     'var(--l-card)',
+                borderRight:    '1px solid var(--l-card-border)',
+                height:         '100%',
+                overflowY:      'auto',
+              }
+        }
+      >
       {/* Header */}
       <div
         style={{
@@ -68,28 +95,41 @@ export default function VeilleFilters({ filters, onChange, onReset }: Props) {
           padding:        '14px 16px 10px',
           borderBottom:   '1px solid var(--l-card-border)',
           flexShrink:     0,
+          gap:            10,
         }}
       >
         <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--l-text)' }}>
           Filtres
         </span>
-        {hasActiveFilters && (
-          <button
-            onClick={onReset}
-            style={{
-              background:   'none',
-              border:       'none',
-              cursor:       'pointer',
-              fontSize:     12,
-              color:        'var(--l-blue)',
-              fontFamily:   'inherit',
-              padding:      0,
-              fontWeight:   600,
-            }}
-          >
-            {t('veille.filters.reset')}
-          </button>
-        )}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          {hasActiveFilters && (
+            <button
+              onClick={onReset}
+              style={{
+                background:   'none',
+                border:       'none',
+                cursor:       'pointer',
+                fontSize:     12,
+                color:        'var(--l-blue)',
+                fontFamily:   'inherit',
+                padding:      0,
+                fontWeight:   600,
+              }}
+            >
+              {t('veille.filters.reset')}
+            </button>
+          )}
+          {isMobile && onClose && (
+            <button
+              onClick={onClose}
+              style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--l-dim)', display: 'flex', padding: 2 }}
+            >
+              <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Filters */}
@@ -162,6 +202,7 @@ export default function VeilleFilters({ filters, onChange, onReset }: Props) {
           />
         </FilterSection>
       </div>
-    </aside>
+      </aside>
+    </>
   );
 }

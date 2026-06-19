@@ -195,6 +195,8 @@ services:
       MINIO_SECRET_KEY: ${MINIO_SECRET_KEY:-offria_dev_secret}
       MINIO_BUCKET: offria
       MAIN_APP_PORT: 8000
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     volumes:
       - ./ao-watcher/app:/app/app
       - ./ao-watcher/scrapers:/app/scrapers

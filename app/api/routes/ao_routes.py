@@ -3,6 +3,7 @@ import uuid
 from datetime import datetime, timezone
 
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, status
+from pydantic import BaseModel
 from typing import Annotated
 from sqlalchemy import select
 from sqlalchemy.orm import selectinload
@@ -86,6 +87,75 @@ async def create_ao(
         reference=body.reference,
         acheteur=body.acheteur,
         objet=body.objet,
+        statut="brouillon",
+        pipeline_pct=0,
+        created_at=now,
+        updated_at=now,
+    )
+
+
+class FromWatcherPayload(BaseModel):
+    scraped_ao_id: int
+    titre: str
+    acheteur: str | None = None
+    date_limite: str | None = None
+    categorie: str | None = None
+    region: str | None = None
+    classified_docs: dict[str, str] = {}
+
+
+@router.post("/from-watcher", response_model=AoSummary, status_code=status.HTTP_201_CREATED)
+async def import_from_watcher(
+    body: FromWatcherPayload,
+    current_user: UserPublic = Depends(get_current_user),
+) -> AoSummary:
+    """Crée un AO à partir d'un appel d'offres favorisé dans la veille (ao-watcher).
+    Les documents (classified_docs) sont déjà sur MinIO (bucket partagé) : on les référence
+    directement sans les re-télécharger.
+    """
+    org_id = current_user.org_id or current_user.id
+    ao_id = str(uuid.uuid4())
+    now = _now_iso()
+
+    from app.storage import minio_client as mc
+
+    async with AsyncSessionLocal() as session:
+        ao = AppelOffre(
+            id=ao_id,
+            org_id=org_id,
+            user_id=current_user.id,
+            created_at=now,
+            updated_at=now,
+            reference=f"watcher-{body.scraped_ao_id}",
+            acheteur=body.acheteur or "",
+            objet=body.titre,
+            statut="brouillon",
+            pipeline_pct=0,
+        )
+        session.add(ao)
+
+        for label, minio_key in body.classified_docs.items():
+            session.add(AoDocument(
+                id=str(uuid.uuid4()),
+                ao_id=ao_id,
+                created_at=now,
+                dossier="source",
+                doc_type=label,
+                origine="upload",
+                statut="en_attente",
+                minio_key=minio_key,
+                nom_fichier=f"{label}.pdf",
+                taille_octets=mc.stat_size(minio_key),
+            ))
+
+        await session.commit()
+
+    logger.info("AO importé depuis ao-watcher: %s org=%s scraped_ao=%s", ao_id, org_id, body.scraped_ao_id)
+    return AoSummary(
+        id=ao_id,
+        reference=ao.reference,
+        acheteur=ao.acheteur,
+        objet=ao.objet,
         statut="brouillon",
         pipeline_pct=0,
         created_at=now,

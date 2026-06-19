@@ -79,6 +79,7 @@ class MPEPlatformScraper(IAOScraper):
         self.base_url = self.cfg["base_url"]
         self._browser: Browser | None = None
         self._context: BrowserContext | None = None
+        self._http: httpx.AsyncClient | None = None
 
     # ------------------------------------------------------------------ #
     #  Playwright context management                                       #
@@ -102,6 +103,20 @@ class MPEPlatformScraper(IAOScraper):
             )
         return self._context
 
+    def _get_http(self) -> httpx.AsyncClient:
+        if self._http is None:
+            self._http = httpx.AsyncClient(
+                headers={
+                    "User-Agent": random.choice(USER_AGENTS),
+                    "Accept": "text/html,application/xhtml+xml",
+                    "Accept-Language": "fr-FR,fr;q=0.9",
+                },
+                follow_redirects=True,
+                timeout=20,
+                limits=httpx.Limits(max_connections=5, max_keepalive_connections=5),
+            )
+        return self._http
+
     async def _close(self):
         if self._context:
             await self._context.close()
@@ -109,6 +124,9 @@ class MPEPlatformScraper(IAOScraper):
         if self._browser:
             await self._browser.close()
             self._browser = None
+        if self._http:
+            await self._http.aclose()
+            self._http = None
 
     # ------------------------------------------------------------------ #
     #  Listing scrape (Playwright — JS-rendered)                          #
@@ -259,16 +277,9 @@ class MPEPlatformScraper(IAOScraper):
         path = self.cfg["detail_path"].format(ref_id=external_id, org=org)
         url = self.base_url + path
 
-        headers = {
-            "User-Agent": random.choice(USER_AGENTS),
-            "Accept": "text/html,application/xhtml+xml",
-            "Accept-Language": "fr-FR,fr;q=0.9",
-        }
-
         try:
-            async with httpx.AsyncClient(headers=headers, follow_redirects=True, timeout=20) as client:
-                resp = await client.get(url)
-                resp.raise_for_status()
+            resp = await self._get_http().get(url)
+            resp.raise_for_status()
         except Exception as e:
             log.error("Detail fetch failed", url=url, error=str(e))
             return None

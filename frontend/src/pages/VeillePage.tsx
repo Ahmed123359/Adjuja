@@ -5,6 +5,7 @@ import { fetchScrapedAos, updateScrapedAoStatus } from '../api';
 import WatcherStatusBadge from '../components/veille/WatcherStatusBadge';
 import VeilleFilters from '../components/veille/VeilleFilters';
 import AoDetailPanel from '../components/veille/AoDetailPanel';
+import { useIsMobile } from '../hooks/useIsMobile';
 
 // ── Constants ────────────────────────────────────────────────────────────────
 
@@ -236,13 +237,14 @@ function AoTableRow({
 
 export default function VeillePage() {
   const { t } = useTranslation();
+  const isMobile = useIsMobile();
 
   const [filters, setFilters]           = useState<WatcherFilters>(DEFAULT_FILTERS);
   const [data, setData]                 = useState<ScrapedAoList | null>(null);
   const [loading, setLoading]           = useState(false);
   const [error, setError]               = useState<string | null>(null);
   const [selectedAo, setSelectedAo]     = useState<ScrapedAo | null>(null);
-  const [showFilters, setShowFilters]   = useState(true);
+  const [showFilters, setShowFilters]   = useState(() => !isMobile);
   const debounceRef                     = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const load = useCallback(async (f: WatcherFilters) => {
@@ -323,6 +325,7 @@ export default function VeillePage() {
           filters={filters}
           onChange={patchFilters}
           onReset={resetFilters}
+          onClose={() => setShowFilters(false)}
         />
       )}
 
@@ -343,7 +346,7 @@ export default function VeillePage() {
           }}
         >
           {/* Status tabs */}
-          <div style={{ display: 'flex', alignItems: 'center', height: '100%', gap: 0, flex: 1 }}>
+          <div style={{ display: 'flex', alignItems: 'center', height: '100%', gap: 0, flex: 1, minWidth: 0, overflowX: 'auto' }}>
             {STATUS_TABS.map(tab => (
               <button
                 key={tab}
@@ -382,8 +385,8 @@ export default function VeillePage() {
 
           {/* Right: total + toggle filters */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexShrink: 0 }}>
-            {!loading && data && (
-              <span style={{ fontSize: 12, color: 'var(--l-dim)' }}>
+            {!isMobile && !loading && data && (
+              <span style={{ fontSize: 12, color: 'var(--l-dim)', whiteSpace: 'nowrap' }}>
                 {total.toLocaleString()} {total <= 1 ? t('veille.totalSingle') : t('veille.total')}
               </span>
             )}
@@ -393,7 +396,7 @@ export default function VeillePage() {
                 display:        'flex',
                 alignItems:     'center',
                 gap:            6,
-                padding:        '6px 11px',
+                padding:        isMobile ? '6px' : '6px 11px',
                 borderRadius:   7,
                 border:         '1px solid var(--l-card-border)',
                 background:     showFilters ? 'var(--l-blue-a)' : 'transparent',
@@ -403,12 +406,13 @@ export default function VeillePage() {
                 cursor:         'pointer',
                 fontFamily:     'inherit',
                 transition:     'background .12s, color .12s',
+                flexShrink:     0,
               }}
             >
               <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 6h9.75M10.5 6a1.5 1.5 0 11-3 0m3 0a1.5 1.5 0 10-3 0M3.75 6H7.5m3 12h9.75m-9.75 0a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m-3.75 0H7.5m9-6h3.75m-3.75 0a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m-9.75 0h9.75" />
               </svg>
-              {showFilters ? t('veille.filters.hide') : t('veille.filters.show')}
+              {!isMobile && (showFilters ? t('veille.filters.hide') : t('veille.filters.show'))}
             </button>
           </div>
         </div>

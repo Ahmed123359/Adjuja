@@ -831,14 +831,14 @@ export async function fetchScrapedAos(
   if (filters.date_limite_from) p.set('date_limite_from', filters.date_limite_from);
   p.set('page', String(filters.page));
   p.set('limit', String(limit));
-  const res = await fetch(`${WATCHER_BASE}/aos?${p}`);
+  const res = await fetch(`${WATCHER_BASE}/aos?${p}`, { headers: authHeaders() });
   const json = await res.json();
   if (!res.ok) throw new Error('Erreur chargement veille.');
   return json;
 }
 
 export async function fetchScrapedAo(id: number): Promise<ScrapedAo> {
-  const res = await fetch(`${WATCHER_BASE}/aos/${id}`);
+  const res = await fetch(`${WATCHER_BASE}/aos/${id}`, { headers: authHeaders() });
   const json = await res.json();
   if (!res.ok) throw new Error('AO introuvable.');
   return json;
@@ -847,7 +847,7 @@ export async function fetchScrapedAo(id: number): Promise<ScrapedAo> {
 export async function updateScrapedAoStatus(id: number, status: string): Promise<ScrapedAo> {
   const res = await fetch(`${WATCHER_BASE}/aos/${id}/status`, {
     method: 'PATCH',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', ...authHeaders() },
     body: JSON.stringify({ status }),
   });
   const json = await res.json();
@@ -856,7 +856,7 @@ export async function updateScrapedAoStatus(id: number, status: string): Promise
 }
 
 export async function importScrapedAo(id: number): Promise<{ ao_id: string; message: string }> {
-  const res = await fetch(`${WATCHER_BASE}/aos/${id}/import`, { method: 'POST' });
+  const res = await fetch(`${WATCHER_BASE}/aos/${id}/import`, { method: 'POST', headers: authHeaders() });
   const json = await res.json();
   if (!res.ok) throw new Error(typeof json.detail === 'string' ? json.detail : 'Erreur import AO.');
   return json;

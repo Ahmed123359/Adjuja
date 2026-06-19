@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import type { ScrapedAo } from '../../types';
 import WatcherStatusBadge from './WatcherStatusBadge';
 import { updateScrapedAoStatus, importScrapedAo } from '../../api';
+import { useIsMobile } from '../../hooks/useIsMobile';
 
 type Tab = 'resume' | 'docs';
 
@@ -99,6 +100,7 @@ function formatAmount(raw: string | null): string {
 
 export default function AoDetailPanel({ ao: initialAo, onClose, onUpdated }: Props) {
   const { t } = useTranslation();
+  const isMobile = useIsMobile();
   const [ao, setAo] = useState<ScrapedAo>(initialAo);
   const [tab, setTab] = useState<Tab>('resume');
   const [loadingStatus, setLoadingStatus] = useState(false);
@@ -143,16 +145,28 @@ export default function AoDetailPanel({ ao: initialAo, onClose, onUpdated }: Pro
 
   return (
     <aside
-      style={{
-        width:          460,
-        flexShrink:     0,
-        display:        'flex',
-        flexDirection:  'column',
-        background:     'var(--l-card)',
-        borderLeft:     '1px solid var(--l-card-border)',
-        height:         '100%',
-        overflowY:      'auto',
-      }}
+      style={
+        isMobile
+          ? {
+              position:      'fixed',
+              inset:         0,
+              zIndex:        60,
+              display:       'flex',
+              flexDirection: 'column',
+              background:    'var(--l-card)',
+              overflowY:     'auto',
+            }
+          : {
+              width:          460,
+              flexShrink:     0,
+              display:        'flex',
+              flexDirection:  'column',
+              background:     'var(--l-card)',
+              borderLeft:     '1px solid var(--l-card-border)',
+              height:         '100%',
+              overflowY:      'auto',
+            }
+      }
     >
       {/* Header */}
       <div

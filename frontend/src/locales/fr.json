@@ -238,6 +238,7 @@
     "nav": {
       "dashboard": "Tableau de bord",
       "tenders": "Appels d'offres",
+      "veille": "Veille",
       "tools": "Outils",
       "settings": "Paramètres",
       "logout": "Déconnexion",
@@ -247,6 +248,7 @@
     "topbar": {
       "offres": "Tableau de bord",
       "marches": "Appels d'offres",
+      "veille": "Veille marchés publics",
       "outils": "Outils"
     }
   },

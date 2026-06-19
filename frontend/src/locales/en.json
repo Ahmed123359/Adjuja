@@ -236,6 +236,7 @@
     "nav": {
       "dashboard": "Dashboard",
       "tenders": "Tenders",
+      "veille": "Watch",
       "tools": "Tools",
       "settings": "Settings",
       "logout": "Sign out",
@@ -245,6 +246,7 @@
     "topbar": {
       "offres": "Dashboard",
       "marches": "Tenders",
+      "veille": "Public tenders watch",
       "outils": "Tools"
     }
   },
