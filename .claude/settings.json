@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell(Get-Process \"Docker Desktop\" -ErrorAction SilentlyContinue)",
+      "PowerShell(Get-Service \"com.docker.service\" -ErrorAction SilentlyContinue)",
+      "Bash(python \"C:\\\\Users\\\\PC\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\c--Users-PC-Desktop-Adjuja\\\\be3aa02f-1cc2-4ba4-bf82-a9b243b938a3\\\\scratchpad\\\\rewrite_taxonomie.py\")",
+      "Bash(docker exec *)"
+    ]
+  }
+}

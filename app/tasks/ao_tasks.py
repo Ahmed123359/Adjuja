@@ -263,6 +263,19 @@ def task_analyze_ao_context(self, ao_id: str) -> dict:
         from mistralai import Mistral
         from sqlalchemy import select
 
+        # Deja analyse cote ao-watcher (veille) avant l'import -> pas de
+        # second appel Mistral pour le meme CPS/RC, cf. import_from_watcher.
+        async with AsyncSessionLocal() as session:
+            existing = await session.execute(select(AppelOffre).where(AppelOffre.id == ao_id))
+            existing_ao = existing.scalar_one_or_none()
+            if existing_ao and existing_ao.analyse_json:
+                existing_ao.statut       = "en_traitement"
+                existing_ao.pipeline_pct = 20
+                existing_ao.updated_at   = _now_iso()
+                await session.commit()
+                logger.info("[analyze] analyse_json deja present (reuse ao-watcher) ao_id=%s", ao_id)
+                return {"ao_id": ao_id, "analyse_json": existing_ao.analyse_json}
+
         async with AsyncSessionLocal() as session:
             docs_result = await session.execute(
                 select(AoDocument).where(

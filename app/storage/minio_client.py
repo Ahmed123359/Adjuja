@@ -101,6 +101,15 @@ def delete_file(key: str) -> None:
     _client().remove_object(get_settings().minio_bucket, key)
 
 
+def stat_size(key: str) -> int:
+    """Taille en octets d'un objet MinIO déjà présent (sans le télécharger). 0 si introuvable."""
+    from app.config.settings import get_settings
+    try:
+        return _client().stat_object(get_settings().minio_bucket, key).size or 0
+    except S3Error:
+        return 0
+
+
 def is_ready() -> bool:
     try:
         from app.config.settings import get_settings

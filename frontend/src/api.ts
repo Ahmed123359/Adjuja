@@ -1,4 +1,4 @@
-import type { Model, CompanyData, GenerationResult, RagStatus, AppDefaults, UsageData, HistorySummary, HistoryEntry, User, ActeEngagementData, ChatMessage, ChatApiResponse, CompanyCase, FillerResult, MarcheSummary, MarcheDetail, AoSummary, AoResponse, AoStatus, AoDocumentOut, CompanyProfile, CompanyProfileForm, ProfileCheck } from './types';
+import type { Model, CompanyData, GenerationResult, RagStatus, AppDefaults, UsageData, HistorySummary, HistoryEntry, User, ActeEngagementData, ChatMessage, ChatApiResponse, CompanyCase, FillerResult, MarcheSummary, MarcheDetail, AoSummary, AoResponse, AoStatus, AoDocumentOut, CompanyProfile, CompanyProfileForm, ProfileCheck, ScrapedAo, ScrapedAoList, WatcherFilters, Secteur, EligibilityVerdict, ScrapedBdc, ScrapedBdcList, WatcherBdcFilters, NaturePrestation } from './types';
 
 // ── Token helpers ──────────────────────────────────────────────────────
 
@@ -812,5 +812,127 @@ export async function deleteTemplateNoteMetho(): Promise<import('./types').Compa
   });
   const json = await res.json();
   if (!res.ok) throw new Error(json.detail ?? 'Erreur suppression template.');
+  return json;
+}
+
+// ── AO Watcher (port 8001, proxied via /watcher) ────────────────────────────
+
+const WATCHER_BASE = '/watcher';
+
+export async function fetchScrapedAos(
+  filters: WatcherFilters,
+  limit = 50,
+): Promise<ScrapedAoList> {
+  const p = new URLSearchParams();
+  if (filters.status !== 'all') p.set('status', filters.status);
+  if (filters.search)           p.set('search', filters.search);
+  if (filters.categorie)        p.set('categorie', filters.categorie);
+  if (filters.region)           p.set('region', filters.region);
+  if (filters.date_limite_from) p.set('date_limite_from', filters.date_limite_from);
+  for (const code of filters.secteur_codes) p.append('secteur_codes', code);
+  p.set('page', String(filters.page));
+  p.set('limit', String(limit));
+  const res = await fetch(`${WATCHER_BASE}/aos?${p}`, { headers: authHeaders() });
+  const json = await res.json();
+  if (!res.ok) throw new Error('Erreur chargement veille.');
+  return json;
+}
+
+let secteursCache: Promise<Secteur[]> | null = null;
+
+export async function fetchSecteurs(): Promise<Secteur[]> {
+  if (!secteursCache) {
+    secteursCache = fetch(`${WATCHER_BASE}/secteurs`)
+      .then(res => {
+        if (!res.ok) throw new Error('Erreur chargement secteurs.');
+        return res.json();
+      })
+      .catch(e => { secteursCache = null; throw e; });
+  }
+  return secteursCache;
+}
+
+export async function fetchScrapedAo(id: number): Promise<ScrapedAo> {
+  const res = await fetch(`${WATCHER_BASE}/aos/${id}`, { headers: authHeaders() });
+  const json = await res.json();
+  if (!res.ok) throw new Error('AO introuvable.');
+  return json;
+}
+
+export async function updateScrapedAoStatus(id: number, status: string): Promise<ScrapedAo> {
+  const res = await fetch(`${WATCHER_BASE}/aos/${id}/status`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...authHeaders() },
+    body: JSON.stringify({ status }),
+  });
+  const json = await res.json();
+  if (!res.ok) throw new Error(typeof json.detail === 'string' ? json.detail : 'Erreur statut.');
+  return json;
+}
+
+export async function importScrapedAo(id: number): Promise<{ ao_id: string; message: string }> {
+  const res = await fetch(`${WATCHER_BASE}/aos/${id}/import`, { method: 'POST', headers: authHeaders() });
+  const json = await res.json();
+  if (!res.ok) throw new Error(typeof json.detail === 'string' ? json.detail : 'Erreur import AO.');
+  return json;
+}
+
+export async function analyzeScrapedAo(id: number): Promise<EligibilityVerdict> {
+  const res = await fetch(`${WATCHER_BASE}/aos/${id}/verdict`, { method: 'POST', headers: authHeaders() });
+  const json = await res.json();
+  if (!res.ok) throw new Error(typeof json.detail === 'string' ? json.detail : 'Erreur analyse AO.');
+  return json;
+}
+
+// ── BDC Watcher (Bons de commande) ──────────────────────────────────────────
+
+export async function fetchScrapedBdc(
+  filters: WatcherBdcFilters,
+  limit = 50,
+): Promise<ScrapedBdcList> {
+  const p = new URLSearchParams();
+  if (filters.status !== 'all') p.set('status', filters.status);
+  if (filters.search)           p.set('search', filters.search);
+  if (filters.categorie)        p.set('categorie', filters.categorie);
+  if (filters.nature_prestation) p.set('nature_prestation', filters.nature_prestation);
+  if (filters.region)           p.set('region', filters.region);
+  if (filters.date_limite_from) p.set('date_limite_from', filters.date_limite_from);
+  p.set('page', String(filters.page));
+  p.set('limit', String(limit));
+  const res = await fetch(`${WATCHER_BASE}/bdc?${p}`, { headers: authHeaders() });
+  const json = await res.json();
+  if (!res.ok) throw new Error('Erreur chargement bons de commande.');
+  return json;
+}
+
+let naturesPrestationCache: Promise<NaturePrestation[]> | null = null;
+
+export async function fetchNaturesPrestation(): Promise<NaturePrestation[]> {
+  if (!naturesPrestationCache) {
+    naturesPrestationCache = fetch(`${WATCHER_BASE}/bdc/nature-prestation`)
+      .then(res => {
+        if (!res.ok) throw new Error('Erreur chargement natures de prestation.');
+        return res.json();
+      })
+      .catch(e => { naturesPrestationCache = null; throw e; });
+  }
+  return naturesPrestationCache;
+}
+
+export async function fetchScrapedBdcOne(id: number): Promise<ScrapedBdc> {
+  const res = await fetch(`${WATCHER_BASE}/bdc/${id}`, { headers: authHeaders() });
+  const json = await res.json();
+  if (!res.ok) throw new Error('Bon de commande introuvable.');
+  return json;
+}
+
+export async function updateBdcStatus(id: number, status: string): Promise<ScrapedBdc> {
+  const res = await fetch(`${WATCHER_BASE}/bdc/${id}/status`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...authHeaders() },
+    body: JSON.stringify({ status }),
+  });
+  const json = await res.json();
+  if (!res.ok) throw new Error(typeof json.detail === 'string' ? json.detail : 'Erreur statut.');
   return json;
 }

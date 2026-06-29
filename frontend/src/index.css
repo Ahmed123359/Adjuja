@@ -350,6 +350,13 @@
 input[type="range"] {
   accent-color: hsl(var(--primary));
 }
+select {
+  color-scheme: light dark;
+}
+.dark select {
+  color-scheme: dark;
+}
 option {
-  background: white;
+  background: var(--l-card);
+  color: var(--l-text);
 }

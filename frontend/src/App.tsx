@@ -74,7 +74,7 @@ export default function App({
   const [langue, setLangue] = useState<"fr" | "en">("fr");
 
   // Navigation principale
-  const [mainTab, setMainTab] = useState<"offres" | "marches" | "outils">(
+  const [mainTab, setMainTab] = useState<"offres" | "marches" | "outils" | "veille">(
     "offres",
   );
   const [outilSection, setOutilSection] = useState<Outil>("signatures");

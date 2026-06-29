@@ -94,7 +94,7 @@ export default function FloatingChat({ provider, model }: Props) {
                     <Sparkles className="h-4 w-4 text-primary" />
                   </div>
                   <div>
-                    <h3 className="text-sm font-semibold text-foreground">Assistant OffrIA</h3>
+                    <h3 className="text-sm font-semibold text-foreground">Assistant ADJUJA</h3>
                     <div className="flex items-center gap-1.5">
                       <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
                       <span className="text-xs text-muted-foreground">En ligne · {provider}</span>
@@ -130,7 +130,7 @@ export default function FloatingChat({ provider, model }: Props) {
                     <Sparkles className="h-3.5 w-3.5 text-primary" />
                   </div>
                   <div className="flex flex-col gap-1 max-w-[85%]">
-                    <span className="text-xs font-medium text-muted-foreground">Assistant OffrIA</span>
+                    <span className="text-xs font-medium text-muted-foreground">Assistant ADJUJA</span>
                     <div className="rounded-2xl rounded-tl-none bg-muted/50 px-4 py-2.5 text-sm border border-border/20">
                       <p>Bonjour ! Je peux vous aider sur vos appels d'offres et documents. Que souhaitez-vous savoir ?</p>
                     </div>

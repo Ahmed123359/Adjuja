@@ -65,7 +65,7 @@ function DocMockup() {
         {["#ff5f57","#febc2e","#28c840"].map(c => (
           <div key={c} style={{ width: 7, height: 7, borderRadius: "50%", background: c }} />
         ))}
-        <span style={{ color: "var(--l-text-dim)", marginLeft: 6 }}>DCE-ONCF-2025.pdf</span>
+        <span style={{ color: "var(--l-text-dim)", marginLeft: 6 }}>DAO-ONCF-2025.pdf</span>
       </div>
       <div style={{ padding: "12px", display: "flex", gap: 8 }}>
         <div style={{ flex: 1 }}>
@@ -121,7 +121,7 @@ function WritingMockup() {
         borderBottom: "1px solid var(--l-mk-border)",
         display: "flex", alignItems: "center", justifyContent: "space-between",
       }}>
-        <span style={{ color: "var(--l-text-dim)" }}>memoire_technique.docx</span>
+        <span style={{ color: "var(--l-text-dim)" }}>offre_technique.docx</span>
         <span style={{ color: "#22c55e", fontWeight: 600, fontSize: 9 }}>Génération en cours...</span>
       </div>
       <div style={{ padding: "12px" }}>
@@ -216,7 +216,7 @@ function AOTableMockup() {
 
 function PipelineMockup() {
   const steps = [
-    { label: "DCE reçu",   done: true,  active: false },
+    { label: "DAO reçu",   done: true,  active: false },
     { label: "Analyse",    done: true,  active: false },
     { label: "Rédaction",  done: false, active: true  },
     { label: "Validation", done: false, active: false },
@@ -316,7 +316,7 @@ export default function FeaturesSection() {
         {/* Bento grid */}
         <div className="feat-grid">
 
-          {/* A - Analyse DCE */}
+          {/* A - Analyse DAO */}
           <div className="feat-a feat-card">
             <DocMockup />
             <div>

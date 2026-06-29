@@ -145,7 +145,7 @@ export default function LeftPanel(props: Props) {
     ws["!cols"] = [{ wch: 22 }, { wch: 65 }];
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Profil ADJUJA");
-    XLSX.writeFile(wb, "profil_entreprise_offria.xlsx");
+    XLSX.writeFile(wb, "profil_entreprise_adjuja.xlsx");
     flash("Export réussi ✓");
   }
 

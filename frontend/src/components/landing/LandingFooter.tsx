@@ -55,7 +55,7 @@ export default function LandingFooter({ onEnterApp }: { onEnterApp: () => void }
 
           {/* Logo — isolated left column */}
           <div className="flex flex-col gap-0">
-            <img src="/logo-adjuja.png" alt="ADJUJA" className="h-8 w-auto object-contain object-left" />
+            <img src="/logo-adjuja.png" alt="ADJUJA" className="h-14 w-auto object-contain object-left" />
           </div>
 
           {/* Navigation */}

@@ -144,15 +144,18 @@ export default function HeroSection({
           </span>
         </h1>
 
-        <p className="m-0 mt-6 max-w-[440px] text-[15px] leading-[1.7] text-[rgba(220,232,250,0.7)]">
-          Du DCE au dossier signé, automatiquement. Analysez, redigez, exportez en minutes.
+        <p
+          className="m-0 mt-6 max-w-[440px] text-[15px] leading-[1.7] text-[rgba(238,244,255,0.92)]"
+          style={{ textShadow: "0 2px 18px rgba(5,8,20,0.9), 0 1px 4px rgba(5,8,20,0.95)" }}
+        >
+          Du DAO au dossier signé, automatiquement. Analysez, redigez, exportez en minutes.
         </p>
 
         <button
           onClick={onEnterApp}
           className="mt-8 inline-flex cursor-pointer items-center gap-[10px] rounded-full border-0 bg-[linear-gradient(135deg,#3248CE_0%,#2B79E8_100%)] px-8 py-[14px] text-[13px] font-bold tracking-[.04em] text-white shadow-[0_12px_32px_rgba(43,121,232,0.35)] transition-all hover:-translate-y-px hover:shadow-[0_16px_40px_rgba(43,121,232,0.45)] hover:brightness-110 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[3px] focus-visible:outline-[#1BC9A8]/70"
         >
-          Déposer mon premier DCE
+          Déposer mon premier DAO
           <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M5 12h14M12 5l7 7-7 7" />
           </svg>

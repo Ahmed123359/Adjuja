@@ -3,15 +3,17 @@ import uuid
 from datetime import datetime, timezone
 
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, status
+from pydantic import BaseModel
 from typing import Annotated
 from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 
 from app.api.dependencies import get_current_user
 from app.db.base import AsyncSessionLocal
-from app.db.models import AoDocument, AppelOffre
+from app.db.models import AoDocument, AppelOffre, CompanyProfile
 from app.models.ao_pipeline import AoCreate, AoDocumentOut, AoResponse, AoStatus, AoSummary
 from app.models.user import UserPublic
+from app.services.eligibility_service import compute_verdict
 from app.services.security.input_sanitizer import validate_upload_size
 
 router = APIRouter(prefix="/ao", tags=["Appels d'offres"])
@@ -91,6 +93,104 @@ async def create_ao(
         created_at=now,
         updated_at=now,
     )
+
+
+class FromWatcherPayload(BaseModel):
+    scraped_ao_id: int
+    titre: str
+    acheteur: str | None = None
+    date_limite: str | None = None
+    categorie: str | None = None
+    region: str | None = None
+    classified_docs: dict[str, str] = {}
+    analyse_json: dict | None = None
+
+
+class EligibilityCheckPayload(BaseModel):
+    analyse_json: dict
+    date_limite: str | None = None
+
+
+@router.post("/from-watcher", response_model=AoSummary, status_code=status.HTTP_201_CREATED)
+async def import_from_watcher(
+    body: FromWatcherPayload,
+    current_user: UserPublic = Depends(get_current_user),
+) -> AoSummary:
+    """Crée un AO à partir d'un appel d'offres favorisé dans la veille (ao-watcher).
+    Les documents (classified_docs) sont déjà sur MinIO (bucket partagé) : on les référence
+    directement sans les re-télécharger.
+    """
+    org_id = current_user.org_id or current_user.id
+    ao_id = str(uuid.uuid4())
+    now = _now_iso()
+
+    from app.storage import minio_client as mc
+
+    async with AsyncSessionLocal() as session:
+        ao = AppelOffre(
+            id=ao_id,
+            org_id=org_id,
+            user_id=current_user.id,
+            created_at=now,
+            updated_at=now,
+            reference=f"watcher-{body.scraped_ao_id}",
+            acheteur=body.acheteur or "",
+            objet=body.titre,
+            statut="brouillon",
+            pipeline_pct=0,
+            analyse_json=body.analyse_json,
+        )
+        session.add(ao)
+
+        for label, minio_key in body.classified_docs.items():
+            session.add(AoDocument(
+                id=str(uuid.uuid4()),
+                ao_id=ao_id,
+                created_at=now,
+                dossier="source",
+                doc_type=label,
+                origine="upload",
+                statut="en_attente",
+                minio_key=minio_key,
+                nom_fichier=f"{label}.pdf",
+                taille_octets=mc.stat_size(minio_key),
+            ))
+
+        await session.commit()
+
+    logger.info("AO importé depuis ao-watcher: %s org=%s scraped_ao=%s", ao_id, org_id, body.scraped_ao_id)
+    return AoSummary(
+        id=ao_id,
+        reference=ao.reference,
+        acheteur=ao.acheteur,
+        objet=ao.objet,
+        statut="brouillon",
+        pipeline_pct=0,
+        created_at=now,
+        updated_at=now,
+    )
+
+
+@router.post("/eligibility-check")
+async def eligibility_check(
+    body: EligibilityCheckPayload,
+    current_user: UserPublic = Depends(get_current_user),
+) -> dict:
+    """
+    Calcule le verdict Go/No-Go pour l'org de l'appelant en comparant
+    analyse_json (deja calcule cote ao-watcher, un seul appel Mistral par AO)
+    aux donnees d'eligibilite du profil entreprise. Aucun appel IA ici :
+    comparaison Python deterministe (app/services/eligibility_service.py).
+    """
+    org_id = current_user.org_id or current_user.id
+    async with AsyncSessionLocal() as session:
+        result = await session.execute(
+            select(CompanyProfile).where(CompanyProfile.org_id == org_id)
+        )
+        profile = result.scalar_one_or_none()
+
+    extra = profile.extra if profile and profile.extra else {}
+    return compute_verdict(body.analyse_json, body.date_limite, extra)
 
 
 @router.get("", response_model=list[AoSummary])
