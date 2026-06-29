@@ -17,7 +17,7 @@
       "titleBlue": "to win more contracts.",
       "cta": "See all features",
       "analyse": {
-        "title": "DCE Analysis",
+        "title": "RFP Analysis",
         "desc": "AI extracts every key clause from the tender specification in seconds."
       },
       "gen": {
@@ -30,24 +30,24 @@
       },
       "pipeline": {
         "title": "Automated pipeline",
-        "desc": "From DCE receipt to final submission, every step is orchestrated and tracked."
+        "desc": "From RFP receipt to final submission, every step is orchestrated and tracked."
       }
     },
     "how": {
       "title": "Three steps.",
       "titleBlue": "A complete tender file.",
-      "t1Title": "Upload your DCE",
-      "t1Desc": "Drop the PDF into ADJUJA. The AI extracts in seconds the award criteria, required documents, and technical constraints. You read nothing, configure nothing.",
+      "t1Title": "Upload your RFP",
+      "t1Desc": "Drop the document into ADJUJA. The AI extracts in seconds the award criteria, required documents, and technical constraints. You read nothing, configure nothing.",
       "t2Title": "AI writes. You review.",
-      "t2Desc": "While you get on with your day, ADJUJA generates your full technical memo, section by section, tailored to your profile and the tender's exact criteria. Zero manual writing.",
-      "t3Title": "Submit. Win.",
-      "t3Desc": "Download your dossier as a ZIP: technical memo, engagement act, declaration of honour, initialled CPS. Every document signed, every box ticked. Ready to submit.",
+      "t2Desc": "While you get on with your day, ADJUJA generates your full technical proposal, section by section, tailored to your profile and the tender's exact criteria. Zero manual writing.",
+      "t3Title": "Sign and download",
+      "t3Desc": "Download your dossier as a ZIP: technical proposal, engagement act, declaration of honour, initialled CPS. Every document signed, every box ticked. Ready to submit.",
       "t4Title": "Track your performance",
       "t4Desc": "See your win rate, number of contracts won, and how your results evolve month by month."
     },
     "cta": {
       "title": "Start winning more contracts today.",
-      "subtitle": "Upload your first DCE and get a complete response in under 2 minutes.",
+      "subtitle": "Upload your first RFP and get a complete response in under 2 minutes.",
       "button": "Free trial",
       "bullet1": "Set up in 2 minutes",
       "bullet2": "No credit card",
@@ -281,13 +281,32 @@
       "error": "Error saving.",
       "sections": {
         "company": "Company information",
+        "activites": "Activity sectors",
+        "qualifications": "Qualifications and references",
         "legal": "Legal identifiers",
         "manager": "Manager",
         "contact": "Contact"
       },
+      "activitesHint": "Select the sectors that match your activity. Used to filter tender monitoring and, soon, to notify you about tenders matching your profile.",
+      "qualificationsHint": "This information is used to automatically assess your eligibility (Go/No-Go) on scraped tenders, by comparing it against requirements extracted from the CPS and RC.",
+      "addClassification": "Add a classification",
+      "addCertification": "Add",
+      "addReference": "Add a reference",
+      "certificationPh": "E.g. ISO 9001:2015",
+      "caPh": "E.g. 12000000",
       "fields": {
         "nom_entreprise": "Company name",
         "secteur": "Industry",
+        "classifications": "Classifications (construction qualification)",
+        "domaine": "Domain",
+        "categorie": "Category",
+        "classe": "Class",
+        "certifications": "Certifications",
+        "references_similaires": "Similar references",
+        "intitule": "Project title",
+        "montant": "Amount (Dhs)",
+        "annee": "Year",
+        "chiffre_affaires_moyen": "Average turnover (Dhs)",
         "ice": "ICE",
         "rc": "RC",
         "if_fiscal": "Tax ID",
@@ -417,6 +436,10 @@
   },
   "veille": {
     "title": "Public procurement watch",
+    "hub": {
+      "tabMarches": "Public tenders",
+      "tabBdc": "Purchase orders"
+    },
     "tabs": {
       "all": "All",
       "new": "New",
@@ -424,8 +447,11 @@
       "imported": "Imported"
     },
     "filters": {
+      "title": "Filters",
       "search": "Search a tender, a buyer...",
-      "categorie": "Category",
+      "activites": "Activities",
+      "categorie": "Main category",
+      "categorieAll": "All categories",
       "categoriePh": "E.g. Works",
       "region": "Region",
       "regionPh": "E.g. Casablanca",
@@ -433,6 +459,19 @@
       "reset": "Reset",
       "hide": "Hide filters",
       "show": "Filters"
+    },
+    "categories": {
+      "Travaux": "Works",
+      "Fournitures": "Supplies",
+      "Services": "Services"
+    },
+    "secteurPicker": {
+      "placeholder": "All activities",
+      "selectedCount": "{{count}} activity selected",
+      "selectedCount_other": "{{count}} activities selected",
+      "searchPh": "Search an activity...",
+      "loading": "Loading...",
+      "empty": "No activity found."
     },
     "table": {
       "acheteur": "Buyer",
@@ -461,15 +500,29 @@
       "zipReady": "Documents available",
       "zipError": "Download error",
       "openSource": "View on portal",
+      "showMore": "Show more",
+      "showLess": "Show less",
       "tabResume": "Summary",
       "tabDocs": "Documents",
+      "tabGoNoGo": "Go/No-Go",
       "noDesc": "No description available.",
       "budget": "Budget",
       "caution": "Deposit",
       "datePub": "Published",
       "dateLimite": "Deadline",
       "location": "Location",
-      "source": "Source"
+      "source": "Source",
+      "goNoGo": {
+        "needFavorite": "Add this tender to your favorites and wait for documents to download before running the analysis.",
+        "cta": "Run analysis",
+        "analyzing": "Analyzing...",
+        "error": "Error during analysis.",
+        "verdict": {
+          "go": "GO: eligible",
+          "risque": "Review needed: points of attention",
+          "no_go": "NO-GO: criteria not met"
+        }
+      }
     },
     "empty": {
       "allTitle": "No tenders found",
@@ -489,5 +542,29 @@
     },
     "total": "results",
     "totalSingle": "result"
+  },
+  "bdc": {
+    "filters": {
+      "search": "Search a purchase order, a buyer...",
+      "naturePrestation": "Service type"
+    },
+    "naturePicker": {
+      "placeholder": "All service types",
+      "searchPh": "Search a service type...",
+      "loading": "Loading...",
+      "empty": "No service type found."
+    },
+    "table": {
+      "statut": "Status",
+      "annule": "Cancelled"
+    },
+    "detail": {
+      "annule": "Cancelled",
+      "naturePrestation": "Service type",
+      "downloadDoc": "Download the file",
+      "downloadingDoc": "Downloading file...",
+      "docReady": "File ready",
+      "docError": "Error downloading file"
+    }
   }
 }

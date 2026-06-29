@@ -6,6 +6,7 @@ import WatcherStatusBadge from '../components/veille/WatcherStatusBadge';
 import VeilleFilters from '../components/veille/VeilleFilters';
 import AoDetailPanel from '../components/veille/AoDetailPanel';
 import { useIsMobile } from '../hooks/useIsMobile';
+import { formatTitre, splitReservationClause } from '../utils/formatTitre';
 
 // ── Constants ────────────────────────────────────────────────────────────────
 
@@ -17,6 +18,7 @@ const DEFAULT_FILTERS: WatcherFilters = {
   categorie:        '',
   region:           '',
   date_limite_from: '',
+  secteur_codes:    [],
   page:             1,
 };
 
@@ -184,7 +186,7 @@ function AoTableRow({
       {/* Titre */}
       <td style={{ padding: '10px 14px', borderBottom: '1px solid var(--l-card-border)' }}>
         <p style={{ margin: 0, fontSize: 13, color: 'var(--l-text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 340 }}>
-          {ao.titre}
+          {formatTitre(splitReservationClause(ao.titre).main)}
         </p>
       </td>
 
@@ -297,7 +299,10 @@ export default function VeillePage() {
   }, [handleRowUpdated]);
 
   const activeTab = filters.status as StatusTab;
-  const hasActiveTextFilters = !!(filters.search || filters.categorie || filters.region || filters.date_limite_from);
+  const hasActiveTextFilters = !!(
+    filters.search || filters.categorie || filters.region || filters.date_limite_from
+    || filters.secteur_codes.length > 0
+  );
   const total = data?.total ?? 0;
   const totalPages = Math.ceil(total / PAGE_LIMIT);
 
@@ -532,6 +537,7 @@ export default function VeillePage() {
       {/* Detail panel */}
       {selectedAo && (
         <AoDetailPanel
+          key={selectedAo.id}
           ao={selectedAo}
           onClose={() => setSelectedAo(null)}
           onUpdated={handleRowUpdated}

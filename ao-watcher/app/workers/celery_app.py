@@ -10,6 +10,8 @@ celery_app = Celery(
     include=[
         "app.workers.tasks.scrape_tasks",
         "app.workers.tasks.download_tasks",
+        "app.workers.tasks.scrape_bdc_tasks",
+        "app.workers.tasks.download_bdc_tasks",
     ],
 )
 
@@ -25,6 +27,10 @@ celery_app.conf.update(
         "scrape-all-mpe-portals": {
             "task": "app.workers.tasks.scrape_tasks.run_scrape_pipeline",
             "schedule": crontab(hour=f"*/{settings.scrape_interval_hours}", minute=0),
+        },
+        "scrape-bdc": {
+            "task": "app.workers.tasks.scrape_bdc_tasks.run_scrape_bdc_pipeline",
+            "schedule": crontab(hour=f"*/{settings.scrape_interval_hours}", minute=15),
         },
     },
 )

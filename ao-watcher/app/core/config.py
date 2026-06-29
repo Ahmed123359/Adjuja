@@ -17,6 +17,7 @@ class Settings(BaseSettings):
     main_app_host: str = "host.docker.internal"
     main_app_port: int = 8000
     scrape_interval_hours: int = 6
+    mistral_api_key: str = ""
 
 
 settings = Settings()

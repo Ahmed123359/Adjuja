@@ -2,10 +2,23 @@ from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
+from app.core.taxonomie import SECTEURS
+from app.modules.ao_scraper.analysis import AnalysisError, analyze_ao
 from app.modules.ao_scraper.repository import AoRepository
-from app.modules.ao_scraper.schemas import AoListOut, AoOut, ImportResult, StatusUpdate
+from app.modules.ao_scraper.schemas import AoListOut, AoOut, ImportResult, SecteurOut, StatusUpdate, VerdictOut
 
 router = APIRouter(prefix="/aos", tags=["ao-watcher"])
+secteurs_router = APIRouter(prefix="/secteurs", tags=["taxonomie"])
+
+
+@secteurs_router.get("", response_model=list[SecteurOut])
+async def list_secteurs():
+    """Nomenclature complete des secteurs d'activite (reference statique,
+    voir app.core.taxonomie). Pas d'auth : donnee de reference publique."""
+    return [
+        SecteurOut(code=s.code, label=s.label, activites=list(s.activites), categorie=s.categorie)
+        for s in SECTEURS
+    ]
 
 VALID_STATUSES = {"new", "seen", "favorited", "imported"}
 
@@ -26,6 +39,7 @@ async def list_aos(
     categorie: str | None = Query(None),
     search: str | None = Query(None),
     date_limite_from: str | None = Query(None),
+    secteur_codes: list[str] | None = Query(None),
     page: int = Query(1, ge=1),
     limit: int = Query(50, ge=1, le=200),
     db: AsyncSession = Depends(get_db),
@@ -37,6 +51,7 @@ async def list_aos(
         categorie=categorie,
         search=search,
         date_limite_from=date_limite_from,
+        secteur_codes=secteur_codes,
         page=page,
         limit=limit,
     )
@@ -118,6 +133,7 @@ async def import_to_pipeline(
         "categorie": ao.categorie,
         "region": ao.region,
         "classified_docs": ao.classified_docs,
+        "analyse_json": ao.analyse_json,
     }
 
     try:
@@ -132,3 +148,57 @@ async def import_to_pipeline(
 
     await repo.update_status(ao_id, "imported")
     return ImportResult(ao_id=data["id"], message="AO imported successfully")
+
+
+@router.post("/{ao_id}/verdict", response_model=VerdictOut)
+async def get_verdict(
+    ao_id: int,
+    db: AsyncSession = Depends(get_db),
+    auth: str = Depends(_require_auth_header),
+):
+    """
+    Analyse CPS/RC (cache : un seul appel Mistral par AO, jamais repete) puis
+    demande a l'app principale de calculer le verdict Go/No-Go pour l'org de
+    l'appelant (resolu via le JWT relaye, ao-watcher ne le decode pas).
+    """
+    repo = AoRepository(db)
+    ao = await repo.get_by_id(ao_id)
+    if not ao:
+        raise HTTPException(status_code=404, detail="AO not found")
+
+    if ao.analyse_json:
+        analyse_json = ao.analyse_json
+    else:
+        try:
+            analyse_json = await analyze_ao(ao)
+        except AnalysisError as e:
+            raise HTTPException(status_code=400, detail=str(e))
+        await repo.update_analyse_json(ao_id, analyse_json)
+
+    import httpx
+    from app.core.config import settings
+
+    main_app_url = f"http://{settings.main_app_host}:{settings.main_app_port}/api/v1/ao/eligibility-check"
+    try:
+        async with httpx.AsyncClient(timeout=30) as client:
+            resp = await client.post(
+                main_app_url,
+                json={
+                    "analyse_json": analyse_json,
+                    "date_limite": ao.date_limite.isoformat() if ao.date_limite else None,
+                },
+                headers={"Authorization": auth},
+            )
+            resp.raise_for_status()
+            verdict_data = resp.json()
+    except httpx.HTTPStatusError as e:
+        raise HTTPException(status_code=502, detail=f"Main app rejected eligibility check: {e.response.text}")
+    except Exception as e:
+        raise HTTPException(status_code=502, detail=f"Main app unreachable: {e}")
+
+    return VerdictOut(
+        analyse_json=analyse_json,
+        verdict=verdict_data["verdict"],
+        raisons=verdict_data["raisons"],
+        details=verdict_data["details"],
+    )

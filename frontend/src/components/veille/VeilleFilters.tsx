@@ -1,6 +1,10 @@
 import { useTranslation } from 'react-i18next';
-import type { WatcherFilters } from '../../types';
+import type { AoCategorie, WatcherFilters } from '../../types';
 import { useIsMobile } from '../../hooks/useIsMobile';
+import SecteurPicker from './SecteurPicker';
+import CategorieSelect from './CategorieSelect';
+
+const CATEGORIES: AoCategorie[] = ['Travaux', 'Fournitures', 'Services'];
 
 type Props = {
   filters: WatcherFilters;
@@ -46,8 +50,14 @@ export default function VeilleFilters({ filters, onChange, onReset, onClose }: P
   const { t } = useTranslation();
   const isMobile = useIsMobile();
 
+  const categorieOptions: { value: AoCategorie | ''; label: string }[] = [
+    { value: '', label: t('veille.filters.categorieAll') },
+    ...CATEGORIES.map(cat => ({ value: cat, label: t(`veille.categories.${cat}`) })),
+  ];
+
   const hasActiveFilters =
-    filters.search || filters.categorie || filters.region || filters.date_limite_from;
+    filters.search || filters.categorie || filters.region || filters.date_limite_from
+    || filters.secteur_codes.length > 0;
 
   return (
     <>
@@ -99,7 +109,7 @@ export default function VeilleFilters({ filters, onChange, onReset, onClose }: P
         }}
       >
         <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--l-text)' }}>
-          Filtres
+          {t('veille.filters.title')}
         </span>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
           {hasActiveFilters && (
@@ -166,15 +176,25 @@ export default function VeilleFilters({ filters, onChange, onReset, onClose }: P
           />
         </div>
 
-        {/* Categorie */}
+        {/* Categorie principale : choisie en premier, cadre la liste d'activites ci-dessous */}
         <FilterSection label={t('veille.filters.categorie')}>
-          <input
-            value={filters.categorie}
-            onChange={e => onChange({ categorie: e.target.value, page: 1 })}
-            placeholder={t('veille.filters.categoriePh')}
-            style={inputStyle}
-            onFocus={e  => (e.currentTarget.style.borderColor = 'var(--l-blue)')}
-            onBlur={e   => (e.currentTarget.style.borderColor = 'var(--l-card-border)')}
+          <CategorieSelect
+            value={filters.categorie as AoCategorie | ''}
+            onChange={cat => onChange({
+              categorie: cat,
+              secteur_codes: [], // les activites selectionnees ne s'appliquent plus forcement a la nouvelle categorie
+              page: 1,
+            })}
+            options={categorieOptions}
+          />
+        </FilterSection>
+
+        {/* Activites (secteurs) : narrowees par la categorie choisie ci-dessus */}
+        <FilterSection label={t('veille.filters.activites')}>
+          <SecteurPicker
+            selected={filters.secteur_codes}
+            onChange={codes => onChange({ secteur_codes: codes, page: 1 })}
+            categorieFilter={filters.categorie as AoCategorie | ''}
           />
         </FilterSection>
 

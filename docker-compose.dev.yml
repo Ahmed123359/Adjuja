@@ -195,6 +195,7 @@ services:
       MINIO_SECRET_KEY: ${MINIO_SECRET_KEY:-offria_dev_secret}
       MINIO_BUCKET: offria
       MAIN_APP_PORT: 8000
+      MISTRAL_API_KEY: ${MISTRAL_API_KEY:-}
     extra_hosts:
       - "host.docker.internal:host-gateway"
     volumes:

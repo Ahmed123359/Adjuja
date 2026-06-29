@@ -28,6 +28,8 @@ class AoOut(BaseModel):
     zip_downloaded_at: datetime | None
     zip_error: str | None
     classified_docs: dict | None
+    secteur_codes: list[str] | None
+    analyse_json: dict | None
 
 
 class AoListOut(BaseModel):
@@ -44,3 +46,17 @@ class StatusUpdate(BaseModel):
 class ImportResult(BaseModel):
     ao_id: str
     message: str
+
+
+class SecteurOut(BaseModel):
+    code: str
+    label: str
+    activites: list[str]
+    categorie: str
+
+
+class VerdictOut(BaseModel):
+    analyse_json: dict
+    verdict: str
+    raisons: list[str]
+    details: dict

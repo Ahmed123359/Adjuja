@@ -58,7 +58,7 @@ export default function ChatPanel({ provider, model }: Props) {
           </svg>
         </div>
         <div>
-          <h2 className="font-semibold text-foreground text-sm">Assistant OffrIA</h2>
+          <h2 className="font-semibold text-foreground text-sm">Assistant ADJUJA</h2>
           <p className="text-xs text-muted-foreground">Posez vos questions sur vos AOs et documents</p>
         </div>
         {messages.length > 0 && (

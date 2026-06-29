@@ -2,11 +2,13 @@ from datetime import datetime, timezone
 
 import structlog
 from sqlalchemy import select, update
+from sqlalchemy.dialects.postgresql import array
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.models import ScrapedAo
 from app.modules.ao_scraper.base import AoData
+from app.modules.ao_scraper.matching import match_secteurs
 
 log = structlog.get_logger(__name__)
 
@@ -41,6 +43,7 @@ class AoRepository:
         categorie: str | None = None,
         search: str | None = None,
         date_limite_from: str | None = None,
+        secteur_codes: list[str] | None = None,
         page: int = 1,
         limit: int = 50,
     ) -> tuple[list[ScrapedAo], int]:
@@ -59,6 +62,10 @@ class AoRepository:
             )
         if date_limite_from:
             q = q.where(ScrapedAo.date_limite >= date_limite_from)
+        if secteur_codes:
+            # Postgres jsonb "?|" : l'AO matche si au moins un des codes
+            # demandes est present dans son tableau secteur_codes.
+            q = q.where(ScrapedAo.secteur_codes.op("?|")(array(secteur_codes)))
 
         # Count
         from sqlalchemy import func
@@ -142,6 +149,7 @@ class AoRepository:
                 "caution": ao.caution,
                 "description": ao.description,
                 "zip_url": ao.zip_url,
+                "secteur_codes": match_secteurs(ao.titre, ao.secteur, ao.description),
                 "status": "new",
             }
             for ao in aos
@@ -162,6 +170,7 @@ class AoRepository:
                 "budget_estime": stmt.excluded.budget_estime,
                 "caution": stmt.excluded.caution,
                 "zip_url": stmt.excluded.zip_url,
+                "secteur_codes": stmt.excluded.secteur_codes,
                 "updated_at": datetime.now(timezone.utc),
                 # Preserve: status, classified_docs, zip_minio_key, zip_downloaded_at
             },
@@ -196,5 +205,13 @@ class AoRepository:
 
         await self.db.execute(
             update(ScrapedAo).where(ScrapedAo.id == ao_id).values(**values)
+        )
+        await self.db.commit()
+
+    async def update_analyse_json(self, ao_id: int, analyse_json: dict) -> None:
+        await self.db.execute(
+            update(ScrapedAo)
+            .where(ScrapedAo.id == ao_id)
+            .values(analyse_json=analyse_json, updated_at=datetime.now(timezone.utc))
         )
         await self.db.commit()

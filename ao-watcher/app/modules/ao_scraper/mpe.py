@@ -18,6 +18,21 @@ log = structlog.get_logger(__name__)
 
 SCRAPERS_DIR = Path(__file__).parent.parent.parent.parent / "scrapers"
 
+
+def _collapse_duplicate_title(text: str, anchor_len: int = 40) -> str:
+    """Le site source duplique parfois l'objet dans le meme element DOM
+    (apercu tronque suivi du texte complet, ou tooltip dupliquant le texte
+    visible) -- get_text() capture les deux a la suite. Detecte la
+    repetition via un fragment-ancre et ne garde que la deuxieme occurrence
+    (la complete, jamais tronquee par une virgule de coupure)."""
+    if len(text) < anchor_len * 2:
+        return text
+    anchor = text[:anchor_len]
+    pos = text.find(anchor, anchor_len)
+    if pos == -1:
+        return text
+    return text[pos:].strip()
+
 USER_AGENTS = [
     "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/129.0.0.0 Safari/537.36",
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/129.0.0.0 Safari/537.36",
@@ -247,6 +262,7 @@ class MPEPlatformScraper(IAOScraper):
                 titre = titre_el.get_text(strip=True) if titre_el else ""
                 if titre:
                     titre = re.sub(r"^Objet\s*:", "", titre).strip()
+                    titre = _collapse_duplicate_title(titre)
 
                 # Lieu
                 lieu_el = row.select_one(cols.get("lieu", ""))
@@ -293,7 +309,7 @@ class MPEPlatformScraper(IAOScraper):
             el = soup.find(id=f"{prefix}{suffix}")
             return el.get_text(strip=True) if el else ""
 
-        titre = get_field("titre")
+        titre = _collapse_duplicate_title(get_field("titre"))
         acheteur = get_field("acheteur")
         date_limite_raw = get_field("date_limite")
         categorie = get_field("categorie")

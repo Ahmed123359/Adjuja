@@ -19,7 +19,7 @@
       "titleBlue": "pour remporter plus de marchés.",
       "cta": "Voir toutes les fonctionnalités",
       "analyse": {
-        "title": "Analyse du DCE",
+        "title": "Analyse du DAO",
         "desc": "L'IA extrait chaque clause clé du dossier de consultation en quelques secondes."
       },
       "gen": {
@@ -32,24 +32,24 @@
       },
       "pipeline": {
         "title": "Pipeline automatisé",
-        "desc": "De la réception du DCE à la soumission finale, chaque étape est orchestrée et tracée."
+        "desc": "De la réception du DAO à la soumission finale, chaque étape est orchestrée et tracée."
       }
     },
     "how": {
       "title": "Trois étapes.",
       "titleBlue": "Un dossier complet.",
-      "t1Title": "Déposez votre DCE",
-      "t1Desc": "Glissez le PDF du dossier dans ADJUJA. L'IA extrait en quelques secondes les critères d'attribution, les pièces exigées et les contraintes techniques. Vous ne lisez rien, vous ne configurez rien.",
+      "t1Title": "Importez votre DAO",
+      "t1Desc": "Glissez le document du dossier dans ADJUJA. L'IA extrait en quelques secondes les critères d'attribution, les pièces exigées et les contraintes techniques. Vous ne lisez rien, vous ne configurez rien.",
       "t2Title": "L'IA rédige. Vous validez.",
-      "t2Desc": "Pendant que vous continuez votre journée, ADJUJA génère votre mémoire technique complet, section par section, adapté à votre profil et aux critères exacts du marché. Aucune rédaction manuelle.",
-      "t3Title": "Soumettez. Gagnez.",
-      "t3Desc": "Téléchargez votre dossier en ZIP : mémoire technique, acte d'engagement, déclaration d'honneur, CPS paraphé. Chaque document signé, chaque case cochée. Prêt à déposer.",
+      "t2Desc": "Pendant que vous continuez votre journée, ADJUJA génère votre offre technique complète, section par section, adaptée à votre profil et aux critères exacts du marché. Aucune rédaction manuelle.",
+      "t3Title": "Signez et téléchargez",
+      "t3Desc": "Téléchargez votre dossier en ZIP : offre technique, acte d'engagement, déclaration d'honneur, CPS paraphé. Chaque document signé, chaque case cochée. Prêt à déposer.",
       "t4Title": "Suivi de vos performances",
       "t4Desc": "Visualisez votre taux de réussite, le nombre d'AOs remportés et l'évolution de vos résultats mois par mois."
     },
     "cta": {
       "title": "Commencez à remporter plus de marchés dès aujourd'hui.",
-      "subtitle": "Déposez votre premier DCE et obtenez une réponse complète en moins de 2 minutes.",
+      "subtitle": "Déposez votre premier DAO et obtenez une réponse complète en moins de 2 minutes.",
       "button": "Essai gratuit",
       "bullet1": "Configuration en 2 minutes",
       "bullet2": "Sans carte bancaire",
@@ -130,7 +130,7 @@
     "subtitle": "Trois etapes. Zero complexite.",
     "steps": {
       "s1_title": "Importez votre AO",
-      "s1_desc": "Glissez votre DCE (PDF ou texte brut). ADJUJA extrait automatiquement les criteres, les lots et les pieces demandees.",
+      "s1_desc": "Glissez votre DAO (PDF ou texte brut). ADJUJA extrait automatiquement les criteres, les lots et les pieces demandees.",
       "s1_note": "PDF natif · texte brut",
       "s2_title": "Reponse generee en parallele",
       "s2_desc": "Chaque section est redigee simultanement et adaptee a votre profil entreprise.",
@@ -283,13 +283,32 @@
       "error": "Erreur lors de la sauvegarde.",
       "sections": {
         "company": "Informations de l'entreprise",
+        "activites": "Secteurs d'activité",
+        "qualifications": "Qualifications et références",
         "legal": "Identifiants légaux",
         "manager": "Gérant",
         "contact": "Contact"
       },
+      "activitesHint": "Sélectionnez les secteurs qui correspondent à votre activité. Utilisé pour filtrer la veille des marchés et, bientôt, pour les notifications d'AOs correspondant à votre profil.",
+      "qualificationsHint": "Ces informations servent à évaluer automatiquement votre éligibilité (Go/No-Go) sur les AOs scrapés, en comparant ces données aux exigences extraites du CPS et du RC.",
+      "addClassification": "Ajouter une classification",
+      "addCertification": "Ajouter",
+      "addReference": "Ajouter une référence",
+      "certificationPh": "Ex: ISO 9001:2015",
+      "caPh": "Ex: 12000000",
       "fields": {
         "nom_entreprise": "Raison sociale",
         "secteur": "Secteur d'activité",
+        "classifications": "Classifications (qualification BTP)",
+        "domaine": "Domaine",
+        "categorie": "Catégorie",
+        "classe": "Classe",
+        "certifications": "Certifications",
+        "references_similaires": "Références similaires",
+        "intitule": "Intitulé du projet",
+        "montant": "Montant (Dhs)",
+        "annee": "Année",
+        "chiffre_affaires_moyen": "Chiffre d'affaires moyen (Dhs)",
         "ice": "ICE",
         "rc": "RC",
         "if_fiscal": "Identifiant fiscal",
@@ -421,6 +440,10 @@
   },
   "veille": {
     "title": "Veille marchés publics",
+    "hub": {
+      "tabMarches": "Marchés publics",
+      "tabBdc": "Bons de commande"
+    },
     "tabs": {
       "all": "Tout",
       "new": "Nouveaux",
@@ -428,8 +451,11 @@
       "imported": "Importés"
     },
     "filters": {
+      "title": "Filtres",
       "search": "Rechercher un AO, un acheteur...",
-      "categorie": "Catégorie",
+      "activites": "Activités",
+      "categorie": "Catégorie principale",
+      "categorieAll": "Toutes les catégories",
       "categoriePh": "Ex: Travaux",
       "region": "Région",
       "regionPh": "Ex: Casablanca",
@@ -437,6 +463,19 @@
       "reset": "Réinitialiser",
       "hide": "Cacher les filtres",
       "show": "Filtres"
+    },
+    "categories": {
+      "Travaux": "Travaux",
+      "Fournitures": "Fournitures",
+      "Services": "Services"
+    },
+    "secteurPicker": {
+      "placeholder": "Toutes les activités",
+      "selectedCount": "{{count}} activité sélectionnée",
+      "selectedCount_other": "{{count}} activités sélectionnées",
+      "searchPh": "Rechercher une activité...",
+      "loading": "Chargement...",
+      "empty": "Aucune activité trouvée."
     },
     "table": {
       "acheteur": "Acheteur",
@@ -461,19 +500,33 @@
       "importing": "Importation...",
       "importBtn": "Importer dans le pipeline",
       "importDone": "Importé avec succès",
-      "downloadingZip": "Téléchargement du DCE en cours...",
-      "zipReady": "DCE disponible",
-      "zipError": "Erreur téléchargement DCE",
+      "downloadingZip": "Téléchargement du DAO en cours...",
+      "zipReady": "DAO disponible",
+      "zipError": "Erreur téléchargement DAO",
       "openSource": "Voir sur le portail",
+      "showMore": "Voir plus",
+      "showLess": "Voir moins",
       "tabResume": "Résumé",
       "tabDocs": "Documents",
+      "tabGoNoGo": "Go/No-Go",
       "noDesc": "Aucune description disponible.",
       "budget": "Budget",
       "caution": "Caution",
       "datePub": "Publié le",
       "dateLimite": "Date limite",
       "location": "Localisation",
-      "source": "Source"
+      "source": "Source",
+      "goNoGo": {
+        "needFavorite": "Ajoutez cet AO à vos favoris et attendez le téléchargement des documents pour lancer l'analyse.",
+        "cta": "Lancer l'analyse",
+        "analyzing": "Analyse en cours...",
+        "error": "Erreur lors de l'analyse.",
+        "verdict": {
+          "go": "GO : éligible",
+          "risque": "À vérifier : points d'attention",
+          "no_go": "NO-GO : critère(s) non rempli(s)"
+        }
+      }
     },
     "empty": {
       "allTitle": "Aucun appel d'offres",
@@ -481,7 +534,7 @@
       "newTitle": "Aucun nouvel AO",
       "newDesc": "Tous les appels d'offres ont déjà été consultés.",
       "favTitle": "Aucun favori",
-      "favDesc": "Marquez des AOs comme favoris pour les retrouver ici et lancer le téléchargement du DCE."
+      "favDesc": "Marquez des AOs comme favoris pour les retrouver ici et lancer le téléchargement du DAO."
     },
     "error": {
       "loadFailed": "Impossible de charger les appels d'offres."
@@ -493,5 +546,29 @@
     },
     "total": "résultats",
     "totalSingle": "résultat"
+  },
+  "bdc": {
+    "filters": {
+      "search": "Rechercher un BDC, un acheteur...",
+      "naturePrestation": "Nature de prestation"
+    },
+    "naturePicker": {
+      "placeholder": "Toutes les natures",
+      "searchPh": "Rechercher une nature de prestation...",
+      "loading": "Chargement...",
+      "empty": "Aucune nature trouvée."
+    },
+    "table": {
+      "statut": "Statut",
+      "annule": "Annulé"
+    },
+    "detail": {
+      "annule": "Annulé",
+      "naturePrestation": "Nature de prestation",
+      "downloadDoc": "Télécharger le dossier",
+      "downloadingDoc": "Téléchargement du dossier en cours...",
+      "docReady": "Dossier disponible",
+      "docError": "Erreur téléchargement du dossier"
+    }
   }
 }

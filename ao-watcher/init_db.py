@@ -13,7 +13,7 @@ from sqlalchemy import text
 
 from app.core.config import settings
 from app.core.database import Base
-from app.core.models import ScrapedAo  # noqa: F401 — registers the model
+from app.core.models import ScrapedAo, ScrapedBdc  # noqa: F401 — registers the models
 
 
 async def init():

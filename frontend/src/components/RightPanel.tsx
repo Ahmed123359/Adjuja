@@ -15,7 +15,7 @@ import type {
 import { exportDocx } from "../api";
 import AoPipelinePage from "../pages/AoPipelinePage";
 import DashboardPage from "../pages/DashboardPage";
-import VeillePage from "../pages/VeillePage";
+import VeilleHubPage from "../pages/VeilleHubPage";
 import DocumentsTab from "./DocumentsTab";
 import { useTheme } from "../hooks/useTheme";
 import LanguageSelector from "./LanguageSelector";
@@ -930,10 +930,10 @@ export default function RightPanel({
         </div>
       )}
 
-      {/* Veille AO tab */}
+      {/* Veille tab (Marches publics + Bons de commande) */}
       {mainTab === "veille" && (
         <div className="flex-1 flex flex-col overflow-hidden">
-          <VeillePage />
+          <VeilleHubPage />
         </div>
       )}
 

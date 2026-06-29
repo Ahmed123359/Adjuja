@@ -59,13 +59,13 @@ export default function AppSidebar({ mainTab, onTabChange, user, onLogout, onGoS
     }}>
       {/* Logo */}
       <div style={{ padding: '22px 20px 18px', borderBottom: '1px solid var(--l-card-border)' }}>
-        <img src="/logo-adjuja.png" alt="ADJUJA" style={{ height: 28 }} />
+        <img src="/logo-adjuja.png" alt="ADJUJA" style={{ height: 56 }} />
       </div>
 
       {/* Nav */}
       <nav style={{ flex: 1, padding: '12px 10px', display: 'flex', flexDirection: 'column', gap: 2, overflowY: 'auto' }}>
         {NAV_ITEMS.map(({ tab, key, icon }) => {
-          const active = mainTab === tab;
+          const active = !isSettings && mainTab === tab;
           return (
             <button
               key={tab}

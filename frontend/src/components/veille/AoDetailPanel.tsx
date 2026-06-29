@@ -1,11 +1,32 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { ScrapedAo } from '../../types';
+import type { EligibilityVerdict, EligibilityVerdictType, ScrapedAo } from '../../types';
 import WatcherStatusBadge from './WatcherStatusBadge';
-import { updateScrapedAoStatus, importScrapedAo } from '../../api';
+import { updateScrapedAoStatus, importScrapedAo, analyzeScrapedAo } from '../../api';
 import { useIsMobile } from '../../hooks/useIsMobile';
+import { formatTitre, splitReservationClause } from '../../utils/formatTitre';
 
-type Tab = 'resume' | 'docs';
+const TITRE_CLAMP_LINES = 4;
+
+type Tab = 'resume' | 'docs' | 'goNoGo';
+
+const VERDICT_STYLES: Record<EligibilityVerdictType, { bg: string; color: string; border: string }> = {
+  go: {
+    bg:     'rgba(34,197,94,0.10)',
+    color:  '#16a34a',
+    border: 'rgba(34,197,94,0.25)',
+  },
+  risque: {
+    bg:     'rgba(245,158,11,0.10)',
+    color:  '#d97706',
+    border: 'rgba(245,158,11,0.25)',
+  },
+  no_go: {
+    bg:     'rgba(220,38,38,0.10)',
+    color:  '#dc2626',
+    border: 'rgba(220,38,38,0.25)',
+  },
+};
 
 type Props = {
   ao: ScrapedAo;
@@ -107,6 +128,10 @@ export default function AoDetailPanel({ ao: initialAo, onClose, onUpdated }: Pro
   const [loadingImport, setLoadingImport] = useState(false);
   const [importedId, setImportedId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [analyzing, setAnalyzing] = useState(false);
+  const [verdict, setVerdict] = useState<EligibilityVerdict | null>(null);
+  const [analyzeError, setAnalyzeError] = useState<string | null>(null);
+  const [titreExpanded, setTitreExpanded] = useState(false);
 
   const update = async (status: string) => {
     setLoadingStatus(true);
@@ -135,6 +160,20 @@ export default function AoDetailPanel({ ao: initialAo, onClose, onUpdated }: Pro
       setError(e instanceof Error ? e.message : 'Erreur import');
     } finally {
       setLoadingImport(false);
+    }
+  };
+
+  const doAnalyze = async () => {
+    setAnalyzing(true);
+    setAnalyzeError(null);
+    try {
+      const result = await analyzeScrapedAo(ao.id);
+      setVerdict(result);
+      setAo(prev => ({ ...prev, analyse_json: result.analyse_json }));
+    } catch (e: unknown) {
+      setAnalyzeError(e instanceof Error ? e.message : t('veille.detail.goNoGo.error'));
+    } finally {
+      setAnalyzing(false);
     }
   };
 
@@ -227,9 +266,68 @@ export default function AoDetailPanel({ ao: initialAo, onClose, onUpdated }: Pro
               {ao.acheteur}
             </p>
           )}
-          <h2 style={{ margin: 0, fontSize: 15, fontWeight: 700, color: 'var(--l-text)', lineHeight: 1.4 }}>
-            {ao.titre}
-          </h2>
+          {(() => {
+            const { main, clause } = splitReservationClause(ao.titre);
+            const displayTitre = formatTitre(main);
+            const isLong = displayTitre.length > 220;
+            return (
+              <>
+                <h2
+                  style={{
+                    margin: 0,
+                    fontSize: 15,
+                    fontWeight: 700,
+                    color: 'var(--l-text)',
+                    lineHeight: 1.4,
+                    ...(isLong && !titreExpanded
+                      ? {
+                          display: '-webkit-box',
+                          WebkitLineClamp: TITRE_CLAMP_LINES,
+                          WebkitBoxOrient: 'vertical' as const,
+                          overflow: 'hidden',
+                        }
+                      : {}),
+                  }}
+                >
+                  {displayTitre}
+                </h2>
+                {isLong && (
+                  <button
+                    onClick={() => setTitreExpanded(v => !v)}
+                    style={{
+                      marginTop: 4,
+                      background: 'none',
+                      border: 'none',
+                      padding: 0,
+                      cursor: 'pointer',
+                      fontSize: 12,
+                      fontWeight: 600,
+                      color: 'var(--l-blue)',
+                      fontFamily: 'inherit',
+                    }}
+                  >
+                    {titreExpanded ? t('veille.detail.showLess') : t('veille.detail.showMore')}
+                  </button>
+                )}
+                {clause && (
+                  <div
+                    style={{
+                      marginTop: 8,
+                      padding: '7px 11px',
+                      borderRadius: 8,
+                      background: 'var(--l-blue-a)',
+                      border: '1px solid rgba(30,136,229,0.2)',
+                      fontSize: 12,
+                      color: 'var(--l-blue)',
+                      lineHeight: 1.5,
+                    }}
+                  >
+                    {formatTitre(clause)}
+                  </div>
+                )}
+              </>
+            );
+          })()}
         </div>
 
         {/* Budget + Caution chips */}
@@ -425,7 +523,7 @@ export default function AoDetailPanel({ ao: initialAo, onClose, onUpdated }: Pro
 
         {/* Tabs */}
         <div style={{ display: 'flex', gap: 0, borderBottom: '1px solid var(--l-card-border)', marginBottom: 16 }}>
-          {(['resume', 'docs'] as Tab[]).map(t2 => (
+          {(['resume', 'docs', 'goNoGo'] as Tab[]).map(t2 => (
             <button
               key={t2}
               onClick={() => setTab(t2)}
@@ -491,6 +589,56 @@ export default function AoDetailPanel({ ao: initialAo, onClose, onUpdated }: Pro
                     : t('veille.detail.noDesc')}
                 </p>
               )}
+          </div>
+        )}
+
+        {tab === 'goNoGo' && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+            {!zipReady ? (
+              <p style={{ margin: 0, fontSize: 13, color: 'var(--l-dim)' }}>
+                {t('veille.detail.goNoGo.needFavorite')}
+              </p>
+            ) : (
+              <>
+                <ActionBtn variant="secondary" onClick={doAnalyze} disabled={analyzing}>
+                  {analyzing ? <Spinner /> : (
+                    <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 00-2.456 2.456z" />
+                    </svg>
+                  )}
+                  {analyzing ? t('veille.detail.goNoGo.analyzing') : t('veille.detail.goNoGo.cta')}
+                </ActionBtn>
+
+                {analyzeError && (
+                  <p style={{ margin: 0, fontSize: 12, color: '#dc2626' }}>{analyzeError}</p>
+                )}
+
+                {verdict && (
+                  <>
+                    <div style={{
+                      display: 'flex', alignItems: 'center', gap: 8,
+                      padding: '10px 14px', borderRadius: 8,
+                      background: VERDICT_STYLES[verdict.verdict].bg,
+                      border: `1px solid ${VERDICT_STYLES[verdict.verdict].border}`,
+                    }}>
+                      <span style={{ fontSize: 13, fontWeight: 700, color: VERDICT_STYLES[verdict.verdict].color }}>
+                        {t(`veille.detail.goNoGo.verdict.${verdict.verdict}`)}
+                      </span>
+                    </div>
+
+                    {verdict.raisons.length > 0 && (
+                      <ul style={{ margin: 0, padding: '0 0 0 18px', display: 'flex', flexDirection: 'column', gap: 6 }}>
+                        {verdict.raisons.map((raison, i) => (
+                          <li key={i} style={{ fontSize: 12.5, color: 'var(--l-sub)', lineHeight: 1.5 }}>
+                            {raison}
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </>
+                )}
+              </>
+            )}
           </div>
         )}
       </div>

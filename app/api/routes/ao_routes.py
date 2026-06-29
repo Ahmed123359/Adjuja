@@ -10,9 +10,10 @@ from sqlalchemy.orm import selectinload
 
 from app.api.dependencies import get_current_user
 from app.db.base import AsyncSessionLocal
-from app.db.models import AoDocument, AppelOffre
+from app.db.models import AoDocument, AppelOffre, CompanyProfile
 from app.models.ao_pipeline import AoCreate, AoDocumentOut, AoResponse, AoStatus, AoSummary
 from app.models.user import UserPublic
+from app.services.eligibility_service import compute_verdict
 from app.services.security.input_sanitizer import validate_upload_size
 
 router = APIRouter(prefix="/ao", tags=["Appels d'offres"])
@@ -102,6 +103,12 @@ class FromWatcherPayload(BaseModel):
     categorie: str | None = None
     region: str | None = None
     classified_docs: dict[str, str] = {}
+    analyse_json: dict | None = None
+
+
+class EligibilityCheckPayload(BaseModel):
+    analyse_json: dict
+    date_limite: str | None = None
 
 
 @router.post("/from-watcher", response_model=AoSummary, status_code=status.HTTP_201_CREATED)
@@ -131,6 +138,7 @@ async def import_from_watcher(
             objet=body.titre,
             statut="brouillon",
             pipeline_pct=0,
+            analyse_json=body.analyse_json,
         )
         session.add(ao)
 
@@ -161,6 +169,28 @@ async def import_from_watcher(
         created_at=now,
         updated_at=now,
     )
+
+
+@router.post("/eligibility-check")
+async def eligibility_check(
+    body: EligibilityCheckPayload,
+    current_user: UserPublic = Depends(get_current_user),
+) -> dict:
+    """
+    Calcule le verdict Go/No-Go pour l'org de l'appelant en comparant
+    analyse_json (deja calcule cote ao-watcher, un seul appel Mistral par AO)
+    aux donnees d'eligibilite du profil entreprise. Aucun appel IA ici :
+    comparaison Python deterministe (app/services/eligibility_service.py).
+    """
+    org_id = current_user.org_id or current_user.id
+    async with AsyncSessionLocal() as session:
+        result = await session.execute(
+            select(CompanyProfile).where(CompanyProfile.org_id == org_id)
+        )
+        profile = result.scalar_one_or_none()
+
+    extra = profile.extra if profile and profile.extra else {}
+    return compute_verdict(body.analyse_json, body.date_limite, extra)
 
 
 @router.get("", response_model=list[AoSummary])
