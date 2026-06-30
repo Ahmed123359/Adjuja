@@ -1,8 +1,10 @@
 import asyncio
 from pathlib import Path
 
+import httpx
 import structlog
 
+from app.core.config import settings
 from app.modules.ao_scraper.mpe import MPEPlatformScraper
 from app.modules.ao_scraper.repository import AoRepository
 from app.workers.celery_app import celery_app
@@ -29,10 +31,37 @@ def run_scrape_pipeline(self) -> dict:
     try:
         result = run_async(_run_all_sources())
         log.info("Scrape pipeline complete", result=result)
+
+        if result.get("total_saved", 0) > 0:
+            _trigger_notification_batch(result["total_saved"])
+
         return result
     except Exception as exc:
         log.error("Scrape pipeline failed", error=str(exc))
         raise self.retry(exc=exc)
+
+
+def _trigger_notification_batch(new_ao_count: int) -> None:
+    """
+    Appelle POST /admin/trigger sur le notification-service.
+    Non bloquant : timeout court, échec silencieux (le scrape ne doit pas échouer
+    à cause du service de notification).
+    """
+    url = f"{settings.notification_service_url}/admin/trigger"
+    try:
+        resp = httpx.post(
+            url,
+            headers={"X-Admin-Secret": settings.notification_admin_secret},
+            timeout=5.0,
+        )
+        if resp.status_code == 200:
+            log.info("Notification batch triggered", new_aos=new_ao_count, task_id=resp.json().get("task_id"))
+        else:
+            log.warning("Notification trigger responded with error", status=resp.status_code, body=resp.text)
+    except httpx.TimeoutException:
+        log.warning("Notification trigger timeout  notification-service injoignable, le batch Beat prendra le relais")
+    except Exception as exc:
+        log.warning("Notification trigger failed", error=str(exc))
 
 
 async def _run_all_sources() -> dict:
@@ -90,7 +119,7 @@ async def _scrape_source(config_name: str) -> int:
 
     await asyncio.gather(*[enrich(ao) for ao in new_aos])
 
-    # Upsert everything (new + existing — existing just updates metadata)
+    # Upsert everything (new + existing  existing just updates metadata)
     async with task_db() as db:
         repo = AoRepository(db)
         async with db.begin_nested():

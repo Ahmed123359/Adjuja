@@ -56,7 +56,7 @@ SAFE_FONTS = {"helv", "Helvetica", "Times-Roman", "Courier", "Times", "Symbol", 
 def _pdf_safe_text(text: str) -> str:
     replacements = {
         "’": "'", "‘": "'", "“": '"', "”": '"',
-        "–": "-", "—": "-", "•": "-", " ": " ",
+        "–": "-", "": "-", "•": "-", " ": " ",
         "…": "...", "°": "°",
     }
     for src, dst in replacements.items():

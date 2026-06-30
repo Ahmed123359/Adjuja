@@ -280,7 +280,7 @@ def build() -> Document:
     doc.add_page_break()
 
     # =========================================================================
-    # PARTIE I — FONCTIONNELLE
+    # PARTIE I  FONCTIONNELLE
     # =========================================================================
     p = doc.add_paragraph()
     p.paragraph_format.space_before = Pt(10)
@@ -448,7 +448,7 @@ def build() -> Document:
     doc.add_page_break()
 
     # =========================================================================
-    # PARTIE II — TECHNIQUE
+    # PARTIE II  TECHNIQUE
     # =========================================================================
     p = doc.add_paragraph()
     p.paragraph_format.space_before = Pt(10)

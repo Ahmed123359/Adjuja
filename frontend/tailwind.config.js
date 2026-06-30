@@ -34,7 +34,7 @@ export default {
           DEFAULT: "hsl(var(--destructive))",
           foreground: "hsl(var(--destructive-foreground))",
         },
-        /* Landing tokens — use these in landing components */
+        /* Landing tokens  use these in landing components */
         l: {
           bg:             "var(--l-bg)",
           "bg-alt":       "var(--l-bg-alt)",

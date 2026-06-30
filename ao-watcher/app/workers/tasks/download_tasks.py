@@ -80,7 +80,7 @@ async def _download_and_classify(ao_id: int) -> dict:
         "Referer": ao.url_source,
     }
 
-    # Download — could be a form POST or direct GET
+    # Download  could be a form POST or direct GET
     content = await _fetch_document(ao.zip_url, ao.url_source, headers)
     if not content:
         raise ValueError("Empty response from download URL")
@@ -176,7 +176,7 @@ async def _fetch_document(zip_url: str, referer: str, headers: dict) -> bytes | 
                 return file_resp.content
             return post_resp.content
 
-        # No form — try direct GET of the URL
+        # No form  try direct GET of the URL
         if resp.headers.get("content-type", "").startswith("application/"):
             return resp.content
 

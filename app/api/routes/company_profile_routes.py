@@ -217,7 +217,7 @@ async def delete_cachet(current_user: UserPublic = Depends(get_current_user)) ->
 
 @router.post("/lu-et-accepte", response_model=CompanyProfileResponse)
 async def upload_lu_et_accepte(file: UploadFile = File(...), current_user: UserPublic = Depends(get_current_user)) -> CompanyProfileResponse:
-    """Upload l'image 'Lu et accepté' manuscrite (PNG/JPG) — remplace le texte généré."""
+    """Upload l'image 'Lu et accepté' manuscrite (PNG/JPG)  remplace le texte généré."""
     return await _upload_image_asset(file, "lu_et_accepte", current_user)
 
 @router.delete("/lu-et-accepte", response_model=CompanyProfileResponse)

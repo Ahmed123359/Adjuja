@@ -13,10 +13,13 @@ import type {
   User,
 } from "../types";
 import { exportDocx } from "../api";
-import AoPipelinePage from "../pages/AoPipelinePage";
+import AoPipelinePage from "../pages/AoPipelinePage"; // kept intact -- feature in progress
+import ComingSoonAo from "../pages/ComingSoonAo";
 import DashboardPage from "../pages/DashboardPage";
 import VeilleHubPage from "../pages/VeilleHubPage";
 import DocumentsTab from "./DocumentsTab";
+import ParapheTab from "./ParapheTab";
+import RemplissageTab from "./RemplissageTab";
 import { useTheme } from "../hooks/useTheme";
 import LanguageSelector from "./LanguageSelector";
 
@@ -655,14 +658,26 @@ function Loading({ provider, model }: { provider?: string; model?: string }) {
 }
 
 // ── Page Outils ─────────────────────────────────────────────
-export type Outil = "signatures";
+export type Outil = "signatures" | "paraphe" | "remplissage";
 
 const OUTILS_NAV: { id: Outil; label: string; desc: string; icon: string }[] = [
   {
     id: "signatures",
-    label: "Documents & Signatures",
-    desc: "Signature électronique, paraphe, cachet",
+    label: "Signature & Cachet",
+    desc: "Signer avec signature et cachet personnalisés",
     icon: "M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z",
+  },
+  {
+    id: "paraphe",
+    label: "Paraphe",
+    desc: "Parapher toutes les pages d'un document",
+    icon: "M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z",
+  },
+  {
+    id: "remplissage",
+    label: "Remplissage automatique",
+    desc: "Remplir acte d'engagement et bordereau",
+    icon: "M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z",
   },
 ];
 
@@ -780,11 +795,65 @@ export function OutilsLeftPanel({
 }
 
 // Contenu seul (rendu dans RightPanel)
-function OutilsContent({ section: _section }: { section: Outil }) {
+function OutilsContent({
+  section,
+  onSectionChange,
+}: {
+  section: Outil;
+  onSectionChange?: (s: Outil) => void;
+}) {
   return (
     <div className="flex-1 overflow-y-auto">
-      <div className="max-w-4xl mx-auto px-6 py-4">
-        <DocumentsTab />
+      {/* Nav mobile horizontale (desktop : panneau gauche) */}
+      {onSectionChange && (
+        <div
+          style={{
+            display: 'flex',
+            gap: 6,
+            padding: '12px 16px 0',
+            overflowX: 'auto',
+            flexShrink: 0,
+            WebkitOverflowScrolling: 'touch',
+            scrollbarWidth: 'none',
+          }}
+        >
+          {OUTILS_NAV.map((item) => (
+            <button
+              key={item.id}
+              onClick={() => onSectionChange(item.id)}
+              style={{
+                flexShrink: 0,
+                display: 'flex',
+                alignItems: 'center',
+                gap: 6,
+                padding: '7px 14px',
+                borderRadius: 10,
+                border: `1px solid ${section === item.id ? 'var(--l-blue)' : 'var(--l-card-border)'}`,
+                background: section === item.id ? 'color-mix(in srgb, var(--l-blue) 10%, transparent)' : 'var(--l-card)',
+                color: section === item.id ? 'var(--l-blue)' : 'var(--l-sub)',
+                fontSize: 13,
+                fontWeight: section === item.id ? 600 : 400,
+                cursor: 'pointer',
+                transition: 'all .15s',
+                whiteSpace: 'nowrap',
+              }}
+            >
+              <svg
+                width="14" height="14" fill="none" viewBox="0 0 24 24"
+                stroke="currentColor" strokeWidth={2}
+                style={{ flexShrink: 0 }}
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" d={item.icon} />
+              </svg>
+              {item.label}
+            </button>
+          ))}
+        </div>
+      )}
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 py-4">
+        {section === "signatures"  && <DocumentsTab />}
+        {section === "paraphe"     && <ParapheTab />}
+        {section === "remplissage" && <RemplissageTab />}
       </div>
     </div>
   );
@@ -814,6 +883,7 @@ type Props = {
   mainTab: "offres" | "marches" | "outils" | "veille";
   onMainTabChange: (tab: "offres" | "marches" | "outils" | "veille") => void;
   outilSection: Outil;
+  onOutilSectionChange?: (s: Outil) => void;
   onOpenSidebar?: () => void;
 };
 
@@ -840,6 +910,7 @@ export default function RightPanel({
   mainTab,
   onMainTabChange,
   outilSection,
+  onOutilSectionChange,
   onOpenSidebar,
 }: Props) {
   const wordRef = useRef<HTMLDivElement>(null);
@@ -923,10 +994,10 @@ export default function RightPanel({
       {/* Top bar  always visible */}
       <ContentTopBar mainTab={mainTab} onOpenSidebar={onOpenSidebar} />
 
-      {/* Pipeline AO tab */}
+      {/* Pipeline AO tab -- coming soon screen (AoPipelinePage conservé, non supprimé) */}
       {mainTab === "marches" && (
         <div className="flex-1 flex flex-col overflow-hidden">
-          <AoPipelinePage />
+          <ComingSoonAo />
         </div>
       )}
 
@@ -937,8 +1008,10 @@ export default function RightPanel({
         </div>
       )}
 
-      {/* Outils tab  contenu seul (panneau gauche rendu dans App.tsx) */}
-      {mainTab === "outils" && <OutilsContent section={outilSection} />}
+      {/* Outils tab  contenu seul (panneau gauche rendu dans App.tsx sur desktop) */}
+      {mainTab === "outils" && (
+        <OutilsContent section={outilSection} onSectionChange={onOutilSectionChange} />
+      )}
 
       {/* Dashboard / Génération tab */}
       {mainTab === "offres" && (

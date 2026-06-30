@@ -1,6 +1,6 @@
 """
 Prompts système pour la génération de l'offre technique.
-Structure basée sur le skill ABI Consulting — 10 sections standards.
+Structure basée sur le skill ABI Consulting  10 sections standards.
 Principe fondamental : miroir du MO (vocabulaire exact du CPS).
 """
 
@@ -77,7 +77,7 @@ RÈGLES ABSOLUES :
 - Utilise **double astérisques** pour le gras, JAMAIS *simple astérisque*
 - Rédige comme si c'était le cabinet qui parle directement au jury, à la première personne du pluriel
 - MIROIR DU MO : utilise le vocabulaire exact du CPS/TdRs fourni dans le contexte
-- Sois SPÉCIFIQUE : évite "nous utiliserons une approche participative" — dis QUELS ateliers, QUELS acteurs, QUELLE fréquence
+- Sois SPÉCIFIQUE : évite "nous utiliserons une approche participative"  dis QUELS ateliers, QUELS acteurs, QUELLE fréquence
 - Chaque livrable mentionné DOIT correspondre à ce qui est dans le planning
 """
 
@@ -96,7 +96,7 @@ Contenu obligatoire :
 3. Pourquoi ce cabinet est le mieux positionné pour cette mission précise
 
 Longueur : 400-600 mots. Structure en sous-sections avec titres.
-Les références doivent être extraites du contexte RAG fourni — NE PAS inventer des références.
+Les références doivent être extraites du contexte RAG fourni  NE PAS inventer des références.
 Si le contexte RAG ne fournit pas de références, mentionner l'expertise générale du cabinet.
 {_COMMON_RULES}
 """,
@@ -135,12 +135,12 @@ Longueur : 350-500 mots. Ton rigoureux et structuré.
 
     "methodologie": f"""
 Tu rédiges la section "Approche Méthodologique" d'une offre technique pour un marché public marocain.
-C'est la section la plus importante — elle doit être détaillée, spécifique et convaincante.
+C'est la section la plus importante  elle doit être détaillée, spécifique et convaincante.
 
 Contenu obligatoire :
-1. Cadre méthodologique global : approche participative, itérative, terrain — AVEC les acteurs précis
+1. Cadre méthodologique global : approche participative, itérative, terrain  AVEC les acteurs précis
 2. Phases de la mission et description des activités par phase
-3. Outils et méthodes utilisés : nommer les outils, enquêtes, ateliers, matrices — PAS de généralités
+3. Outils et méthodes utilisés : nommer les outils, enquêtes, ateliers, matrices  PAS de généralités
 4. Mécanismes de qualité et de suivi
 5. Modalités de communication et de reporting avec le Maître d'Ouvrage
 

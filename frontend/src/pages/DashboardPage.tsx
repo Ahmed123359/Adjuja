@@ -1158,7 +1158,7 @@ function SignatureTab() {
                 Template configuré
               </span>
             ) : (
-              <span style={{ fontSize: 13, color: 'var(--l-dim)' }}>Aucun template — design par défaut utilisé</span>
+              <span style={{ fontSize: 13, color: 'var(--l-dim)' }}>Aucun template  design par défaut utilisé</span>
             )}
           </div>
           <div style={{ display: 'flex', gap: 8 }}>
@@ -1570,7 +1570,7 @@ function EquipeTab() {
           {mode === "confirm" && (
             <div style={{ padding: '8px 12px', borderRadius: 8, background: 'rgba(34,197,94,0.08)', border: '1px solid rgba(34,197,94,0.2)', marginBottom: 14 }}>
               <p style={{ margin: 0, fontSize: 12, color: '#16a34a' }}>
-                Informations extraites automatiquement — vérifiez et corrigez si nécessaire.
+                Informations extraites automatiquement  vérifiez et corrigez si nécessaire.
               </p>
             </div>
           )}
@@ -1602,7 +1602,7 @@ function EquipeTab() {
         cvs.length === 0 ? (
           <SectionCard title="Equipe">
             <p style={{ margin: 0, fontSize: 13, color: 'var(--l-dim)' }}>
-              Aucun membre dans le pool. Uploadez un CV PDF — les informations seront extraites automatiquement.
+              Aucun membre dans le pool. Uploadez un CV PDF  les informations seront extraites automatiquement.
             </p>
           </SectionCard>
         ) : (
@@ -1616,7 +1616,7 @@ function EquipeTab() {
                       {!cv.actif && <span style={{ marginLeft: 6, fontSize: 11, color: '#d97706' }}>Inactif</span>}
                     </p>
                     <p style={{ margin: 0, fontSize: 12, color: 'var(--l-sub)' }}>
-                      {cv.poste}{cv.specialite ? ` — ${cv.specialite}` : ''}{cv.annees_experience ? ` — ${cv.annees_experience} ans` : ''}
+                      {cv.poste}{cv.specialite ? `  ${cv.specialite}` : ''}{cv.annees_experience ? `  ${cv.annees_experience} ans` : ''}
                     </p>
                   </div>
                   <div style={{ display: 'flex', gap: 8, flexShrink: 0, marginLeft: 12, alignItems: 'center' }}>

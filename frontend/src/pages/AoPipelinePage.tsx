@@ -1496,7 +1496,7 @@ export default function AoPipelinePage() {
         </div>
       </div>
 
-      {/* ConfirmModal — remplace window.confirm() */}
+      {/* ConfirmModal  remplace window.confirm() */}
       {confirmModal && (
         <div style={{
           position: 'fixed', inset: 0, zIndex: 1000,

@@ -16,7 +16,7 @@ def run_async(coro):
 @asynccontextmanager
 async def task_db():
     """
-    Fresh engine per Celery task — NullPool prevents cross-process state
+    Fresh engine per Celery task  NullPool prevents cross-process state
     when using prefork workers.
     """
     engine = create_async_engine(settings.database_url, poolclass=NullPool)

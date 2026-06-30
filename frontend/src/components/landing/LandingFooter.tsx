@@ -53,7 +53,7 @@ export default function LandingFooter({ onEnterApp }: { onEnterApp: () => void }
 
         <div className="grid grid-cols-1 lg:grid-cols-[180px_1fr_1fr_1fr_300px] gap-y-12 gap-x-10 xl:gap-x-16">
 
-          {/* Logo — isolated left column */}
+          {/* Logo  isolated left column */}
           <div className="flex flex-col gap-0">
             <img src="/logo-adjuja.png" alt="ADJUJA" className="h-14 w-auto object-contain object-left" />
           </div>
@@ -87,7 +87,7 @@ export default function LandingFooter({ onEnterApp }: { onEnterApp: () => void }
             ))}
           </div>
 
-          {/* Newsletter — far right */}
+          {/* Newsletter  far right */}
           <div>
             <ColTitle>{t("landing.footer.newsletterTitle")}</ColTitle>
             <p className="mt-0 mb-5 text-[14px] leading-[1.65] text-l-text-muted">

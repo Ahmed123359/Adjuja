@@ -28,7 +28,7 @@ async def get_db() -> AsyncSession:
 async def task_db():
     """
     Fresh engine with NullPool for Celery tasks.
-    Each prefork worker process gets its own clean connection — no shared pool state.
+    Each prefork worker process gets its own clean connection  no shared pool state.
     """
     task_engine = create_async_engine(settings.database_url, poolclass=NullPool)
     task_session = sessionmaker(task_engine, class_=AsyncSession, expire_on_commit=False)

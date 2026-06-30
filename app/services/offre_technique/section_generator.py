@@ -20,11 +20,11 @@ _RETRY_DELAYS = (15, 45, 90)
 
 # Sections générées par LLM (dans l'ordre du document)
 SECTION_NAMES = [
-    "presentation_cabinet",   # Section 3 — Cabinet + références
-    "comprehension_contexte", # Section 4 — Contexte national/sectoriel
-    "comprehension_mission",  # Section 5 — Objectifs, livrables, périmètre
-    "methodologie",           # Section 6 — Approche méthodologique
-    "planning",               # Section 8 — Planning JSON (phases, Gantt)
+    "presentation_cabinet",   # Section 3  Cabinet + références
+    "comprehension_contexte", # Section 4  Contexte national/sectoriel
+    "comprehension_mission",  # Section 5  Objectifs, livrables, périmètre
+    "methodologie",           # Section 6  Approche méthodologique
+    "planning",               # Section 8  Planning JSON (phases, Gantt)
     "rse",                    # Démarche RSE
 ]
 
@@ -42,7 +42,7 @@ def _build_rc_block(section: str, rc: RCContext | None) -> str:
         "rse":                    ["rse", "développement durable", "environnement", "social"],
     }
 
-    lines = ["", "Grille de notation du jury (RC) — optimise le contenu pour maximiser le score :"]
+    lines = ["", "Grille de notation du jury (RC)  optimise le contenu pour maximiser le score :"]
     for c in rc.criteres:
         nom   = c.get("nom", "")
         pts   = c.get("points", 0)
@@ -84,7 +84,7 @@ def _build_user_prompt(
     custom_instructions: str | None = None,
 ) -> str:
     parts = [
-        f"ANGLE NARRATIF : {angle.angle} — {angle.narrative}",
+        f"ANGLE NARRATIF : {angle.angle}  {angle.narrative}",
         f"Différenciateurs clés : {', '.join(angle.differentiators)}",
         "",
         "=== INFORMATIONS DU CPS (vocabulaire à réutiliser tel quel) ===",

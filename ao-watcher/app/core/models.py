@@ -53,7 +53,7 @@ class ScrapedAo(Base):
     region: Mapped[str | None] = mapped_column(String(100))
     ville: Mapped[str | None] = mapped_column(Text)
     # Codes de la nomenclature Sodipress (app.core.taxonomie) matches
-    # par mots-cles au moment du scrape — voir matching.py
+    # par mots-cles au moment du scrape  voir matching.py
     secteur_codes: Mapped[list[str] | None] = mapped_column(JSONB)
     budget_estime: Mapped[Decimal | None] = mapped_column(Numeric(15, 2))
     caution: Mapped[Decimal | None] = mapped_column(Numeric(15, 2))
@@ -76,7 +76,7 @@ class ScrapedAo(Base):
     classified_docs: Mapped[dict | None] = mapped_column(JSON)
 
     # Analyse CPS/RC via Mistral, calculee une seule fois par AO (cache
-    # global, partage entre toutes les orgs) — voir analysis.py
+    # global, partage entre toutes les orgs)  voir analysis.py
     analyse_json: Mapped[dict | None] = mapped_column(JSONB)
 
 

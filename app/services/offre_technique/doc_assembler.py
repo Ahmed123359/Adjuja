@@ -1,6 +1,6 @@
 # -- coding: utf-8 --
 """
-Assembleur DOCX pour l'offre technique — 10 sections (skill ABI Consulting).
+Assembleur DOCX pour l'offre technique  10 sections (skill ABI Consulting).
 """
 import io
 import json
@@ -593,7 +593,7 @@ def _add_header_footer(doc: Document, cps: CPSContext, company_name: str) -> Non
         ftr_p.clear()
         ftr_p.alignment = WD_ALIGN_PARAGRAPH.CENTER
 
-        run1 = ftr_p.add_run("Confidentiel — ")
+        run1 = ftr_p.add_run("Confidentiel  ")
         run1.font.size = Pt(8)
         _force_font(run1, 8)
 
@@ -717,7 +717,7 @@ def build_docx(
             cv = m.get("cv") or {}
             nom = f"{cv.get('nom', '')} {cv.get('prenom', '')}".strip()
             if nom and cv.get("cv_url"):
-                annexes.append(f"CV de {nom} — {m.get('role_dans_offre', '')}")
+                annexes.append(f"CV de {nom}  {m.get('role_dans_offre', '')}")
     for ann in annexes:
         _add_rich_paragraph(doc, f"• {ann}")
 

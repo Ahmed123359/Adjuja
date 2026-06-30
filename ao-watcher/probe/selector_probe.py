@@ -6,7 +6,7 @@ Usage (host, si playwright installé) :
   cd ao-watcher
   python probe/selector_probe.py
 
-Usage (Docker — recommande) :
+Usage (Docker  recommande) :
   docker compose -f docker-compose.dev.yml run --rm ao-watcher-api python probe/selector_probe.py
 
 Résultats attendus :

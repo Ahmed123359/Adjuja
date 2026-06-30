@@ -82,7 +82,7 @@ def _extract_ref_org(href: str) -> tuple[str, str] | None:
 class MPEPlatformScraper(IAOScraper):
     """
     Scraper for any portal running the Marchés Publics Electroniques (MPE) platform.
-    Takes a config JSON file as input — selectors and URLs live there, not here.
+    Takes a config JSON file as input  selectors and URLs live there, not here.
     """
 
     def __init__(self, config_name: str):
@@ -144,7 +144,7 @@ class MPEPlatformScraper(IAOScraper):
             self._http = None
 
     # ------------------------------------------------------------------ #
-    #  Listing scrape (Playwright — JS-rendered)                          #
+    #  Listing scrape (Playwright  JS-rendered)                          #
     # ------------------------------------------------------------------ #
 
     async def fetch_page(self, page: int = 1) -> list[AoData]:
@@ -153,7 +153,7 @@ class MPEPlatformScraper(IAOScraper):
         Pagination is handled internally via Playwright next-page clicks.
         Returns the full list of AoData found.
 
-        The caller should pass page=1 always — this method manages pagination.
+        The caller should pass page=1 always  this method manages pagination.
         """
         listing_cfg = self.cfg["listing"]
         listing_url = self.base_url + self.cfg["listing_path"]
@@ -285,7 +285,7 @@ class MPEPlatformScraper(IAOScraper):
         return results
 
     # ------------------------------------------------------------------ #
-    #  Detail page scrape (requests — server-rendered HTML)               #
+    #  Detail page scrape (requests  server-rendered HTML)               #
     # ------------------------------------------------------------------ #
 
     async def fetch_detail(self, external_id: str, org: str) -> AoData | None:
@@ -317,11 +317,11 @@ class MPEPlatformScraper(IAOScraper):
         caution_raw = get_field("caution")
         secteur = get_field("secteur")
 
-        # Budget — uses a dynamic repeater ID
+        # Budget  uses a dynamic repeater ID
         budget_el = soup.select_one(detail_cfg.get("budget_selector", ""))
         budget_raw = budget_el.get_text(strip=True) if budget_el else ""
 
-        # Date publication — not in summary, try page title area
+        # Date publication  not in summary, try page title area
         pub_el = soup.find(id=lambda x: x and "datePublication" in (x or ""))
         date_pub_raw = pub_el.get_text(strip=True) if pub_el else ""
 

@@ -19,5 +19,8 @@ class Settings(BaseSettings):
     scrape_interval_hours: int = 6
     mistral_api_key: str = ""
 
+    notification_service_url: str = "http://notification-api:8002"
+    notification_admin_secret: str = "dev-admin-secret"
+
 
 settings = Settings()

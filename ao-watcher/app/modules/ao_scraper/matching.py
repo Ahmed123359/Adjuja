@@ -7,7 +7,7 @@ même fonction sera réutilisable plus tard par le service de notifications.
 Volontairement basé sur des phrases complètes (label du secteur ou
 sous-activité entière), jamais sur des mots isolés : `categorie` n'est
 qu'un mot générique ("Travaux"/"Services"/"Fournitures") qui apparaît
-dans une dizaine de libellés de secteurs différents — le faire correspondre
+dans une dizaine de libellés de secteurs différents  le faire correspondre
 ferait matcher quasiment tous les AOs sur tous ces secteurs. Le matching
 porte donc sur titre + secteur + description uniquement.
 """
@@ -17,7 +17,7 @@ import unicodedata
 from app.core.taxonomie import SECTEURS
 
 # Mots vides + mots génériques du domaine (apparaissent en tête d'une
-# dizaine de libellés de secteurs différents — "Travaux", "Etudes",
+# dizaine de libellés de secteurs différents  "Travaux", "Etudes",
 # "Matériel"... seuls, ils ne distinguent rien et feraient matcher
 # n'importe quel AO sur la moitié de la nomenclature).
 _STOPWORDS = {
@@ -37,7 +37,7 @@ _STOPWORDS = {
 }
 
 # Une phrase ne sert de signal de matching que si elle garde au moins ce
-# nombre de mots significatifs apres filtrage — sinon trop generique
+# nombre de mots significatifs apres filtrage  sinon trop generique
 # (ex: secteur "1101 - Maintenance", mot unique, garde a 1 par exception).
 MIN_SIGNIFICANT_TOKENS = 2
 

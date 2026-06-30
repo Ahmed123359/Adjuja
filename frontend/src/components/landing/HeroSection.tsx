@@ -21,7 +21,7 @@ function EarthOrb() {
   const globeRadius = isMobile ? 11  : isTablet ? 11  : 12;
   const moonRadius  = isMobile ? 0.5 : 0.55;
 
-  /* Floating moon — anchored to the camera's own local space (right, up, forward),
+  /* Floating moon  anchored to the camera's own local space (right, up, forward),
      so it always lands in the visible sky no matter the globe's scale or fov per breakpoint. */
   const moonLocalOffset = new THREE.Vector3(
     isMobile ? 1.6 : isTablet ? 2.2 : 2.4,
@@ -57,7 +57,7 @@ function EarthOrb() {
 
   return (
     <>
-      {/* Lights stay at world-space — NOT nested under the globe's translation,
+      {/* Lights stay at world-space  NOT nested under the globe's translation,
           otherwise their default (0,0,0) target shifts the lit face away from camera */}
       <ambientLight intensity={0.18} />
       <directionalLight position={[-8, 6, 5]} intensity={1.1} color="#fff3e0" />
@@ -75,7 +75,7 @@ function EarthOrb() {
         />
       </mesh>
 
-      {/* Cloud layer — real NASA-based cloud cover, slightly faster spin for parallax */}
+      {/* Cloud layer  real NASA-based cloud cover, slightly faster spin for parallax */}
       <mesh ref={cloudsRef} position={[globeX, globeY, 0]} scale={1.008}>
         <sphereGeometry args={[globeRadius, 96, 96]} />
         <meshStandardMaterial
@@ -88,13 +88,13 @@ function EarthOrb() {
         />
       </mesh>
 
-      {/* Atmosphere glow — the rim-light that sells the 3D depth */}
+      {/* Atmosphere glow  the rim-light that sells the 3D depth */}
       <mesh ref={glowRef} position={[globeX, globeY, 0]} scale={1.025}>
         <sphereGeometry args={[globeRadius, 64, 64]} />
         <meshBasicMaterial color="#2B79E8" transparent opacity={0.3} side={THREE.BackSide} />
       </mesh>
 
-      {/* Floating moon — anchored to camera space, always in the visible sky, gentle bob */}
+      {/* Floating moon  anchored to camera space, always in the visible sky, gentle bob */}
       <mesh ref={moonRef}>
         <sphereGeometry args={[moonRadius, 48, 48]} />
         <meshStandardMaterial map={reliefTex} bumpMap={reliefTex} bumpScale={0.08} roughness={0.9} color="#dfe6f5" />
@@ -112,11 +112,11 @@ export default function HeroSection({
   return (
     <section className="relative flex h-[100svh] min-h-[640px] w-full flex-col justify-center overflow-hidden bg-[#0A0F1E]">
 
-      {/* Corner color bleed — brand cobalt top-left, teal bottom-right */}
+      {/* Corner color bleed  brand cobalt top-left, teal bottom-right */}
       <div className="pointer-events-none absolute -left-32 -top-32 z-[1] h-[420px] w-[420px] rounded-full bg-[#3248CE] opacity-35 blur-[120px]" />
       <div className="pointer-events-none absolute -bottom-32 -right-32 z-[1] h-[420px] w-[420px] rounded-full bg-[#1BC9A8] opacity-30 blur-[120px]" />
 
-      {/* Three.js canvas — full-bleed, the earth is positioned in 3D space, not boxed in a div */}
+      {/* Three.js canvas  full-bleed, the earth is positioned in 3D space, not boxed in a div */}
       <div className="absolute inset-0 z-[1]">
         <Canvas
           camera={{ position: [0, 1.5, 10], fov: 60, near: 0.1, far: 100 }}
@@ -131,7 +131,7 @@ export default function HeroSection({
 
       <div className="pointer-events-none absolute inset-0 z-[2] bg-[radial-gradient(ellipse_120%_100%_at_50%_0%,rgba(255,255,255,0.04),transparent_60%)]" />
 
-      {/* Bottom fade — dissolves the globe into the next section's bg instead of a hard cut */}
+      {/* Bottom fade  dissolves the globe into the next section's bg instead of a hard cut */}
       <div className="pointer-events-none absolute inset-x-0 bottom-0 z-[2] h-[420px] bg-[linear-gradient(180deg,transparent_0%,rgba(9,13,28,0.18)_35%,rgba(9,13,28,0.55)_65%,rgba(9,13,28,0.88)_85%,#090D1C_100%)]" />
 
       <div className="relative z-[3] mx-auto flex w-full max-w-[1280px] flex-col items-center px-8 text-center md:px-14">
