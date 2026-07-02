@@ -110,7 +110,7 @@ export default function HeroSection({
   onGoRegister: () => void;
 }) {
   return (
-    <section className="relative flex h-[100svh] min-h-[640px] w-full flex-col justify-center overflow-hidden bg-[#0A0F1E]">
+    <section className="relative flex h-[100svh] min-h-[640px] w-full flex-col justify-center pb-[19vh] overflow-hidden bg-[#0A0F1E]">
 
       {/* Corner color bleed  brand cobalt top-left, teal bottom-right */}
       <div className="pointer-events-none absolute -left-32 -top-32 z-[1] h-[420px] w-[420px] rounded-full bg-[#3248CE] opacity-35 blur-[120px]" />

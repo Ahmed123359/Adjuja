@@ -66,6 +66,7 @@ def notify_org(org_id: str, secteur_codes: list[str], batch_id: int) -> dict:
     """
     with get_session() as session:
         # 1. Fetch new matching AOs not yet in notification_log for this org
+        codes_json = "[" + ",".join('"' + c + '"' for c in secteur_codes) + "]"
         aos_rows = session.execute(
             text("""
                 SELECT sa.id,
@@ -85,7 +86,7 @@ def notify_org(org_id: str, secteur_codes: list[str], batch_id: int) -> dict:
                 ORDER BY sa.date_publication DESC
                 LIMIT 50
             """),
-            {"codes": f'[{",".join(f\'"{c}"\' for c in secteur_codes)}]', "org_id": org_id},
+            {"codes": codes_json, "org_id": org_id},
         ).fetchall()
 
         if not aos_rows:

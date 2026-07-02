@@ -57,7 +57,7 @@ _HTML = """\
           <!-- CTA -->
           <tr>
             <td style="padding:8px 40px 32px;text-align:center;">
-              <a href="https://app.adjuja.ma/veille"
+              <a href="https://app.adjuja.com/veille"
                  style="display:inline-block;background:#1BC9A8;color:#080B1C;
                         font-weight:700;font-size:14px;text-decoration:none;
                         border-radius:8px;padding:12px 28px;letter-spacing:0.2px;">
@@ -72,12 +72,12 @@ _HTML = """\
                        padding:20px 40px;text-align:center;">
               <p style="margin:0;font-size:12px;color:#9AA3BF;line-height:1.6;">
                 Vous recevez cet email parce que vous avez activé les alertes secteur sur ADJUJA.<br>
-                <a href="https://app.adjuja.ma/settings/notifications"
+                <a href="https://app.adjuja.com/settings/notifications"
                    style="color:#3248CE;text-decoration:none;">
                   Gérer mes préférences
                 </a>
                 &nbsp;&middot;&nbsp;
-                <a href="https://app.adjuja.ma/settings/notifications?unsubscribe=1"
+                <a href="https://app.adjuja.com/settings/notifications?unsubscribe=1"
                    style="color:#9AA3BF;text-decoration:none;">
                   Se désabonner
                 </a>
@@ -191,5 +191,5 @@ class AoDigestTemplate(NotificationTemplate):
                 lines.append(f"  Date limite : {_format_date(ao.date_limite)}")
             lines.append(f"  Lien : {ao.url_source}")
             lines.append("")
-        lines.append("Gérer vos préférences : https://app.adjuja.ma/settings/notifications")
+        lines.append("Gérer vos préférences : https://app.adjuja.com/settings/notifications")
         return "\n".join(lines)

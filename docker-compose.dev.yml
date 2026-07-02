@@ -276,7 +276,7 @@ services:
       REDIS_URL: redis://redis:6379/4
       RESEND_API_KEY: ${RESEND_API_KEY:-}
       NOTIFICATION_CHANNEL: email_resend
-      NOTIFICATION_FROM_EMAIL: ${NOTIFICATION_FROM_EMAIL:-noreply@adjuja.ma}
+      NOTIFICATION_FROM_EMAIL: ${NOTIFICATION_FROM_EMAIL:-noreply@adjuja.com}
       NOTIFICATION_FROM_NAME: ADJUJA Veille
       ADMIN_SECRET: ${ADMIN_SECRET:-dev-admin-secret}
     depends_on:
@@ -304,7 +304,7 @@ services:
       REDIS_URL: redis://redis:6379/4
       RESEND_API_KEY: ${RESEND_API_KEY:-}
       NOTIFICATION_CHANNEL: email_resend
-      NOTIFICATION_FROM_EMAIL: ${NOTIFICATION_FROM_EMAIL:-noreply@adjuja.ma}
+      NOTIFICATION_FROM_EMAIL: ${NOTIFICATION_FROM_EMAIL:-noreply@adjuja.com}
       NOTIFICATION_FROM_NAME: ADJUJA Veille
     depends_on:
       postgres:

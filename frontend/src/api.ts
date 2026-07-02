@@ -23,6 +23,24 @@ function authHeaders(): Record<string, string> {
 
 // ── Helpers internes ───────────────────────────────────────────────────
 
+/** Parse JSON sans planter si le corps est vide ou invalide. */
+async function safeJson<T = unknown>(res: Response): Promise<T | null> {
+  try {
+    const text = await res.text();
+    return text ? (JSON.parse(text) as T) : null;
+  } catch {
+    return null;
+  }
+}
+
+/** Traduit les erreurs réseau bas-niveau en message lisible. */
+function wrapNetworkError(err: unknown): never {
+  if (err instanceof TypeError) {
+    throw new Error('Serveur inaccessible. Vérifiez votre connexion et réessayez.');
+  }
+  throw err;
+}
+
 function splitTags(s: string): string[] {
   return s ? s.split(/[,\n]/).map(t => t.trim()).filter(Boolean) : [];
 }
@@ -60,51 +78,70 @@ export async function getPasswordRules(): Promise<PasswordRules> {
 export async function register(params: {
   nom: string; prenom: string; email: string; password: string;
 }): Promise<boolean> {
-  const res = await fetch('/api/v1/auth/register', {
-    method:  'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body:    JSON.stringify(params),
-  });
-  const data = await res.json();
+  let res: Response;
+  try {
+    res = await fetch('/api/v1/auth/register', {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify(params),
+    });
+  } catch (err) { wrapNetworkError(err); }
+  const data = await safeJson<{ detail?: unknown; access_token?: string }>(res);
   if (!res.ok) {
-    if (Array.isArray(data.detail)) {
-      throw new Error(data.detail.map((e: { msg: string }) => e.msg).join(' '));
+    if (Array.isArray(data?.detail)) {
+      throw new Error((data.detail as { msg: string }[]).map(e => e.msg).join(' '));
     }
-    throw new Error(typeof data.detail === 'string' ? data.detail : 'Erreur inscription.');
+    throw new Error(typeof data?.detail === 'string' ? data.detail : 'Erreur lors de l\'inscription. Réessayez.');
   }
-  if (data.access_token) {
+  if (data?.access_token) {
     setToken(data.access_token);
-    return true;   // admin → connexion directe
+    return true;
   }
-  return false;    // freemium → vérification email requise
+  return false;
 }
 
 export async function login(email: string, password: string): Promise<void> {
-  const res = await fetch('/api/v1/auth/login', {
-    method:  'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body:    JSON.stringify({ email, password }),
-  });
-  const data = await res.json();
-  if (!res.ok) throw new Error(typeof data.detail === 'string' ? data.detail : 'Identifiants incorrects.');
+  let res: Response;
+  try {
+    res = await fetch('/api/v1/auth/login', {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ email, password }),
+    });
+  } catch (err) { wrapNetworkError(err); }
+  const data = await safeJson<{ detail?: unknown; access_token?: string }>(res);
+  if (!res.ok) {
+    const msg = typeof data?.detail === 'string' ? data.detail : null;
+    throw new Error(msg ?? (res.status === 401 ? 'Email ou mot de passe incorrect.' : 'Erreur serveur. Réessayez dans un instant.'));
+  }
+  if (!data?.access_token) throw new Error('Réponse inattendue du serveur. Réessayez.');
   setToken(data.access_token);
 }
 
 export async function loginWithGoogle(credential: string): Promise<void> {
-  const res = await fetch('/api/v1/auth/google', {
-    method:  'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body:    JSON.stringify({ credential }),
-  });
-  const data = await res.json();
-  if (!res.ok) throw new Error(typeof data.detail === 'string' ? data.detail : 'Erreur Google OAuth.');
+  let res: Response;
+  try {
+    res = await fetch('/api/v1/auth/google', {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ credential }),
+    });
+  } catch (err) { wrapNetworkError(err); }
+  const data = await safeJson<{ detail?: unknown; access_token?: string }>(res);
+  if (!res.ok) throw new Error(typeof data?.detail === 'string' ? data.detail : 'Erreur Google OAuth. Réessayez.');
+  if (!data?.access_token) throw new Error('Réponse inattendue du serveur. Réessayez.');
   setToken(data.access_token);
 }
 
 export async function getMe(): Promise<User> {
-  const res = await fetch('/api/v1/auth/me', { headers: authHeaders() });
+  let res: Response;
+  try {
+    res = await fetch('/api/v1/auth/me', { headers: authHeaders() });
+  } catch (err) { wrapNetworkError(err); }
   if (!res.ok) throw new Error('Non authentifié.');
-  return res.json();
+  const data = await safeJson<User>(res);
+  if (!data) throw new Error('Non authentifié.');
+  return data;
 }
 
 // ── Defaults & Models (publics) ────────────────────────────────────────

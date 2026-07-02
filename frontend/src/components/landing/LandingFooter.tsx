@@ -118,13 +118,24 @@ export default function LandingFooter({ onEnterApp }: { onEnterApp: () => void }
           <p className="m-0 text-[14px] text-l-text-dim">
             {t("landing.footer.copyright")}
           </p>
-          <div className="flex items-center gap-5">
-            <a href="#" aria-label="LinkedIn" className="text-l-text-dim hover:text-l-text transition-colors">
-              <IconLinkedin />
+          <div className="flex items-center gap-6">
+            <a
+              href="https://continuum.ma"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-3 no-underline opacity-90 hover:opacity-100 transition-opacity"
+            >
+              <span className="text-[15px] font-medium text-l-text">Made by</span>
+              <img src="/continuium-light.png" alt="Continuum" className="h-9 w-auto object-contain" />
             </a>
-            <a href="#" aria-label="X" className="text-l-text-dim hover:text-l-text transition-colors">
-              <IconX />
-            </a>
+            <div className="flex items-center gap-5">
+              <a href="#" aria-label="LinkedIn" className="text-l-text-dim hover:text-l-text transition-colors">
+                <IconLinkedin />
+              </a>
+              <a href="#" aria-label="X" className="text-l-text-dim hover:text-l-text transition-colors">
+                <IconX />
+              </a>
+            </div>
           </div>
         </div>
       </div>
