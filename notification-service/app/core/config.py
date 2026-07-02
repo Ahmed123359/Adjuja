@@ -17,6 +17,9 @@ class Settings(BaseSettings):
 
     admin_secret: str = "dev-admin-secret"
 
+    jwt_secret_key: str = "change-me-in-production"
+    jwt_algorithm: str = "HS256"
+
     notification_hour: int = 8    # 08:00 Africa/Casablanca
     notification_minute: int = 0
 

@@ -101,7 +101,7 @@ class User(Base):
     hashed_pwd: Mapped[str]              = mapped_column(Text)
     created_at: Mapped[str]              = mapped_column(String(50))
     email_verified: Mapped[bool]         = mapped_column(Boolean, default=True)
-    verification_token: Mapped[str | None] = mapped_column(String(36), nullable=True)
+    verification_token: Mapped[str | None] = mapped_column(String(36), nullable=True, index=True)
     generations_used: Mapped[int]        = mapped_column(Integer, default=0)
     max_generations: Mapped[int]         = mapped_column(Integer, default=0)
 

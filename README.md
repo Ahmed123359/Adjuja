@@ -1,4 +1,4 @@
-# ADJUJA — Plateforme IA pour les Marchés Publics Marocains
+# ADJUJA  Plateforme IA pour les Marchés Publics Marocains
 
 ADJUJA est un SaaS B2B qui automatise la réponse aux appels d'offres publics marocains.
 L'utilisateur dépose son dossier de consultation (CPS, RC, templates) et obtient en moins de 2 minutes
@@ -344,14 +344,14 @@ pytest --cov=app          # avec couverture
 | Service | Port | Description |
 |---|---|---|
 | `api` | 8000 | FastAPI backend principal |
-| `celery-io` | — | Worker Celery : LLM, analyse (concurrency=4) |
-| `celery-cpu` | — | Worker Celery : filler, signing, ZIP (concurrency=2) |
+| `celery-io` |  | Worker Celery : LLM, analyse (concurrency=4) |
+| `celery-cpu` |  | Worker Celery : filler, signing, ZIP (concurrency=2) |
 | `ao-watcher-api` | 8001 | API scraping AO |
-| `ao-watcher-worker` | — | Celery prefork (Playwright, concurrency=2) |
-| `ao-watcher-beat` | — | Celery Beat : scrape toutes les 6h |
+| `ao-watcher-worker` |  | Celery prefork (Playwright, concurrency=2) |
+| `ao-watcher-beat` |  | Celery Beat : scrape toutes les 6h |
 | `notification-api` | 8002 | API préférences + admin |
-| `notification-worker` | — | Celery gevent : envois email (concurrency=10) |
-| `notification-beat` | — | Celery Beat : digest quotidien 08h00 |
+| `notification-worker` |  | Celery gevent : envois email (concurrency=10) |
+| `notification-beat` |  | Celery Beat : digest quotidien 08h00 |
 | `frontend` | 8090 | Nginx + React SPA (production) |
 | `postgres` | 5432 | PostgreSQL 15 |
 | `redis` | 6379 | Cache + broker Celery (5 DBs logiques) |
@@ -364,10 +364,10 @@ pytest --cov=app          # avec couverture
 
 Les architectures détaillées de chaque module sont dans `conception/` :
 
-- [conception/2. Architecture/architecture.md](conception/2.%20Architecture/architecture.md) — Architecture principale
-- [hafid-taches-docs/technical-offer/architecture.md](hafid-taches-docs/technical-offer/architecture.md) — Pipeline AO et filler
-- [hafid-taches-docs/scraping/architecture.md](hafid-taches-docs/scraping/architecture.md) — AO Watcher et scraping
-- [hafid-taches-docs/notification/architecture.md](hafid-taches-docs/notification/architecture.md) — Service de notification
+- [conception/2. Architecture/architecture.md](conception/2.%20Architecture/architecture.md)  Architecture principale
+- [hafid-taches-docs/technical-offer/architecture.md](hafid-taches-docs/technical-offer/architecture.md)  Pipeline AO et filler
+- [hafid-taches-docs/scraping/architecture.md](hafid-taches-docs/scraping/architecture.md)  AO Watcher et scraping
+- [hafid-taches-docs/notification/architecture.md](hafid-taches-docs/notification/architecture.md)  Service de notification
 
 ---
 

@@ -51,6 +51,9 @@ def run_notification_batch() -> dict:
     )
     chord(tasks)(finalize_batch.s(batch_id))
 
+    # Abonnés newsletter en parallèle (indépendant du chord)
+    notify_newsletter_subscribers.delay(batch_id)
+
     return {"batch_id": batch_id, "orgs": len(rows)}
 
 
@@ -182,6 +185,58 @@ def finalize_batch(results: list[dict], batch_id: int) -> dict:
         batch_id, emails_sent, orgs_skipped,
     )
     return {"batch_id": batch_id, "emails_sent": emails_sent, "orgs_skipped": orgs_skipped}
+
+
+@celery_app.task(
+    name="app.workers.tasks.batch_tasks.notify_newsletter_subscribers",
+    autoretry_for=(Exception,),
+    max_retries=2,
+    default_retry_delay=60,
+)
+def notify_newsletter_subscribers(batch_id: int) -> dict:
+    """Envoie un digest des AOs récents à tous les abonnés newsletter actifs."""
+    with get_session() as session:
+        rows = session.execute(
+            text("""
+                SELECT sa.id, sa.titre, sa.acheteur, sa.categorie,
+                       sa.date_limite, sa.url_source
+                FROM watcher.scraped_aos sa
+                WHERE sa.date_publication >= NOW() - INTERVAL '24 hours'
+                ORDER BY sa.date_publication DESC
+                LIMIT 20
+            """)
+        ).fetchall()
+
+        if not rows:
+            return {"newsletter": True, "sent": 0, "reason": "no_new_aos"}
+
+        subscribers = session.execute(
+            text("SELECT email FROM public.newsletter_subscribers WHERE active = TRUE")
+        ).fetchall()
+
+        if not subscribers:
+            return {"newsletter": True, "sent": 0, "reason": "no_subscribers"}
+
+        ao_items = [
+            AoItem(
+                titre=r.titre,
+                acheteur=r.acheteur,
+                categorie=r.categorie,
+                date_limite=r.date_limite,
+                url_source=r.url_source,
+            )
+            for r in rows
+        ]
+        content = TemplateRegistry.get("ao_digest").render({"aos": ao_items})
+        channel = NotificationChannelFactory.create(settings.notification_channel)
+
+        sent = 0
+        for sub in subscribers:
+            if channel.send(sub.email, content):
+                sent += 1
+
+    logger.info("Newsletter : %d emails envoyés.", sent)
+    return {"newsletter": True, "sent": sent}
 
 
 def _mark_batch_done(

@@ -1,6 +1,8 @@
 import logging
+import re
 import uuid
 from datetime import datetime, timezone
+from pathlib import Path
 from typing import Optional
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
@@ -13,6 +15,15 @@ from app.storage import minio_client as mc
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/sign", tags=["Signature"])
+
+_UNSAFE_CHARS = re.compile(r"[^\w\-]")
+
+
+def _safe_filename(raw: str | None) -> str:
+    """Extrait un nom de fichier sans composant de chemin ni caractère dangereux."""
+    stem = Path(raw or "document").stem
+    safe = _UNSAFE_CHARS.sub("_", stem)[:80]
+    return safe or "document"
 
 
 @router.post("/pdf")
@@ -52,10 +63,11 @@ async def sign_pdf_endpoint(
 
     org_id = current_user.org_id or current_user.id
 
+    safe_name = _safe_filename(pdf.filename)
+
     if marche_id:
         job_id = uuid.uuid4().hex
-        original_name = (pdf.filename or "document").replace(".pdf", "")
-        minio_key = f"{org_id}/marches/{marche_id}/signing/{job_id}/{original_name}_signe.pdf"
+        minio_key = f"{org_id}/marches/{marche_id}/signing/{job_id}/{safe_name}_signe.pdf"
         try:
             mc.upload_bytes(minio_key, signed_bytes, "application/pdf")
             logger.info("Signing uploadé: %s", minio_key)
@@ -64,11 +76,11 @@ async def sign_pdf_endpoint(
 
         await _save_signing_job(marche_id, org_id, job_id)
 
-    filename = (pdf.filename or "document").replace(".pdf", "_signe.pdf")
+    dl_filename = f"{safe_name}_signe.pdf"
     return Response(
         content=signed_bytes,
         media_type="application/pdf",
-        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+        headers={"Content-Disposition": f"attachment; filename=\"{dl_filename}\""},
     )
 
 

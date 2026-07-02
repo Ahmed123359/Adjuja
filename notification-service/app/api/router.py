@@ -1,6 +1,7 @@
 from datetime import datetime, timezone
 
 from fastapi import APIRouter, Depends, Header, HTTPException, Query
+from jose import JWTError, jwt
 from pydantic import BaseModel
 from sqlalchemy import text
 
@@ -19,10 +20,33 @@ def _require_admin(x_admin_secret: str = Header(..., alias="X-Admin-Secret")) ->
 
 
 def _require_jwt(authorization: str = Header(...)) -> str:
-    """Extrait le org_id du JWT. Validation minimale : présence du header."""
+    """Valide le JWT et retourne le user_id (sub). Résout l'org_id via la DB."""
     if not authorization.startswith("Bearer "):
         raise HTTPException(status_code=401, detail="Token manquant.")
-    return authorization  # relayé tel quel  la validation complète est côté app principale
+    token = authorization[7:]
+    try:
+        payload = jwt.decode(token, settings.jwt_secret_key, algorithms=[settings.jwt_algorithm])
+        user_id: str = payload.get("sub", "")
+        if not user_id:
+            raise HTTPException(status_code=401, detail="Token invalide.")
+    except JWTError:
+        raise HTTPException(status_code=401, detail="Token invalide ou expiré.")
+
+    with get_session() as session:
+        row = session.execute(
+            text("SELECT org_id, id FROM users WHERE id = :uid"),
+            {"uid": user_id},
+        ).fetchone()
+    if not row:
+        raise HTTPException(status_code=401, detail="Utilisateur introuvable.")
+
+    return row.org_id or row.id
+
+
+def _check_org_access(path_org_id: str, jwt_org_id: str) -> None:
+    """Lève 403 si le JWT n'appartient pas à l'org demandée."""
+    if path_org_id != jwt_org_id:
+        raise HTTPException(status_code=403, detail="Accès refusé à cette organisation.")
 
 
 # ── Schemas ──────────────────────────────────────────────────────────────────
@@ -47,7 +71,8 @@ class PreferenceOut(BaseModel):
 # ── Preferences CRUD ─────────────────────────────────────────────────────────
 
 @router.get("/preferences/{org_id}", response_model=PreferenceOut)
-def get_preferences(org_id: str, _auth: str = Depends(_require_jwt)):
+def get_preferences(org_id: str, caller_org: str = Depends(_require_jwt)):
+    _check_org_access(org_id, caller_org)
     with get_session() as session:
         pref = session.execute(
             text("SELECT * FROM notifications.notification_preferences WHERE org_id = :id"),
@@ -66,7 +91,8 @@ def get_preferences(org_id: str, _auth: str = Depends(_require_jwt)):
 
 
 @router.put("/preferences/{org_id}", response_model=PreferenceOut)
-def upsert_preferences(org_id: str, body: PreferenceIn, _auth: str = Depends(_require_jwt)):
+def upsert_preferences(org_id: str, body: PreferenceIn, caller_org: str = Depends(_require_jwt)):
+    _check_org_access(org_id, caller_org)
     now = datetime.now(timezone.utc)
     with get_session() as session:
         session.execute(
@@ -106,7 +132,8 @@ def upsert_preferences(org_id: str, body: PreferenceIn, _auth: str = Depends(_re
 
 
 @router.delete("/preferences/{org_id}", status_code=204)
-def disable_preferences(org_id: str, _auth: str = Depends(_require_jwt)):
+def disable_preferences(org_id: str, caller_org: str = Depends(_require_jwt)):
+    _check_org_access(org_id, caller_org)
     with get_session() as session:
         session.execute(
             text("""

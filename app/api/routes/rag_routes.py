@@ -9,9 +9,10 @@ Le service principal ne fait jamais d'indexation  il délègue au rag-etl.
 import httpx
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
+from app.api.dependencies import get_current_user, get_rag_service
 from app.config.settings import Settings, get_settings
+from app.models.user import UserPublic
 from app.services.rag_service import RagService, DOCUMENT_TYPES
-from app.api.dependencies import get_rag_service
 
 router = APIRouter(prefix="/rag", tags=["RAG"])
 
@@ -70,7 +71,10 @@ async def rag_status(
         "Retourne une erreur 503 si le service rag-etl n'est pas disponible."
     ),
 )
-async def rag_index(settings: Settings = Depends(get_settings)) -> dict:
+async def rag_index(
+    settings: Settings = Depends(get_settings),
+    _user: UserPublic = Depends(get_current_user),
+) -> dict:
     """Proxie POST /index vers rag-etl et retourne son rapport."""
     if not settings.rag_etl_url:
         raise HTTPException(

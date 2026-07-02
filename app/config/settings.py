@@ -55,8 +55,8 @@ class Settings(BaseSettings):
     app_port: int = 8000
     """Port d'écoute du serveur Uvicorn."""
 
-    app_debug: bool = True
-    """Active le mode debug (CORS permissif, rechargement automatique)."""
+    app_debug: bool = False
+    """Active le mode debug (CORS permissif, rechargement automatique). False en prod."""
 
     # ------------------------------------------------------------------
     # Base de données PostgreSQL

@@ -45,6 +45,8 @@ async def run_filler_endpoint(
         raise HTTPException(status_code=400, detail=f"Fichier trop volumineux ({size_mb:.1f} Mo). Limite : {_MAX_PDF_MB} Mo.")
     if len(pdf_bytes) < 1024:
         raise HTTPException(status_code=400, detail="Fichier PDF invalide ou vide.")
+    if not pdf_bytes.startswith(b"%PDF-"):
+        raise HTTPException(status_code=400, detail="Le fichier n'est pas un PDF valide.")
 
     if not settings.mistral_api_key:
         raise HTTPException(status_code=503, detail="Clé API Mistral non configurée.")

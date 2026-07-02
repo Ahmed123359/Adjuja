@@ -1,8 +1,9 @@
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel
 
-from app.api.dependencies import get_usage_service
+from app.api.dependencies import get_current_user, get_usage_service
 from app.api.routes.defaults_routes import _load_defaults
+from app.models.user import UserPublic
 from app.services.usage_service import UsageService
 
 router = APIRouter(prefix="/usage", tags=["Compteur"])
@@ -29,11 +30,17 @@ async def _build_usage(usage: UsageService) -> UsageData:
 
 
 @router.get("", response_model=UsageData, summary="Compteur de tokens et d'appels")
-async def get_usage(usage: UsageService = Depends(get_usage_service)) -> UsageData:
+async def get_usage(
+    usage: UsageService = Depends(get_usage_service),
+    _user: UserPublic = Depends(get_current_user),
+) -> UsageData:
     return await _build_usage(usage)
 
 
 @router.post("/reset", response_model=UsageData, summary="Réinitialiser les compteurs")
-async def reset_usage(usage: UsageService = Depends(get_usage_service)) -> UsageData:
+async def reset_usage(
+    usage: UsageService = Depends(get_usage_service),
+    _user: UserPublic = Depends(get_current_user),
+) -> UsageData:
     await usage.reset()
     return await _build_usage(usage)

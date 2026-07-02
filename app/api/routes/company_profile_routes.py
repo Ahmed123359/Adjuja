@@ -232,14 +232,14 @@ async def _upload_image_asset(
 ) -> CompanyProfileResponse:
     org_id = current_user.org_id or current_user.id
 
-    allowed = ("image/png", "image/jpeg", "image/jpg")
-    if file.content_type not in allowed:
-        raise HTTPException(400, "Format non supporté. PNG ou JPEG requis.")
-
     data = await file.read()
     if len(data) > _IMG_MAX_MB * 1024 * 1024:
         raise HTTPException(400, f"Image trop volumineuse (max {_IMG_MAX_MB} Mo).")
 
+    from app.services.security.input_sanitizer import validate_logo
+    validate_logo(data, file.filename or "upload.png")
+
+    allowed = ("image/png", "image/jpeg", "image/jpg")
     ext = "png" if file.content_type == "image/png" else "jpg"
     key = f"{org_id}/profile/{asset}.{ext}"
 

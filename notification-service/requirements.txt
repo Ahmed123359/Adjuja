@@ -8,3 +8,4 @@ celery[gevent,redis]==5.4.0
 redis==5.2.1
 gevent==24.11.1
 resend==2.4.0
+python-jose[cryptography]==3.3.0

@@ -25,11 +25,12 @@ class HistoryService:
         ))
         await self._db.commit()
 
-    async def list_summaries(self, user_id: str) -> list[HistorySummary]:
+    async def list_summaries(self, user_id: str, limit: int = 100) -> list[HistorySummary]:
         result = await self._db.execute(
             select(Launch)
             .where(Launch.user_id == user_id)
             .order_by(Launch.created_at.desc())
+            .limit(limit)
         )
         return [
             HistorySummary(

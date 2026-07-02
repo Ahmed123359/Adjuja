@@ -52,6 +52,12 @@ async def extract_pdf(
 
     pdf_bytes = await file.read()
 
+    if not pdf_bytes.startswith(b"%PDF-"):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Le fichier n'est pas un PDF valide.",
+        )
+
     # Limite de taille
     size_mb = len(pdf_bytes) / (1024 * 1024)
     if size_mb > _MAX_PDF_SIZE_MB:
@@ -76,7 +82,7 @@ async def extract_pdf(
         logger.error("Erreur extraction PDF  user=%s erreur=%s", current_user.id, e, exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Impossible d'extraire le texte du PDF : {e}",
+            detail="Impossible d'extraire le texte du PDF. Vérifiez que le fichier n'est pas corrompu.",
         )
 
     if result.tokens_ocr > 0:

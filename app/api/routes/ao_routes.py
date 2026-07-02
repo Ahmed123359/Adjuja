@@ -196,6 +196,8 @@ async def eligibility_check(
 @router.get("", response_model=list[AoSummary])
 async def list_ao(
     current_user: UserPublic = Depends(get_current_user),
+    limit: int = 100,
+    offset: int = 0,
 ) -> list[AoSummary]:
     org_id = current_user.org_id or current_user.id
     async with AsyncSessionLocal() as session:
@@ -203,6 +205,8 @@ async def list_ao(
             select(AppelOffre)
             .where(AppelOffre.org_id == org_id)
             .order_by(AppelOffre.created_at.desc())
+            .limit(min(limit, 200))
+            .offset(offset)
         )
         aos = result.scalars().all()
 
@@ -280,6 +284,8 @@ async def upload_document(
         raise HTTPException(status_code=400, detail="Seuls les fichiers PDF sont acceptés.")
 
     pdf_bytes = await file.read()
+    if not pdf_bytes.startswith(b"%PDF-"):
+        raise HTTPException(status_code=400, detail="Le fichier n'est pas un PDF valide.")
     validate_upload_size(pdf_bytes, file.filename)
 
     async with AsyncSessionLocal() as session:
@@ -343,6 +349,8 @@ async def upload_multiple_documents(
                 raise HTTPException(status_code=400, detail=f"Fichier non-PDF refusé : {file.filename}")
 
             pdf_bytes = await file.read()
+            if not pdf_bytes.startswith(b"%PDF-"):
+                raise HTTPException(status_code=400, detail=f"Fichier PDF invalide : {file.filename}")
             validate_upload_size(pdf_bytes, file.filename)
 
             minio_key = mc.upload_dedup(
@@ -411,6 +419,7 @@ async def start_pipeline(
     """Lance la tâche Celery dummy (Phase 4a) ou le pipeline réel (Phase 4c+)."""
     org_id = current_user.org_id or current_user.id
 
+    _REQUIRED = ["nom_entreprise", "ice", "gerant_nom", "gerant_prenom", "adresse"]
     async with AsyncSessionLocal() as session:
         result = await session.execute(
             select(AppelOffre).where(AppelOffre.id == ao_id, AppelOffre.org_id == org_id)
@@ -425,34 +434,28 @@ async def start_pipeline(
                 detail=f"Pipeline déjà en cours ou terminé (statut: {ao.statut}).",
             )
 
+        prof_result = await session.execute(
+            select(CompanyProfile).where(CompanyProfile.org_id == org_id)
+        )
+        profile = prof_result.scalar_one_or_none()
+        if not profile:
+            raise HTTPException(
+                status_code=422,
+                detail="Profil entreprise non configuré. Renseignez votre profil dans le Dashboard avant de lancer le pipeline.",
+            )
+
+        manquants = [f for f in _REQUIRED if not getattr(profile, f, "")]
+        if manquants:
+            raise HTTPException(
+                status_code=422,
+                detail=f"Profil incomplet. Champs manquants : {', '.join(manquants)}. Complétez votre profil dans le Dashboard.",
+            )
+
         ao.statut = "en_analyse"
         ao.pipeline_pct = 0
         ao.erreur_message = None
         ao.updated_at = _now_iso()
         await session.commit()
-
-    # Vérifier que le profil entreprise est complet avant de lancer
-    from app.db.models import CompanyProfile
-    from sqlalchemy import select as sa_select
-    _REQUIRED = ["nom_entreprise", "ice", "gerant_nom", "gerant_prenom", "adresse"]
-    async with AsyncSessionLocal() as session:
-        prof_result = await session.execute(
-            sa_select(CompanyProfile).where(CompanyProfile.org_id == org_id)
-        )
-        profile = prof_result.scalar_one_or_none()
-
-    if not profile:
-        raise HTTPException(
-            status_code=422,
-            detail="Profil entreprise non configuré. Renseignez votre profil dans le Dashboard avant de lancer le pipeline.",
-        )
-
-    manquants = [f for f in _REQUIRED if not getattr(profile, f, "")]
-    if manquants:
-        raise HTTPException(
-            status_code=422,
-            detail=f"Profil incomplet. Champs manquants : {', '.join(manquants)}. Complétez votre profil dans le Dashboard.",
-        )
 
     from celery import chain
     from app.tasks.ao_tasks import (

@@ -8,12 +8,12 @@ from google.oauth2 import id_token as google_id_token
 from jose import jwt
 from pydantic import BaseModel
 
-from app.api.dependencies import get_current_user
+from app.api.dependencies import get_current_user, get_user_service
 from app.config.settings import Settings, get_settings
+from app.limiter import limiter
 from app.models.user import Token, UserCreate, UserPublic, PASSWORD_MIN_LENGTH, PASSWORD_REQUIRE_DIGIT
-from app.services.user_service import UserService
-from app.api.dependencies import get_user_service
 from app.services.email_service import send_verification_email
+from app.services.user_service import UserService
 
 router = APIRouter(prefix="/auth", tags=["Authentification"])
 logger = logging.getLogger(__name__)
@@ -132,7 +132,9 @@ async def verify_email(
     response_model=Token,
     summary="Se connecter",
 )
+@limiter.limit("5/minute")
 async def login(
+    request: Request,
     data: LoginRequest,
     users: UserService = Depends(get_user_service),
     settings: Settings = Depends(get_settings),

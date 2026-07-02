@@ -319,7 +319,8 @@ function AoDetailView({ aoId, onBack }: { aoId: string; onBack: () => void }) {
   const [confirmModal, setConfirmModal] = useState<{ message: string; onConfirm: () => void } | null>(null);
   const [dragOver, setDragOver] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const pollingRef = useRef<number | null>(null);
+  const pollingRef    = useRef<number | null>(null);
+  const pollCountRef  = useRef(0);
 
   const load = useCallback(async () => {
     try {
@@ -334,31 +335,45 @@ function AoDetailView({ aoId, onBack }: { aoId: string; onBack: () => void }) {
     load();
   }, [load]);
 
-  const startPolling = useCallback(() => {
-    if (pollingRef.current) return;
-    pollingRef.current = window.setInterval(async () => {
+  const stopPolling = useCallback(() => {
+    if (pollingRef.current) {
+      clearTimeout(pollingRef.current);
+      pollingRef.current = null;
+    }
+    pollCountRef.current = 0;
+  }, []);
+
+  const scheduleNextPoll = useCallback(() => {
+    // Backoff adaptatif : 3s → 5s → 8s → max 12s
+    const delays = [3000, 5000, 8000, 12000];
+    const delay = delays[Math.min(pollCountRef.current, delays.length - 1)];
+    pollCountRef.current += 1;
+
+    pollingRef.current = window.setTimeout(async () => {
       try {
         const status = await fetchAoStatus(aoId);
         setAo((prev) =>
           prev
-            ? {
-                ...prev,
-                statut: status.statut,
-                pipeline_pct: status.pipeline_pct,
-                erreur_message: status.erreur_message,
-              }
+            ? { ...prev, statut: status.statut, pipeline_pct: status.pipeline_pct, erreur_message: status.erreur_message }
             : prev,
         );
         if (status.statut === "termine" || status.statut === "erreur") {
-          clearInterval(pollingRef.current!);
-          pollingRef.current = null;
+          stopPolling();
           await load();
+        } else {
+          scheduleNextPoll();
         }
       } catch {
-        /* ignore */
+        scheduleNextPoll();
       }
-    }, 2000);
-  }, [aoId, load]);
+    }, delay);
+  }, [aoId, load, stopPolling]);
+
+  const startPolling = useCallback(() => {
+    if (pollingRef.current) return;
+    pollCountRef.current = 0;
+    scheduleNextPoll();
+  }, [scheduleNextPoll]);
 
   const isRunning = ao
     ? ["en_analyse", "en_traitement"].includes(ao.statut)
@@ -368,10 +383,7 @@ function AoDetailView({ aoId, onBack }: { aoId: string; onBack: () => void }) {
     if (isRunning) {
       startPolling();
     } else {
-      if (pollingRef.current) {
-        clearInterval(pollingRef.current);
-        pollingRef.current = null;
-      }
+      stopPolling();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isRunning]);
@@ -416,10 +428,7 @@ function AoDetailView({ aoId, onBack }: { aoId: string; onBack: () => void }) {
     setCancelling(true);
     setError(null);
     try {
-      if (pollingRef.current) {
-        clearInterval(pollingRef.current);
-        pollingRef.current = null;
-      }
+      stopPolling();
       const status = await cancelAoPipeline(aoId);
       setAo((prev) =>
         prev

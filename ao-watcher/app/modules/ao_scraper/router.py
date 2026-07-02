@@ -43,6 +43,7 @@ async def list_aos(
     page: int = Query(1, ge=1),
     limit: int = Query(50, ge=1, le=200),
     db: AsyncSession = Depends(get_db),
+    _auth: str = Depends(_require_auth_header),
 ):
     repo = AoRepository(db)
     items, total = await repo.list_aos(
@@ -59,13 +60,13 @@ async def list_aos(
 
 
 @router.get("/stats")
-async def get_stats(db: AsyncSession = Depends(get_db)):
+async def get_stats(db: AsyncSession = Depends(get_db), _auth: str = Depends(_require_auth_header)):
     repo = AoRepository(db)
     return await repo.get_stats()
 
 
 @router.get("/{ao_id}", response_model=AoOut)
-async def get_ao(ao_id: int, db: AsyncSession = Depends(get_db)):
+async def get_ao(ao_id: int, db: AsyncSession = Depends(get_db), _auth: str = Depends(_require_auth_header)):
     repo = AoRepository(db)
     ao = await repo.get_by_id(ao_id)
     if not ao:

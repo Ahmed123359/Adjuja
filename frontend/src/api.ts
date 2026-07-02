@@ -165,19 +165,19 @@ export async function fetchRagStatus(): Promise<RagStatus> {
 }
 
 export async function fetchUsage(): Promise<UsageData> {
-  const res = await fetch('/api/v1/usage');
+  const res = await fetch('/api/v1/usage', { headers: authHeaders() });
   if (!res.ok) throw new Error('Impossible de charger le compteur');
   return res.json();
 }
 
 export async function resetUsage(): Promise<UsageData> {
-  const res = await fetch('/api/v1/usage/reset', { method: 'POST' });
+  const res = await fetch('/api/v1/usage/reset', { method: 'POST', headers: authHeaders() });
   if (!res.ok) throw new Error('Impossible de réinitialiser le compteur');
   return res.json();
 }
 
 export async function reindexRag(): Promise<RagStatus> {
-  const res = await fetch('/api/v1/rag/index', { method: 'POST' });
+  const res = await fetch('/api/v1/rag/index', { method: 'POST', headers: authHeaders() });
   if (!res.ok) throw new Error('Échec de la reindexation RAG');
   return res.json();
 }
