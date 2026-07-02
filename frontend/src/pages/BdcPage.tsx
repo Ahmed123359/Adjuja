@@ -157,17 +157,21 @@ export default function BdcPage() {
   const [selectedBdc, setSelectedBdc] = useState<ScrapedBdc | null>(null);
   const [showFilters, setShowFilters] = useState(() => !isMobile);
   const debounceRef                   = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const loadIdRef                     = useRef(0);
 
   const load = useCallback(async (f: WatcherBdcFilters) => {
+    const id = ++loadIdRef.current;
     setLoading(true);
     setError(null);
     try {
       const result = await fetchScrapedBdc(f, PAGE_LIMIT);
+      if (id !== loadIdRef.current) return;
       setData(result);
     } catch (e: unknown) {
+      if (id !== loadIdRef.current) return;
       setError(t('veille.error.loadFailed'));
     } finally {
-      setLoading(false);
+      if (id === loadIdRef.current) setLoading(false);
     }
   }, [t]);
 
@@ -301,7 +305,7 @@ export default function BdcPage() {
                 <th style={{ ...thStyle, textAlign: 'right' }}>{t('bdc.table.statut')}</th>
               </tr>
             </thead>
-            <tbody>
+            <tbody style={{ opacity: loading && data ? 0.45 : 1, transition: 'opacity 0.15s' }}>
               {loading && !data ? (
                 <TableSkeleton />
               ) : !data?.items.length ? (
