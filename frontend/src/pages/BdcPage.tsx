@@ -165,7 +165,7 @@ export default function BdcPage() {
       const result = await fetchScrapedBdc(f, PAGE_LIMIT);
       setData(result);
     } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : t('veille.error.loadFailed'));
+      setError(t('veille.error.loadFailed'));
     } finally {
       setLoading(false);
     }

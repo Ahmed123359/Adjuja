@@ -256,7 +256,7 @@ export default function VeillePage() {
       const result = await fetchScrapedAos(f, PAGE_LIMIT);
       setData(result);
     } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : t('veille.error.loadFailed'));
+      setError(t('veille.error.loadFailed'));
     } finally {
       setLoading(false);
     }

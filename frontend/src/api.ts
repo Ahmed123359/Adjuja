@@ -870,8 +870,9 @@ export async function fetchScrapedAos(
   p.set('page', String(filters.page));
   p.set('limit', String(limit));
   const res = await fetch(`${WATCHER_BASE}/aos?${p}`, { headers: authHeaders() });
-  const json = await res.json();
   if (!res.ok) throw new Error('Erreur chargement veille.');
+  const json = await safeJson<ScrapedAoList>(res);
+  if (!json) throw new Error('Erreur chargement veille.');
   return json;
 }
 
@@ -937,8 +938,9 @@ export async function fetchScrapedBdc(
   p.set('page', String(filters.page));
   p.set('limit', String(limit));
   const res = await fetch(`${WATCHER_BASE}/bdc?${p}`, { headers: authHeaders() });
-  const json = await res.json();
   if (!res.ok) throw new Error('Erreur chargement bons de commande.');
+  const json = await safeJson<ScrapedBdcList>(res);
+  if (!json) throw new Error('Erreur chargement bons de commande.');
   return json;
 }
 
