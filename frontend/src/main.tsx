@@ -35,11 +35,8 @@ function AppRouter() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{ background: '#050914' }}>
-        <div className="w-8 h-8 rounded-xl flex items-center justify-center animate-pulse"
-          style={{ background: 'linear-gradient(135deg,#4338ca,#6366f1)' }}>
-          <span className="font-bold text-white text-base">O</span>
-        </div>
+      <div className="min-h-screen flex items-center justify-center" style={{ background: '#080B1C' }}>
+        <img src="/logo-adjuja.png" alt="ADJUJA" className="h-12 w-auto object-contain animate-pulse" />
       </div>
     );
   }

@@ -13,7 +13,7 @@ from app.api.routes import (
     defaults_router, usage_router, history_router, auth_router, pdf_router, brief_router,
     signing_router, bordereau_router, acte_engagement_router, chat_router, export_router,
     filler_router, offre_technique_router, marche_router, ao_router, company_profile_router,
-    staff_cvs_router, company_documents_router,
+    staff_cvs_router, company_documents_router, newsletter_router,
 )
 try:
     from app.celery_app import celery_app as _celery_app  # noqa: F401  initialise le broker/task_routes pour les shared_tasks
@@ -127,6 +127,7 @@ app.include_router(ao_router,               prefix="/api/v1")
 app.include_router(company_profile_router,  prefix="/api/v1")
 app.include_router(staff_cvs_router,         prefix="/api/v1")
 app.include_router(company_documents_router, prefix="/api/v1")
+app.include_router(newsletter_router)
 
 
 @app.get("/", include_in_schema=False)
@@ -141,8 +142,8 @@ def sitemap():
     content = """<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
-    <loc>https://offria.cloud</loc>
-    <lastmod>2026-03-23</lastmod>
+    <loc>https://adjuja.com</loc>
+    <lastmod>2026-07-02</lastmod>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
   </url>
@@ -153,7 +154,7 @@ def sitemap():
 @app.get("/robots.txt", include_in_schema=False)
 def robots():
     """Robots.txt pour les crawlers."""
-    content = "User-agent: *\nAllow: /\nSitemap: https://offria.cloud/sitemap.xml\n"
+    content = "User-agent: *\nAllow: /\nSitemap: https://adjuja.com/sitemap.xml\n"
     return Response(content=content, media_type="text/plain")
 
 

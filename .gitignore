@@ -9,26 +9,43 @@ venv/
 # Node / Frontend
 frontend/node_modules/
 frontend/dist/
+node_modules/
+package-lock.json
+
+# Environnement local et secrets
+.env.local
+.env.production
+
+# Dossiers de données personnelles et documents confidentiels
+Dossier AO HAFID/
+__MACOSX/
+*.DS_Store
+
+# R&D (notebooks, PDFs, scripts de test ponctuels)
+rd/
+worker/
+
+# Scripts one-shot
+seed_company_profile.py
+
+# Claude Code
+.claude/settings.json
+
+# Documents de travail internes (garder seulement les architecture.md)
+hafid-taches-docs/**
+!hafid-taches-docs/technical-offer/architecture.md
+!hafid-taches-docs/scraping/architecture.md
+!hafid-taches-docs/notification/architecture.md
+!hafid-taches-docs/documents-filler/
+
+# Anciennes présentations
+conception/5. Presentation/old/
 
 # Divers
-.DS_Store
 *.log
 data/
 documents/
 knowledge_base/
 scripts/
 QA/
-
-# R&D  sorties du scraper (ZIPs téléchargés, debug, rapports, base de données locale)
-rd/scrapper/output/
-rd/scrapper/*.db
-rd/ocr/output/
-
-# Worker  sorties (ZIPs, debug, BDD locale)
-worker/output/
-worker/.venv/
-
-# Lovable  dossier généré automatiquement
 lovable/
-
-

@@ -19,6 +19,7 @@ from app.api.routes.ao_routes import router as ao_router
 from app.api.routes.company_profile_routes import router as company_profile_router
 from app.api.routes.staff_cvs_routes import router as staff_cvs_router
 from app.api.routes.company_documents_routes import router as company_documents_router
+from app.api.routes.newsletter_routes import router as newsletter_router
 
 __all__ = [
     "generation_router",
@@ -42,4 +43,5 @@ __all__ = [
     "company_profile_router",
     "staff_cvs_router",
     "company_documents_router",
+    "newsletter_router",
 ]

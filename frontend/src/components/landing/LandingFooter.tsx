@@ -38,6 +38,36 @@ function NavLink({ children }: { children: React.ReactNode }) {
 export default function LandingFooter({ onEnterApp }: { onEnterApp: () => void }) {
   const { t } = useTranslation();
   const [email, setEmail] = useState("");
+  const [subState, setSubState] = useState<"idle" | "loading" | "ok" | "error">("idle");
+  const [toast, setToast] = useState<{ msg: string; type: "ok" | "error" } | null>(null);
+
+  async function handleSubscribe() {
+    if (!email.trim()) return;
+    setSubState("loading");
+    try {
+      const res = await fetch("/api/v1/newsletter/subscribe", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: email.trim() }),
+      });
+      if (res.ok) {
+        setSubState("ok");
+        setEmail("");
+        showToast("Votre email a bien été enregistré, vous recevrez les prochaines alertes AO !", "ok");
+      } else {
+        setSubState("error");
+        showToast("Adresse invalide ou déjà inscrite.", "error");
+      }
+    } catch {
+      setSubState("error");
+      showToast("Erreur réseau, réessayez.", "error");
+    }
+  }
+
+  function showToast(msg: string, type: "ok" | "error") {
+    setToast({ msg, type });
+    setTimeout(() => setToast(null), 4000);
+  }
 
   const NAV_LINKS   = ["navHome", "navFeatures", "navPricing", "navBlog", "navContact"] as const;
   const LEGAL_LINKS = ["legalTerms", "legalPrivacy", "legalMentions", "legalSecurity", "legalRgpd"] as const;
@@ -98,13 +128,16 @@ export default function LandingFooter({ onEnterApp }: { onEnterApp: () => void }
                 type="email"
                 placeholder={t("landing.footer.emailPlaceholder")}
                 value={email}
-                onChange={e => setEmail(e.target.value)}
+                onChange={e => { setEmail(e.target.value); setSubState("idle"); }}
+                onKeyDown={e => e.key === "Enter" && handleSubscribe()}
                 className="flex-1 min-w-0 bg-transparent px-4 py-3 text-[14px] text-l-text placeholder:text-l-text-dim outline-none border-0"
               />
               <button
-                className="shrink-0 bg-l-blue border-0 cursor-pointer px-5 py-3 text-[14px] font-semibold text-white hover:brightness-110 transition-all"
+                onClick={handleSubscribe}
+                disabled={subState === "loading"}
+                className="shrink-0 bg-l-blue border-0 cursor-pointer px-5 py-3 text-[14px] font-semibold text-white hover:brightness-110 transition-all disabled:opacity-60"
               >
-                {t("landing.footer.subscribe")}
+                {subState === "loading" ? "..." : t("landing.footer.subscribe")}
               </button>
             </div>
           </div>
@@ -140,6 +173,39 @@ export default function LandingFooter({ onEnterApp }: { onEnterApp: () => void }
         </div>
       </div>
 
+      {/* Toast newsletter */}
+      {toast && (
+        <div
+          style={{
+            position: "fixed",
+            bottom: 28,
+            right: 28,
+            zIndex: 9999,
+            display: "flex",
+            alignItems: "center",
+            gap: 10,
+            padding: "14px 20px",
+            borderRadius: 12,
+            background: toast.type === "ok" ? "#0e2a24" : "#2a0e0e",
+            border: `1px solid ${toast.type === "ok" ? "#1BC9A8" : "#e53e3e"}`,
+            color: toast.type === "ok" ? "#1BC9A8" : "#fc8181",
+            fontSize: 14,
+            fontWeight: 500,
+            boxShadow: "0 4px 24px rgba(0,0,0,0.4)",
+            maxWidth: 360,
+            animation: "slideInToast 0.3s ease",
+          }}
+        >
+          <span style={{ fontSize: 18 }}>{toast.type === "ok" ? "✓" : "✕"}</span>
+          {toast.msg}
+        </div>
+      )}
+      <style>{`
+        @keyframes slideInToast {
+          from { opacity: 0; transform: translateY(16px); }
+          to   { opacity: 1; transform: translateY(0); }
+        }
+      `}</style>
     </footer>
   );
 }

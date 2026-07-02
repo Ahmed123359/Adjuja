@@ -1,9 +1,19 @@
-from sqlalchemy import Boolean, ForeignKey, Index, Integer, String, Text
+from sqlalchemy import Boolean, ForeignKey, Index, Integer, String, Text, UniqueConstraint
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from typing import Any, Optional
 
 from app.db.base import Base
+
+
+class NewsletterSubscriber(Base):
+    __tablename__ = "newsletter_subscribers"
+    __table_args__ = (UniqueConstraint("email", name="uq_newsletter_email"),)
+
+    id: Mapped[str]        = mapped_column(String(36), primary_key=True)
+    email: Mapped[str]     = mapped_column(String(255), nullable=False, index=True)
+    active: Mapped[bool]   = mapped_column(Boolean, default=True, nullable=False)
+    created_at: Mapped[str] = mapped_column(String(50))
 
 
 class Marche(Base):
