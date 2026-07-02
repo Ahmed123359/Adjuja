@@ -36,11 +36,11 @@ type Props = {
 
 function MetaChip({ label, value }: { label: string; value: string }) {
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 3, minWidth: 0 }}>
       <span style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.07em', color: 'var(--l-dim)' }}>
         {label}
       </span>
-      <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--l-text)' }}>
+      <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--l-text)', wordBreak: 'break-word', overflowWrap: 'anywhere', lineHeight: 1.4 }}>
         {value}
       </span>
     </div>
@@ -63,15 +63,17 @@ function ActionBtn({
     alignItems:     'center',
     justifyContent: 'center',
     gap:            6,
-    padding:        '9px 16px',
-    borderRadius:   8,
-    fontSize:       13,
+    padding:        '11px 16px',
+    minHeight:      44,
+    borderRadius:   10,
+    fontSize:       14,
     fontWeight:     600,
     cursor:         disabled ? 'not-allowed' : 'pointer',
     border:         'none',
     fontFamily:     'inherit',
     transition:     'opacity .15s',
     opacity:        disabled ? 0.55 : 1,
+    width:          '100%',
   };
   const styles: Record<string, React.CSSProperties> = {
     primary:   { ...base, background: 'var(--l-blue)',   color: '#fff' },
@@ -257,7 +259,7 @@ export default function AoDetailPanel({ ao: initialAo, onClose, onUpdated }: Pro
       </div>
 
       {/* Body */}
-      <div style={{ flex: 1, overflowY: 'auto', padding: '18px 18px 24px' }}>
+      <div style={{ flex: 1, overflowY: 'auto', padding: isMobile ? '16px 16px max(24px, env(safe-area-inset-bottom))' : '18px 18px 24px' }}>
 
         {/* Acheteur + Titre */}
         <div style={{ marginBottom: 16 }}>
@@ -372,11 +374,11 @@ export default function AoDetailPanel({ ao: initialAo, onClose, onUpdated }: Pro
           {(ao.region || ao.ville) && (
             <MetaChip
               label={t('veille.detail.location')}
-              value={[ao.ville, ao.region].filter(Boolean).join(', ')}
+              value={ao.region || ao.ville || ''}
             />
           )}
           {ao.categorie && (
-            <MetaChip label={t('veille.detail.source')} value={ao.categorie} />
+            <MetaChip label={t('veille.detail.categorie')} value={ao.categorie} />
           )}
         </div>
 

@@ -14,11 +14,11 @@ type Props = {
 function MetaChip({ label, value }: { label: string; value: string | null }) {
   if (!value) return null;
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 3, minWidth: 0 }}>
       <span style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.07em', color: 'var(--l-dim)' }}>
         {label}
       </span>
-      <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--l-text)' }}>
+      <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--l-text)', wordBreak: 'break-word', overflowWrap: 'anywhere', lineHeight: 1.4 }}>
         {value}
       </span>
     </div>
@@ -41,15 +41,17 @@ function ActionBtn({
     alignItems:     'center',
     justifyContent: 'center',
     gap:            6,
-    padding:        '9px 16px',
-    borderRadius:   8,
-    fontSize:       13,
+    padding:        '11px 16px',
+    minHeight:      44,
+    borderRadius:   10,
+    fontSize:       14,
     fontWeight:     600,
     cursor:         disabled ? 'not-allowed' : 'pointer',
     border:         'none',
     fontFamily:     'inherit',
     transition:     'opacity .15s',
     opacity:        disabled ? 0.55 : 1,
+    width:          '100%',
   };
   const styles: Record<string, React.CSSProperties> = {
     primary:   { ...base, background: 'var(--l-blue)',   color: '#fff' },
@@ -162,7 +164,7 @@ export default function BdcDetailPanel({ bdc: initialBdc, onClose, onUpdated }: 
       </div>
 
       {/* Body */}
-      <div style={{ flex: 1, overflowY: 'auto', padding: '18px 18px 24px' }}>
+      <div style={{ flex: 1, overflowY: 'auto', padding: isMobile ? '16px 16px max(24px, env(safe-area-inset-bottom))' : '18px 18px 24px' }}>
 
         {/* Acheteur + Titre */}
         <div style={{ marginBottom: 16 }}>
@@ -204,15 +206,15 @@ export default function BdcDetailPanel({ bdc: initialBdc, onClose, onUpdated }: 
           <MetaChip label={t('veille.detail.datePub')} value={formatDate(bdc.date_publication)} />
           <MetaChip label={t('veille.detail.dateLimite')} value={formatDate(bdc.date_limite)} />
           {(bdc.region || bdc.ville) && (
-            <MetaChip label={t('veille.detail.location')} value={[bdc.ville, bdc.region].filter(Boolean).join(', ')} />
+            <MetaChip label={t('veille.detail.location')} value={bdc.region || bdc.ville} />
           )}
-          {bdc.categorie && <MetaChip label={t('veille.detail.source')} value={bdc.categorie} />}
+          {bdc.categorie && <MetaChip label={t('veille.detail.categorie')} value={bdc.categorie} />}
           {bdc.nature_prestation && (
-            <div style={{ gridColumn: '1 / -1', display: 'flex', flexDirection: 'column', gap: 2 }}>
+            <div style={{ gridColumn: '1 / -1', display: 'flex', flexDirection: 'column', gap: 3, minWidth: 0 }}>
               <span style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.07em', color: 'var(--l-dim)' }}>
                 {t('bdc.detail.naturePrestation')}
               </span>
-              <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--l-text)' }}>{bdc.nature_prestation}</span>
+              <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--l-text)', wordBreak: 'break-word' }}>{bdc.nature_prestation}</span>
             </div>
           )}
         </div>

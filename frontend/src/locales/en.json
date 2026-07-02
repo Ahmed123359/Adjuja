@@ -512,6 +512,7 @@
       "dateLimite": "Deadline",
       "location": "Location",
       "source": "Source",
+      "categorie": "Category",
       "goNoGo": {
         "needFavorite": "Add this tender to your favorites and wait for documents to download before running the analysis.",
         "cta": "Run analysis",

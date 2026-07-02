@@ -516,6 +516,7 @@
       "dateLimite": "Date limite",
       "location": "Localisation",
       "source": "Source",
+      "categorie": "Catégorie",
       "goNoGo": {
         "needFavorite": "Ajoutez cet AO à vos favoris et attendez le téléchargement des documents pour lancer l'analyse.",
         "cta": "Lancer l'analyse",
