@@ -181,6 +181,16 @@ class MPEPlatformScraper(IAOScraper):
                         await tab.wait_for_selector(listing_cfg["results_ready_selector"], timeout=15000)
                     except Exception as e:
                         log.warning("Could not set nbElem", error=str(e))
+                        # Le select_option a pu déclencher une navigation qui a perdu
+                        # les params de recherche (AllCons&EnCours). On renavigue.
+                        try:
+                            await tab.goto(listing_url, timeout=30000)
+                            await tab.wait_for_selector(listing_cfg["search_button"], timeout=15000)
+                            await tab.click(listing_cfg["search_button"])
+                            await tab.wait_for_selector(listing_cfg["results_ready_selector"], timeout=30000)
+                            log.info("Results reloaded after nbElem failure", source=self.source)
+                        except Exception as e2:
+                            log.error("Could not reload after nbElem failure", error=str(e2))
 
                 current_page = 1
                 while True:
