@@ -253,7 +253,7 @@ services:
       MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY:-offria_dev}
       MINIO_SECRET_KEY: ${MINIO_SECRET_KEY:-offria_dev_secret}
       MINIO_BUCKET: offria
-      NOTIFICATION_SERVICE_URL: http://notification-api:8002
+      NOTIFICATION_SERVICE_URL: http://localhost:8002
       NOTIFICATION_ADMIN_SECRET: ${ADMIN_SECRET:-dev-admin-secret}
     volumes:
       - ./ao-watcher/app:/app/app
@@ -265,8 +265,6 @@ services:
         condition: service_healthy
       minio:
         condition: service_healthy
-      notification-api:
-        condition: service_started
     networks:
       - ao_network
 
@@ -288,75 +286,8 @@ services:
     networks:
       - ao_network
 
-  # ── Notification Service ─────────────────────────────────────────────────
-  notification-api:
-    build:
-      context: ./notification-service
-      dockerfile: Dockerfile
-    command: uvicorn app.main:app --host 0.0.0.0 --port 8002 --reload
-    ports:
-      - "8002:8002"
-    environment:
-      DATABASE_URL: postgresql+asyncpg://offria:${POSTGRES_PASSWORD:-offria_dev}@postgres:5432/offria
-      REDIS_URL: redis://redis:6379/4
-      RESEND_API_KEY: ${RESEND_API_KEY:-}
-      NOTIFICATION_CHANNEL: email_resend
-      NOTIFICATION_FROM_EMAIL: ${NOTIFICATION_FROM_EMAIL:-noreply@adjuja.com}
-      NOTIFICATION_FROM_NAME: ADJUJA Veille
-      ADMIN_SECRET: ${ADMIN_SECRET:-dev-admin-secret}
-    depends_on:
-      postgres:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-    networks:
-      - ao_network
-    volumes:
-      - ./notification-service/app:/app/app
-
-  notification-worker:
-    build:
-      context: ./notification-service
-      dockerfile: Dockerfile
-    command: >
-      celery -A app.workers.celery_app.celery_app worker
-      --pool=gevent
-      --concurrency=10
-      --loglevel=info
-      --hostname=notification-worker@%h
-    environment:
-      DATABASE_URL: postgresql+asyncpg://offria:${POSTGRES_PASSWORD:-offria_dev}@postgres:5432/offria
-      REDIS_URL: redis://redis:6379/4
-      RESEND_API_KEY: ${RESEND_API_KEY:-}
-      NOTIFICATION_CHANNEL: email_resend
-      NOTIFICATION_FROM_EMAIL: ${NOTIFICATION_FROM_EMAIL:-noreply@adjuja.com}
-      NOTIFICATION_FROM_NAME: ADJUJA Veille
-    depends_on:
-      postgres:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-    networks:
-      - ao_network
-    volumes:
-      - ./notification-service/app:/app/app
-
-  notification-beat:
-    build:
-      context: ./notification-service
-      dockerfile: Dockerfile
-    command: >
-      celery -A app.workers.celery_app.celery_app beat
-      --loglevel=info
-    environment:
-      DATABASE_URL: postgresql+asyncpg://offria:${POSTGRES_PASSWORD:-offria_dev}@postgres:5432/offria
-      REDIS_URL: redis://redis:6379/4
-    depends_on:
-      - redis
-    networks:
-      - ao_network
-    volumes:
-      - ./notification-service/app:/app/app
+  # notification-* : désactivés en dev (pas de réseau PyPI dans certains envs)
+  # Lancer séparément si besoin : docker compose -f docker-compose.dev.yml up notification-api
 
 volumes:
   postgres_data:
