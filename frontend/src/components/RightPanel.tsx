@@ -879,7 +879,6 @@ type Props = {
   onResetUsage: () => void;
   user: User;
   onLogout: () => void;
-  onGoSettings: () => void;
   mainTab: "offres" | "marches" | "outils" | "veille";
   onMainTabChange: (tab: "offres" | "marches" | "outils" | "veille") => void;
   outilSection: Outil;
@@ -906,7 +905,6 @@ export default function RightPanel({
   onResetUsage,
   user,
   onLogout,
-  onGoSettings,
   mainTab,
   onMainTabChange,
   outilSection,

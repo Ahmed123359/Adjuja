@@ -1,4 +1,5 @@
 import json
+import os
 import random
 import re
 import asyncio
@@ -92,6 +93,9 @@ class MPEPlatformScraper(IAOScraper):
 
         self.source = self.cfg["name"]
         self.base_url = self.cfg["base_url"]
+        # Proxy optionnel : lu depuis la variable d'env indiquée dans le config
+        proxy_env = self.cfg.get("proxy_env")
+        self._proxy: str | None = os.environ.get(proxy_env) if proxy_env else None
         self._browser: Browser | None = None
         self._context: BrowserContext | None = None
         self._http: httpx.AsyncClient | None = None
@@ -105,6 +109,7 @@ class MPEPlatformScraper(IAOScraper):
             self._browser = await pw.chromium.launch(
                 headless=True,
                 args=["--no-sandbox", "--disable-dev-shm-usage"],
+                proxy={"server": self._proxy} if self._proxy else None,
             )
         if self._context is None:
             self._context = await self._browser.new_context(
@@ -129,6 +134,7 @@ class MPEPlatformScraper(IAOScraper):
                 follow_redirects=True,
                 timeout=20,
                 limits=httpx.Limits(max_connections=5, max_keepalive_connections=5),
+                proxies=self._proxy if self._proxy else None,
             )
         return self._http
 
@@ -166,28 +172,38 @@ class MPEPlatformScraper(IAOScraper):
             try:
                 log.info("Loading listing page", source=self.source, url=listing_url)
                 await tab.goto(listing_url, timeout=30000)
-                await tab.wait_for_selector(listing_cfg["search_button"], timeout=15000)
 
-                # Click search
-                await tab.click(listing_cfg["search_button"])
-                await tab.wait_for_selector(listing_cfg["results_ready_selector"], timeout=30000)
-                log.info("Results loaded", source=self.source)
+                # Certains paramètres URL (AllCons&searchAnnCons) déclenchent
+                # la recherche automatiquement -- les résultats sont déjà là.
+                results_sel = listing_cfg["results_ready_selector"]
+                try:
+                    await tab.wait_for_selector(results_sel, timeout=5000)
+                    log.info("Results already loaded (auto-search)", source=self.source)
+                except Exception:
+                    # Résultats pas encore là : cliquer le bouton de recherche
+                    await tab.wait_for_selector(listing_cfg["search_button"], timeout=15000)
+                    await tab.click(listing_cfg["search_button"])
+                    await tab.wait_for_selector(results_sel, timeout=30000)
+                    log.info("Results loaded after search click", source=self.source)
 
                 # Set 500 items per page
                 nbelem_sel = listing_cfg.get("nbelem_select")
                 if nbelem_sel:
                     try:
                         await tab.select_option(nbelem_sel, listing_cfg.get("nbelem_value", "500"))
-                        await tab.wait_for_selector(listing_cfg["results_ready_selector"], timeout=15000)
+                        await tab.wait_for_selector(listing_cfg["results_ready_selector"], timeout=60000)
                     except Exception as e:
                         log.warning("Could not set nbElem", error=str(e))
-                        # Le select_option a pu déclencher une navigation qui a perdu
-                        # les params de recherche (AllCons&EnCours). On renavigue.
+                        # Le select_option a pu perturber la navigation. On recharge
+                        # l'URL et on réutilise la logique auto-detect.
                         try:
                             await tab.goto(listing_url, timeout=30000)
-                            await tab.wait_for_selector(listing_cfg["search_button"], timeout=15000)
-                            await tab.click(listing_cfg["search_button"])
-                            await tab.wait_for_selector(listing_cfg["results_ready_selector"], timeout=30000)
+                            try:
+                                await tab.wait_for_selector(results_sel, timeout=5000)
+                            except Exception:
+                                await tab.wait_for_selector(listing_cfg["search_button"], timeout=15000)
+                                await tab.click(listing_cfg["search_button"])
+                                await tab.wait_for_selector(results_sel, timeout=30000)
                             log.info("Results reloaded after nbElem failure", source=self.source)
                         except Exception as e2:
                             log.error("Could not reload after nbElem failure", error=str(e2))
@@ -277,6 +293,8 @@ class MPEPlatformScraper(IAOScraper):
                 # Lieu
                 lieu_el = row.select_one(cols.get("lieu", ""))
                 lieu = lieu_el.get_text(strip=True) if lieu_el else None
+                if lieu:
+                    lieu = _collapse_duplicate_title(lieu)
 
                 results.append(AoData(
                     source=self.source,
@@ -323,7 +341,8 @@ class MPEPlatformScraper(IAOScraper):
         acheteur = get_field("acheteur")
         date_limite_raw = get_field("date_limite")
         categorie = get_field("categorie")
-        lieu = get_field("lieu")
+        lieu_raw = get_field("lieu")
+        lieu = _collapse_duplicate_title(lieu_raw) if lieu_raw else lieu_raw
         caution_raw = get_field("caution")
         secteur = get_field("secteur")
 
@@ -331,9 +350,11 @@ class MPEPlatformScraper(IAOScraper):
         budget_el = soup.select_one(detail_cfg.get("budget_selector", ""))
         budget_raw = budget_el.get_text(strip=True) if budget_el else ""
 
-        # Date publication  not in summary, try page title area
-        pub_el = soup.find(id=lambda x: x and "datePublication" in (x or ""))
-        date_pub_raw = pub_el.get_text(strip=True) if pub_el else ""
+        # Date publication : essayer le champ config d'abord, puis recherche par ID
+        date_pub_raw = get_field("date_publication")
+        if not date_pub_raw:
+            pub_el = soup.find(id=lambda x: x and "datePublication" in (x or ""))
+            date_pub_raw = pub_el.get_text(strip=True) if pub_el else ""
 
         # ZIP download link
         zip_link_id = detail_cfg.get("zip_link_id", "")

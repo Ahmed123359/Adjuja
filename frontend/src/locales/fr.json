@@ -237,7 +237,7 @@
   "app": {
     "nav": {
       "dashboard": "Tableau de bord",
-      "tenders": "Appels d'offres",
+      "tenders": "Mes offres",
       "veille": "Veille",
       "tools": "Outils",
       "settings": "Paramètres",
@@ -247,7 +247,7 @@
     },
     "topbar": {
       "offres": "Tableau de bord",
-      "marches": "Appels d'offres",
+      "marches": "Mes offres",
       "veille": "Veille marchés publics",
       "outils": "Outils"
     }
@@ -331,7 +331,7 @@
     }
   },
   "pipeline": {
-    "title": "Appels d'offres",
+    "title": "Mes offres",
     "new": "Nouvel AO",
     "deleteConfirm": "Supprimer cet appel d'offres et tous ses documents ?",
     "upload": "Déposer les documents",
@@ -457,7 +457,7 @@
       "categorie": "Catégorie principale",
       "categorieAll": "Toutes les catégories",
       "categoriePh": "Ex: Travaux",
-      "region": "Région",
+      "region": "Localisation",
       "regionPh": "Ex: Casablanca",
       "dateLimite": "Date limite après",
       "reset": "Réinitialiser",
@@ -483,7 +483,7 @@
       "datePub": "Publié le",
       "dateLimite": "Date limite",
       "categorie": "Catégorie",
-      "region": "Région",
+      "region": "Localisation",
       "budget": "Budget",
       "caution": "Caution"
     },
@@ -508,7 +508,7 @@
       "showLess": "Voir moins",
       "tabResume": "Résumé",
       "tabDocs": "Documents",
-      "tabGoNoGo": "Go/No-Go",
+      "tabGoNoGo": "Analyse",
       "noDesc": "Aucune description disponible.",
       "budget": "Budget",
       "caution": "Caution",
@@ -555,6 +555,7 @@
     },
     "naturePicker": {
       "placeholder": "Toutes les natures",
+      "selected": "{{count}} nature(s) sélectionnée(s)",
       "searchPh": "Rechercher une nature de prestation...",
       "loading": "Chargement...",
       "empty": "Aucune nature trouvée."

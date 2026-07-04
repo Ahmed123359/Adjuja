@@ -13,7 +13,7 @@ const DEFAULT_FILTERS: WatcherBdcFilters = {
   status:            'all',
   search:            '',
   categorie:         '',
-  nature_prestation: '',
+  nature_prestations: [],
   region:            '',
   date_limite_from:  '',
   page:              1,

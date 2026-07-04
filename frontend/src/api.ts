@@ -1,4 +1,4 @@
-import type { Model, CompanyData, GenerationResult, RagStatus, AppDefaults, UsageData, HistorySummary, HistoryEntry, User, ActeEngagementData, ChatMessage, ChatApiResponse, CompanyCase, FillerResult, MarcheSummary, MarcheDetail, AoSummary, AoResponse, AoStatus, AoDocumentOut, CompanyProfile, CompanyProfileForm, ProfileCheck, ScrapedAo, ScrapedAoList, WatcherFilters, Secteur, EligibilityVerdict, ScrapedBdc, ScrapedBdcList, WatcherBdcFilters, NaturePrestation } from './types';
+import type { Model, CompanyData, GenerationResult, RagStatus, AppDefaults, UsageData, HistorySummary, HistoryEntry, User, ActeEngagementData, ChatMessage, ChatApiResponse, FillerResult, MarcheSummary, MarcheDetail, AoSummary, AoResponse, AoStatus, AoDocumentOut, CompanyProfile, CompanyProfileForm, ProfileCheck, ScrapedAo, ScrapedAoList, WatcherFilters, Secteur, EligibilityVerdict, ScrapedBdc, ScrapedBdcList, WatcherBdcFilters, NaturePrestation } from './types';
 
 // ── Token helpers ──────────────────────────────────────────────────────
 
@@ -394,13 +394,11 @@ export async function exportDocx(
 
 export async function runFiller(
   file: File,
-  companyCase: CompanyCase,
   lots: number[],
   marcheId?: string,
 ): Promise<FillerResult> {
   const form = new FormData();
   form.append('file', file);
-  form.append('company_case', companyCase);
   form.append('lots', lots.join(','));
   if (marcheId) form.append('marche_id', marcheId);
 
@@ -932,7 +930,7 @@ export async function fetchScrapedBdc(
   if (filters.status !== 'all') p.set('status', filters.status);
   if (filters.search)           p.set('search', filters.search);
   if (filters.categorie)        p.set('categorie', filters.categorie);
-  if (filters.nature_prestation) p.set('nature_prestation', filters.nature_prestation);
+  for (const n of filters.nature_prestations) p.append('nature_prestations', n);
   if (filters.region)           p.set('region', filters.region);
   if (filters.date_limite_from) p.set('date_limite_from', filters.date_limite_from);
   p.set('page', String(filters.page));

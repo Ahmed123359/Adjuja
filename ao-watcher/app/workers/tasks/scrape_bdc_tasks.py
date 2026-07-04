@@ -1,7 +1,10 @@
 import asyncio
+import time
 
+import redis as redis_lib
 import structlog
 
+from app.core.config import settings
 from app.modules.bdc_scraper.repository import BdcRepository
 from app.modules.bdc_scraper.scraper import BdcScraper
 from app.workers.celery_app import celery_app
@@ -10,6 +13,29 @@ from app.workers.utils import run_async, task_db
 log = structlog.get_logger(__name__)
 
 MAX_PAGES = 200  # garde-fou : ~1300 resultats / ~10 par page ~= 134 pages actuellement
+_COOLDOWN_KEY = "scrape:bdc:last_run"
+_COOLDOWN_SECONDS = 3600  # 1h minimum entre deux scrapes BDC
+
+
+def _check_and_set_cooldown() -> bool:
+    """Retourne True si le cooldown est actif (scrape à ignorer)."""
+    try:
+        r = redis_lib.from_url(settings.redis_url, decode_responses=True)
+        last_run = r.get(_COOLDOWN_KEY)
+        now = time.time()
+        if last_run and (now - float(last_run)) < _COOLDOWN_SECONDS:
+            elapsed = int(now - float(last_run))
+            log.warning(
+                "Scrape BDC ignoré : cooldown actif",
+                elapsed_s=elapsed,
+                remaining_s=_COOLDOWN_SECONDS - elapsed,
+            )
+            return True
+        r.set(_COOLDOWN_KEY, now, ex=_COOLDOWN_SECONDS + 60)
+        return False
+    except Exception as exc:
+        log.warning("Redis cooldown check failed, proceeding anyway", error=str(exc))
+        return False
 
 
 @celery_app.task(
@@ -19,6 +45,9 @@ MAX_PAGES = 200  # garde-fou : ~1300 resultats / ~10 par page ~= 134 pages actue
     default_retry_delay=300,
 )
 def run_scrape_bdc_pipeline(self) -> dict:
+    if _check_and_set_cooldown():
+        return {"status": "skipped", "reason": "cooldown"}
+
     log.info("Starting BDC scrape pipeline")
     try:
         result = run_async(_run())

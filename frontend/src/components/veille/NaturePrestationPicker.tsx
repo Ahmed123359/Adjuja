@@ -18,7 +18,7 @@ function useNaturesPrestation(): { natures: NaturePrestation[]; loading: boolean
     let cancelled = false;
     fetchNaturesPrestation()
       .then(data => { if (!cancelled) setNatures(data); })
-      .catch(() => { /* non-fatal: picker stays empty */ })
+      .catch(() => { /* non-fatal */ })
       .finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
   }, []);
@@ -27,10 +27,8 @@ function useNaturesPrestation(): { natures: NaturePrestation[]; loading: boolean
 }
 
 type Props = {
-  value: string;
-  onChange: (label: string) => void;
-  /** Quand fourni, ne montre que les natures de cette categorie (cascade
-   * categorie -> nature, choisie en premier dans le filtre). */
+  value: string[];
+  onChange: (labels: string[]) => void;
   categorieFilter?: AoCategorie | '';
 };
 
@@ -60,13 +58,21 @@ export default function NaturePrestationPicker({ value, onChange, categorieFilte
     ? natures.filter(n => normalize(n.label).includes(term))
     : natures;
 
-  const selectedLabel = allNatures.find(n => n.label === value)?.label ?? null;
-
-  function select(label: string) {
-    onChange(label);
-    setOpen(false);
-    setSearch('');
+  function toggle(label: string) {
+    if (value.includes(label)) {
+      onChange(value.filter(v => v !== label));
+    } else {
+      onChange([...value, label]);
+    }
   }
+
+  function remove(label: string) {
+    onChange(value.filter(v => v !== label));
+  }
+
+  const placeholder = value.length === 0
+    ? t('bdc.naturePicker.placeholder')
+    : t('bdc.naturePicker.selected', { count: value.length });
 
   return (
     <div ref={containerRef} style={{ position: 'relative' }}>
@@ -83,54 +89,57 @@ export default function NaturePrestationPicker({ value, onChange, categorieFilte
           borderRadius:   8,
           border:         `1px solid ${open ? 'var(--l-blue)' : 'var(--l-card-border)'}`,
           background:     'var(--l-input-bg)',
-          color:          selectedLabel ? 'var(--l-text)' : 'var(--l-dim)',
+          color:          value.length > 0 ? 'var(--l-text)' : 'var(--l-dim)',
           fontSize:       13,
           fontFamily:     'inherit',
           cursor:         'pointer',
         }}
       >
         <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-          {selectedLabel ?? t('bdc.naturePicker.placeholder')}
+          {placeholder}
         </span>
         <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} style={{ flexShrink: 0 }}>
           <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
         </svg>
       </button>
 
-      {selectedLabel && (
+      {value.length > 0 && (
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5, marginTop: 7 }}>
-          <span
-            style={{
-              display:      'flex',
-              alignItems:   'center',
-              gap:          5,
-              padding:      '3px 6px 3px 9px',
-              borderRadius: 20,
-              background:   'var(--l-blue-a)',
-              color:        'var(--l-blue)',
-              fontSize:     11.5,
-              fontWeight:   600,
-              maxWidth:     '100%',
-            }}
-          >
-            <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 180 }}>
-              {selectedLabel}
-            </span>
-            <button
-              type="button"
-              onClick={() => select('')}
+          {value.map(label => (
+            <span
+              key={label}
               style={{
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                width: 14, height: 14, borderRadius: '50%', border: 'none',
-                background: 'transparent', color: 'var(--l-blue)', cursor: 'pointer', padding: 0,
-                flexShrink: 0,
+                display:      'flex',
+                alignItems:   'center',
+                gap:          5,
+                padding:      '3px 6px 3px 9px',
+                borderRadius: 20,
+                background:   'var(--l-blue-a)',
+                color:        'var(--l-blue)',
+                fontSize:     11.5,
+                fontWeight:   600,
+                maxWidth:     '100%',
               }}
             >
-              <svg width="9" height="9" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
-          </span>
+              <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 170 }}>
+                {label}
+              </span>
+              <button
+                type="button"
+                onClick={e => { e.stopPropagation(); remove(label); }}
+                style={{
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  width: 14, height: 14, borderRadius: '50%', border: 'none',
+                  background: 'transparent', color: 'var(--l-blue)', cursor: 'pointer', padding: 0,
+                  flexShrink: 0,
+                }}
+              >
+                <svg width="9" height="9" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </span>
+          ))}
         </div>
       )}
 
@@ -152,7 +161,6 @@ export default function NaturePrestationPicker({ value, onChange, categorieFilte
             overflow:      'hidden',
           }}
         >
-          {/* Search */}
           <div style={{ padding: 10, borderBottom: '1px solid var(--l-card-border)', flexShrink: 0 }}>
             <input
               autoFocus
@@ -174,7 +182,6 @@ export default function NaturePrestationPicker({ value, onChange, categorieFilte
             />
           </div>
 
-          {/* List */}
           <div style={{ flex: 1, overflowY: 'auto', padding: '4px 0' }}>
             {loading ? (
               <p style={{ margin: 0, padding: '16px 14px', fontSize: 12.5, color: 'var(--l-dim)' }}>
@@ -186,11 +193,11 @@ export default function NaturePrestationPicker({ value, onChange, categorieFilte
               </p>
             ) : (
               filtered.map(n => {
-                const isSelected = n.label === value;
+                const isSelected = value.includes(n.label);
                 return (
                   <div
                     key={n.code}
-                    onClick={() => select(n.label)}
+                    onClick={() => toggle(n.label)}
                     style={{
                       display:    'flex',
                       alignItems: 'flex-start',
@@ -200,6 +207,24 @@ export default function NaturePrestationPicker({ value, onChange, categorieFilte
                       background: isSelected ? 'var(--l-blue-a)' : 'transparent',
                     }}
                   >
+                    <div style={{
+                      width:        14,
+                      height:       14,
+                      borderRadius: 4,
+                      border:       `2px solid ${isSelected ? 'var(--l-blue)' : 'var(--l-card-border)'}`,
+                      background:   isSelected ? 'var(--l-blue)' : 'transparent',
+                      flexShrink:   0,
+                      marginTop:    1,
+                      display:      'flex',
+                      alignItems:   'center',
+                      justifyContent: 'center',
+                    }}>
+                      {isSelected && (
+                        <svg width="9" height="9" fill="none" viewBox="0 0 24 24" stroke="white" strokeWidth={3}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                        </svg>
+                      )}
+                    </div>
                     <span style={{ flex: 1, fontSize: 12.5, color: 'var(--l-text)', lineHeight: 1.4 }}>
                       {n.label}
                     </span>

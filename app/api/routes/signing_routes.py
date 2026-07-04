@@ -56,9 +56,10 @@ async def sign_pdf_endpoint(
 
     signed_bytes = sign_pdf(
         pdf_bytes, sig_bytes, cac_bytes,
-        sig_w, sig_h, sig_mx, sig_my,
-        cac_w, cac_h, cac_mx, cac_my,
-        fait_a_lieu, fait_a_date,
+        lu_et_accepte_bytes=None,
+        sig_w=sig_w, sig_h=sig_h, sig_mx=sig_mx, sig_my=sig_my,
+        cac_w=cac_w, cac_h=cac_h, cac_mx=cac_mx, cac_my=cac_my,
+        fait_a_lieu=fait_a_lieu, fait_a_date=fait_a_date,
     )
 
     org_id = current_user.org_id or current_user.id

@@ -1,15 +1,6 @@
 import { useRef, useState } from "react";
 import { runFiller, downloadFillerFile } from "../api";
-import type { CompanyCase, FillerResult, FillerOutputFile } from "../types";
-
-const COMPANY_CASES: { value: CompanyCase; label: string }[] = [
-  { value: "societe",             label: "Société (SARL, SA, SAS...)" },
-  { value: "personne_physique",   label: "Personne physique" },
-  { value: "auto_entrepreneur",   label: "Auto-entrepreneur" },
-  { value: "groupement",          label: "Groupement d'entreprises" },
-  { value: "cooperative",         label: "Coopérative" },
-  { value: "etablissement_public", label: "Établissement public" },
-];
+import type { FillerResult, FillerOutputFile } from "../types";
 
 const DOC_TYPE_LABELS: Record<string, string> = {
   acte_engagement:   "Acte d'engagement",
@@ -40,7 +31,6 @@ function parseLots(raw: string): number[] {
 
 export default function RemplissageTab() {
   const [file, setFile] = useState<File | null>(null);
-  const [companyCase, setCompanyCase] = useState<CompanyCase>("societe");
   const [lotsRaw, setLotsRaw] = useState("1");
   const [isDragging, setIsDragging] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -68,7 +58,7 @@ export default function RemplissageTab() {
     setResult(null);
     setError(null);
     try {
-      const res = await runFiller(file, companyCase, lots);
+      const res = await runFiller(file, lots);
       setResult(res);
       if (!res.succes && res.erreurs.length > 0) {
         setError(res.erreurs.join(" | "));
@@ -111,9 +101,9 @@ export default function RemplissageTab() {
       {/* Steps */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
         {[
-          { n: "01", title: "Type de soumissionnaire", desc: "Société, personne physique, groupement..." },
+          { n: "01", title: "Profil entreprise", desc: "Vos informations légales (configurées dans votre profil)" },
           { n: "02", title: "Lots concernés", desc: "Un ou plusieurs lots séparés par des virgules" },
-          { n: "03", title: "Dossier AO", desc: "ZIP contenant les formulaires PDF à remplir" },
+          { n: "03", title: "Dossier AO", desc: "PDF contenant les formulaires à remplir" },
         ].map(({ n, title, desc }) => (
           <div
             key={n}
@@ -130,56 +120,26 @@ export default function RemplissageTab() {
         ))}
       </div>
 
-      {/* Configuration */}
-      <div className="border border-border rounded-xl bg-card p-4 space-y-4">
-        <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Configuration</h3>
-
-        {/* Type soumissionnaire */}
-        <div>
-          <p className="text-xs font-medium text-foreground mb-2">Type de soumissionnaire</p>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-            {COMPANY_CASES.map((c) => (
-              <button
-                key={c.value}
-                onClick={() => setCompanyCase(c.value)}
-                className={`flex items-center gap-3 px-3 py-2.5 rounded-lg border text-left transition-all ${
-                  companyCase === c.value
-                    ? "border-primary/40 bg-primary/8 text-primary"
-                    : "border-border hover:border-primary/20 hover:bg-accent/20 text-foreground"
-                }`}
-              >
-                <div
-                  className={`h-2 w-2 rounded-full flex-shrink-0 transition-colors ${
-                    companyCase === c.value ? "bg-primary" : "bg-border"
-                  }`}
-                />
-                <span className="text-sm font-medium">{c.label}</span>
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Lots */}
-        <div>
-          <label className="text-xs font-medium text-foreground block mb-1.5">
-            Lots <span className="text-muted-foreground font-normal">(numéros séparés par des virgules)</span>
-          </label>
-          <input
-            type="text"
-            value={lotsRaw}
-            onChange={(e) => setLotsRaw(e.target.value)}
-            placeholder="ex : 1, 2, 3"
-            className="w-full px-3 py-2.5 text-sm bg-background border border-border rounded-lg text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/50 transition-all"
-          />
-          {lotsRaw && parseLots(lotsRaw).length > 0 && (
-            <p className="mt-1.5 text-xs text-muted-foreground">
-              Lots détectés :{" "}
-              <span className="font-medium text-foreground">
-                {parseLots(lotsRaw).join(", ")}
-              </span>
-            </p>
-          )}
-        </div>
+      {/* Lots */}
+      <div className="border border-border rounded-xl bg-card p-4 space-y-2">
+        <label className="text-xs font-medium text-foreground block">
+          Lots <span className="text-muted-foreground font-normal">(numéros séparés par des virgules)</span>
+        </label>
+        <input
+          type="text"
+          value={lotsRaw}
+          onChange={(e) => setLotsRaw(e.target.value)}
+          placeholder="ex : 1, 2, 3"
+          className="w-full px-3 py-2.5 text-sm bg-background border border-border rounded-lg text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/50 transition-all"
+        />
+        {lotsRaw && parseLots(lotsRaw).length > 0 && (
+          <p className="text-xs text-muted-foreground">
+            Lots détectés :{" "}
+            <span className="font-medium text-foreground">
+              {parseLots(lotsRaw).join(", ")}
+            </span>
+          </p>
+        )}
       </div>
 
       {/* File upload */}
@@ -221,7 +181,7 @@ export default function RemplissageTab() {
             <>
               <p className="text-sm font-semibold text-foreground">Dossier AO</p>
               <p className="text-xs text-muted-foreground">
-                Glissez votre fichier ZIP ou{" "}
+                Glissez votre fichier PDF ou{" "}
                 <span className="text-primary font-medium">parcourez vos fichiers</span>
               </p>
             </>
@@ -341,7 +301,7 @@ export default function RemplissageTab() {
           </div>
           <p className="text-sm font-semibold text-foreground mb-1">Aucun document généré</p>
           <p className="text-xs text-muted-foreground max-w-xs mx-auto">
-            Le dossier AO ne contient pas de formulaires reconnus. Vérifiez que le ZIP inclut les PDFs de l'acte d'engagement ou du bordereau.
+            Le dossier AO ne contient pas de formulaires reconnus. Vérifiez que le fichier inclut les PDFs de l'acte d'engagement ou du bordereau.
           </p>
         </div>
       )}

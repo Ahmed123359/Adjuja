@@ -27,7 +27,7 @@ class BdcRepository:
         status: str | None = None,
         region: str | None = None,
         categorie: str | None = None,
-        nature_prestation: str | None = None,
+        nature_prestations: list[str] | None = None,
         search: str | None = None,
         date_limite_from: str | None = None,
         page: int = 1,
@@ -41,8 +41,8 @@ class BdcRepository:
             q = q.where(ScrapedBdc.region.ilike(f"%{region}%"))
         if categorie:
             q = q.where(ScrapedBdc.categorie.ilike(f"%{categorie}%"))
-        if nature_prestation:
-            q = q.where(ScrapedBdc.nature_prestation == nature_prestation)
+        if nature_prestations:
+            q = q.where(ScrapedBdc.nature_prestation.in_(nature_prestations))
         if search:
             q = q.where(
                 ScrapedBdc.titre.ilike(f"%{search}%")

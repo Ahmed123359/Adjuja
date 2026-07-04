@@ -1,15 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { runFiller, downloadFillerFile } from "../api";
-import type { CompanyCase, FillerOutputFile, FillerResult } from "../types";
-
-const CASE_OPTIONS: { value: CompanyCase; label: string }[] = [
-  { value: "societe", label: "Société / SARL" },
-  { value: "personne_physique", label: "Personne physique" },
-  { value: "auto_entrepreneur", label: "Auto-entrepreneur" },
-  { value: "groupement", label: "Groupement" },
-  { value: "cooperative", label: "Coopérative" },
-  { value: "etablissement_public", label: "Établissement public" },
-];
+import type { FillerOutputFile, FillerResult } from "../types";
 
 const FORMAT_LABELS: Record<string, string> = {
   pdf: "PDF",
@@ -141,7 +132,6 @@ function DownloadCard({
 
 export default function FillerTab({ marcheId }: { marcheId?: string } = {}) {
   const [pdf, setPdf] = useState<File | null>(null);
-  const [companyCase, setCompanyCase] = useState<CompanyCase>("societe");
   const [lots, setLots] = useState("");
   const [loading, setLoading] = useState(false);
   const [elapsed, setElapsed] = useState(0);
@@ -192,7 +182,7 @@ export default function FillerTab({ marcheId }: { marcheId?: string } = {}) {
     setError("");
     setResult(null);
     try {
-      const res = await runFiller(pdf, companyCase, parseLots(), marcheId);
+      const res = await runFiller(pdf, parseLots(), marcheId);
       setResult(res);
       if (!res.succes && res.erreurs.length > 0) {
         setError(res.erreurs.join(" · "));
@@ -238,8 +228,8 @@ export default function FillerTab({ marcheId }: { marcheId?: string } = {}) {
           },
           {
             n: "02",
-            title: "Paramétrez",
-            desc: "Type de soumissionnaire et numéros de lots",
+            title: "Numéros de lots",
+            desc: "Les lots concernés (vide = tous les lots)",
           },
           {
             n: "03",
@@ -363,28 +353,6 @@ export default function FillerTab({ marcheId }: { marcheId?: string } = {}) {
             }
           }}
         />
-      </div>
-
-      {/* ── Type de soumissionnaire ───────────────────────────── */}
-      <div className="border border-border rounded-xl bg-card p-4 space-y-3">
-        <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-          Type de soumissionnaire
-        </h3>
-        <div className="flex flex-wrap gap-2">
-          {CASE_OPTIONS.map(({ value, label }) => (
-            <button
-              key={value}
-              onClick={() => setCompanyCase(value)}
-              className={`px-3.5 py-1.5 text-sm rounded-lg border transition-all ${
-                companyCase === value
-                  ? "bg-primary text-primary-foreground border-primary shadow-sm"
-                  : "border-border text-muted-foreground hover:border-primary hover:text-foreground"
-              }`}
-            >
-              {label}
-            </button>
-          ))}
-        </div>
       </div>
 
       {/* ── Lots (optionnel) ──────────────────────────────────── */}

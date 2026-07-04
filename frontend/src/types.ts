@@ -460,7 +460,7 @@ export interface WatcherBdcFilters {
   status:             'all' | BdcStatus;
   search:             string;
   categorie:          string;
-  nature_prestation:  string;
+  nature_prestations: string[];
   region:             string;
   date_limite_from:   string;
   page:               number;

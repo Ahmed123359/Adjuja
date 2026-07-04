@@ -1,12 +1,10 @@
 import { useState, useEffect, useCallback } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
 import LeftPanel from "./components/LeftPanel";
 import RightPanel, { OutilsLeftPanel } from "./components/RightPanel";
 import AppSidebar from "./components/AppSidebar";
 import type { Outil } from "./components/RightPanel";
 import FloatingChat from "./components/FloatingChat";
 import PricingModal from "./components/PricingModal";
-import SettingsPage from "./pages/SettingsPage";
 import LanguageSelector from "./components/LanguageSelector";
 import { useIsMobile } from "./hooks/useIsMobile";
 import { useTheme } from "./hooks/useTheme";
@@ -58,13 +56,9 @@ export default function App({
   onLogout: () => void;
   user: User;
 }) {
-  const navigate = useNavigate();
-  const location = useLocation();
   const isMobile = useIsMobile();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [user, setUser] = useState(initialUser);
-
-  const isSettings = location.pathname === "/app/settings";
 
   // Form
   const [aoText, setAoText] = useState("");
@@ -229,11 +223,9 @@ export default function App({
       {!isMobile && (
         <AppSidebar
           mainTab={mainTab}
-          onTabChange={(t) => { setMainTab(t); if (isSettings) navigate("/app"); }}
+          onTabChange={setMainTab}
           user={user}
           onLogout={onLogout}
-          onGoSettings={() => navigate("/app/settings")}
-          isSettings={isSettings}
           apiStatus={apiStatus}
           onGoLanding={onGoLanding}
         />
@@ -247,11 +239,9 @@ export default function App({
         <div style={{ position: 'fixed', inset: '0 auto 0 0', zIndex: 50, transform: sidebarOpen ? 'translateX(0)' : 'translateX(-100%)', transition: 'transform .28s cubic-bezier(.4,0,.2,1)' }}>
           <AppSidebar
             mainTab={mainTab}
-            onTabChange={(t) => { setMainTab(t); setSidebarOpen(false); if (isSettings) navigate("/app"); }}
+            onTabChange={(t) => { setMainTab(t); setSidebarOpen(false); }}
             user={user}
             onLogout={onLogout}
-            onGoSettings={() => { navigate("/app/settings"); setSidebarOpen(false); }}
-            isSettings={isSettings}
             apiStatus={apiStatus}
             onGoLanding={onGoLanding}
           />
@@ -259,7 +249,7 @@ export default function App({
       )}
 
       {/* Outils left panel (desktop only) */}
-      {mainTab === "outils" && !isSettings && !isMobile && (
+      {mainTab === "outils" && !isMobile && (
         <OutilsLeftPanel
           section={outilSection}
           onSectionChange={setOutilSection}
@@ -289,41 +279,6 @@ export default function App({
 
       {/* Main content */}
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', minWidth: 0 }}>
-        {isSettings ? (
-          <>
-            <header style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', height: 58, padding: '0 24px', background: 'var(--l-card)', borderBottom: '1px solid var(--l-card-border)', flexShrink: 0 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                {isMobile && (
-                  <button onClick={() => setSidebarOpen(true)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--l-sub)', padding: 6, display: 'flex', borderRadius: 7 }}>
-                    <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" /></svg>
-                  </button>
-                )}
-                <h1 style={{ margin: 0, fontSize: 17, fontWeight: 700, color: 'var(--l-text)', letterSpacing: '-0.02em' }}>Paramètres</h1>
-              </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <button onClick={toggle} style={{ background: 'none', border: '1px solid var(--l-card-border)', cursor: 'pointer', color: 'var(--l-sub)', padding: '7px 10px', borderRadius: 7, display: 'flex', alignItems: 'center' }}>
-                  {theme === 'dark'
-                    ? <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><circle cx="12" cy="12" r="5"/><path strokeLinecap="round" strokeLinejoin="round" d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
-                    : <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg>
-                  }
-                </button>
-                <LanguageSelector />
-              </div>
-            </header>
-            <div style={{ flex: 1, overflow: 'hidden' }}>
-              <SettingsPage
-                provider={provider}
-                setProvider={setProvider}
-                model={model}
-                setModel={setModel}
-                models={models}
-                usage={usage}
-                onRefreshUsage={() => fetchUsage().then(setUsage).catch(() => {})}
-                onResetUsage={() => resetUsage().then(setUsage).catch(() => {})}
-              />
-            </div>
-          </>
-        ) : (
           <RightPanel
             state={appState}
             result={result}
@@ -343,14 +298,12 @@ export default function App({
             onResetUsage={handleResetUsage}
             user={user}
             onLogout={onLogout}
-            onGoSettings={() => navigate("/app/settings")}
             mainTab={mainTab}
             onMainTabChange={setMainTab}
             outilSection={outilSection}
             onOutilSectionChange={isMobile ? setOutilSection : undefined}
             onOpenSidebar={isMobile ? () => setSidebarOpen(true) : undefined}
           />
-        )}
       </div>
 
       <FloatingChat provider={provider} model={model} />

@@ -38,17 +38,42 @@ services:
     networks:
       - ao_network
 
-  # api:
-  #   build:
-  #     context: .
-  #     dockerfile: Dockerfile
-  #     target: api-dev            # Saute le stage frontend-builder inutile en dev
-  #   volumes:
-  #     - ./app:/app/app           # Hot-reload : monte le code source Python en live
-  #   command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
-  #   environment:
-  #     APP_ENV: development
-  #     APP_DEBUG: "true"
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: api-dev
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+    ports:
+      - "8000:8000"
+    environment:
+      APP_ENV: development
+      APP_DEBUG: "true"
+      DATABASE_URL: postgresql+asyncpg://offria:${POSTGRES_PASSWORD:-offria_dev}@postgres:5432/offria
+      REDIS_URL: redis://redis:6379/0
+      CELERY_BROKER_URL: redis://redis:6379/1
+      CELERY_RESULT_BACKEND: redis://redis:6379/2
+      MINIO_ENDPOINT: minio:9000
+      MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY:-offria_dev}
+      MINIO_SECRET_KEY: ${MINIO_SECRET_KEY:-offria_dev_secret}
+      MISTRAL_API_KEY: ${MISTRAL_API_KEY:-}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY:-change-me-in-production-32chars!!}
+      QDRANT_URL: http://qdrant:6333
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+      qdrant:
+        condition: service_healthy
+    networks:
+      - ao_network
+    volumes:
+      - ./app:/app/app
 
   # frontend:
   #   build:

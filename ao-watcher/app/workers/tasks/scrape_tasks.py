@@ -1,7 +1,9 @@
 import asyncio
+import time
 from pathlib import Path
 
 import httpx
+import redis as redis_lib
 import structlog
 
 from app.core.config import settings
@@ -13,11 +15,34 @@ from app.workers.utils import run_async, task_db
 log = structlog.get_logger(__name__)
 
 SCRAPERS_DIR = Path(__file__).parent.parent.parent.parent / "scrapers"
+_COOLDOWN_KEY = "scrape:ao:last_run"
+_COOLDOWN_SECONDS = 3600  # 1h minimum entre deux scrapes AO
 
 
 def _get_all_configs() -> list[str]:
     """Return all config names (without .config.json extension)."""
     return [p.stem.replace(".config", "") for p in SCRAPERS_DIR.glob("*.config.json")]
+
+
+def _check_and_set_cooldown() -> bool:
+    """Retourne True si le cooldown est actif (scrape à ignorer)."""
+    try:
+        r = redis_lib.from_url(settings.redis_url, decode_responses=True)
+        last_run = r.get(_COOLDOWN_KEY)
+        now = time.time()
+        if last_run and (now - float(last_run)) < _COOLDOWN_SECONDS:
+            elapsed = int(now - float(last_run))
+            log.warning(
+                "Scrape AO ignoré : cooldown actif",
+                elapsed_s=elapsed,
+                remaining_s=_COOLDOWN_SECONDS - elapsed,
+            )
+            return True
+        r.set(_COOLDOWN_KEY, now, ex=_COOLDOWN_SECONDS + 60)
+        return False
+    except Exception as exc:
+        log.warning("Redis cooldown check failed, proceeding anyway", error=str(exc))
+        return False
 
 
 @celery_app.task(
@@ -27,6 +52,9 @@ def _get_all_configs() -> list[str]:
     default_retry_delay=300,
 )
 def run_scrape_pipeline(self) -> dict:
+    if _check_and_set_cooldown():
+        return {"status": "skipped", "reason": "cooldown"}
+
     log.info("Starting scrape pipeline")
     try:
         result = run_async(_run_all_sources())

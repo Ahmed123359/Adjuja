@@ -258,6 +258,7 @@ services:
       NOTIFICATION_SERVICE_URL: http://notification-api:8002
       NOTIFICATION_ADMIN_SECRET: ${ADMIN_SECRET}
       MISTRAL_API_KEY: ${MISTRAL_API_KEY:-}
+      SCRAPER_PROXY: ${SCRAPER_PROXY:-}
     depends_on:
       postgres:
         condition: service_healthy

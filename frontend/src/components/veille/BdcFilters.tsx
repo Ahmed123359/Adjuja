@@ -51,7 +51,7 @@ export default function BdcFilters({ filters, onChange, onReset, onClose }: Prop
   const isMobile = useIsMobile();
 
   const hasActiveFilters =
-    filters.search || filters.categorie || filters.nature_prestation || filters.region || filters.date_limite_from;
+    filters.search || filters.categorie || filters.nature_prestations.length > 0 || filters.region || filters.date_limite_from;
 
   const categorieOptions: { value: AoCategorie | ''; label: string }[] = [
     { value: '', label: t('veille.filters.categorieAll') },
@@ -181,7 +181,7 @@ export default function BdcFilters({ filters, onChange, onReset, onClose }: Prop
             value={filters.categorie as AoCategorie | ''}
             onChange={cat => onChange({
               categorie: cat,
-              nature_prestation: '', // ne s'applique plus forcement a la nouvelle categorie
+              nature_prestations: [],
               page: 1,
             })}
             options={categorieOptions}
@@ -191,8 +191,8 @@ export default function BdcFilters({ filters, onChange, onReset, onClose }: Prop
         {/* Nature de prestation : narrowee par la categorie choisie ci-dessus */}
         <FilterSection label={t('bdc.filters.naturePrestation')}>
           <NaturePrestationPicker
-            value={filters.nature_prestation}
-            onChange={label => onChange({ nature_prestation: label, page: 1 })}
+            value={filters.nature_prestations}
+            onChange={labels => onChange({ nature_prestations: labels, page: 1 })}
             categorieFilter={filters.categorie as AoCategorie | ''}
           />
         </FilterSection>
