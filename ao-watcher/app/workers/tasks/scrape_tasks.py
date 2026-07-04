@@ -147,14 +147,14 @@ async def _scrape_source(config_name: str) -> int:
 
     await asyncio.gather(*[enrich(ao) for ao in new_aos])
 
-    # Upsert everything (new + existing  existing just updates metadata)
+    # Upsert all AOs -- COALESCE preserve date_publication deja en DB
     async with task_db() as db:
         repo = AoRepository(db)
         async with db.begin_nested():
             saved = await repo.upsert_many(all_aos)
         await db.commit()
 
-    log.info("Source scrape done", source=config_name, total=len(all_aos), saved=saved)
+    log.info("Source scrape done", source=config_name, total=len(all_aos), new=len(new_aos), saved=saved)
     return saved
 
 

@@ -1,7 +1,7 @@
 from datetime import datetime, timezone
 
 import structlog
-from sqlalchemy import select, update
+from sqlalchemy import func, select, update
 from sqlalchemy.dialects.postgresql import array
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -172,6 +172,8 @@ class AoRepository:
                 "zip_url": stmt.excluded.zip_url,
                 "secteur_codes": stmt.excluded.secteur_codes,
                 "updated_at": datetime.now(timezone.utc),
+                # Preserve date_publication if already set (only detail page has it)
+                "date_publication": func.coalesce(stmt.excluded.date_publication, ScrapedAo.date_publication),
                 # Preserve: status, classified_docs, zip_minio_key, zip_downloaded_at
             },
         )
