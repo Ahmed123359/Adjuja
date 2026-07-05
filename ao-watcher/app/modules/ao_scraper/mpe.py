@@ -269,32 +269,41 @@ class MPEPlatformScraper(IAOScraper):
 
                 url_source = urljoin(self.base_url, href)
 
+                def _sel(selector: str):
+                    """select_one avec garde contre sélecteur vide."""
+                    s = selector.strip()
+                    return row.select_one(s) if s else None
+
                 # Catégorie
-                cat_el = row.select_one(cols.get("categorie", ""))
+                cat_el = _sel(cols.get("categorie", ""))
                 categorie = cat_el.get_text(strip=True) if cat_el else None
 
                 # Date limite
-                dl_el = row.select_one(cols.get("date_limite", ""))
+                dl_el = _sel(cols.get("date_limite", ""))
                 date_limite = _parse_date(dl_el.get_text(strip=True)) if dl_el else None
 
                 # Acheteur (truncated in listing)
-                acheteur_el = row.select_one(cols.get("acheteur", ""))
+                acheteur_el = _sel(cols.get("acheteur", ""))
                 acheteur = acheteur_el.get_text(strip=True) if acheteur_el else None
                 if acheteur:
                     acheteur = re.sub(r"^Acheteur public\s*:", "", acheteur).strip()
 
                 # Titre / objet (truncated)
-                titre_el = row.select_one(cols.get("titre", ""))
+                titre_el = _sel(cols.get("titre", ""))
                 titre = titre_el.get_text(strip=True) if titre_el else ""
                 if titre:
                     titre = re.sub(r"^Objet\s*:", "", titre).strip()
                     titre = _collapse_duplicate_title(titre)
 
                 # Lieu
-                lieu_el = row.select_one(cols.get("lieu", ""))
+                lieu_el = _sel(cols.get("lieu", ""))
                 lieu = lieu_el.get_text(strip=True) if lieu_el else None
                 if lieu:
                     lieu = _collapse_duplicate_title(lieu)
+
+                # Date publication
+                date_pub_el = _sel(cols.get("date_publication", ""))
+                date_publication = _parse_date(date_pub_el.get_text(strip=True)) if date_pub_el else None
 
                 results.append(AoData(
                     source=self.source,
@@ -302,6 +311,7 @@ class MPEPlatformScraper(IAOScraper):
                     url_source=url_source,
                     titre=titre or f"AO {ref_id}",
                     acheteur=acheteur,
+                    date_publication=date_publication,
                     date_limite=date_limite,
                     categorie=categorie,
                     ville=lieu,

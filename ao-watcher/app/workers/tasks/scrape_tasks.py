@@ -141,6 +141,7 @@ async def _scrape_source(config_name: str) -> int:
                 ao.date_limite = detail.date_limite or ao.date_limite
                 ao.categorie = detail.categorie or ao.categorie
                 ao.secteur = detail.secteur or ao.secteur
+                ao.ville = detail.ville or ao.ville
                 ao.budget_estime = detail.budget_estime
                 ao.caution = detail.caution
                 ao.zip_url = detail.zip_url

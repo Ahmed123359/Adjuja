@@ -21,6 +21,23 @@ def _client() -> Minio:
     )
 
 
+@lru_cache(maxsize=1)
+def _public_client() -> Minio:
+    """Client MinIO avec l'endpoint public, utilisé uniquement pour presigner les URLs.
+    La signature HMAC inclut le hostname : il doit correspondre à ce que le navigateur appellera.
+    La région est passée explicitement pour éviter l'appel GET /bucket?location= au démarrage."""
+    from app.config.settings import get_settings
+    s = get_settings()
+    endpoint = s.minio_public_endpoint or s.minio_endpoint
+    return Minio(
+        endpoint,
+        access_key=s.minio_access_key,
+        secret_key=s.minio_secret_key,
+        secure=s.minio_secure,
+        region=s.minio_region,
+    )
+
+
 def _ensure_bucket(bucket: str) -> None:
     c = _client()
     if not c.bucket_exists(bucket):
@@ -49,12 +66,11 @@ def upload_file(key: str, local_path: str, content_type: str = "application/octe
 def presigned_get(key: str) -> str:
     from app.config.settings import get_settings
     s = get_settings()
-    url = _client().presigned_get_object(
+    return _public_client().presigned_get_object(
         s.minio_bucket,
         key,
         expires=datetime.timedelta(seconds=s.minio_presign_expires),
     )
-    return url
 
 
 def delete(key: str) -> None:

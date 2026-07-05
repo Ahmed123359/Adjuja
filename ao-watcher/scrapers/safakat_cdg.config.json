@@ -21,7 +21,8 @@
       "date_limite": "td.col-60 div.cloture-line",
       "acheteur": "td.col-450 div[id*='panelBlocDenomination']",
       "titre": "td.col-450 div[id*='panelBlocObjet']",
-      "lieu": "td.col-90 div[id*='panelBlocLieuxExec']"
+      "lieu": "td.col-90 div[id*='panelBlocLieuxExec']",
+      "date_publication": "td.col-90 > div:not([id]):not([class])"
     }
   },
   "detail": {

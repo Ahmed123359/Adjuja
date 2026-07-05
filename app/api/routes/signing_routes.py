@@ -1,33 +1,47 @@
 import logging
 import re
 import uuid
-from datetime import datetime, timezone
-from pathlib import Path
 from typing import Optional
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
-from fastapi.responses import Response
+from sqlalchemy import select
 
 from app.api.dependencies import get_current_user
+from app.db.base import AsyncSessionLocal
+from app.db.models import CompanyProfile
 from app.models.user import UserPublic
-from app.services.signing_service import sign_pdf
 from app.storage import minio_client as mc
+from app.tasks.tools_tasks import task_sign_pdf, get_job, set_job
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/sign", tags=["Signature"])
 
-_UNSAFE_CHARS = re.compile(r"[^\w\-]")
+_UNSAFE = re.compile(r"[^\w\-]")
 
 
-def _safe_filename(raw: str | None) -> str:
-    """Extrait un nom de fichier sans composant de chemin ni caractère dangereux."""
-    stem = Path(raw or "document").stem
-    safe = _UNSAFE_CHARS.sub("_", stem)[:80]
-    return safe or "document"
+def _safe(name: str | None) -> str:
+    from pathlib import Path
+    stem = Path(name or "document").stem
+    return _UNSAFE.sub("_", stem)[:80] or "document"
 
 
-@router.post("/pdf")
-async def sign_pdf_endpoint(
+async def _profile_keys(org_id: str) -> tuple[str | None, str | None]:
+    """Retourne (signature_minio_key, cachet_minio_key) du profil company."""
+    async with AsyncSessionLocal() as session:
+        result = await session.execute(
+            select(
+                CompanyProfile.signature_minio_key,
+                CompanyProfile.cachet_minio_key,
+            ).where(CompanyProfile.org_id == org_id)
+        )
+        row = result.one_or_none()
+        if row:
+            return row.signature_minio_key, row.cachet_minio_key
+        return None, None
+
+
+@router.post("/start")
+async def sign_start(
     pdf: UploadFile = File(...),
     signature: Optional[UploadFile] = File(None),
     cachet: Optional[UploadFile] = File(None),
@@ -41,65 +55,114 @@ async def sign_pdf_endpoint(
     cac_my:      int = Form(40),
     fait_a_lieu: str = Form(""),
     fait_a_date: str = Form(""),
-    marche_id: Optional[str] = Form(default=None),
+    paraphe_mode: bool = Form(False),
     current_user: UserPublic = Depends(get_current_user),
-) -> Response:
-    """
-    Signe un PDF :
-    - signature en bas à droite sur toutes les pages
-    - cachet en bas à gauche sur la dernière page (optionnel)
-    Retourne le PDF signé (et l'enregistre dans MinIO si marche_id fourni).
-    """
+) -> dict:
+    """Lance la signature en background. Retourne {job_id} pour polling."""
     pdf_bytes = await pdf.read()
-    sig_bytes = await signature.read() if signature else None
-    cac_bytes = await cachet.read() if cachet else None
-
-    signed_bytes = sign_pdf(
-        pdf_bytes, sig_bytes, cac_bytes,
-        lu_et_accepte_bytes=None,
-        sig_w=sig_w, sig_h=sig_h, sig_mx=sig_mx, sig_my=sig_my,
-        cac_w=cac_w, cac_h=cac_h, cac_mx=cac_mx, cac_my=cac_my,
-        fait_a_lieu=fait_a_lieu, fait_a_date=fait_a_date,
-    )
+    if not pdf_bytes:
+        raise HTTPException(status_code=400, detail="PDF vide.")
 
     org_id = current_user.org_id or current_user.id
+    job_id = uuid.uuid4().hex
 
-    safe_name = _safe_filename(pdf.filename)
+    # Upload PDF input en MinIO (temp)
+    pdf_key = f"{org_id}/tools/signing/{job_id}/input.pdf"
+    mc.upload_bytes(pdf_key, pdf_bytes, "application/pdf")
 
-    if marche_id:
-        job_id = uuid.uuid4().hex
-        minio_key = f"{org_id}/marches/{marche_id}/signing/{job_id}/{safe_name}_signe.pdf"
-        try:
-            mc.upload_bytes(minio_key, signed_bytes, "application/pdf")
-            logger.info("Signing uploadé: %s", minio_key)
-        except Exception as exc:
-            logger.warning("MinIO upload signing échoué: %s", exc)
+    # Signature : fichier uploade > profil company > None (défaut dans le service)
+    sig_key: str | None = None
+    if signature and signature.size:
+        sig_bytes = await signature.read()
+        sig_key = f"{org_id}/tools/signing/{job_id}/sig{_ext(signature.filename)}"
+        mc.upload_bytes(sig_key, sig_bytes, signature.content_type or "image/png")
 
-        await _save_signing_job(marche_id, org_id, job_id)
+    cac_key: str | None = None
+    if cachet and cachet.size:
+        cac_bytes = await cachet.read()
+        cac_key = f"{org_id}/tools/signing/{job_id}/cac{_ext(cachet.filename)}"
+        mc.upload_bytes(cac_key, cac_bytes, cachet.content_type or "image/png")
 
-    dl_filename = f"{safe_name}_signe.pdf"
-    return Response(
-        content=signed_bytes,
-        media_type="application/pdf",
-        headers={"Content-Disposition": f"attachment; filename=\"{dl_filename}\""},
+    # Si pas d'image uploadee, charger depuis le profil company
+    if not sig_key or not cac_key:
+        profile_sig, profile_cac = await _profile_keys(org_id)
+        if not sig_key and profile_sig:
+            sig_key = profile_sig
+        if not cac_key and profile_cac:
+            cac_key = profile_cac
+
+    # Enregistrer l'etat initial
+    set_job(job_id, {"status": "pending", "type": "sign", "org_id": org_id})
+
+    # Dispatcher la tache Celery
+    task_sign_pdf.delay(
+        job_id=job_id,
+        org_id=org_id,
+        pdf_key=pdf_key,
+        sig_key=sig_key,
+        cac_key=cac_key,
+        sig_w=sig_w, sig_h=sig_h, sig_mx=sig_mx, sig_my=sig_my,
+        cac_w=cac_w, cac_h=cac_h, cac_mx=cac_mx, cac_my=cac_my,
+        fait_a_lieu=fait_a_lieu,
+        fait_a_date=fait_a_date,
+        original_filename=pdf.filename or "document.pdf",
+        paraphe=paraphe_mode,
     )
 
+    return {"job_id": job_id, "status": "pending"}
 
-async def _save_signing_job(marche_id: str, org_id: str, job_id: str) -> None:
-    from app.db.base import AsyncSessionLocal
-    from app.db.models import SigningJob
 
-    try:
-        async with AsyncSessionLocal() as session:
-            job = SigningJob(
-                id=uuid.uuid4().hex,
-                marche_id=marche_id,
-                org_id=org_id,
-                created_at=datetime.now(timezone.utc).isoformat(),
-                job_id=job_id,
-                statut="termine",
-            )
-            session.add(job)
-            await session.commit()
-    except Exception as exc:
-        logger.warning("Impossible de sauvegarder SigningJob: %s", exc)
+@router.get("/status/{job_id}")
+async def sign_status(
+    job_id: str,
+    current_user: UserPublic = Depends(get_current_user),
+) -> dict:
+    job = get_job(job_id)
+    if not job:
+        raise HTTPException(status_code=404, detail="Job introuvable ou expiré.")
+
+    org_id = current_user.org_id or current_user.id
+    if job.get("org_id") != org_id:
+        raise HTTPException(status_code=403, detail="Accès refusé.")
+
+    response = {"job_id": job_id, "status": job["status"]}
+
+    if job["status"] == "done":
+        try:
+            response["download_url"] = mc.presigned_get(job["result_key"])
+            response["filename"] = job.get("filename", "document_signe.pdf")
+        except Exception:
+            response["status"] = "failed"
+            response["error"] = "Fichier résultat introuvable."
+
+    if job["status"] == "failed":
+        response["error"] = job.get("error", "Erreur inconnue.")
+
+    return response
+
+
+@router.delete("/cancel/{job_id}")
+async def sign_cancel(
+    job_id: str,
+    current_user: UserPublic = Depends(get_current_user),
+) -> dict:
+    job = get_job(job_id)
+    if not job:
+        raise HTTPException(status_code=404, detail="Job introuvable.")
+
+    org_id = current_user.org_id or current_user.id
+    if job.get("org_id") != org_id:
+        raise HTTPException(status_code=403, detail="Accès refusé.")
+
+    celery_task_id = job.get("celery_task_id")
+    if celery_task_id:
+        from app.celery_app import celery_app
+        celery_app.control.revoke(celery_task_id, terminate=True)
+
+    set_job(job_id, {**job, "status": "cancelled"})
+    return {"job_id": job_id, "status": "cancelled"}
+
+
+def _ext(filename: str | None) -> str:
+    from pathlib import Path
+    return Path(filename or "file.png").suffix or ".png"

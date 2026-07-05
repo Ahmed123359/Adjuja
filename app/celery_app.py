@@ -7,7 +7,7 @@ celery_app = Celery(
     "offria",
     broker=settings.celery_broker_url,
     backend=settings.celery_result_backend,
-    include=["app.tasks.ao_tasks"],
+    include=["app.tasks.ao_tasks", "app.tasks.tools_tasks"],
 )
 
 celery_app.conf.update(
@@ -28,5 +28,7 @@ celery_app.conf.update(
         "app.tasks.ao_tasks.task_sign_and_compile":    {"queue": "celery_cpu"},
         "app.tasks.ao_tasks.task_index_results":       {"queue": "celery_io"},
         "app.tasks.ao_tasks.task_dummy_pipeline":      {"queue": "celery_io"},
+        "app.tasks.tools_tasks.task_sign_pdf":         {"queue": "celery_cpu"},
+        "app.tasks.tools_tasks.task_run_filler":       {"queue": "celery_cpu"},
     },
 )

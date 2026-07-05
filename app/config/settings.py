@@ -114,6 +114,14 @@ class Settings(BaseSettings):
     minio_presign_expires: int = 900
     """Durée de validité des presigned URLs en secondes (défaut : 15 min)."""
 
+    minio_public_endpoint: str = "localhost:9000"
+    """Endpoint public MinIO pour les presigned URLs envoyées au navigateur.
+    En Docker dev : localhost:9000. En prod : hostname public ou CDN."""
+
+    minio_region: str = "us-east-1"
+    """Région MinIO. Doit être fournie explicitement pour éviter un appel réseau
+    de détection automatique (GET /bucket?location=) au moment du presigning."""
+
     # ------------------------------------------------------------------
     # RAG  base de données vectorielle Qdrant
     # ------------------------------------------------------------------

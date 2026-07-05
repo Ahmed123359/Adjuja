@@ -216,7 +216,7 @@ function AoTableRow({
       {/* Région */}
       <td style={{ padding: '10px 14px', borderBottom: '1px solid var(--l-card-border)', maxWidth: 140 }}>
         <span style={{ fontSize: 12, color: 'var(--l-sub)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'block' }}>
-          {ao.region ?? '-'}
+          {ao.region || ao.ville || '-'}
         </span>
       </td>
 

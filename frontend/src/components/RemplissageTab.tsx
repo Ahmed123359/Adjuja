@@ -1,6 +1,8 @@
-import { useRef, useState } from "react";
-import { runFiller, downloadFillerFile } from "../api";
+import { useEffect, useRef, useState } from "react";
+import { startFiller, getFillerStatus, cancelFiller } from "../api";
 import type { FillerResult, FillerOutputFile } from "../types";
+
+const LS_KEY = "remplissage_job_id";
 
 const DOC_TYPE_LABELS: Record<string, string> = {
   acte_engagement:   "Acte d'engagement",
@@ -34,11 +36,50 @@ export default function RemplissageTab() {
   const [lotsRaw, setLotsRaw] = useState("1");
   const [isDragging, setIsDragging] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [jobId, setJobId] = useState<string | null>(() => localStorage.getItem(LS_KEY));
   const [result, setResult] = useState<FillerResult | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [downloading, setDownloading] = useState<Set<string>>(new Set());
 
   const fileRef = useRef<HTMLInputElement>(null);
+
+  // Restauration d'un job actif au montage
+  useEffect(() => {
+    const saved = localStorage.getItem(LS_KEY);
+    if (!saved) return;
+    setLoading(true);
+    setJobId(saved);
+  }, []);
+
+  // Polling
+  useEffect(() => {
+    if (!jobId) return;
+    const interval = setInterval(async () => {
+      try {
+        const s = await getFillerStatus(jobId);
+        if (s.status === "done") {
+          setResult(s.result as FillerResult);
+          if (s.result && (s.result as FillerResult).erreurs?.length > 0) {
+            setError((s.result as FillerResult).erreurs.join(" | "));
+          }
+          setLoading(false);
+          setJobId(null);
+          localStorage.removeItem(LS_KEY);
+        } else if (s.status === "failed") {
+          setError(s.error ?? "Erreur lors du remplissage.");
+          setLoading(false);
+          setJobId(null);
+          localStorage.removeItem(LS_KEY);
+        } else if (s.status === "cancelled") {
+          setLoading(false);
+          setJobId(null);
+          localStorage.removeItem(LS_KEY);
+        }
+      } catch {
+        // Ignore les erreurs transitoires
+      }
+    }, 4000);
+    return () => clearInterval(interval);
+  }, [jobId]);
 
   function pickFile(files: FileList | null) {
     if (!files || files.length === 0) return;
@@ -58,34 +99,38 @@ export default function RemplissageTab() {
     setResult(null);
     setError(null);
     try {
-      const res = await runFiller(file, lots);
-      setResult(res);
-      if (!res.succes && res.erreurs.length > 0) {
-        setError(res.erreurs.join(" | "));
-      }
+      const { job_id } = await startFiller(file, lots);
+      setJobId(job_id);
+      localStorage.setItem(LS_KEY, job_id);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Erreur lors du remplissage.");
-    } finally {
+      setError(e instanceof Error ? e.message : "Erreur lors du démarrage.");
       setLoading(false);
     }
   }
 
-  async function handleDownload(f: FillerOutputFile) {
-    setDownloading((prev) => new Set(prev).add(f.filename));
-    try {
-      await downloadFillerFile(f.download_url, f.filename);
-    } catch {
-      // file expired or unavailable -- silent, user can retry
-    } finally {
-      setDownloading((prev) => {
-        const s = new Set(prev);
-        s.delete(f.filename);
-        return s;
-      });
-    }
+  async function handleCancel() {
+    if (!jobId) return;
+    try { await cancelFiller(jobId); } catch { /* ignore */ }
+    setLoading(false);
+    setJobId(null);
+    localStorage.removeItem(LS_KEY);
   }
 
-  const canRun = file !== null && !loading;
+  function reset() {
+    setFile(null);
+    setResult(null);
+    setError(null);
+    setJobId(null);
+    localStorage.removeItem(LS_KEY);
+  }
+
+  async function handleDownload(f: FillerOutputFile) {
+    if (!f.download_url) return;
+    const a = document.createElement("a");
+    a.href = f.download_url;
+    a.download = f.filename;
+    a.click();
+  }
 
   return (
     <div className="space-y-4">
@@ -156,11 +201,7 @@ export default function RemplissageTab() {
             : "border-border hover:border-primary/40 hover:bg-accent/20 cursor-pointer"
         }`}
       >
-        <div
-          className={`h-12 w-12 rounded-xl flex items-center justify-center flex-shrink-0 ${
-            file ? "bg-emerald-500/10" : "bg-accent"
-          }`}
-        >
+        <div className={`h-12 w-12 rounded-xl flex items-center justify-center flex-shrink-0 ${file ? "bg-emerald-500/10" : "bg-accent"}`}>
           {file ? (
             <svg className="h-6 w-6 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
@@ -200,26 +241,50 @@ export default function RemplissageTab() {
         <input ref={fileRef} type="file" accept=".zip,.pdf" className="hidden" onChange={(e) => pickFile(e.target.files)} />
       </div>
 
-      {/* Run button */}
-      <button
-        onClick={handleRun}
-        disabled={!canRun}
-        className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-      >
-        {loading ? (
-          <>
-            <div className="w-4 h-4 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" />
-            Remplissage en cours...
-          </>
-        ) : (
-          <>
-            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
+      {/* CTA */}
+      <div className="flex gap-2">
+        {result && !loading && (
+          <button
+            onClick={reset}
+            className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl border border-border bg-card text-muted-foreground text-sm font-medium hover:text-foreground hover:border-primary/30 transition-colors"
+          >
+            <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
             </svg>
-            Remplir automatiquement
-          </>
+            Nouveau
+          </button>
         )}
-      </button>
+        {loading && (
+          <button
+            onClick={handleCancel}
+            className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl border border-red-400/40 bg-red-500/10 text-red-400 text-sm font-medium hover:bg-red-500/20 transition-colors"
+          >
+            <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+            Arrêter
+          </button>
+        )}
+        <button
+          onClick={handleRun}
+          disabled={loading || !file}
+          className="flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+        >
+          {loading ? (
+            <>
+              <div className="w-4 h-4 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" />
+              Remplissage en cours...
+            </>
+          ) : (
+            <>
+              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
+              </svg>
+              Remplir automatiquement
+            </>
+          )}
+        </button>
+      </div>
 
       {/* Error */}
       {error && (
@@ -269,16 +334,11 @@ export default function RemplissageTab() {
                 </div>
                 <button
                   onClick={() => handleDownload(f)}
-                  disabled={downloading.has(f.filename)}
-                  className="text-xs font-medium px-3 py-1.5 rounded-lg border border-border bg-card text-muted-foreground hover:text-primary hover:border-primary/30 transition-colors flex items-center gap-1.5 disabled:opacity-50 flex-shrink-0"
+                  className="text-xs font-medium px-3 py-1.5 rounded-lg border border-border bg-card text-muted-foreground hover:text-primary hover:border-primary/30 transition-colors flex items-center gap-1.5 flex-shrink-0"
                 >
-                  {downloading.has(f.filename) ? (
-                    <div className="w-3 h-3 border border-primary/30 border-t-primary rounded-full animate-spin" />
-                  ) : (
-                    <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                    </svg>
-                  )}
+                  <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                  </svg>
                   Télécharger
                 </button>
               </div>

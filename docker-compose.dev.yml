@@ -54,6 +54,7 @@ services:
       CELERY_BROKER_URL: redis://redis:6379/1
       CELERY_RESULT_BACKEND: redis://redis:6379/2
       MINIO_ENDPOINT: minio:9000
+      MINIO_PUBLIC_ENDPOINT: ${MINIO_PUBLIC_ENDPOINT:-localhost:9000}
       MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY:-offria_dev}
       MINIO_SECRET_KEY: ${MINIO_SECRET_KEY:-offria_dev_secret}
       MISTRAL_API_KEY: ${MISTRAL_API_KEY:-}
@@ -143,6 +144,7 @@ services:
       CELERY_BROKER_URL: redis://redis:6379/1
       CELERY_RESULT_BACKEND: redis://redis:6379/2
       MINIO_ENDPOINT: minio:9000
+      MINIO_PUBLIC_ENDPOINT: ${MINIO_PUBLIC_ENDPOINT:-localhost:9000}
       MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY:-offria_dev}
       MINIO_SECRET_KEY: ${MINIO_SECRET_KEY:-offria_dev_secret}
       MISTRAL_API_KEY: ${MISTRAL_API_KEY:-}
@@ -183,6 +185,7 @@ services:
       CELERY_BROKER_URL: redis://redis:6379/1
       CELERY_RESULT_BACKEND: redis://redis:6379/2
       MINIO_ENDPOINT: minio:9000
+      MINIO_PUBLIC_ENDPOINT: ${MINIO_PUBLIC_ENDPOINT:-localhost:9000}
       MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY:-offria_dev}
       MINIO_SECRET_KEY: ${MINIO_SECRET_KEY:-offria_dev_secret}
       MISTRAL_API_KEY: ${MISTRAL_API_KEY:-}

@@ -69,8 +69,7 @@ export default function LandingFooter({ onEnterApp }: { onEnterApp: () => void }
     setTimeout(() => setToast(null), 4000);
   }
 
-  const NAV_LINKS   = ["navHome", "navFeatures", "navPricing", "navBlog", "navContact"] as const;
-  const LEGAL_LINKS = ["legalTerms", "legalPrivacy", "legalMentions", "legalSecurity", "legalRgpd"] as const;
+  const NAV_LINKS   = ["navHome", "navFeatures", "navPricing"] as const;
   const CONTACT     = [
     { label: t("landing.footer.contactEmail"),   value: t("landing.footer.contactEmailValue") },
     { label: t("landing.footer.contactPhone"),   value: t("landing.footer.contactPhoneValue") },
@@ -81,7 +80,7 @@ export default function LandingFooter({ onEnterApp }: { onEnterApp: () => void }
     <footer className="bg-[#050818] rounded-t-[32px] -mt-8">
       <div className="animate-on-scroll max-w-[1280px] mx-auto px-10 pt-20 pb-16">
 
-        <div className="grid grid-cols-1 lg:grid-cols-[180px_1fr_1fr_1fr_300px] gap-y-12 gap-x-10 xl:gap-x-16">
+        <div className="grid grid-cols-1 lg:grid-cols-[180px_1fr_1fr_300px] gap-y-12 gap-x-10 xl:gap-x-16">
 
           {/* Logo  isolated left column */}
           <div className="flex flex-col gap-0">
@@ -92,14 +91,6 @@ export default function LandingFooter({ onEnterApp }: { onEnterApp: () => void }
           <div>
             <ColTitle>{t("landing.footer.navTitle")}</ColTitle>
             {NAV_LINKS.map(k => (
-              <NavLink key={k}>{t(`landing.footer.${k}`)}</NavLink>
-            ))}
-          </div>
-
-          {/* Légal */}
-          <div>
-            <ColTitle>{t("landing.footer.legalTitle")}</ColTitle>
-            {LEGAL_LINKS.map(k => (
               <NavLink key={k}>{t(`landing.footer.${k}`)}</NavLink>
             ))}
           </div>

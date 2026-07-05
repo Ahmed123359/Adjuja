@@ -17,7 +17,7 @@
     "cols": {
       "detail_link": "td.actions a[href*='EntrepriseDetailConsultation']",
       "categorie": "td.col-90 div[id*='panelBlocCategorie']",
-      "date_publication": "td.col-90 div[id*='panelBlocTypesProc']",
+      "date_publication": "td.col-90 > div:not([id]):not([class])",
       "date_limite": "td.col-60 div.cloture-line",
       "acheteur": "td.col-450 div[id*='panelBlocDenomination']",
       "titre": "td.col-450 div[id*='panelBlocObjet']",

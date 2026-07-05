@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { runFiller, downloadFillerFile } from "../api";
+import { startFiller, getFillerStatus, cancelFiller, downloadFillerFile } from "../api";
 import type { FillerOutputFile, FillerResult } from "../types";
 
 const FORMAT_LABELS: Record<string, string> = {
@@ -138,11 +138,56 @@ export default function FillerTab({ marcheId }: { marcheId?: string } = {}) {
   const [error, setError] = useState("");
   const [result, setResult] = useState<FillerResult | null>(null);
   const [isDragging, setIsDragging] = useState(false);
+  const [jobId, setJobId] = useState<string | null>(() => localStorage.getItem("filler_job_id"));
 
   const pdfRef = useRef<HTMLInputElement>(null);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  // Start/stop elapsed timer during loading
+  // Reprendre un job actif depuis localStorage au montage
+  useEffect(() => {
+    const saved = localStorage.getItem("filler_job_id");
+    if (saved && !result) {
+      setJobId(saved);
+      setLoading(true);
+      setElapsed(0);
+    }
+  }, []);
+
+  // Polling du statut quand jobId est défini
+  useEffect(() => {
+    if (!jobId) return;
+    pollRef.current = setInterval(async () => {
+      try {
+        const s = await getFillerStatus(jobId);
+        if (s.status === "done" && s.result) {
+          setResult(s.result);
+          setLoading(false);
+          setJobId(null);
+          localStorage.removeItem("filler_job_id");
+          if (!s.result.succes && s.result.erreurs.length > 0) {
+            setError(s.result.erreurs.join(" · "));
+          }
+          if (pollRef.current) clearInterval(pollRef.current);
+        } else if (s.status === "failed") {
+          setError(s.error || "Remplissage échoué.");
+          setLoading(false);
+          setJobId(null);
+          localStorage.removeItem("filler_job_id");
+          if (pollRef.current) clearInterval(pollRef.current);
+        } else if (s.status === "cancelled") {
+          setError("Remplissage annulé.");
+          setLoading(false);
+          setJobId(null);
+          localStorage.removeItem("filler_job_id");
+          if (pollRef.current) clearInterval(pollRef.current);
+        }
+      } catch { /* réseau -- réessayer */ }
+    }, 4000);
+    return () => { if (pollRef.current) clearInterval(pollRef.current); };
+  }, [jobId]);
+
+  // Chrono
   useEffect(() => {
     if (loading) {
       setElapsed(0);
@@ -150,9 +195,7 @@ export default function FillerTab({ marcheId }: { marcheId?: string } = {}) {
     } else {
       if (timerRef.current) clearInterval(timerRef.current);
     }
-    return () => {
-      if (timerRef.current) clearInterval(timerRef.current);
-    };
+    return () => { if (timerRef.current) clearInterval(timerRef.current); };
   }, [loading]);
 
   function parseLots(): number[] {
@@ -164,34 +207,32 @@ export default function FillerTab({ marcheId }: { marcheId?: string } = {}) {
   }
 
   async function handleSubmit() {
-    if (!pdf) {
-      setError("Veuillez sélectionner un fichier PDF.");
+    if (!pdf) { setError("Veuillez sélectionner un fichier PDF."); return; }
+    const lotsRaw = lots.trim();
+    if (lotsRaw && parseLots().length === 0) {
+      setError("Format des lots invalide. Exemple valide : '1' ou '1,2'.");
       return;
     }
-
-    const lotsRaw = lots.trim();
-    if (lotsRaw) {
-      const parsed = parseLots();
-      if (parsed.length === 0) {
-        setError("Format des lots invalide. Exemple valide : '1' ou '1,2'.");
-        return;
-      }
-    }
-
     setLoading(true);
     setError("");
     setResult(null);
     try {
-      const res = await runFiller(pdf, parseLots(), marcheId);
-      setResult(res);
-      if (!res.succes && res.erreurs.length > 0) {
-        setError(res.erreurs.join(" · "));
-      }
+      const { job_id } = await startFiller(pdf, parseLots(), marcheId);
+      setJobId(job_id);
+      localStorage.setItem("filler_job_id", job_id);
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : "Erreur inattendue.");
-    } finally {
       setLoading(false);
     }
+  }
+
+  async function handleCancel() {
+    if (!jobId) return;
+    try { await cancelFiller(jobId); } catch { /* ignore */ }
+    setLoading(false);
+    setJobId(null);
+    localStorage.removeItem("filler_job_id");
+    setError("Remplissage annulé.");
   }
 
   function reset() {
@@ -199,6 +240,8 @@ export default function FillerTab({ marcheId }: { marcheId?: string } = {}) {
     setLots("");
     setError("");
     setResult(null);
+    setJobId(null);
+    localStorage.removeItem("filler_job_id");
   }
 
   const formatElapsed = (s: number) =>
@@ -504,20 +547,21 @@ export default function FillerTab({ marcheId }: { marcheId?: string } = {}) {
                 onClick={reset}
                 className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl border border-primary-foreground/30 bg-primary-foreground/10 text-primary-foreground text-sm font-medium hover:bg-primary-foreground/20 transition-colors"
               >
-                <svg
-                  className="h-3.5 w-3.5"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                  strokeWidth={2}
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-                  />
+                <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                 </svg>
                 Nouveau
+              </button>
+            )}
+            {loading && (
+              <button
+                onClick={handleCancel}
+                className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl border border-red-400/40 bg-red-500/10 text-red-300 text-sm font-medium hover:bg-red-500/20 transition-colors"
+              >
+                <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+                Arrêter
               </button>
             )}
             <button
@@ -528,41 +572,16 @@ export default function FillerTab({ marcheId }: { marcheId?: string } = {}) {
             >
               {loading ? (
                 <>
-                  <svg
-                    className="h-4 w-4 animate-spin"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                  >
-                    <circle
-                      className="opacity-25"
-                      cx="12"
-                      cy="12"
-                      r="10"
-                      stroke="currentColor"
-                      strokeWidth="4"
-                    />
-                    <path
-                      className="opacity-75"
-                      fill="currentColor"
-                      d="M4 12a8 8 0 018-8v8z"
-                    />
+                  <svg className="h-4 w-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
                   </svg>
                   Traitement…
                 </>
               ) : (
                 <>
-                  <svg
-                    className="h-4 w-4"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                    strokeWidth={2}
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
-                    />
+                  <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                   </svg>
                   Lancer le remplissage
                 </>

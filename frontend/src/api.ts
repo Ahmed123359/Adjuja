@@ -232,33 +232,50 @@ export async function extractPdfText(file: File): Promise<PdfExtractResult> {
   return data;
 }
 
-// ── Signature PDF (protégée) ───────────────────────────────────────────
+// ── Signature PDF -- mode background Celery ───────────────────────────────
 
-export async function signPdf(
+export async function startSign(
   pdf: File,
   signature?: File | null,
   cachet?: File | null,
   lieu?: string,
   date?: string,
-): Promise<Blob> {
+  parapheMode?: boolean,
+): Promise<{ job_id: string; status: string }> {
   const form = new FormData();
   form.append('pdf', pdf);
-  if (signature) form.append('signature', signature);
-  if (cachet)    form.append('cachet', cachet);
-  if (lieu)      form.append('fait_a_lieu', lieu);
-  if (date)      form.append('fait_a_date', date);
+  if (signature)   form.append('signature', signature);
+  if (cachet)      form.append('cachet', cachet);
+  if (lieu)        form.append('fait_a_lieu', lieu);
+  if (date)        form.append('fait_a_date', date);
+  if (parapheMode) form.append('paraphe_mode', 'true');
 
-  const res = await fetch('/api/v1/sign/pdf', {
+  const res = await fetch('/api/v1/sign/start', {
     method:  'POST',
     headers: authHeaders(),
     body:    form,
   });
-
   if (!res.ok) {
     const data = await res.json().catch(() => ({}));
     throw new Error(typeof data.detail === 'string' ? data.detail : 'Erreur lors de la signature.');
   }
-  return res.blob();
+  return res.json();
+}
+
+export async function getSignStatus(jobId: string): Promise<{
+  job_id: string;
+  status: string;
+  download_url?: string;
+  filename?: string;
+  error?: string;
+}> {
+  const res = await fetch(`/api/v1/sign/status/${jobId}`, { headers: authHeaders() });
+  if (!res.ok) throw new Error('Job introuvable.');
+  return res.json();
+}
+
+export async function cancelSign(jobId: string): Promise<void> {
+  await fetch(`/api/v1/sign/cancel/${jobId}`, { method: 'DELETE', headers: authHeaders() });
 }
 
 export async function extractBordereauExcel(pdf: File): Promise<Blob> {
@@ -390,29 +407,60 @@ export async function exportDocx(
   return res.blob();
 }
 
-// ── Remplissage dossier AO (protégé) ──────────────────────────────────────
+// ── Remplissage dossier AO -- mode background Celery ─────────────────────
+
+export async function startFiller(
+  file: File,
+  lots: number[],
+  marcheId?: string,
+): Promise<{ job_id: string; status: string }> {
+  const form = new FormData();
+  form.append('file', file);
+  form.append('lots', lots.join(','));
+  if (marcheId) form.append('marche_id', marcheId);
+
+  const res = await fetch('/api/v1/filler/start', {
+    method:  'POST',
+    headers: authHeaders(),
+    body:    form,
+  });
+  const data = await res.json();
+  if (!res.ok) {
+    throw new Error(typeof data.detail === 'string' ? data.detail : 'Erreur lors du remplissage.');
+  }
+  return data;
+}
+
+export async function getFillerStatus(jobId: string): Promise<{
+  job_id: string;
+  status: string;
+  result?: FillerResult;
+  error?: string;
+}> {
+  const res = await fetch(`/api/v1/filler/status/${jobId}`, { headers: authHeaders() });
+  if (!res.ok) throw new Error('Job introuvable.');
+  return res.json();
+}
+
+export async function cancelFiller(jobId: string): Promise<void> {
+  await fetch(`/api/v1/filler/cancel/${jobId}`, { method: 'DELETE', headers: authHeaders() });
+}
 
 export async function runFiller(
   file: File,
   lots: number[],
   marcheId?: string,
 ): Promise<FillerResult> {
-  const form = new FormData();
-  form.append('file', file);
-  form.append('lots', lots.join(','));
-  if (marcheId) form.append('marche_id', marcheId);
-
-  const res = await fetch('/api/v1/filler/run', {
-    method:  'POST',
-    headers: authHeaders(),
-    body:    form,
-  });
-
-  const data = await res.json();
-  if (!res.ok) {
-    throw new Error(typeof data.detail === 'string' ? data.detail : 'Erreur lors du remplissage.');
+  const { job_id } = await startFiller(file, lots, marcheId);
+  // Polling jusqu'a completion
+  for (let i = 0; i < 360; i++) {
+    await new Promise((r) => setTimeout(r, 5000));
+    const status = await getFillerStatus(job_id);
+    if (status.status === 'done' && status.result) return status.result;
+    if (status.status === 'failed') throw new Error(status.error || 'Remplissage échoué.');
+    if (status.status === 'cancelled') throw new Error('Remplissage annulé.');
   }
-  return data;
+  throw new Error('Timeout : le remplissage a pris trop de temps.');
 }
 
 export async function downloadFillerFile(downloadUrl: string, filename: string): Promise<void> {

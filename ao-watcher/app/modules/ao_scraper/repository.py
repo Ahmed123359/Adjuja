@@ -166,14 +166,15 @@ class AoRepository:
                 "categorie": stmt.excluded.categorie,
                 "secteur": stmt.excluded.secteur,
                 "region": stmt.excluded.region,
-                "ville": stmt.excluded.ville,
                 "budget_estime": stmt.excluded.budget_estime,
                 "caution": stmt.excluded.caution,
                 "zip_url": stmt.excluded.zip_url,
                 "secteur_codes": stmt.excluded.secteur_codes,
                 "updated_at": datetime.now(timezone.utc),
-                # Preserve date_publication if already set (only detail page has it)
+                # Preserve non-null values : listing peut ne pas avoir ville/date_publication,
+                # mais la page detail les a -- on ne les efface jamais avec NULL.
                 "date_publication": func.coalesce(stmt.excluded.date_publication, ScrapedAo.date_publication),
+                "ville": func.coalesce(stmt.excluded.ville, ScrapedAo.ville),
                 # Preserve: status, classified_docs, zip_minio_key, zip_downloaded_at
             },
         )
