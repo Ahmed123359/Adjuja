@@ -1,8 +1,12 @@
-import type { Model, CompanyData, GenerationResult, RagStatus, AppDefaults, UsageData, HistorySummary, HistoryEntry, User, ActeEngagementData, ChatMessage, ChatApiResponse, FillerResult, MarcheSummary, MarcheDetail, AoSummary, AoResponse, AoStatus, AoDocumentOut, CompanyProfile, CompanyProfileForm, ProfileCheck, ScrapedAo, ScrapedAoList, WatcherFilters, Secteur, EligibilityVerdict, ScrapedBdc, ScrapedBdcList, WatcherBdcFilters, NaturePrestation } from './types';
+import type { Model, CompanyData, GenerationResult, RagStatus, AppDefaults, UsageData, HistorySummary, HistoryEntry, User, ActeEngagementData, ChatMessage, ChatApiResponse, FillerResult, MarcheSummary, MarcheDetail, AoSummary, AoResponse, AoStatus, AoDocumentOut, CompanyProfile, CompanyProfileForm, ProfileCheck, ScrapedAo, ScrapedAoList, WatcherFilters, Secteur, EligibilityVerdict, ScrapedBdc, ScrapedBdcList, WatcherBdcFilters, NaturePrestation, Subscription } from './types';
 
 // ── Token helpers ──────────────────────────────────────────────────────
 
 const TOKEN_KEY = 'offria_token';
+/** Plan choisi sur la page pricing avant que l'utilisateur soit connecté. Consommé une
+ * seule fois juste après login/register (voir main.tsx::handleAuthSuccess), pour que le
+ * clic sur "Commencer" mène au checkout même si l'utilisateur doit d'abord s'inscrire. */
+export const CHECKOUT_INTENT_KEY = 'adjuja_checkout_intent';
 
 export function getToken(): string | null {
   return localStorage.getItem(TOKEN_KEY);
@@ -1020,4 +1024,25 @@ export async function updateBdcStatus(id: number, status: string): Promise<Scrap
   const json = await res.json();
   if (!res.ok) throw new Error(typeof json.detail === 'string' ? json.detail : 'Erreur statut.');
   return json;
+}
+
+// ── Billing & Subscriptions ─────────────────────────────────────────────────
+
+export async function getSubscription(): Promise<Subscription> {
+  const res = await fetch('/api/v1/billing/subscription', { headers: authHeaders() });
+  if (!res.ok) throw new Error('Impossible de récupérer votre abonnement.');
+  return res.json();
+}
+
+export async function startCheckout(planCode: string): Promise<{ redirect_url: string }> {
+  const res = await fetch('/api/v1/billing/checkout', {
+    method:  'POST',
+    headers: { 'Content-Type': 'application/json', ...authHeaders() },
+    body:    JSON.stringify({ plan_code: planCode }),
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    throw new Error(typeof data.detail === 'string' ? data.detail : 'Impossible de démarrer le paiement.');
+  }
+  return data;
 }

@@ -304,3 +304,44 @@ class AoTeamMember(Base):
     profil_requis_ref: Mapped[str | None] = mapped_column(Text, nullable=True)
     # True si aucun CV de l'org ne couvre ce profil requis
     warning:           Mapped[bool]       = mapped_column(Boolean, default=False)
+
+
+# ---------------------------------------------------------------------------
+# Billing & Subscriptions
+# ---------------------------------------------------------------------------
+
+class Subscription(Base):
+    """Etat d'abonnement d'un org. Source de vérité unique pour l'accès aux
+    fonctionnalités payantes -- jamais un appel live au provider de paiement."""
+    __tablename__ = "subscriptions"
+
+    id: Mapped[str]         = mapped_column(String(36), primary_key=True)
+    org_id: Mapped[str]     = mapped_column(String(36), ForeignKey("organizations.id"), unique=True, index=True)
+    plan_code: Mapped[str]  = mapped_column(String(20), default="free")
+    # active | past_due | canceled | trialing
+    status: Mapped[str]     = mapped_column(String(20), default="active")
+    current_period_end: Mapped[str | None] = mapped_column(String(50), nullable=True)
+    # manual | cmi
+    provider: Mapped[str]        = mapped_column(String(20), default="manual")
+    provider_ref: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    grace_until: Mapped[str | None]  = mapped_column(String(50), nullable=True)
+    created_at: Mapped[str] = mapped_column(String(50))
+    updated_at: Mapped[str] = mapped_column(String(50))
+
+
+class BillingEvent(Base):
+    """Garde-fou d'idempotence pour les webhooks. Un provider (CMI ou autre) peut
+    rejouer un callback ; un provider_event_id déjà vu est ignoré plutôt que de
+    réactiver l'abonnement une deuxième fois."""
+    __tablename__ = "billing_events"
+    __table_args__ = (
+        UniqueConstraint("provider", "provider_event_id", name="uq_billing_event"),
+    )
+
+    id: Mapped[str]                = mapped_column(String(36), primary_key=True)
+    provider: Mapped[str]          = mapped_column(String(20))
+    provider_event_id: Mapped[str] = mapped_column(String(255))
+    org_id: Mapped[str | None]     = mapped_column(String(36), nullable=True)
+    event_type: Mapped[str]        = mapped_column(String(50))
+    raw_payload: Mapped[str]       = mapped_column(Text)
+    processed_at: Mapped[str]      = mapped_column(String(50))

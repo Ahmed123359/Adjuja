@@ -6,7 +6,7 @@ from datetime import datetime, timezone
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form
 from sqlalchemy import select
 
-from app.api.dependencies import get_current_user
+from app.api.dependencies import get_current_user, require_within_limit
 from app.db.base import AsyncSessionLocal
 from app.db.models import CompanyDocument
 from app.models.company_document import (
@@ -70,7 +70,10 @@ async def list_documents(
 
 # ── Upload (crée ou remplace) ──────────────────────────────────────────────
 
-@router.post("", response_model=CompanyDocumentResponse, status_code=201)
+@router.post(
+    "", response_model=CompanyDocumentResponse, status_code=201,
+    dependencies=[Depends(require_within_limit("documents"))],
+)
 async def upload_document(
     file: UploadFile = File(...),
     doc_type: str = Form(...),

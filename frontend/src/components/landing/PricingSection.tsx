@@ -1,6 +1,7 @@
 import { useState } from "react";
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
+import { getToken, startCheckout, CHECKOUT_INTENT_KEY } from "../../api";
 
 /* ------------------------------------------------------------------ */
 /* Sub-components                                                        */
@@ -114,6 +115,32 @@ function PricingCard({
 export default function PricingSection({ onEnterApp }: { onEnterApp: () => void }) {
   const { t } = useTranslation();
   const [annual, setAnnual] = useState(false);
+  const [checkoutLoading, setCheckoutLoading] = useState<string | null>(null);
+
+  /** Standard SaaS pattern : le clic sur "Commencer" mène droit au checkout, pas juste
+   * à l'app. Connecté -> redirection immédiate vers CMI. Pas connecté -> l'intention est
+   * mémorisée et consommée juste après login/register (voir main.tsx::handleAuthSuccess),
+   * pour ne jamais perdre "je voulais ce plan" en route vers l'inscription. Starter et Pro
+   * sont tous les deux self-serve, seul Enterprise reste "Sur devis" (déploiement
+   * on-premise, SSO, accompagnement dédié -- nécessite une conversation commerciale). */
+  async function handlePlanCheckout(planCode: string) {
+    if (getToken()) {
+      setCheckoutLoading(planCode);
+      try {
+        const { redirect_url } = await startCheckout(planCode);
+        window.location.href = redirect_url;
+        return;
+      } catch {
+        // CMI pas configuré ou autre échec : on n'affiche pas d'erreur ici (page publique,
+        // pas de système de toast), on laisse l'utilisateur atterrir dans l'app où la
+        // carte Abonnement explique l'erreur et propose de réessayer.
+        setCheckoutLoading(null);
+      }
+    } else {
+      localStorage.setItem(CHECKOUT_INTENT_KEY, planCode);
+    }
+    onEnterApp();
+  }
 
   const starterFeats = [
     t("pricing.plans.f_users_1"),
@@ -126,6 +153,7 @@ export default function PricingSection({ onEnterApp }: { onEnterApp: () => void 
 
   const proFeats = [
     t("pricing.plans.f_users_5"),
+    t("pricing.plans.f_ao_illimite"),
     t("pricing.plans.f_unlimited_gen"),
     t("pricing.plans.f_export"),
     t("pricing.plans.f_docs_200"),
@@ -214,8 +242,8 @@ export default function PricingSection({ onEnterApp }: { onEnterApp: () => void 
             features={starterFeats}
             checkColor="#1BC9A8"
             cta={
-              <button onClick={onEnterApp} className={ghostBtn}>
-                Commencer
+              <button onClick={() => handlePlanCheckout("starter")} disabled={checkoutLoading === "starter"} className={ghostBtn}>
+                {checkoutLoading === "starter" ? "..." : "Commencer"}
               </button>
             }
           />
@@ -225,19 +253,23 @@ export default function PricingSection({ onEnterApp }: { onEnterApp: () => void 
             icon={<TierIcon color="#3248CE" />}
             badge={<TierBadge label={t("pricing.plans.pro_name")} color="#3248CE" />}
             price={
-              <span className="font-display text-[2.4rem] font-extrabold leading-none tracking-[-0.03em] bg-gradient-to-br from-[#3248CE] to-[#2B79E8] bg-clip-text text-transparent">
-                Sur devis
-              </span>
+              <div className="flex items-baseline gap-[5px]">
+                <span className="font-display text-[2.4rem] font-extrabold leading-none tracking-[-0.03em] bg-gradient-to-br from-[#3248CE] to-[#2B79E8] bg-clip-text text-transparent">
+                  {annual ? "239" : "299"}
+                </span>
+                <span className="text-[13px] text-[rgba(168,196,232,0.5)]">MAD / mois</span>
+              </div>
             }
             tagline={t("pricing.plans.pro_tagline")}
             features={proFeats}
             checkColor="#3248CE"
             cta={
               <button
-                onClick={onEnterApp}
-                className="w-full py-[13px] rounded-lg text-[15px] font-semibold cursor-pointer border-0 transition-all mt-7 tracking-[.01em] hover:brightness-110 bg-[#2B79E8] text-white focus:outline-none"
+                onClick={() => handlePlanCheckout("pro")}
+                disabled={checkoutLoading === "pro"}
+                className="w-full py-[13px] rounded-lg text-[15px] font-semibold cursor-pointer border-0 transition-all mt-7 tracking-[.01em] hover:brightness-110 bg-[#2B79E8] text-white focus:outline-none disabled:opacity-70"
               >
-                {t("pricing.plans.pro_cta")}
+                {checkoutLoading === "pro" ? "..." : t("pricing.plans.pro_cta")}
               </button>
             }
           />

@@ -8,7 +8,7 @@ from typing import Annotated
 from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 
-from app.api.dependencies import get_current_user
+from app.api.dependencies import get_current_user, require_within_limit
 from app.db.base import AsyncSessionLocal
 from app.db.models import AoDocument, AppelOffre, CompanyProfile
 from app.models.ao_pipeline import AoCreate, AoDocumentOut, AoResponse, AoStatus, AoSummary
@@ -56,7 +56,10 @@ def _ao_to_response(ao: AppelOffre) -> AoResponse:
     )
 
 
-@router.post("", response_model=AoSummary, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "", response_model=AoSummary, status_code=status.HTTP_201_CREATED,
+    dependencies=[Depends(require_within_limit("ao_per_month"))],
+)
 async def create_ao(
     body: AoCreate,
     current_user: UserPublic = Depends(get_current_user),
@@ -111,7 +114,10 @@ class EligibilityCheckPayload(BaseModel):
     date_limite: str | None = None
 
 
-@router.post("/from-watcher", response_model=AoSummary, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/from-watcher", response_model=AoSummary, status_code=status.HTTP_201_CREATED,
+    dependencies=[Depends(require_within_limit("ao_per_month"))],
+)
 async def import_from_watcher(
     body: FromWatcherPayload,
     current_user: UserPublic = Depends(get_current_user),

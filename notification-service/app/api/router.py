@@ -5,6 +5,8 @@ from jose import JWTError, jwt
 from pydantic import BaseModel
 from sqlalchemy import text
 
+from app.channels.base import NotificationContent
+from app.channels.factory import NotificationChannelFactory
 from app.core.config import settings
 from app.core.database import get_session
 from app.core.models import NotificationPreference
@@ -153,6 +155,27 @@ def trigger_batch():
     from app.workers.tasks.batch_tasks import run_notification_batch
     task = run_notification_batch.delay()
     return {"task_id": task.id, "status": "queued"}
+
+
+class TransactionalSendRequest(BaseModel):
+    to_email: str
+    subject: str
+    html: str
+    text: str
+
+
+@router.post("/admin/send-transactional", dependencies=[Depends(_require_admin)])
+def send_transactional(body: TransactionalSendRequest):
+    """Envoi direct, un email, sans template ni batch. Utilisé par des services
+    externes (billing du backend principal pour les emails de relance/dunning)
+    qui ont déjà leur propre HTML et n'ont pas besoin d'un NotificationTemplate
+    dédié dans ce service pour un seul type d'email transactionnel."""
+    channel = NotificationChannelFactory.create(settings.notification_channel)
+    sent = channel.send(
+        body.to_email,
+        NotificationContent(subject=body.subject, html=body.html, text=body.text),
+    )
+    return {"status": "sent" if sent else "failed"}
 
 
 @router.get("/admin/batches", dependencies=[Depends(_require_admin)])

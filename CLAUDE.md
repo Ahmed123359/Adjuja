@@ -42,7 +42,8 @@ pytest --cov=app        # avec couverture
 - Toujours proposer un plan avant de modifier un service existant
 - Mettre à jour `conception/1.Roadmap/roadmap_technique.md` quand un item est terminé (`[ ]` → `[x]`)
 - Mettre à jour `conception/2. Architecture/architecture.md` si l'architecture change
-- **Mettre à jour `SUIVI.md` à chaque fin de session** : cocher les tâches terminées, ajouter les nouvelles décisions techniques, noter les variables DEV à remettre en prod
+- **Lire `context/ai-workflow-rules.md` et `context/progress-tracker.md` en début de session** : discipline de travail (vérifier en réel, pas supposer) et état vivant du projet. `SUIVI.md` est obsolète, remplacé par ces deux fichiers (2026-07-18).
+- **Mettre à jour `context/progress-tracker.md` dès qu'un changement significatif est fait** (pas seulement en fin de session) : section Complété, En cours, Questions ouvertes
 
 ## Sécurité
 

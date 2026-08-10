@@ -5,7 +5,7 @@ import App from './App';
 import LandingPage from './pages/LandingPage';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
-import { getMe, clearToken } from './api';
+import { getMe, clearToken, startCheckout, CHECKOUT_INTENT_KEY } from './api';
 import type { User } from './types';
 import './index.css';
 import './i18n';
@@ -23,7 +23,27 @@ function AppRouter() {
 
   function handleAuthSuccess() {
     getMe()
-      .then(u  => { setUser(u); navigate('/app', { replace: true }); })
+      .then(async u => {
+        setUser(u);
+
+        // Intention de checkout mémorisée depuis la page pricing (avant login/register) :
+        // on continue vers le paiement au lieu d'atterrir sur le dashboard, pour ne pas
+        // perdre "je voulais Starter" en route -- voir PricingSection.tsx::handleStarterClick.
+        const plan = localStorage.getItem(CHECKOUT_INTENT_KEY);
+        if (plan) {
+          localStorage.removeItem(CHECKOUT_INTENT_KEY);
+          try {
+            const { redirect_url } = await startCheckout(plan);
+            window.location.href = redirect_url;
+            return;
+          } catch {
+            // CMI pas configuré ou autre échec : l'utilisateur atterrit normalement dans
+            // l'app, où la carte Abonnement du dashboard explique l'erreur.
+          }
+        }
+
+        navigate('/app', { replace: true });
+      })
       .catch(() => navigate('/login', { replace: true }));
   }
 

@@ -189,6 +189,34 @@ services:
     networks:
       - ao_network
 
+  celery-beat:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: final
+    restart: unless-stopped
+    command: >
+      celery -A app.celery_app.celery_app beat
+      --loglevel=info
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: postgresql+asyncpg://offria:${POSTGRES_PASSWORD}@postgres:5432/offria
+      REDIS_URL: redis://redis:6379/0
+      CELERY_BROKER_URL: redis://redis:6379/1
+      CELERY_RESULT_BACKEND: redis://redis:6379/2
+      NOTIFICATION_SERVICE_URL: http://notification-api:8002
+      NOTIFICATION_ADMIN_SECRET: ${ADMIN_SECRET}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      notification-api:
+        condition: service_started
+    networks:
+      - ao_network
+
   # ── Frontend ─────────────────────────────────────────────────────────────────
 
   frontend:

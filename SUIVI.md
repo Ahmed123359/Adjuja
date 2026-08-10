@@ -1,4 +1,9 @@
-# SUIVI OffrIA
+# SUIVI OffrIA (ARCHIVÉ)
+
+> **Obsolète depuis le 2026-07-18.** Ce fichier n'est plus tenu à jour. La trace vivante du
+> projet est maintenant dans `context/progress-tracker.md`, avec la discipline
+> de mise à jour associée dans `context/ai-workflow-rules.md`. Conservé ici
+> uniquement pour l'historique des premières sessions.
 
 ## Branche courante : `feat/improve-methodology`
 

@@ -119,7 +119,7 @@ class UserService:
     @staticmethod
     def _to_public(row: User) -> UserPublic:
         return UserPublic(
-            id=row.id, nom=row.nom, prenom=row.prenom, email=row.email,
+            id=row.id, org_id=row.org_id, nom=row.nom, prenom=row.prenom, email=row.email,
             created_at=row.created_at, email_verified=row.email_verified,
             generations_used=row.generations_used, max_generations=row.max_generations,
         )

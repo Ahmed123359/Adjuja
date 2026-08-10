@@ -207,6 +207,47 @@ class Settings(BaseSettings):
     rate_limit_generate: str = "10/minute"
     """Limite de requêtes sur POST /generate par user (syntaxe slowapi : '10/minute')."""
 
+    # ------------------------------------------------------------------
+    # Billing  CMI (paiement carte MAD, Maroc)
+    # ------------------------------------------------------------------
+
+    cmi_merchant_id: str = ""
+    """Identifiant marchand CMI. Vide = CMIProvider refuse tout checkout (voir
+    app/billing/provider/cmi.py)."""
+
+    cmi_store_key: str = ""
+    """Clé secrète marchand CMI, utilisée pour signer/vérifier les requêtes et callbacks."""
+
+    cmi_api_url: str = ""
+    """URL de base de la page de paiement hébergée CMI (sandbox ou prod)."""
+
+    cmi_ok_url: str = ""
+    """URL de redirection ADJUJA après paiement réussi."""
+
+    cmi_fail_url: str = ""
+    """URL de redirection ADJUJA après paiement échoué/annulé."""
+
+    cmi_callback_url: str = ""
+    """URL de callback serveur-à-serveur CMI (webhook), indépendante de la redirection navigateur."""
+
+    # ------------------------------------------------------------------
+    # Billing  dunning et révocation automatique
+    # ------------------------------------------------------------------
+
+    billing_dunning_grace_days: int = 5
+    """Jours de grâce après échéance avant downgrade automatique vers le plan free."""
+
+    billing_admin_secret: str = ""
+    """Secret pour POST /billing/admin/activate. Vide = endpoint désactivé (403)."""
+
+    notification_service_url: str = ""
+    """URL interne du notification-service (ex: http://notification-api:8002).
+    Utilisée pour déclencher les emails de relance (dunning). Vide = email de
+    relance non envoyé, seul le changement de statut en DB a lieu."""
+
+    notification_admin_secret: str = ""
+    """Secret partagé avec notification-service pour POST /admin/trigger."""
+
     @model_validator(mode="after")
     def _valider_jwt_secret(self) -> "Settings":
         """

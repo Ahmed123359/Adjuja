@@ -1,6 +1,7 @@
 from functools import lru_cache
+from typing import Literal
 
-from fastapi import Depends, HTTPException, status
+from fastapi import Depends, Header, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from jose import JWTError, jwt
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -13,6 +14,7 @@ from app.services.generation_service import GenerationService
 from app.services.history_service import HistoryService
 from app.services.prompt_builder_service import PromptBuilderService
 from app.services.rag_service import RagService
+from app.services.subscription_service import PlanLimitExceeded, SubscriptionService
 from app.services.usage_service import UsageService
 from app.services.user_service import UserService
 
@@ -81,6 +83,41 @@ async def get_current_user(
             headers={"WWW-Authenticate": "Bearer"},
         )
     return user
+
+
+def get_subscription_service(db: AsyncSession = Depends(get_db)) -> SubscriptionService:
+    return SubscriptionService(db)
+
+
+def require_within_limit(counter: Literal["ao_per_month", "documents"]):
+    """Dépendance à poser à côté de `Depends(get_current_user)` sur toute route
+    dont l'usage est plafonné par le plan de l'org. Lève 402 (pas 429 : ce n'est
+    pas un rate limit temporaire, c'est un plafond de plan qui ne se lève qu'en
+    passant à un plan supérieur ou au mois suivant)."""
+
+    async def _check(
+        current_user: UserPublic = Depends(get_current_user),
+        subs: SubscriptionService = Depends(get_subscription_service),
+    ) -> None:
+        org_id = current_user.org_id or current_user.id
+        try:
+            await subs.check_limit(org_id, counter)
+        except PlanLimitExceeded as e:
+            raise HTTPException(
+                status_code=status.HTTP_402_PAYMENT_REQUIRED,
+                detail=(
+                    f"Limite de votre plan atteinte ({e.limit}). "
+                    "Passez à un plan supérieur pour continuer."
+                ),
+            )
+
+    return _check
+
+
+def require_billing_admin(x_billing_admin_secret: str = Header(..., alias="X-Billing-Admin-Secret")) -> None:
+    settings = get_settings()
+    if not settings.billing_admin_secret or x_billing_admin_secret != settings.billing_admin_secret:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Accès refusé.")
 
 
 def get_generation_service(

@@ -158,8 +158,8 @@
       "pro_name": "Pro",
       "pro_tagline": "Pour les PME qui traitent plusieurs AOs par semaine",
       "pro_badge": "Recommande",
-      "pro_cta": "Contacter l'equipe",
-      "pro_note": "Le plus choisi par nos clients PME / ETI",
+      "pro_cta": "Commencer",
+      "pro_note": "Le plus choisi par nos clients PME / ETI  Sans engagement",
       "enterprise_name": "Entreprise",
       "enterprise_tagline": "Pour les grandes structures qui automatisent leur démarche commerciale",
       "enterprise_price": "Sur devis",
@@ -182,7 +182,8 @@
       "f_onboarding": "Accompagnement dedie",
       "f_export": "Export Word (.docx)",
       "f_providers": "3 providers LLM (GPT-4o, Claude, Mistral)",
-      "f_50_ao": "50 AOs generes / mois"
+      "f_50_ao": "50 AOs generes / mois",
+      "f_ao_illimite": "AOs generes illimites"
     }
   },
   "ctaBand": {
@@ -268,6 +269,25 @@
       "noAos": "Aucun appel d'offres créé.",
       "profileWarning": "Profil entreprise incomplet",
       "profileWarningDesc": "Complétez votre profil pour activer le pipeline automatisé."
+    },
+    "billing": {
+      "title": "Abonnement",
+      "planFree": "Free",
+      "planStarter": "Starter",
+      "planPro": "Pro",
+      "planEnterprise": "Entreprise",
+      "statusActive": "Actif",
+      "statusPastDue": "Paiement en retard",
+      "statusCanceled": "Annulé",
+      "statusTrialing": "Essai",
+      "usageAo": "{{used}} / {{limit}} appels d'offres ce mois-ci",
+      "usageAoUnlimited": "{{used}} appels d'offres ce mois-ci (illimité)",
+      "usageDocs": "{{used}} / {{limit}} documents",
+      "usageDocsUnlimited": "{{used}} documents (illimité)",
+      "periodEnd": "Renouvellement le {{date}}",
+      "upgradeButton": "Passer à Starter",
+      "upgradeLoading": "Redirection...",
+      "upgradeError": "Impossible de démarrer le paiement."
     },
     "profile": {
       "save": "Enregistrer",

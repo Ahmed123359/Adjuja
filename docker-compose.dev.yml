@@ -207,6 +207,34 @@ services:
     volumes:
       - ./app:/app/app
 
+  # Celery Beat  sweep quotidien billing (dunning + downgrade), voir app/tasks/billing_tasks.py
+  celery-beat:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: api-dev
+    command: >
+      celery -A app.celery_app.celery_app beat
+      --loglevel=info
+    environment:
+      DATABASE_URL: postgresql+asyncpg://offria:${POSTGRES_PASSWORD:-offria_dev}@postgres:5432/offria
+      REDIS_URL: redis://redis:6379/0
+      CELERY_BROKER_URL: redis://redis:6379/1
+      CELERY_RESULT_BACKEND: redis://redis:6379/2
+      # notification-* désactivé par défaut en dev (voir note plus bas) : vide =
+      # le sweep tourne quand même, seul l'email de relance est silencieusement sauté.
+      NOTIFICATION_SERVICE_URL: ${NOTIFICATION_SERVICE_URL:-}
+      NOTIFICATION_ADMIN_SECRET: ${ADMIN_SECRET:-dev-admin-secret}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - ao_network
+    volumes:
+      - ./app:/app/app
+
   # AO Watcher  scraping service (isolated, same DB)
   ao-watcher-api:
     build:

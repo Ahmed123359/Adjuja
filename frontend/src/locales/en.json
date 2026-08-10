@@ -156,8 +156,8 @@
       "pro_name": "Pro",
       "pro_tagline": "For SMEs handling multiple tenders every week",
       "pro_badge": "Recommended",
-      "pro_cta": "Contact the team",
-      "pro_note": "Most chosen by our SME clients",
+      "pro_cta": "Get started",
+      "pro_note": "Most chosen by our SME clients  No commitment",
       "enterprise_name": "Enterprise",
       "enterprise_tagline": "For large organisations automating their commercial approach",
       "enterprise_price": "Custom pricing",
@@ -180,7 +180,8 @@
       "f_onboarding": "Dedicated onboarding",
       "f_export": "Word export (.docx)",
       "f_providers": "3 LLM providers (GPT-4o, Claude, Mistral)",
-      "f_50_ao": "50 tenders generated / month"
+      "f_50_ao": "50 tenders generated / month",
+      "f_ao_illimite": "Unlimited tenders generated"
     }
   },
   "ctaBand": {
@@ -266,6 +267,25 @@
       "noAos": "No tenders created.",
       "profileWarning": "Incomplete company profile",
       "profileWarningDesc": "Complete your profile to activate the automated pipeline."
+    },
+    "billing": {
+      "title": "Subscription",
+      "planFree": "Free",
+      "planStarter": "Starter",
+      "planPro": "Pro",
+      "planEnterprise": "Enterprise",
+      "statusActive": "Active",
+      "statusPastDue": "Payment overdue",
+      "statusCanceled": "Canceled",
+      "statusTrialing": "Trial",
+      "usageAo": "{{used}} / {{limit}} tenders this month",
+      "usageAoUnlimited": "{{used}} tenders this month (unlimited)",
+      "usageDocs": "{{used}} / {{limit}} documents",
+      "usageDocsUnlimited": "{{used}} documents (unlimited)",
+      "periodEnd": "Renews on {{date}}",
+      "upgradeButton": "Upgrade to Starter",
+      "upgradeLoading": "Redirecting...",
+      "upgradeError": "Could not start checkout."
     },
     "profile": {
       "save": "Save",
