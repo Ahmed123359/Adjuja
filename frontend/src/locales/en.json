@@ -3,47 +3,130 @@
     "features": "Features",
     "howItWorks": "How it works",
     "pricing": "Pricing",
-    "access": "Get started",
-    "signup": "Sign up"
+    "access": "Sign in",
+    "signup": "Waitlist",
+    "close": "Close menu",
+    "faq": "FAQ"
+  },
+  "notFound": {
+    "title": "Page not found",
+    "message": "This page does not exist or has moved. Check the address or go back home.",
+    "cta": "Back to home"
   },
   "landing": {
     "hero": {
-      "line1": "Win more contracts.",
-      "line2": "Without spending your nights.",
-      "demo": "See the demo"
+      "titleLine1": "Your public tenders,",
+      "titleHighlight": "without the sleepless nights.",
+      "subtitle": "Adjuja monitors new publications, analyses your tender specifications in 4 minutes, and helps you draft your offer. Built in Morocco, aligned with decree n°2-22-431.",
+      "cta": "Request access"
     },
     "features": {
-      "title": "Everything you need",
-      "titleBlue": "to win more contracts.",
+      "title": "A complete copilot",
+      "titleBlue": "for your public tenders.",
       "cta": "See all features",
+      "veille": {
+        "title": "Automatic monitoring",
+        "desc": "Adjuja continuously monitors Moroccan public tender portals and flags the ones that match your sector."
+      },
+      "gonogo": {
+        "title": "Go/No-Go analysis",
+        "desc": "A relevance score and a clear verdict before you commit: budget, deadlines, references, all checked in seconds."
+      },
       "analyse": {
-        "title": "RFP Analysis",
-        "desc": "AI extracts every key clause from the tender specification in seconds."
+        "title": "Specification analysis",
+        "desc": "Automatic extraction of award criteria, deadlines and required documents. You keep the final decision."
       },
       "gen": {
-        "title": "Real-time generation",
-        "desc": "Every section is drafted and exported to Word in under 2 minutes."
-      },
-      "suivi": {
-        "title": "Track all your tenders",
-        "desc": "One place to follow every bid, from receipt to victory."
-      },
-      "pipeline": {
-        "title": "Automated pipeline",
-        "desc": "From RFP receipt to final submission, every step is orchestrated and tracked."
+        "title": "Assisted drafting",
+        "desc": "Adjuja prepares the structure and standard sections of your technical offer. You review, adjust, validate."
       }
     },
     "how": {
       "title": "Three steps.",
-      "titleBlue": "A complete tender file.",
-      "t1Title": "Upload your RFP",
-      "t1Desc": "Drop the document into ADJUJA. The AI extracts in seconds the award criteria, required documents, and technical constraints. You read nothing, configure nothing.",
-      "t2Title": "AI writes. You review.",
-      "t2Desc": "While you get on with your day, ADJUJA generates your full technical proposal, section by section, tailored to your profile and the tender's exact criteria. Zero manual writing.",
-      "t3Title": "Sign and download",
-      "t3Desc": "Download your dossier as a ZIP: technical proposal, engagement act, declaration of honour, initialled CPS. Every document signed, every box ticked. Ready to submit.",
-      "t4Title": "Track your performance",
-      "t4Desc": "See your win rate, number of contracts won, and how your results evolve month by month."
+      "titleBlue": "You stay in charge.",
+      "t1Title": "You receive the tenders that matter to you",
+      "t1Desc": "Adjuja monitors the portals and filters based on your profile. You stop searching.",
+      "t2Title": "You decide in 4 minutes",
+      "t2Desc": "The analysis extracts the criteria, deadlines and required documents. You keep the decision: it's your tender, your commitment, your judgment.",
+      "t3Title": "You draft three times faster",
+      "t3Desc": "Adjuja prepares the structure and standard sections. You review, adjust, validate. Word export, ready to finalize."
+    },
+    "trust": {
+      "label": "Privacy",
+      "title": "Your data stays yours.",
+      "subtitle": "A firm uploading its pricing and references to Adjuja should be able to do so with total confidence. Here is what we commit to.",
+      "readMore": "Read our full privacy policy",
+      "items": [
+        { "title": "Full ownership", "desc": "Your documents belong to you. Adjuja claims no ownership over them." },
+        { "title": "Total isolation", "desc": "No client's data is visible or accessible to another." },
+        { "title": "Zero competitive use", "desc": "Adjuja never uses one client's file to inform or benefit another." },
+        { "title": "No training without consent", "desc": "No model is trained on your data without your prior written consent." },
+        { "title": "Deletion within 72 hours", "desc": "On simple request, for all or part of your data." },
+        { "title": "Law 09-08 compliance", "desc": "Protection of individuals with regard to the processing of personal data." }
+      ]
+    },
+    "faq": {
+      "label": "Frequently asked questions",
+      "title": "What you're probably wondering",
+      "subtitle": "Privacy, pricing, how it works, and access: answers to what we get asked the most.",
+      "categories": [
+        {
+          "key": "confidentialite",
+          "label": "Privacy",
+          "items": [
+            {
+              "q": "Are my documents and pricing really kept confidential?",
+              "a": "Yes. Every organization is fully isolated: no data is visible to another client, no file is ever used to inform or benefit a competitor, and no model is trained on your data without your written consent. You can request deletion of all or part of your data within 72 hours. Full detail on our privacy page."
+            },
+            {
+              "q": "Is the service adapted to Moroccan legal requirements?",
+              "a": "Yes, that's its whole purpose. Adjuja is built for Moroccan public tenders, aligned with decree n°2-22-431, and works directly on your specifications and tender rules, not a generic format imported from another country."
+            }
+          ]
+        },
+        {
+          "key": "tarifs",
+          "label": "Pricing",
+          "items": [
+            {
+              "q": "Why 990 MAD a month, isn't that expensive for software?",
+              "a": "The price isn't anchored on generic software but on the cost of a consultant's working day. Three hours saved on a single file, or one avoided mistake on an eliminatory criterion, easily covers a month's subscription. The goal isn't to replace a consultant, it's to give them their time back."
+            },
+            {
+              "q": "Am I locked into a minimum term?",
+              "a": "No, the plan has no minimum term and can be cancelled at any time from your dashboard."
+            }
+          ]
+        },
+        {
+          "key": "fonctionnement",
+          "label": "How it works",
+          "items": [
+            {
+              "q": "Can I trust what the AI drafts or analyses?",
+              "a": "Adjuja prepares, you decide. The analysis extracts criteria and deadlines to save you reading time, drafting prepares a structure and standard sections. Nothing is submitted without you reviewing, adjusting and validating every section yourself."
+            },
+            {
+              "q": "Does this replace my expertise or my consulting firm?",
+              "a": "No. Adjuja removes the repetitive work, reading specifications, hunting for criteria, formatting, not professional judgment. The decision to bid on a tender and the responsibility for the submitted offer remain entirely yours."
+            }
+          ]
+        },
+        {
+          "key": "acces",
+          "label": "Access and support",
+          "items": [
+            {
+              "q": "Why a waitlist instead of instant sign-up?",
+              "a": "We open access in waves during the pilot phase to properly support each firm joining Adjuja, rather than spreading attention too thin across too many accounts at once. Profiles closest to our target get priority."
+            },
+            {
+              "q": "If I run into an issue or have a question, who helps?",
+              "a": "Our team is reachable at support@adjuja.com. During the pilot phase, every firm gets direct support to get up and running with the service."
+            }
+          ]
+        }
+      ]
     },
     "cta": {
       "title": "Start winning more contracts today.",
@@ -81,27 +164,9 @@
     }
   },
   "banner": {
-    "mobile": "Early Bird  <strong>-30 %</strong> on all plans",
-    "desktop": "Early Bird offer  <strong>-30 % on all plans</strong> for the first 50 subscribers",
+    "mobile": "Early Bird: <strong>-30 %</strong> on all plans",
+    "desktop": "Early Bird offer: <strong>-30 % on all plans</strong> for the first 50 subscribers",
     "sub": " · Take advantage before the launch ends"
-  },
-  "hero": {
-    "title1": "Win more contracts.",
-    "title2": "Without spending your",
-    "highlight": "nights.",
-    "subtitle": "ADJUJA analyses your tender, drafts every section and delivers a professional response while you focus on your core business.",
-    "cta": "Try for free",
-    "catCaption": "Meanwhile...",
-    "stats": {
-      "time": "< 2 min",
-      "timeLabel": "per tender response",
-      "scale": "10x",
-      "scaleLabel": "more tenders handled",
-      "llms": "3 LLMs",
-      "llmsLabel": "Claude · GPT-4o · Mistral",
-      "market": "100 Bn MAD",
-      "marketLabel": "public contracts / year"
-    }
   },
   "features": {
     "label": "Features",
@@ -117,9 +182,9 @@
       "winrate_title": "Win more contracts",
       "winrate_desc": "Better-structured, more compliant responses written in the language public buyers expect.",
       "privacy_title": "Your data stays with you",
-      "privacy_desc": "Local hosting, GDPR compliance. Your confidential documents never leave your perimeter.",
-      "models_title": "Claude, GPT-4o or Mistral",
-      "models_desc": "Choose the best model for each tender. You stay in control."
+      "privacy_desc": "Local hosting, compliant with Moroccan data protection law 09-08. Your confidential documents never leave your perimeter.",
+      "models_title": "AI that works for your expertise",
+      "models_desc": "ADJUJA prepares the structure and standard sections. You stay in control of every decision."
     }
   },
   "howItWorks": {
@@ -141,14 +206,15 @@
   },
   "pricing": {
     "label": "Pricing",
-    "title": "Win more tenders. From 55 MAD/month.",
+    "title": "Win more tenders. From 490 MAD/month.",
     "subtitle": "No commitment · Cancel anytime · Invoice within 48h",
     "footnote1": "1 document = PDF file up to 20 A4 pages",
-    "footnote2": "All prices excl. VAT · VAT applicable · On-premise deployment on request",
-    "freeTrial": "Not convinced yet? ",
+    "footnote2": "All prices excl. VAT · VAT applicable",
+    "freeTrial": "1 free tender at sign-up, no credit card required",
     "freeTrialCta": "Try for free 1 tender, no credit card",
+    "dayAnchor": "The Pro plan costs about 56 MAD per working day, less than an hour of consulting.",
     "plans": {
-      "starter_name": "Starter",
+      "starter_name": "Essential",
       "starter_tagline": "For a freelancer responding to several tenders a month",
       "starter_badge": "Early Bird -30 %",
       "starter_cta": "Subscribe",
@@ -157,16 +223,15 @@
       "pro_tagline": "For SMEs handling multiple tenders every week",
       "pro_badge": "Recommended",
       "pro_cta": "Get started",
-      "pro_note": "Most chosen by our SME clients  No commitment",
-      "enterprise_name": "Enterprise",
-      "enterprise_tagline": "For large organisations automating their commercial approach",
-      "enterprise_price": "Custom pricing",
-      "enterprise_cta": "Contact the team",
-      "enterprise_note": "Deployed in 5 business days",
+      "pro_note": "Most chosen by our SME clients, no commitment",
+      "enterprise_name": "Firm",
+      "enterprise_tagline": "For consulting firms and large organisations automating their commercial approach",
+      "enterprise_price": "2900 MAD/month",
+      "enterprise_cta": "Get started",
+      "enterprise_note": "Unlimited users, dedicated onboarding",
       "tag_new": "New",
-      "f_unlimited_gen": "Unlimited generation",
-      "f_docs_50": "Ingest up to 50 documents",
-      "f_docs_200": "Ingest up to 200 documents",
+      "f_docs_50": "Process up to 50 documents",
+      "f_docs_200": "Process up to 200 documents",
       "f_chat": "Chat with your documents",
       "f_signatures": "Unlimited instant signatures",
       "f_history": "Full generation history",
@@ -179,7 +244,7 @@
       "f_sla": "99.9 % SLA guaranteed",
       "f_onboarding": "Dedicated onboarding",
       "f_export": "Word export (.docx)",
-      "f_providers": "3 LLM providers (GPT-4o, Claude, Mistral)",
+      "f_providers": "AI-assisted drafting",
       "f_50_ao": "50 tenders generated / month",
       "f_ao_illimite": "Unlimited tenders generated"
     }
@@ -190,9 +255,13 @@
     "cta": "Get started for free"
   },
   "footer": {
-    "rights": "© 2025 ADJUJA. All rights reserved."
+    "rights": "© 2026 ADJUJA. All rights reserved."
   },
   "auth": {
+    "showcase": {
+      "title": "A complete copilot for your public tenders.",
+      "subtitle": "Monitoring, Go/No-Go analysis and assisted drafting, built for Moroccan public tenders."
+    },
     "login": {
       "title": "Sign in",
       "subtitle": "Access your ADJUJA workspace",
@@ -205,7 +274,8 @@
       "noAccount": "No account yet?",
       "createAccount": "Create an account",
       "or": "or",
-      "verified": "Email verified! Sign in to access your free generation."
+      "verified": "Email verified! Sign in to access your free generation.",
+      "continueWithGoogle": "Continue with Google"
     },
     "register": {
       "title": "Create an account",
@@ -216,6 +286,26 @@
       "lastNamePlaceholder": "Smith",
       "email": "Email",
       "emailPlaceholder": "you@example.com",
+      "companyName": "Company",
+      "companyNamePlaceholder": "Smith Engineering",
+      "sector": "Industry sector",
+      "sectorPlaceholder": "Select a sector",
+      "sectorOptions": {
+        "btp": "Construction / Public works",
+        "it": "IT / Software",
+        "ingenierie": "Engineering / Design office",
+        "conseil": "Consulting / Audit",
+        "fournitures": "Supplies / Equipment",
+        "sante": "Healthcare",
+        "education": "Education / Training",
+        "environnement": "Environment",
+        "transport": "Transport / Logistics",
+        "agriculture": "Agriculture / Agri-food",
+        "energie": "Energy",
+        "autre": "Other"
+      },
+      "aoPerYear": "Tenders handled per year",
+      "aoPerYearPlaceholder": "e.g. 12",
       "password": "Password",
       "passwordHint": "min. {{min}} chars.{{digit}}",
       "passwordDigit": ", 1 digit",
@@ -224,7 +314,8 @@
       "submitting": "Creating…",
       "hasAccount": "Already have an account?",
       "loginLink": "Sign in",
-      "or": "or"
+      "or": "or",
+      "continueWithGoogle": "Continue with Google"
     },
     "verify": {
       "title": "Check your email",
@@ -294,9 +385,9 @@
       "incomplete": "Incomplete profile",
       "incompleteDesc": "Complete your profile to activate the automated pipeline.",
       "required": "Required fields for the pipeline",
-      "complete": "Profile complete  pipeline is active.",
-      "incompleteProfile": "Incomplete profile  complete required fields (*) to activate the pipeline.",
-      "notConfigured": "Profile not configured  complete required fields (*) to activate the pipeline.",
+      "complete": "Profile complete. The pipeline is active.",
+      "incompleteProfile": "Incomplete profile. Complete the required fields (*) to activate the pipeline.",
+      "notConfigured": "Profile not configured. Complete the required fields (*) to activate the pipeline.",
       "requiredIncomplete": "Required fields incomplete.",
       "error": "Error saving.",
       "sections": {
@@ -372,7 +463,7 @@
     "detail": {
       "noRef": "Untitled tender",
       "progress": "Pipeline progress",
-      "running": "Pipeline running  auto-updating...",
+      "running": "Pipeline running, auto-updating...",
       "uploadZone": "Drop your documents here",
       "uploadHint": "CPS, RC and all tender documents (PDF only)",
       "uploadClick": "Click to select",
@@ -433,11 +524,11 @@
     "back": "Back",
     "providers": {
       "anthropic": "Anthropic",
-      "anthropicDesc": "Claude  Best for complex writing",
+      "anthropicDesc": "Claude: best for complex writing",
       "openai": "OpenAI",
-      "openaiDesc": "GPT-4o  Versatile and fast",
+      "openaiDesc": "GPT-4o: versatile and fast",
       "mistral": "Mistral",
-      "mistralDesc": "Mistral  European data sovereignty"
+      "mistralDesc": "Mistral: European data sovereignty"
     },
     "usage": {
       "tokens": "Generation tokens",
@@ -587,6 +678,202 @@
       "downloadingDoc": "Downloading file...",
       "docReady": "File ready",
       "docError": "Error downloading file"
+    }
+  },
+  "legal": {
+    "backHome": "Back",
+    "updated": "Last updated: {{date}}",
+    "acceptPrefix": "I accept the ",
+    "acceptCgu": "terms of use",
+    "acceptAnd": " and the ",
+    "acceptPrivacy": "privacy policy",
+    "ctaTitle": "Have a question?",
+    "ctaSubtitle": "Our team is directly reachable for any question about these pages or your data.",
+    "ctaButton": "Contact us",
+    "mentions": {
+      "title": "Legal notice",
+      "updated": "August 13, 2026",
+      "sections": [
+        {
+          "heading": "Site publisher",
+          "paragraphs": [
+            "adjuja.com is published by the ADJUJA team, based in Temara, Morocco. ADJUJA is currently in its launch phase; the company's registration details will be added to this page as soon as they are available.",
+            "Contact: support@adjuja.com - +212 661-396413"
+          ]
+        },
+        {
+          "heading": "Publication manager",
+          "paragraphs": [
+            "The site is published by the ADJUJA team, reachable at support@adjuja.com for any question about its content."
+          ]
+        },
+        {
+          "heading": "Intellectual property",
+          "paragraphs": [
+            "The ADJUJA brand, its logo, texts, interface and site structure are the property of ADJUJA, unless stated otherwise. Any reproduction, representation or use, in whole or in part, without prior written authorization is prohibited."
+          ]
+        },
+        {
+          "heading": "User-submitted content",
+          "paragraphs": [
+            "Documents and information you upload to ADJUJA (specifications, tender files, generated documents) remain your exclusive property. Their handling is detailed in our privacy policy."
+          ]
+        },
+        {
+          "heading": "Applicable law",
+          "paragraphs": [
+            "This site and its use are governed by Moroccan law. In the event of a dispute, and failing an amicable resolution, the competent courts of Rabat shall have sole jurisdiction."
+          ]
+        }
+      ]
+    },
+    "cgu": {
+      "title": "Terms of use",
+      "updated": "August 13, 2026",
+      "sections": [
+        {
+          "heading": "Purpose of the service",
+          "paragraphs": [
+            "ADJUJA helps Moroccan professionals track public tenders relevant to their business, assess whether to bid on them, and prepare their technical offers.",
+            "ADJUJA assists the professional; it does not replace their judgment or their legal responsibility as a bidder."
+          ]
+        },
+        {
+          "heading": "Access to the service",
+          "paragraphs": [
+            "Registration is personal. During the pilot phase, access opens in waves and may require an invitation or a waitlist. ADJUJA reserves the right to prioritize certain profiles based on the pilot's needs."
+          ]
+        },
+        {
+          "heading": "User account",
+          "paragraphs": [
+            "You are responsible for keeping your credentials confidential and for the accuracy of the information provided at registration. Any activity carried out from your account is presumed to be performed by you."
+          ]
+        },
+        {
+          "heading": "Permitted use",
+          "paragraphs": [
+            "The service is intended for fair professional use. Prohibited uses include: automated bulk extraction of the service's content, resale or subletting of access, and using the service to harm another user's interests."
+          ]
+        },
+        {
+          "heading": "Liability",
+          "paragraphs": [
+            "The analyses, extracted criteria and drafting suggestions generated by ADJUJA are a decision and drafting aid. You remain solely responsible for the final content submitted to the contracting authority, its compliance with the specifications, and the legal commitments that follow, notably the commitment letter and the sworn statement."
+          ]
+        },
+        {
+          "heading": "Pricing and billing",
+          "paragraphs": [
+            "Current pricing is the one displayed on the pricing page at the time of subscription. Unless stated otherwise at the time of subscription, the plan has no minimum term and can be cancelled at any time."
+          ]
+        },
+        {
+          "heading": "Suspension and termination",
+          "paragraphs": [
+            "ADJUJA may suspend an account in the event of abusive use of the service or non-payment, after notice by email when possible. You may terminate your account at any time from your dashboard or by simply asking at support@adjuja.com."
+          ]
+        },
+        {
+          "heading": "Changes to these terms",
+          "paragraphs": [
+            "These terms may evolve, notably as the service grows. Any substantial change will be notified to active users by email."
+          ]
+        },
+        {
+          "heading": "Applicable law and jurisdiction",
+          "paragraphs": [
+            "These terms are governed by Moroccan law. In the event of a dispute, and failing an amicable resolution, the competent courts of Rabat shall have sole jurisdiction."
+          ]
+        }
+      ]
+    },
+    "confidentialite": {
+      "title": "Privacy policy",
+      "updated": "August 13, 2026",
+      "sections": [
+        {
+          "heading": "Data controller",
+          "paragraphs": [
+            "ADJUJA is responsible for processing the personal data collected through this site and application. For any question, contact us at support@adjuja.com."
+          ]
+        },
+        {
+          "heading": "Data collected",
+          "paragraphs": [
+            "We collect the following data:"
+          ],
+          "list": [
+            "Identity: first name, last name, email address",
+            "Password, stored in encrypted form, never in plain text",
+            "Qualification data provided at registration: company, industry sector, number of tenders handled per year",
+            "Documents you upload for analysis (specifications, tender rules, tender files) and documents generated by the service"
+          ]
+        },
+        {
+          "heading": "Purpose of processing",
+          "paragraphs": [
+            "This data is used to create and manage your account, provide the service (monitoring, analysis, document generation), improve the product, select profiles during the pilot phase, and communicate with you about the service."
+          ]
+        },
+        {
+          "heading": "Legal basis",
+          "paragraphs": [
+            "Processing is based on the performance of the contract formed with ADJUJA upon registration, as well as ADJUJA's legitimate interest in improving its service."
+          ]
+        },
+        {
+          "heading": "Retention period",
+          "paragraphs": [
+            "Your data is kept for as long as your account is active, then deleted within a reasonable period after closure, unless otherwise required by law."
+          ]
+        },
+        {
+          "heading": "Recipients of the data",
+          "paragraphs": [
+            "Your data is neither sold nor shared for commercial purposes with third parties. Only technical providers strictly necessary for the service to function (hosting, infrastructure, automated document processing) have access to it, solely to run the service."
+          ]
+        },
+        {
+          "heading": "Our commitments",
+          "anchor": "charte-donnees",
+          "paragraphs": [
+            "Beyond our legal obligations, here are the commitments we make to you:"
+          ],
+          "list": [
+            "Your documents belong to you: ADJUJA claims no ownership over them.",
+            "Total isolation between organizations: no client's data is visible or accessible to another.",
+            "No competitive use of your data: ADJUJA never uses one client's file to inform or benefit another.",
+            "No model training on your data without your prior written consent.",
+            "Deletion on request within 72 hours, for all or part of your data.",
+            "Compliance with law 09-08 on the protection of individuals with regard to the processing of personal data."
+          ]
+        },
+        {
+          "heading": "Your rights",
+          "paragraphs": [
+            "In accordance with law 09-08, you have a right of access, rectification, deletion and objection over your personal data. You can exercise these rights at any time by simply asking at support@adjuja.com."
+          ]
+        },
+        {
+          "heading": "Security",
+          "paragraphs": [
+            "We implement technical measures to protect your data: password encryption, data isolation per organization, and access restricted to those who need it to operate the service."
+          ]
+        },
+        {
+          "heading": "Cookies and local storage",
+          "paragraphs": [
+            "ADJUJA uses your browser's local storage to maintain your login session. No advertising cookie or third-party tracking tool is used at this time."
+          ]
+        },
+        {
+          "heading": "Contact",
+          "paragraphs": [
+            "For any question about your personal data or this policy, write to us at support@adjuja.com."
+          ]
+        }
+      ]
     }
   }
 }

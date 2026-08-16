@@ -65,7 +65,7 @@ interface PricingCardProps {
   tagline: string;
   features: string[];
   checkColor: string;
-  cta: ReactNode;
+  cta?: ReactNode;
   featured?: boolean;
 }
 
@@ -74,15 +74,15 @@ function PricingCard({
 }: PricingCardProps) {
   return (
     <div
-      className={[
-        "relative rounded-[20px] flex flex-col items-center text-center border pt-20 pb-10 px-10",
-        featured ? "shadow-[0_0_90px_rgba(50,72,206,0.28)]" : "",
-      ].join(" ")}
+      className="relative rounded-[20px] flex flex-col items-center text-center border pt-20 pb-10 px-10 transition-transform duration-200 hover:-translate-y-1"
       style={{
         borderColor: checkColor + (featured ? "70" : "3D"),
         background: featured
-          ? `linear-gradient(160deg, ${checkColor}1C 0%, rgba(255,255,255,0.03) 60%)`
-          : `linear-gradient(160deg, ${checkColor}10 0%, rgba(255,255,255,0.025) 60%)`,
+          ? `linear-gradient(160deg, ${checkColor}1C 0%, rgba(255,255,255,0.03) 60%), var(--l-surface)`
+          : `linear-gradient(160deg, ${checkColor}10 0%, rgba(255,255,255,0.025) 60%), var(--l-surface)`,
+        boxShadow: featured
+          ? `inset 0 1px 0 rgba(255,255,255,0.08), 0 1px 1px rgba(0,0,0,0.25), 0 32px 64px -20px ${checkColor}45, 0 20px 48px -18px rgba(0,0,0,0.7)`
+          : `inset 0 1px 0 rgba(255,255,255,0.05), 0 1px 1px rgba(0,0,0,0.2), 0 20px 48px -18px rgba(0,0,0,0.6)`,
       }}
     >
       <div className="absolute -top-[43px] left-1/2 -translate-x-1/2">
@@ -120,9 +120,9 @@ export default function PricingSection({ onEnterApp }: { onEnterApp: () => void 
   /** Standard SaaS pattern : le clic sur "Commencer" mène droit au checkout, pas juste
    * à l'app. Connecté -> redirection immédiate vers CMI. Pas connecté -> l'intention est
    * mémorisée et consommée juste après login/register (voir main.tsx::handleAuthSuccess),
-   * pour ne jamais perdre "je voulais ce plan" en route vers l'inscription. Starter et Pro
-   * sont tous les deux self-serve, seul Enterprise reste "Sur devis" (déploiement
-   * on-premise, SSO, accompagnement dédié -- nécessite une conversation commerciale). */
+   * pour ne jamais perdre "je voulais ce plan" en route vers l'inscription. Les trois plans
+   * (Essentiel, Pro, Cabinet) sont désormais self-serve, plus de "Sur devis" -- voir
+   * context/feature-specs/01-billing-subscriptions/api.md, révision suite audit B2. */
   async function handlePlanCheckout(planCode: string) {
     if (getToken()) {
       setCheckoutLoading(planCode);
@@ -145,7 +145,6 @@ export default function PricingSection({ onEnterApp }: { onEnterApp: () => void 
   const starterFeats = [
     t("pricing.plans.f_users_1"),
     t("pricing.plans.f_50_ao"),
-    t("pricing.plans.f_unlimited_gen"),
     t("pricing.plans.f_export"),
     t("pricing.plans.f_docs_50"),
     t("pricing.plans.f_support_email"),
@@ -154,7 +153,6 @@ export default function PricingSection({ onEnterApp }: { onEnterApp: () => void 
   const proFeats = [
     t("pricing.plans.f_users_5"),
     t("pricing.plans.f_ao_illimite"),
-    t("pricing.plans.f_unlimited_gen"),
     t("pricing.plans.f_export"),
     t("pricing.plans.f_docs_200"),
     t("pricing.plans.f_chat"),
@@ -210,13 +208,13 @@ export default function PricingSection({ onEnterApp }: { onEnterApp: () => void 
             <div className="flex bg-white/[0.05] border border-white/[0.08] rounded-lg p-[3px] gap-[3px]">
               <button
                 onClick={() => setAnnual(false)}
-                className={`px-5 py-[7px] rounded-md text-[12px] font-semibold tracking-[.04em] border-0 cursor-pointer transition-all focus:outline-none ${!annual ? "bg-white/[0.09] text-[rgba(220,235,255,0.9)]" : "bg-transparent text-[rgba(168,196,232,0.5)]"}`}
+                className={`px-5 py-[7px] rounded-md text-[12px] font-semibold tracking-[.04em] border-0 cursor-pointer transition-all focus:outline-none ${!annual ? "bg-white/[0.09] text-[rgba(220,235,255,0.9)]" : "bg-transparent text-[color:var(--l-dim)]"}`}
               >
                 Mensuel
               </button>
               <button
                 onClick={() => setAnnual(true)}
-                className={`px-5 py-[7px] rounded-md text-[12px] font-semibold tracking-[.04em] border-0 cursor-pointer transition-all focus:outline-none ${annual ? "bg-white/[0.09] text-[rgba(220,235,255,0.9)]" : "bg-transparent text-[rgba(168,196,232,0.5)]"}`}
+                className={`px-5 py-[7px] rounded-md text-[12px] font-semibold tracking-[.04em] border-0 cursor-pointer transition-all focus:outline-none ${annual ? "bg-white/[0.09] text-[rgba(220,235,255,0.9)]" : "bg-transparent text-[color:var(--l-dim)]"}`}
               >
                 Annuel
               </button>
@@ -233,19 +231,14 @@ export default function PricingSection({ onEnterApp }: { onEnterApp: () => void 
             price={
               <div className="flex items-baseline gap-[5px]">
                 <span className="font-display text-[2.8rem] font-extrabold leading-none text-[#EEF4FF] tracking-[-0.04em]">
-                  {annual ? "44" : "55"}
+                  {annual ? "392" : "490"}
                 </span>
-                <span className="text-[13px] text-[rgba(168,196,232,0.5)]">MAD / mois</span>
+                <span className="text-[13px] text-[color:var(--l-dim)]">MAD / mois</span>
               </div>
             }
             tagline={t("pricing.plans.starter_tagline")}
             features={starterFeats}
             checkColor="#1BC9A8"
-            cta={
-              <button onClick={() => handlePlanCheckout("starter")} disabled={checkoutLoading === "starter"} className={ghostBtn}>
-                {checkoutLoading === "starter" ? "..." : "Commencer"}
-              </button>
-            }
           />
 
           <PricingCard
@@ -255,46 +248,39 @@ export default function PricingSection({ onEnterApp }: { onEnterApp: () => void 
             price={
               <div className="flex items-baseline gap-[5px]">
                 <span className="font-display text-[2.4rem] font-extrabold leading-none tracking-[-0.03em] bg-gradient-to-br from-[#3248CE] to-[#2B79E8] bg-clip-text text-transparent">
-                  {annual ? "239" : "299"}
+                  {annual ? "792" : "990"}
                 </span>
-                <span className="text-[13px] text-[rgba(168,196,232,0.5)]">MAD / mois</span>
+                <span className="text-[13px] text-[color:var(--l-dim)]">MAD / mois</span>
               </div>
             }
             tagline={t("pricing.plans.pro_tagline")}
             features={proFeats}
             checkColor="#3248CE"
-            cta={
-              <button
-                onClick={() => handlePlanCheckout("pro")}
-                disabled={checkoutLoading === "pro"}
-                className="w-full py-[13px] rounded-lg text-[15px] font-semibold cursor-pointer border-0 transition-all mt-7 tracking-[.01em] hover:brightness-110 bg-[#2B79E8] text-white focus:outline-none disabled:opacity-70"
-              >
-                {checkoutLoading === "pro" ? "..." : t("pricing.plans.pro_cta")}
-              </button>
-            }
           />
 
           <PricingCard
             icon={<TierIcon color="#2B79E8" />}
             badge={<TierBadge label={t("pricing.plans.enterprise_name")} color="#2B79E8" />}
             price={
-              <span className="font-display text-[2rem] font-extrabold leading-none tracking-[-0.03em] text-[#EEF4FF]">
-                {t("pricing.plans.enterprise_price")}
-              </span>
+              <div className="flex items-baseline gap-[5px]">
+                <span className="font-display text-[2rem] font-extrabold leading-none tracking-[-0.03em] text-[#EEF4FF]">
+                  {annual ? "2320" : "2900"}
+                </span>
+                <span className="text-[13px] text-[color:var(--l-dim)]">MAD / mois</span>
+              </div>
             }
             tagline={t("pricing.plans.enterprise_tagline")}
             features={enterpriseFeats}
             checkColor="#2B79E8"
-            cta={
-              <button onClick={onEnterApp} className={ghostBtn}>
-                {t("pricing.plans.enterprise_cta")}
-              </button>
-            }
           />
 
         </div>
 
-        <p className="mt-9 mb-0 text-[11.5px] text-[rgba(168,196,232,0.25)] text-center">
+        <p className="mt-9 mb-2 text-[13px] font-medium text-[#EEF4FF] text-center">
+          {t("pricing.dayAnchor")}
+        </p>
+
+        <p className="mt-0 mb-0 text-[11.5px] text-[color:var(--l-dim)] text-center">
           {t("pricing.footnote2")}
         </p>
 

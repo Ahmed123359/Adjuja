@@ -2,6 +2,7 @@ import { Suspense, useEffect, useRef } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { useTexture } from "@react-three/drei";
 import * as THREE from "three";
+import { useTranslation } from "react-i18next";
 
 /* ── Earth, positioned like the old moon hero: huge sphere dipping below
    the viewport, only the upper horizon visible ── */
@@ -104,11 +105,13 @@ function EarthOrb() {
 }
 
 export default function HeroSection({
-  onEnterApp,
+  onGoRegister,
 }: {
   onEnterApp: () => void;
   onGoRegister: () => void;
 }) {
+  const { t } = useTranslation();
+
   return (
     <section className="relative flex h-[100svh] min-h-[640px] w-full flex-col justify-center pb-[19vh] overflow-hidden bg-[#0A0F1E]">
 
@@ -137,28 +140,22 @@ export default function HeroSection({
       <div className="relative z-[3] mx-auto flex w-full max-w-[1280px] flex-col items-center px-8 text-center md:px-14">
 
         <h1 className="m-0 max-w-[820px] text-[clamp(2.1rem,4.4vw,3.5rem)] font-extrabold leading-[1.2] tracking-[-.025em] text-white">
-          Remportez plus de marchés,
+          {t("landing.hero.titleLine1")}
           <br />
           <span className="bg-[linear-gradient(90deg,#3248CE_0%,#2B79E8_50%,#1BC9A8_100%)] bg-clip-text text-transparent">
-            sans y passer vos nuits.
+            {t("landing.hero.titleHighlight")}
           </span>
         </h1>
 
-        <p
-          className="m-0 mt-6 max-w-[440px] text-[15px] leading-[1.7] text-[rgba(238,244,255,0.92)]"
-          style={{ textShadow: "0 2px 18px rgba(5,8,20,0.9), 0 1px 4px rgba(5,8,20,0.95)" }}
-        >
-          Du DAO au dossier signé, automatiquement. Analysez, redigez, exportez en minutes.
+        <p className="m-0 mt-5 max-w-[500px] text-[16.5px] font-medium leading-[1.6] text-white/90">
+          {t("landing.hero.subtitle")}
         </p>
 
         <button
-          onClick={onEnterApp}
-          className="mt-8 inline-flex cursor-pointer items-center gap-[10px] rounded-full border-0 bg-[linear-gradient(135deg,#3248CE_0%,#2B79E8_100%)] px-8 py-[14px] text-[13px] font-bold tracking-[.04em] text-white shadow-[0_12px_32px_rgba(43,121,232,0.35)] transition-all hover:-translate-y-px hover:shadow-[0_16px_40px_rgba(43,121,232,0.45)] hover:brightness-110 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[3px] focus-visible:outline-[#1BC9A8]/70"
+          onClick={onGoRegister}
+          className="mt-7 cursor-pointer rounded-md border-0 bg-white px-9 py-[15px] text-[13px] font-bold tracking-[.03em] text-[#0A0F1E] transition-transform hover:-translate-y-px focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[3px] focus-visible:outline-white/70"
         >
-          Déposer mon premier DAO
-          <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M5 12h14M12 5l7 7-7 7" />
-          </svg>
+          {t("landing.hero.cta")}
         </button>
 
       </div>

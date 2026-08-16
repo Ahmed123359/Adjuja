@@ -34,6 +34,9 @@ class UserService:
             email_verified=email_verified,
             verification_token=verification_token,
             max_generations=max_generations,
+            entreprise=data.entreprise,
+            secteur_activite=data.secteur_activite,
+            nb_ao_par_an=data.nb_ao_par_an,
         )
         self._db.add(user)
         try:
@@ -46,6 +49,8 @@ class UserService:
             id=user_id, nom=data.nom, prenom=data.prenom, email=data.email,
             created_at=created_at, email_verified=email_verified,
             generations_used=0, max_generations=max_generations,
+            entreprise=data.entreprise, secteur_activite=data.secteur_activite,
+            nb_ao_par_an=data.nb_ao_par_an,
         ), verification_token
 
     async def get_by_email(self, email: str) -> UserPublic | None:
@@ -122,4 +127,6 @@ class UserService:
             id=row.id, org_id=row.org_id, nom=row.nom, prenom=row.prenom, email=row.email,
             created_at=row.created_at, email_verified=row.email_verified,
             generations_used=row.generations_used, max_generations=row.max_generations,
+            entreprise=row.entreprise, secteur_activite=row.secteur_activite,
+            nb_ao_par_an=row.nb_ao_par_an,
         )

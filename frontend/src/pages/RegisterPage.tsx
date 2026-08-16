@@ -1,6 +1,9 @@
 import { useState, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
+import { Link } from 'react-router-dom';
 import { register, getPasswordRules, loginWithGoogle, type PasswordRules } from '../api';
+import AuthLayout from '../components/auth/AuthLayout';
+import CustomSelect from '../components/CustomSelect';
 
 declare const google: {
   accounts: { id: { initialize: (cfg: object) => void; renderButton: (el: HTMLElement, cfg: object) => void } };
@@ -13,7 +16,11 @@ export default function RegisterPage({ onSuccess, onGoLogin }: Props) {
   const [nom,       setNom]       = useState('');
   const [prenom,    setPrenom]    = useState('');
   const [email,     setEmail]     = useState('');
+  const [entreprise,       setEntreprise]       = useState('');
+  const [secteurActivite,  setSecteurActivite]  = useState('');
+  const [nbAoParAn,        setNbAoParAn]        = useState('');
   const [password,  setPassword]  = useState('');
+  const [acceptTerms, setAcceptTerms] = useState(false);
   const [error,     setError]     = useState('');
   const [loading,   setLoading]   = useState(false);
   const [emailSent, setEmailSent] = useState(false);
@@ -36,19 +43,31 @@ export default function RegisterPage({ onSuccess, onGoLogin }: Props) {
           },
         });
         google.accounts.id.renderButton(googleBtnRef.current, {
-          theme: 'outline', size: 'large',
-          width: googleBtnRef.current.offsetWidth || 280,
-          text: 'continue_with', shape: 'rectangular',
+          theme: 'filled_black', size: 'large', width: 280,
+          text: 'continue_with', shape: 'rectangular', logo_alignment: 'center',
         });
       }
     }, 100);
     return () => clearInterval(interval);
   }, []);
 
+  /** Le bouton natif de Google (rendu par renderButton dans un iframe) ne peut pas
+   * recevoir de padding/rayon/hauteur personnalisés via CSS -- c'est un iframe cross-origin.
+   * On le garde monté mais invisible, et notre propre bouton (avec exactement le padding et
+   * le style du reste du formulaire) déclenche son clic interne par-dessus. */
+  function triggerGoogleButton() {
+    const btn = googleBtnRef.current?.querySelector('div[role="button"]') as HTMLElement | null;
+    btn?.click();
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault(); setError(''); setLoading(true);
     try {
-      const isAdmin = await register({ nom, prenom, email, password });
+      const isAdmin = await register({
+        nom, prenom, email, password,
+        entreprise, secteur_activite: secteurActivite,
+        nb_ao_par_an: nbAoParAn === '' ? null : Number(nbAoParAn),
+      });
       if (isAdmin) { onSuccess(); } else { setEmailSent(true); }
     } catch (err) {
       setError(err instanceof Error ? err.message : t('auth.register.submitting'));
@@ -56,31 +75,32 @@ export default function RegisterPage({ onSuccess, onGoLogin }: Props) {
   }
 
   const inputStyle: React.CSSProperties = {
-    width: '100%', padding: '11px 14px', borderRadius: 10,
-    border: '1px solid var(--l-card-border)', background: 'var(--l-input-bg)',
-    color: 'var(--l-text)', fontSize: 14, outline: 'none',
-    boxSizing: 'border-box', fontFamily: 'inherit', transition: 'border-color .15s',
+    width: '100%', padding: '9px 13px', borderRadius: 10,
+    border: '1px solid var(--l-card-border)', background: 'var(--l-surface-2, rgba(255,255,255,0.04))',
+    color: 'var(--l-text)', fontSize: 13.5, outline: 'none',
+    boxSizing: 'border-box', fontFamily: 'inherit', transition: 'border-color .15s, background .15s',
   };
 
   const labelStyle: React.CSSProperties = {
-    display: 'block', fontSize: 13, fontWeight: 600, color: 'var(--l-sub)', marginBottom: 6,
+    display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--l-sub)', marginBottom: 4,
   };
 
-  const pageStyle: React.CSSProperties = {
-    minHeight: '100vh', display: 'flex', flexDirection: 'column',
-    alignItems: 'center', justifyContent: 'center', padding: '24px',
-    background: 'var(--l-bg-alt)',
-  };
+  function focusRing(e: React.FocusEvent<HTMLInputElement | HTMLSelectElement>) {
+    e.currentTarget.style.borderColor = 'var(--l-blue)';
+  }
+  function blurRing(e: React.FocusEvent<HTMLInputElement | HTMLSelectElement>) {
+    e.currentTarget.style.borderColor = 'var(--l-card-border)';
+  }
 
   // Email verification screen
   if (emailSent) {
     return (
-      <div style={pageStyle}>
-        <div style={{ marginBottom: 32 }}>
-          <img src="/logo-adjuja.png" alt="ADJUJA" style={{ height: 32 }} />
-        </div>
+      <AuthLayout>
+        <Link to="/" style={{ display: 'block', margin: '0 auto 40px', width: 'fit-content' }}>
+          <img src="/logo-adjuja.png" alt="ADJUJA" style={{ height: 84, display: 'block' }} />
+        </Link>
 
-        <div style={{ width: '100%', maxWidth: 400, background: 'var(--l-card)', border: '1px solid var(--l-card-border)', borderRadius: 20, padding: '40px 36px', boxShadow: 'var(--l-card-shadow)', textAlign: 'center' }}>
+        <div style={{ textAlign: 'center' }}>
           <div style={{ width: 56, height: 56, borderRadius: '50%', background: 'var(--l-blue-a)', border: '1px solid var(--l-card-border)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px' }}>
             <svg width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="var(--l-blue)" strokeWidth={1.8}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
@@ -95,109 +115,164 @@ export default function RegisterPage({ onSuccess, onGoLogin }: Props) {
           </p>
 
           <button onClick={onGoLogin}
-            style={{ width: '100%', padding: '12px', borderRadius: 10, border: 'none', background: 'var(--l-blue)', color: '#fff', fontSize: 15, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', transition: 'opacity .15s' }}
-            onMouseEnter={e => e.currentTarget.style.opacity = '.85'}
+            style={{ width: '100%', padding: '13px', borderRadius: 12, border: 'none', background: 'var(--l-blue)', color: '#fff', fontSize: 15, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', transition: 'opacity .15s' }}
+            onMouseEnter={e => e.currentTarget.style.opacity = '.88'}
             onMouseLeave={e => e.currentTarget.style.opacity = '1'}
           >
             {t('auth.verify.goLogin')}
           </button>
         </div>
-      </div>
+      </AuthLayout>
     );
   }
 
   // Register form
   return (
-    <div style={pageStyle}>
+    <AuthLayout>
+      <Link to="/" style={{ display: 'block', margin: '0 auto 14px', width: 'fit-content' }}>
+        <img src="/logo-adjuja.png" alt="ADJUJA" style={{ height: 64, display: 'block' }} />
+      </Link>
 
-      {/* Logo */}
-      <div style={{ marginBottom: 32 }}>
-        <img src="/logo-adjuja.png" alt="ADJUJA" style={{ height: 32 }} />
-      </div>
+      <h1 style={{ fontSize: 21, fontWeight: 700, color: 'var(--l-text)', margin: '0 0 4px', letterSpacing: '-0.02em', textAlign: 'center' }}>{t('auth.register.title')}</h1>
+      <p style={{ fontSize: 13, color: 'var(--l-sub)', margin: '0 0 16px', textAlign: 'center' }}>{t('auth.register.subtitle')}</p>
 
-      {/* Card */}
-      <div style={{ width: '100%', maxWidth: 400, background: 'var(--l-card)', border: '1px solid var(--l-card-border)', borderRadius: 20, padding: '40px 36px', boxShadow: 'var(--l-card-shadow)' }}>
+      {error && (
+        <div style={{ marginBottom: 14, padding: '9px 12px', borderRadius: 10, background: 'rgba(220,38,38,0.07)', border: '1px solid rgba(220,38,38,0.2)', color: '#dc2626', fontSize: 12.5 }}>
+          {error}
+        </div>
+      )}
 
-        <h1 style={{ fontSize: 22, fontWeight: 700, textAlign: 'center', color: 'var(--l-text)', margin: '0 0 6px', letterSpacing: '-0.01em' }}>{t('auth.register.title')}</h1>
-        <p style={{ fontSize: 14, textAlign: 'center', color: 'var(--l-sub)', margin: '0 0 28px' }}>{t('auth.register.subtitle')}</p>
+      <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 11 }}>
 
-        {error && (
-          <div style={{ marginBottom: 20, padding: '11px 14px', borderRadius: 10, background: 'rgba(220,38,38,0.07)', border: '1px solid rgba(220,38,38,0.2)', color: '#dc2626', fontSize: 13 }}>
-            {error}
-          </div>
-        )}
-
-        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
-
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-            <div>
-              <label style={labelStyle}>{t('auth.register.firstName')}</label>
-              <input type="text" value={prenom} onChange={e => setPrenom(e.target.value)}
-                placeholder={t('auth.register.firstNamePlaceholder')} required style={inputStyle}
-                onFocus={e => e.currentTarget.style.borderColor = 'var(--l-blue)'}
-                onBlur={e => e.currentTarget.style.borderColor = 'var(--l-card-border)'}
-              />
-            </div>
-            <div>
-              <label style={labelStyle}>{t('auth.register.lastName')}</label>
-              <input type="text" value={nom} onChange={e => setNom(e.target.value)}
-                placeholder={t('auth.register.lastNamePlaceholder')} required style={inputStyle}
-                onFocus={e => e.currentTarget.style.borderColor = 'var(--l-blue)'}
-                onBlur={e => e.currentTarget.style.borderColor = 'var(--l-card-border)'}
-              />
-            </div>
-          </div>
-
+        <div className="grid grid-cols-1 sm:grid-cols-2" style={{ gap: 12 }}>
           <div>
-            <label style={labelStyle}>{t('auth.register.email')}</label>
-            <input type="email" value={email} onChange={e => setEmail(e.target.value)}
-              placeholder={t('auth.register.emailPlaceholder')} required style={inputStyle}
-              onFocus={e => e.currentTarget.style.borderColor = 'var(--l-blue)'}
-              onBlur={e => e.currentTarget.style.borderColor = 'var(--l-card-border)'}
+            <label style={labelStyle}>{t('auth.register.firstName')}</label>
+            <input type="text" value={prenom} onChange={e => setPrenom(e.target.value)}
+              placeholder={t('auth.register.firstNamePlaceholder')} required style={inputStyle}
+              onFocus={focusRing} onBlur={blurRing}
             />
           </div>
-
           <div>
-            <label style={labelStyle}>
-              {t('auth.register.password')}{' '}
-              <span style={{ color: 'var(--l-dim)', fontWeight: 400 }}>
-                {t('auth.register.passwordHint', {
-                  min: rules.min_length,
-                  digit: rules.require_digit ? t('auth.register.passwordDigit') : '',
-                })}
-              </span>
-            </label>
-            <input type="password" value={password} onChange={e => setPassword(e.target.value)}
-              placeholder={t('auth.register.passwordPlaceholder')} minLength={rules.min_length} required style={inputStyle}
-              onFocus={e => e.currentTarget.style.borderColor = 'var(--l-blue)'}
-              onBlur={e => e.currentTarget.style.borderColor = 'var(--l-card-border)'}
+            <label style={labelStyle}>{t('auth.register.lastName')}</label>
+            <input type="text" value={nom} onChange={e => setNom(e.target.value)}
+              placeholder={t('auth.register.lastNamePlaceholder')} required style={inputStyle}
+              onFocus={focusRing} onBlur={blurRing}
             />
           </div>
-
-          <button type="submit" disabled={loading}
-            style={{ width: '100%', padding: '12px', borderRadius: 10, border: 'none', background: loading ? 'var(--l-dim)' : 'var(--l-blue)', color: '#fff', fontSize: 15, fontWeight: 600, cursor: loading ? 'not-allowed' : 'pointer', fontFamily: 'inherit', transition: 'opacity .15s' }}
-            onMouseEnter={e => { if (!loading) e.currentTarget.style.opacity = '.85'; }}
-            onMouseLeave={e => e.currentTarget.style.opacity = '1'}
-          >
-            {loading ? t('auth.register.submitting') : t('auth.register.submit')}
-          </button>
-        </form>
-
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12, margin: '20px 0' }}>
-          <div style={{ flex: 1, height: 1, background: 'var(--l-card-border)' }} />
-          <span style={{ fontSize: 12, color: 'var(--l-dim)' }}>{t('auth.register.or')}</span>
-          <div style={{ flex: 1, height: 1, background: 'var(--l-card-border)' }} />
         </div>
 
-        <div ref={googleBtnRef} style={{ width: '100%', minHeight: 44 }} />
+        <div>
+          <label style={labelStyle}>{t('auth.register.email')}</label>
+          <input type="email" value={email} onChange={e => setEmail(e.target.value)}
+            placeholder={t('auth.register.emailPlaceholder')} required style={inputStyle}
+            onFocus={focusRing} onBlur={blurRing}
+          />
+        </div>
 
-        <p style={{ textAlign: 'center', fontSize: 14, color: 'var(--l-sub)', margin: '24px 0 0' }}>
-          {t('auth.register.hasAccount')}{' '}
-          <button onClick={onGoLogin} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--l-blue)', fontWeight: 600, fontSize: 14, fontFamily: 'inherit', padding: 0 }}>
-            {t('auth.register.loginLink')}
-          </button>
-        </p>
+        <div>
+          <label style={labelStyle}>{t('auth.register.companyName')}</label>
+          <input type="text" value={entreprise} onChange={e => setEntreprise(e.target.value)}
+            placeholder={t('auth.register.companyNamePlaceholder')} required style={inputStyle}
+            onFocus={focusRing} onBlur={blurRing}
+          />
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-[1.4fr_1fr]" style={{ gap: 12 }}>
+          <div>
+            <label style={labelStyle}>{t('auth.register.sector')}</label>
+            <CustomSelect
+              value={secteurActivite}
+              onChange={setSecteurActivite}
+              placeholder={t('auth.register.sectorPlaceholder')}
+              style={inputStyle}
+              options={Object.entries(t('auth.register.sectorOptions', { returnObjects: true }) as Record<string, string>).map(
+                ([code, label]) => ({ value: code, label })
+              )}
+            />
+          </div>
+          <div>
+            <label style={labelStyle}>{t('auth.register.aoPerYear')}</label>
+            <input type="number" min={0} value={nbAoParAn} onChange={e => setNbAoParAn(e.target.value)}
+              placeholder={t('auth.register.aoPerYearPlaceholder')} required style={inputStyle}
+              onFocus={focusRing} onBlur={blurRing}
+            />
+          </div>
+        </div>
+
+        <div>
+          <label style={labelStyle}>
+            {t('auth.register.password')}{' '}
+            <span style={{ color: 'var(--l-dim)', fontWeight: 400 }}>
+              {t('auth.register.passwordHint', {
+                min: rules.min_length,
+                digit: rules.require_digit ? t('auth.register.passwordDigit') : '',
+              })}
+            </span>
+          </label>
+          <input type="password" value={password} onChange={e => setPassword(e.target.value)}
+            placeholder={t('auth.register.passwordPlaceholder')} minLength={rules.min_length} required style={inputStyle}
+            onFocus={focusRing} onBlur={blurRing}
+          />
+        </div>
+
+        <label style={{ display: 'flex', alignItems: 'flex-start', gap: 8, cursor: 'pointer' }}>
+          <input
+            type="checkbox"
+            checked={acceptTerms}
+            onChange={e => setAcceptTerms(e.target.checked)}
+            required
+            style={{ marginTop: 2, width: 14, height: 14, accentColor: 'var(--l-blue)', cursor: 'pointer', flexShrink: 0 }}
+          />
+          <span style={{ fontSize: 12, color: 'var(--l-sub)', lineHeight: 1.4 }}>
+            {t('legal.acceptPrefix')}
+            <Link to="/cgu" target="_blank" style={{ color: 'var(--l-blue)' }}>{t('legal.acceptCgu')}</Link>
+            {t('legal.acceptAnd')}
+            <Link to="/confidentialite" target="_blank" style={{ color: 'var(--l-blue)' }}>{t('legal.acceptPrivacy')}</Link>
+          </span>
+        </label>
+
+        <button type="submit" disabled={loading || !acceptTerms || !secteurActivite}
+          style={{ width: '100%', padding: '11px', borderRadius: 10, border: 'none', background: (loading || !acceptTerms || !secteurActivite) ? 'var(--l-dim)' : 'var(--l-blue)', color: '#fff', fontSize: 14, fontWeight: 700, cursor: (loading || !acceptTerms || !secteurActivite) ? 'not-allowed' : 'pointer', fontFamily: 'inherit', transition: 'opacity .15s' }}
+          onMouseEnter={e => { if (!loading && acceptTerms && secteurActivite) e.currentTarget.style.opacity = '.88'; }}
+          onMouseLeave={e => e.currentTarget.style.opacity = '1'}
+        >
+          {loading ? t('auth.register.submitting') : t('auth.register.submit')}
+        </button>
+      </form>
+
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, margin: '14px 0' }}>
+        <div style={{ flex: 1, height: 1, background: 'var(--l-card-border)' }} />
+        <span style={{ fontSize: 11, color: 'var(--l-dim)' }}>{t('auth.register.or')}</span>
+        <div style={{ flex: 1, height: 1, background: 'var(--l-card-border)' }} />
       </div>
-    </div>
+
+      {/* Bouton natif Google, invisible : garde le flux OAuth fonctionnel sans imposer
+          son propre style. Ne pas mettre display:none (casse le clic dans certains
+          navigateurs) -- juste hors-flux et transparent. */}
+      <div ref={googleBtnRef} style={{ position: 'absolute', opacity: 0, pointerEvents: 'none', width: 1, height: 1, overflow: 'hidden' }} />
+
+      <button
+        type="button"
+        onClick={triggerGoogleButton}
+        style={{ width: '100%', padding: '10px 16px', borderRadius: 10, border: 'none', background: '#131314', color: '#fff', fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 9, transition: 'opacity .15s' }}
+        onMouseEnter={e => e.currentTarget.style.opacity = '.88'}
+        onMouseLeave={e => e.currentTarget.style.opacity = '1'}
+      >
+        <svg width="16" height="16" viewBox="0 0 18 18">
+          <path fill="#4285F4" d="M17.64 9.2c0-.64-.06-1.25-.16-1.84H9v3.48h4.84c-.21 1.13-.85 2.09-1.8 2.73v2.27h2.92c1.71-1.57 2.68-3.88 2.68-6.64z"/>
+          <path fill="#34A853" d="M9 18c2.43 0 4.47-.8 5.96-2.18l-2.92-2.27c-.81.54-1.84.86-3.04.86-2.34 0-4.32-1.58-5.03-3.71H.96v2.34C2.44 15.98 5.48 18 9 18z"/>
+          <path fill="#FBBC05" d="M3.97 10.7c-.18-.54-.28-1.11-.28-1.7s.1-1.16.28-1.7V4.96H.96A8.996 8.996 0 000 9c0 1.45.35 2.83.96 4.04l3.01-2.34z"/>
+          <path fill="#EA4335" d="M9 3.58c1.32 0 2.51.45 3.44 1.35l2.59-2.59C13.46.89 11.43 0 9 0 5.48 0 2.44 2.02.96 4.96l3.01 2.34C4.68 5.16 6.66 3.58 9 3.58z"/>
+        </svg>
+        {t('auth.register.continueWithGoogle')}
+      </button>
+
+      <p style={{ textAlign: 'center', fontSize: 13, color: 'var(--l-sub)', margin: '14px 0 0' }}>
+        {t('auth.register.hasAccount')}{' '}
+        <button onClick={onGoLogin} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--l-blue)', fontWeight: 600, fontSize: 13, fontFamily: 'inherit', padding: 0 }}>
+          {t('auth.register.loginLink')}
+        </button>
+      </p>
+    </AuthLayout>
   );
 }

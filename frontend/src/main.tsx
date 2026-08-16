@@ -1,19 +1,47 @@
 import React, { useState, useEffect } from 'react';
 import ReactDOM from 'react-dom/client';
-import { BrowserRouter, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom';
 import App from './App';
 import LandingPage from './pages/LandingPage';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
+import NotFoundPage from './pages/NotFoundPage';
+import MentionsLegalesPage from './pages/MentionsLegalesPage';
+import CguPage from './pages/CguPage';
+import ConfidentialitePage from './pages/ConfidentialitePage';
 import { getMe, clearToken, startCheckout, CHECKOUT_INTENT_KEY } from './api';
 import type { User } from './types';
 import './index.css';
 import './i18n';
 
+/** Le canonical est figé en dur dans index.html au chargement (limite d'une SPA sans
+ * SSR). On le met à jour au changement de route pour les navigateurs et crawlers qui
+ * exécutent le JS, en attendant un vrai pré-rendu serveur. */
+function useDynamicCanonical() {
+  const location = useLocation();
+  useEffect(() => {
+    const link = document.querySelector('link[rel="canonical"]');
+    if (link) link.setAttribute('href', `https://adjuja.com${location.pathname}`);
+  }, [location.pathname]);
+}
+
+/** React Router ne remet pas le scroll en haut lors d'une navigation -- en cliquant un
+ * lien du footer (donc déjà en bas de page), la nouvelle page charge mais on reste
+ * scrollé en bas. Chaque changement de route remonte donc en haut par défaut. */
+function useScrollToTopOnNavigate() {
+  const location = useLocation();
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [location.pathname]);
+}
+
 function AppRouter() {
   const navigate  = useNavigate();
   const [user,    setUser]    = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+
+  useDynamicCanonical();
+  useScrollToTopOnNavigate();
 
   useEffect(() => {
     getMe()
@@ -85,6 +113,9 @@ function AppRouter() {
           />
         )}
       />
+      <Route path="/mentions-legales" element={<MentionsLegalesPage />} />
+      <Route path="/cgu" element={<CguPage />} />
+      <Route path="/confidentialite" element={<ConfidentialitePage />} />
       <Route
         path="/app/*"
         element={user ? (
@@ -95,7 +126,7 @@ function AppRouter() {
           />
         ) : <Navigate to="/login" replace />}
       />
-      <Route path="*" element={<Navigate to="/" replace />} />
+      <Route path="*" element={<NotFoundPage onGoHome={() => navigate('/')} />} />
     </Routes>
   );
 }

@@ -1,7 +1,11 @@
-import { lazy, Suspense, useEffect } from "react";
+import { lazy, Suspense } from "react";
+import { useScrollReveal } from "../hooks/useScrollReveal";
 import LandingNav from "../components/landing/LandingNav";
+import FeaturesSection from "../components/landing/FeaturesSection";
 import HowItWorksSection from "../components/landing/HowItWorksSection";
+import TrustSection from "../components/landing/TrustSection";
 import PricingSection from "../components/landing/PricingSection";
+import FaqSection from "../components/landing/FaqSection";
 import LandingFooter from "../components/landing/LandingFooter";
 
 /* Three.js chargé en lazy pour ne pas bloquer le LCP */
@@ -18,15 +22,7 @@ export default function LandingPage({
   onEnterApp: () => void;
   onGoRegister: () => void;
 }) {
-  useEffect(() => {
-    const els = document.querySelectorAll(".animate-on-scroll");
-    const io = new IntersectionObserver(
-      entries => entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add("is-visible"); io.unobserve(e.target); } }),
-      { threshold: 0.08 }
-    );
-    els.forEach(el => io.observe(el));
-    return () => io.disconnect();
-  }, []);
+  useScrollReveal();
 
   return (
     <div className="landing-dark">
@@ -34,8 +30,11 @@ export default function LandingPage({
       <Suspense fallback={<HeroFallback />}>
         <HeroSection onEnterApp={onEnterApp} onGoRegister={onGoRegister} />
       </Suspense>
+      <FeaturesSection />
       <HowItWorksSection />
+      <TrustSection />
       <PricingSection onEnterApp={onEnterApp} />
+      <FaqSection />
       <LandingFooter onEnterApp={onEnterApp} />
     </div>
   );

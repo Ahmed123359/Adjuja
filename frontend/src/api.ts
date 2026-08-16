@@ -81,6 +81,7 @@ export async function getPasswordRules(): Promise<PasswordRules> {
 /** Retourne true si admin (connecté directement), false si email envoyé */
 export async function register(params: {
   nom: string; prenom: string; email: string; password: string;
+  entreprise?: string; secteur_activite?: string; nb_ao_par_an?: number | null;
 }): Promise<boolean> {
   let res: Response;
   try {

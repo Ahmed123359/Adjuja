@@ -3,49 +3,130 @@
     "features": "Fonctionnalités",
     "howItWorks": "Comment ça marche",
     "pricing": "Tarifs",
-    "access": "Accéder",
-    "signup": "Inscription"
+    "access": "Se connecter",
+    "signup": "Liste d'attente",
+    "close": "Fermer le menu",
+    "faq": "FAQ"
+  },
+  "notFound": {
+    "title": "Page introuvable",
+    "message": "Cette page n'existe pas ou plus. Vérifiez l'adresse ou revenez à l'accueil.",
+    "cta": "Retour à l'accueil"
   },
   "landing": {
     "hero": {
-      "badge": "Nouveau",
-      "badgeText": "Réponse AO automatisée par l'IA",
-      "line1": "Remportez plus de marchés.",
-      "line2": "Sans y passer vos nuits.",
-      "demo": "Voir la démo"
+      "titleLine1": "Vos appels d'offres,",
+      "titleHighlight": "sans les nuits blanches.",
+      "subtitle": "Adjuja surveille les publications, analyse votre CPS en 4 minutes et vous aide à rédiger votre offre. Conçu au Maroc, aligné sur le décret n°2-22-431.",
+      "cta": "Demander l'accès"
     },
     "features": {
-      "title": "Tout ce dont vous avez besoin",
-      "titleBlue": "pour remporter plus de marchés.",
+      "title": "Un copilote complet",
+      "titleBlue": "pour vos appels d'offres.",
       "cta": "Voir toutes les fonctionnalités",
+      "veille": {
+        "title": "Veille automatique",
+        "desc": "Adjuja surveille en continu les portails de marchés publics marocains et vous signale les AO qui correspondent à votre secteur."
+      },
+      "gonogo": {
+        "title": "Analyse Go/No-Go",
+        "desc": "Un score de pertinence et un verdict clair avant de vous engager : budget, délais, références, tout est vérifié en quelques secondes."
+      },
       "analyse": {
-        "title": "Analyse du DAO",
-        "desc": "L'IA extrait chaque clause clé du dossier de consultation en quelques secondes."
+        "title": "Analyse du CPS",
+        "desc": "Extraction automatique des critères d'attribution, des délais et des pièces exigées. Vous gardez la décision finale."
       },
       "gen": {
-        "title": "Génération en temps réel",
-        "desc": "Chaque section est rédigée et exportée en Word en moins de 2 minutes."
-      },
-      "suivi": {
-        "title": "Suivi de tous vos AOs",
-        "desc": "Un seul endroit pour suivre chaque dossier, de la réception à la victoire."
-      },
-      "pipeline": {
-        "title": "Pipeline automatisé",
-        "desc": "De la réception du DAO à la soumission finale, chaque étape est orchestrée et tracée."
+        "title": "Rédaction assistée",
+        "desc": "Adjuja prépare la structure et les sections types de votre offre technique. Vous relisez, ajustez, validez."
       }
     },
     "how": {
       "title": "Trois étapes.",
-      "titleBlue": "Un dossier complet.",
-      "t1Title": "Importez votre DAO",
-      "t1Desc": "Glissez le document du dossier dans ADJUJA. L'IA extrait en quelques secondes les critères d'attribution, les pièces exigées et les contraintes techniques. Vous ne lisez rien, vous ne configurez rien.",
-      "t2Title": "L'IA rédige. Vous validez.",
-      "t2Desc": "Pendant que vous continuez votre journée, ADJUJA génère votre offre technique complète, section par section, adaptée à votre profil et aux critères exacts du marché. Aucune rédaction manuelle.",
-      "t3Title": "Signez et téléchargez",
-      "t3Desc": "Téléchargez votre dossier en ZIP : offre technique, acte d'engagement, déclaration d'honneur, CPS paraphé. Chaque document signé, chaque case cochée. Prêt à déposer.",
-      "t4Title": "Suivi de vos performances",
-      "t4Desc": "Visualisez votre taux de réussite, le nombre d'AOs remportés et l'évolution de vos résultats mois par mois."
+      "titleBlue": "Vous restez aux commandes.",
+      "t1Title": "Vous recevez les AO qui vous concernent",
+      "t1Desc": "Adjuja surveille les portails et filtre selon votre profil. Vous ne cherchez plus.",
+      "t2Title": "Vous décidez en 4 minutes",
+      "t2Desc": "L'analyse extrait les critères, les délais et les pièces exigées. Vous gardez la décision : c'est votre marché, votre engagement, votre jugement.",
+      "t3Title": "Vous rédigez trois fois plus vite",
+      "t3Desc": "Adjuja prépare la structure et les sections types. Vous relisez, ajustez, validez. Export Word, prêt à finaliser."
+    },
+    "trust": {
+      "label": "Confidentialité",
+      "title": "Vos données restent les vôtres.",
+      "subtitle": "Un cabinet qui dépose ses prix et ses références sur Adjuja doit pouvoir le faire les yeux fermés. Voici nos engagements.",
+      "readMore": "Lire notre politique de confidentialité complète",
+      "items": [
+        { "title": "Propriété totale", "desc": "Vos documents vous appartiennent. Adjuja n'en revendique aucun droit de propriété." },
+        { "title": "Cloisonnement total", "desc": "Aucune donnée d'un client n'est visible ou accessible par un autre." },
+        { "title": "Zéro usage concurrentiel", "desc": "Adjuja n'utilise jamais le contenu d'un dossier pour informer ou avantager un autre client." },
+        { "title": "Zéro entraînement sans accord", "desc": "Aucun modèle n'est entraîné sur vos données sans votre accord écrit préalable." },
+        { "title": "Suppression sous 72 heures", "desc": "Sur simple demande, pour tout ou partie de vos données." },
+        { "title": "Conformité loi 09-08", "desc": "Protection des personnes physiques à l'égard du traitement des données à caractère personnel." }
+      ]
+    },
+    "faq": {
+      "label": "Questions fréquentes",
+      "title": "Ce que vous vous demandez sûrement",
+      "subtitle": "Confidentialité, tarifs, fonctionnement et accès : les réponses aux questions qu'on nous pose le plus souvent.",
+      "categories": [
+        {
+          "key": "confidentialite",
+          "label": "Confidentialité",
+          "items": [
+            {
+              "q": "Mes documents et mes prix restent-ils vraiment confidentiels ?",
+              "a": "Oui. Chaque organisation est totalement cloisonnée : aucune donnée n'est visible par un autre client, aucun dossier n'est utilisé pour informer ou avantager un concurrent, et aucun modèle n'est entraîné sur vos données sans votre accord écrit. Vous pouvez demander la suppression de tout ou partie de vos données sous 72 heures. Détail complet sur notre page confidentialité."
+            },
+            {
+              "q": "Le service est-il adapté au cadre juridique marocain ?",
+              "a": "Oui, c'est sa raison d'être. Adjuja est conçu pour les marchés publics marocains, aligné sur le décret n°2-22-431, et travaille directement sur vos CPS et règlements de consultation, pas sur un format générique importé d'un autre pays."
+            }
+          ]
+        },
+        {
+          "key": "tarifs",
+          "label": "Tarifs",
+          "items": [
+            {
+              "q": "Pourquoi 990 MAD par mois, n'est-ce pas cher pour un logiciel ?",
+              "a": "Le prix n'est pas ancré sur un logiciel générique mais sur le coût d'une journée de consultant. Trois heures gagnées sur un seul dossier, ou une erreur d'analyse évitée sur un critère éliminatoire, couvrent largement l'abonnement du mois. L'objectif n'est pas de remplacer un consultant, mais de lui rendre du temps."
+            },
+            {
+              "q": "Suis-je engagé sur une durée ?",
+              "a": "Non, l'abonnement est sans engagement de durée et peut être résilié à tout moment depuis votre espace."
+            }
+          ]
+        },
+        {
+          "key": "fonctionnement",
+          "label": "Fonctionnement",
+          "items": [
+            {
+              "q": "Puis-je faire confiance à ce que l'IA rédige ou analyse ?",
+              "a": "Adjuja prépare, vous décidez. L'analyse extrait les critères et les délais pour vous faire gagner du temps de lecture, la rédaction prépare une structure et des sections types. Rien n'est déposé sans que vous ayez relu, ajusté et validé chaque section vous-même."
+            },
+            {
+              "q": "Est-ce que ça remplace mon expertise ou mon bureau d'études ?",
+              "a": "Non. Adjuja supprime les tâches répétitives, lecture de CPS, recherche de critères, mise en forme, pas le jugement professionnel. La décision de répondre à un marché et la responsabilité de l'offre déposée restent entièrement les vôtres."
+            }
+          ]
+        },
+        {
+          "key": "acces",
+          "label": "Accès et support",
+          "items": [
+            {
+              "q": "Pourquoi une liste d'attente au lieu d'une inscription immédiate ?",
+              "a": "Nous ouvrons l'accès par vagues pendant la phase pilote pour accompagner correctement chaque cabinet qui rejoint Adjuja, plutôt que de diluer l'attention sur trop de comptes à la fois. Les profils les plus proches de notre cible sont prioritaires."
+            },
+            {
+              "q": "Si j'ai un problème ou une question, qui m'aide ?",
+              "a": "Notre équipe est joignable à support@adjuja.com. Pendant la phase pilote, chaque cabinet bénéficie d'un accompagnement direct pour prendre le service en main."
+            }
+          ]
+        }
+      ]
     },
     "cta": {
       "title": "Commencez à remporter plus de marchés dès aujourd'hui.",
@@ -83,118 +164,104 @@
     }
   },
   "banner": {
-    "mobile": "Early Bird  <strong>-30 %</strong> sur tous les plans",
-    "desktop": "Early Bird  <strong>-30 % sur tous les plans</strong> pour les 50 premiers abonnes",
+    "mobile": "Early Bird : <strong>-30 %</strong> sur tous les plans",
+    "desktop": "Early Bird : <strong>-30 % sur tous les plans</strong> pour les 50 premiers abonnés",
     "sub": " · Profitez-en avant la fin du lancement"
   },
-  "hero": {
-    "title1": "Remportez plus de marches.",
-    "title2": "Sans y passer vos",
-    "highlight": "nuits.",
-    "subtitle": "ADJUJA analyse votre appel d'offres, redige chaque section et vous livre une reponse professionnelle pendant que vous vous concentrez sur votre coeur de metier.",
-    "cta": "Essayer gratuitement",
-    "catCaption": "Pendant ce temps...",
-    "stats": {
-      "time": "< 2 min",
-      "timeLabel": "par reponse AO",
-      "scale": "10x",
-      "scaleLabel": "plus d'AOs traites",
-      "llms": "3 LLMs",
-      "llmsLabel": "Claude · GPT-4o · Mistral",
-      "market": "100 Md MAD",
-      "marketLabel": "marches publics / an"
-    }
-  },
   "features": {
-    "label": "Fonctionnalites",
-    "title": "Pourquoi les equipes choisissent ADJUJA",
-    "subtitle": "Concentrez-vous sur la strategie. Nous nous occupons de la redaction.",
+    "label": "Fonctionnalités",
+    "title": "Pourquoi les équipes choisissent ADJUJA",
+    "subtitle": "Concentrez-vous sur la stratégie. Nous nous occupons de la rédaction.",
     "cards": {
       "speed_title": "2 minutes au lieu de 2 jours",
-      "speed_desc": "Une reponse complete, structuree et prete a soumettre en moins de 2 minutes. Traitez 10x plus d'AOs sans recruter.",
+      "speed_desc": "Une réponse complète, structurée et prête à soumettre en moins de 2 minutes. Traitez 10x plus d'AOs sans recruter.",
       "memory_title": "L'IA apprend de vos documents",
-      "memory_desc": "Importez vos anciennes reponses gagnantes, references clients et certifications. ADJUJA les reutilise automatiquement.",
-      "complete_title": "Aucune exigence oubliee",
-      "complete_desc": "Chaque critere du cahier des charges est analyse et traite. Pieces attendues, format de reponse, criteres de selection.",
-      "winrate_title": "Remportez plus de marches",
-      "winrate_desc": "Des reponses mieux structurees, plus conformes et redigees dans le langage attendu par les acheteurs publics.",
-      "privacy_title": "Vos donnees restent chez vous",
-      "privacy_desc": "Hebergement local, conformite RGPD. Vos documents confidentiels ne quittent jamais votre perimetre.",
-      "models_title": "Claude, GPT-4o ou Mistral",
-      "models_desc": "Choisissez le meilleur modele selon l'AO. Vous gardez le controle."
+      "memory_desc": "Importez vos anciennes réponses gagnantes, références clients et certifications. ADJUJA les réutilise automatiquement.",
+      "complete_title": "Aucune exigence oubliée",
+      "complete_desc": "Chaque critère du cahier des charges est analysé et traité. Pièces attendues, format de réponse, critères de sélection.",
+      "winrate_title": "Remportez plus de marchés",
+      "winrate_desc": "Des réponses mieux structurées, plus conformes et rédigées dans le langage attendu par les acheteurs publics.",
+      "privacy_title": "Vos données restent chez vous",
+      "privacy_desc": "Hébergement local, conformité à la loi 09-08. Vos documents confidentiels ne quittent jamais votre périmètre.",
+      "models_title": "Une IA au service de votre expertise",
+      "models_desc": "ADJUJA prépare la structure et les sections types. Vous gardez le contrôle sur chaque décision."
     }
   },
   "howItWorks": {
     "label": "Processus",
-    "title": "Comment ca marche",
-    "subtitle": "Trois etapes. Zero complexite.",
+    "title": "Comment ça marche",
+    "subtitle": "Trois étapes. Zéro complexité.",
     "steps": {
       "s1_title": "Importez votre AO",
-      "s1_desc": "Glissez votre DAO (PDF ou texte brut). ADJUJA extrait automatiquement les criteres, les lots et les pieces demandees.",
+      "s1_desc": "Glissez votre DAO (PDF ou texte brut). ADJUJA extrait automatiquement les critères, les lots et les pièces demandées.",
       "s1_note": "PDF natif · texte brut",
-      "s2_title": "Reponse generee en parallele",
-      "s2_desc": "Chaque section est redigee simultanement et adaptee a votre profil entreprise.",
+      "s2_title": "Réponse générée en parallèle",
+      "s2_desc": "Chaque section est rédigée simultanément et adaptée à votre profil entreprise.",
       "s2_note": "~90 secondes en moyenne",
       "s3_title": "Relisez, ajustez, soumettez",
-      "s3_desc": "Exportez en Word ou PDF, apportez vos touches finales et deposez sur la plateforme de votre choix.",
-      "s3_note": "Export Word · editable en ligne"
+      "s3_desc": "Exportez en Word ou PDF, apportez vos touches finales et déposez sur la plateforme de votre choix.",
+      "s3_note": "Export Word · éditable en ligne"
     },
-    "cta": "Generer ma premiere reponse"
+    "cta": "Générer ma première réponse"
   },
   "pricing": {
     "label": "Tarifs",
-    "title": "Remportez plus de marchés. Dès 55 MAD/mois.",
+    "title": "Remportez plus de marchés. Dès 490 MAD/mois.",
     "subtitle": "Sans engagement · Annulez à tout moment · Facture sous 48h",
-    "footnote1": "1 document = fichier PDF jusqu'a 20 pages A4",
-    "footnote2": "Tous les prix sont HT · TVA applicable · Deploiement on-premise sur devis",
-    "freeTrial": "Pas encore convaincu ? ",
+    "footnote1": "1 document = fichier PDF jusqu'à 20 pages A4",
+    "footnote2": "Tous les prix sont HT · TVA applicable",
+    "freeTrial": "1 AO gratuit à l'inscription, sans carte bancaire",
     "freeTrialCta": "Essayez gratuitement 1 AO sans CB",
+    "dayAnchor": "L'abonnement Pro revient à environ 56 MAD par jour ouvré, moins d'une heure de consultant.",
     "plans": {
-      "starter_name": "Starter",
+      "starter_name": "Essentiel",
       "starter_tagline": "Pour un indépendant qui répond à plusieurs AOs par mois",
       "starter_badge": "Early Bird -30 %",
-      "starter_cta": "S'abonner  55 MAD/mois",
-      "starter_note": "Sans engagement · resiliable a tout moment",
+      "starter_cta": "S'abonner à 490 MAD/mois",
+      "starter_note": "Sans engagement · résiliable à tout moment",
       "pro_name": "Pro",
       "pro_tagline": "Pour les PME qui traitent plusieurs AOs par semaine",
-      "pro_badge": "Recommande",
+      "pro_badge": "Recommandé",
       "pro_cta": "Commencer",
-      "pro_note": "Le plus choisi par nos clients PME / ETI  Sans engagement",
-      "enterprise_name": "Entreprise",
-      "enterprise_tagline": "Pour les grandes structures qui automatisent leur démarche commerciale",
-      "enterprise_price": "Sur devis",
-      "enterprise_cta": "Contacter l'equipe",
-      "enterprise_note": "Deploiement en 5 jours ouvres",
+      "pro_note": "Le plus choisi par nos clients PME / ETI, sans engagement",
+      "enterprise_name": "Cabinet",
+      "enterprise_tagline": "Pour les cabinets et grandes structures qui automatisent leur démarche commerciale",
+      "enterprise_price": "2900 MAD/mois",
+      "enterprise_cta": "Commencer",
+      "enterprise_note": "Utilisateurs illimités · accompagnement dédié",
       "tag_new": "Nouveau",
-      "f_unlimited_gen": "Generation illimitee",
-      "f_docs_50": "Digestion jusqu'a 50 documents",
-      "f_docs_200": "Digestion jusqu'a 200 documents",
+      "f_docs_50": "Traitement jusqu'à 50 documents",
+      "f_docs_200": "Traitement jusqu'à 200 documents",
       "f_chat": "Chat avec vos documents",
-      "f_signatures": "Signatures instantanees illimitees",
-      "f_history": "Historique complet des generations",
+      "f_signatures": "Signatures instantanées illimitées",
+      "f_history": "Historique complet des générations",
       "f_users_1": "1 utilisateur",
       "f_users_5": "5 utilisateurs",
-      "f_users_unlimited": "Utilisateurs illimites",
+      "f_users_unlimited": "Utilisateurs illimités",
       "f_support_email": "Support e-mail (48h)",
       "f_support_priority": "Support prioritaire (4h)",
       "f_sso": "SSO / Active Directory",
       "f_sla": "SLA 99,9 % garanti",
-      "f_onboarding": "Accompagnement dedie",
+      "f_onboarding": "Accompagnement dédié",
       "f_export": "Export Word (.docx)",
-      "f_providers": "3 providers LLM (GPT-4o, Claude, Mistral)",
-      "f_50_ao": "50 AOs generes / mois",
-      "f_ao_illimite": "AOs generes illimites"
+      "f_providers": "Rédaction assistée par IA",
+      "f_50_ao": "50 AOs générés / mois",
+      "f_ao_illimite": "AOs générés illimités"
     }
   },
   "ctaBand": {
-    "title": "Pret a transformer votre taux de reussite ?",
-    "subtitle": "Rejoignez les equipes commerciales qui gagnent du temps et remportent plus de marches avec ADJUJA.",
+    "title": "Prêt à transformer votre taux de réussite ?",
+    "subtitle": "Rejoignez les équipes commerciales qui gagnent du temps et remportent plus de marchés avec ADJUJA.",
     "cta": "Commencer gratuitement"
   },
   "footer": {
-    "rights": "© 2025 ADJUJA. Tous droits reserves."
+    "rights": "© 2026 ADJUJA. Tous droits réservés."
   },
   "auth": {
+    "showcase": {
+      "title": "Un copilote complet pour vos appels d'offres.",
+      "subtitle": "Veille, analyse Go/No-Go et rédaction assistée, conçus pour les marchés publics marocains."
+    },
     "login": {
       "title": "Connexion",
       "subtitle": "Accédez à votre espace ADJUJA",
@@ -207,17 +274,38 @@
       "noAccount": "Pas encore de compte ?",
       "createAccount": "Créer un compte",
       "or": "ou",
-      "verified": "Email vérifié ! Connectez-vous pour accéder à votre génération gratuite."
+      "verified": "Email vérifié ! Connectez-vous pour accéder à votre génération gratuite.",
+      "continueWithGoogle": "Continuer avec Google"
     },
     "register": {
       "title": "Créer un compte",
       "subtitle": "Rejoignez ADJUJA gratuitement",
       "firstName": "Prénom",
-      "firstNamePlaceholder": "Jean",
+      "firstNamePlaceholder": "Karim",
       "lastName": "Nom",
-      "lastNamePlaceholder": "Dupont",
+      "lastNamePlaceholder": "Bennani",
       "email": "Email",
       "emailPlaceholder": "vous@exemple.com",
+      "companyName": "Entreprise",
+      "companyNamePlaceholder": "Bennani Ingénierie",
+      "sector": "Secteur d'activité",
+      "sectorPlaceholder": "Sélectionnez un secteur",
+      "sectorOptions": {
+        "btp": "BTP / Travaux publics",
+        "it": "Informatique / IT",
+        "ingenierie": "Ingénierie / Bureau d'études",
+        "conseil": "Conseil / Audit",
+        "fournitures": "Fournitures / Équipements",
+        "sante": "Santé",
+        "education": "Éducation / Formation",
+        "environnement": "Environnement",
+        "transport": "Transport / Logistique",
+        "agriculture": "Agriculture / Agroalimentaire",
+        "energie": "Énergie",
+        "autre": "Autre"
+      },
+      "aoPerYear": "Nombre d'AO traités par an",
+      "aoPerYearPlaceholder": "ex. 12",
       "password": "Mot de passe",
       "passwordHint": "min. {{min}} car.{{digit}}",
       "passwordDigit": ", 1 chiffre",
@@ -226,7 +314,8 @@
       "submitting": "Création…",
       "hasAccount": "Déjà un compte ?",
       "loginLink": "Se connecter",
-      "or": "ou"
+      "or": "ou",
+      "continueWithGoogle": "Continuer avec Google"
     },
     "verify": {
       "title": "Vérifiez votre email",
@@ -296,9 +385,9 @@
       "incomplete": "Profil incomplet",
       "incompleteDesc": "Complétez votre profil pour activer le pipeline automatisé.",
       "required": "Champs requis pour le pipeline",
-      "complete": "Profil complet  le pipeline est actif.",
-      "incompleteProfile": "Profil incomplet  complétez les champs obligatoires (*) pour activer le pipeline.",
-      "notConfigured": "Profil non configuré  complétez les champs obligatoires (*) pour activer le pipeline.",
+      "complete": "Profil complet. Le pipeline est actif.",
+      "incompleteProfile": "Profil incomplet. Complétez les champs obligatoires (*) pour activer le pipeline.",
+      "notConfigured": "Profil non configuré. Complétez les champs obligatoires (*) pour activer le pipeline.",
       "requiredIncomplete": "Champs obligatoires incomplets.",
       "error": "Erreur lors de la sauvegarde.",
       "sections": {
@@ -374,7 +463,7 @@
     "detail": {
       "noRef": "AO sans référence",
       "progress": "Progression du pipeline",
-      "running": "Pipeline en cours  mise à jour automatique...",
+      "running": "Pipeline en cours, mise à jour automatique...",
       "uploadZone": "Glissez vos documents ici",
       "uploadHint": "CPS, RC et tous les documents du marché (PDF uniquement)",
       "uploadClick": "Cliquer pour sélectionner",
@@ -437,11 +526,11 @@
     "back": "Retour",
     "providers": {
       "anthropic": "Anthropic",
-      "anthropicDesc": "Claude  Meilleur pour la rédaction complexe",
+      "anthropicDesc": "Claude : meilleur pour la rédaction complexe",
       "openai": "OpenAI",
-      "openaiDesc": "GPT-4o  Polyvalent et rapide",
+      "openaiDesc": "GPT-4o : polyvalent et rapide",
       "mistral": "Mistral",
-      "mistralDesc": "Mistral  Souveraineté européenne des données"
+      "mistralDesc": "Mistral : souveraineté européenne des données"
     },
     "usage": {
       "tokens": "Tokens de génération",
@@ -591,6 +680,202 @@
       "downloadingDoc": "Téléchargement du dossier en cours...",
       "docReady": "Dossier disponible",
       "docError": "Erreur téléchargement du dossier"
+    }
+  },
+  "legal": {
+    "backHome": "Retour",
+    "updated": "Dernière mise à jour : {{date}}",
+    "acceptPrefix": "J'accepte les ",
+    "acceptCgu": "conditions générales d'utilisation",
+    "acceptAnd": " et la ",
+    "acceptPrivacy": "politique de confidentialité",
+    "ctaTitle": "Une question ?",
+    "ctaSubtitle": "Notre équipe est joignable directement pour toute question sur ces pages ou sur vos données.",
+    "ctaButton": "Nous contacter",
+    "mentions": {
+      "title": "Mentions légales",
+      "updated": "13 août 2026",
+      "sections": [
+        {
+          "heading": "Éditeur du site",
+          "paragraphs": [
+            "Le site adjuja.com est édité par l'équipe ADJUJA, basée à Témara, au Maroc. ADJUJA est actuellement un service en phase de lancement ; les informations d'immatriculation de la société seront ajoutées sur cette page dès leur disponibilité.",
+            "Contact : support@adjuja.com · +212 661-396413"
+          ]
+        },
+        {
+          "heading": "Responsable de publication",
+          "paragraphs": [
+            "La publication du site est assurée par l'équipe ADJUJA, joignable à l'adresse support@adjuja.com pour toute question relative à son contenu."
+          ]
+        },
+        {
+          "heading": "Propriété intellectuelle",
+          "paragraphs": [
+            "La marque ADJUJA, son logo, les textes, l'interface et la structure du site sont la propriété d'ADJUJA, sauf mention contraire. Toute reproduction, représentation ou exploitation, totale ou partielle, sans autorisation écrite préalable est interdite."
+          ]
+        },
+        {
+          "heading": "Contenus déposés par les utilisateurs",
+          "paragraphs": [
+            "Les documents et informations que vous déposez sur ADJUJA (cahiers des charges, dossiers d'appel d'offres, documents générés) restent votre propriété exclusive. Le détail de leur traitement est décrit dans notre politique de confidentialité."
+          ]
+        },
+        {
+          "heading": "Droit applicable",
+          "paragraphs": [
+            "Le présent site et son utilisation sont soumis au droit marocain. En cas de litige, et à défaut de résolution amiable, les tribunaux compétents de Rabat seront seuls compétents."
+          ]
+        }
+      ]
+    },
+    "cgu": {
+      "title": "Conditions générales d'utilisation",
+      "updated": "13 août 2026",
+      "sections": [
+        {
+          "heading": "Objet du service",
+          "paragraphs": [
+            "ADJUJA est un service qui aide les professionnels marocains à suivre les appels d'offres publics pertinents pour leur activité, à évaluer leur pertinence avant d'y répondre, et à préparer leurs offres techniques.",
+            "ADJUJA assiste le professionnel dans son travail ; il ne remplace ni son jugement, ni sa responsabilité juridique en tant que soumissionnaire."
+          ]
+        },
+        {
+          "heading": "Accès au service",
+          "paragraphs": [
+            "L'inscription est nominative. Pendant la phase pilote, l'accès est ouvert par vagues et peut nécessiter une invitation ou une mise en liste d'attente. ADJUJA se réserve le droit de prioriser certains profils selon les besoins du pilote."
+          ]
+        },
+        {
+          "heading": "Compte utilisateur",
+          "paragraphs": [
+            "Vous êtes responsable de la confidentialité de vos identifiants et de l'exactitude des informations fournies lors de votre inscription. Toute activité réalisée depuis votre compte est présumée effectuée par vous."
+          ]
+        },
+        {
+          "heading": "Utilisation autorisée",
+          "paragraphs": [
+            "Le service est destiné à un usage professionnel loyal. Sont notamment interdits : l'extraction massive automatisée du contenu du service, la revente ou la sous-location de l'accès, et l'utilisation du service pour porter atteinte aux intérêts d'un autre utilisateur."
+          ]
+        },
+        {
+          "heading": "Responsabilité",
+          "paragraphs": [
+            "Les analyses, extractions de critères et propositions rédactionnelles générées par ADJUJA constituent une aide à la décision et à la rédaction. Vous restez seul responsable du contenu final déposé auprès du maître d'ouvrage, de sa conformité au cahier des charges, ainsi que des engagements juridiques qui en découlent, notamment l'acte d'engagement et la déclaration sur l'honneur."
+          ]
+        },
+        {
+          "heading": "Tarifs et facturation",
+          "paragraphs": [
+            "Les tarifs en vigueur sont ceux affichés sur la page tarifs au moment de la souscription. Sauf mention contraire au moment de la souscription, l'abonnement est sans engagement de durée et peut être résilié à tout moment."
+          ]
+        },
+        {
+          "heading": "Suspension et résiliation",
+          "paragraphs": [
+            "ADJUJA peut suspendre un compte en cas d'usage abusif du service ou de défaut de paiement, après notification par email lorsque cela est possible. Vous pouvez résilier votre compte à tout moment depuis votre espace ou par simple demande à support@adjuja.com."
+          ]
+        },
+        {
+          "heading": "Modification des présentes conditions",
+          "paragraphs": [
+            "Les présentes conditions peuvent évoluer, notamment à mesure que le service se développe. Toute modification substantielle sera notifiée aux utilisateurs actifs par email."
+          ]
+        },
+        {
+          "heading": "Droit applicable et juridiction",
+          "paragraphs": [
+            "Les présentes conditions sont soumises au droit marocain. En cas de litige, et à défaut de résolution amiable, les tribunaux compétents de Rabat seront seuls compétents."
+          ]
+        }
+      ]
+    },
+    "confidentialite": {
+      "title": "Politique de confidentialité",
+      "updated": "13 août 2026",
+      "sections": [
+        {
+          "heading": "Responsable du traitement",
+          "paragraphs": [
+            "ADJUJA est responsable du traitement des données personnelles collectées via ce site et cette application. Pour toute question, contactez-nous à support@adjuja.com."
+          ]
+        },
+        {
+          "heading": "Données collectées",
+          "paragraphs": [
+            "Nous collectons les données suivantes :"
+          ],
+          "list": [
+            "Identité : nom, prénom, adresse email",
+            "Mot de passe, conservé sous forme chiffrée, jamais en clair",
+            "Données de qualification renseignées à l'inscription : entreprise, secteur d'activité, nombre d'appels d'offres traités par an",
+            "Documents que vous déposez pour analyse (cahiers des charges, règlements de consultation, dossiers d'appel d'offres) et documents générés par le service"
+          ]
+        },
+        {
+          "heading": "Finalités du traitement",
+          "paragraphs": [
+            "Ces données sont utilisées pour créer et gérer votre compte, fournir le service (veille, analyse, génération de documents), améliorer le produit, sélectionner les profils pendant la phase pilote, et communiquer avec vous au sujet du service."
+          ]
+        },
+        {
+          "heading": "Base légale",
+          "paragraphs": [
+            "Le traitement repose sur l'exécution du contrat qui vous lie à ADJUJA lors de votre inscription, ainsi que sur l'intérêt légitime d'ADJUJA à améliorer son service."
+          ]
+        },
+        {
+          "heading": "Durée de conservation",
+          "paragraphs": [
+            "Vos données sont conservées pendant toute la durée d'utilisation de votre compte, puis supprimées dans un délai raisonnable après sa clôture, sauf obligation légale contraire."
+          ]
+        },
+        {
+          "heading": "Destinataires des données",
+          "paragraphs": [
+            "Vos données ne sont ni vendues ni partagées à des fins commerciales avec des tiers. Seuls des prestataires techniques strictement nécessaires au fonctionnement du service (hébergement, infrastructure, traitement automatisé des documents) y ont accès, dans le seul cadre de l'exécution du service."
+          ]
+        },
+        {
+          "heading": "Notre charte d'engagements",
+          "anchor": "charte-donnees",
+          "paragraphs": [
+            "Au-delà des obligations légales, voici les engagements que nous prenons envers vous :"
+          ],
+          "list": [
+            "Vos documents vous appartiennent : ADJUJA n'en revendique aucun droit de propriété.",
+            "Cloisonnement total entre organisations : aucune donnée d'un client n'est visible ou accessible par un autre.",
+            "Aucun usage concurrentiel de vos données : ADJUJA n'utilise jamais le contenu d'un dossier pour informer ou avantager un autre client.",
+            "Aucun entraînement de modèle sur vos données sans votre accord écrit préalable.",
+            "Suppression sur demande sous 72 heures, pour tout ou partie de vos données.",
+            "Conformité à la loi 09-08 relative à la protection des personnes physiques à l'égard du traitement des données à caractère personnel."
+          ]
+        },
+        {
+          "heading": "Vos droits",
+          "paragraphs": [
+            "Conformément à la loi 09-08, vous disposez d'un droit d'accès, de rectification, de suppression et d'opposition sur vos données personnelles. Vous pouvez exercer ces droits à tout moment par simple demande à support@adjuja.com."
+          ]
+        },
+        {
+          "heading": "Sécurité",
+          "paragraphs": [
+            "Nous mettons en œuvre des mesures techniques pour protéger vos données : chiffrement des mots de passe, cloisonnement des données par organisation, et accès restreint aux seules personnes qui en ont besoin pour opérer le service."
+          ]
+        },
+        {
+          "heading": "Cookies et stockage local",
+          "paragraphs": [
+            "ADJUJA utilise le stockage local de votre navigateur pour maintenir votre session de connexion. Aucun cookie publicitaire ni outil de traçage tiers n'est utilisé à ce jour."
+          ]
+        },
+        {
+          "heading": "Contact",
+          "paragraphs": [
+            "Pour toute question relative à vos données personnelles ou à cette politique, écrivez-nous à support@adjuja.com."
+          ]
+        }
+      ]
     }
   }
 }

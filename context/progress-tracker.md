@@ -138,6 +138,100 @@ toujours pas construite.
   fait).
 - **Footer landing** (2026-07-05) : téléphone `+212 661-396413`, adresse `Temara, Maroc`,
   navigation réduite aux liens réellement existants (Blog/Contact/Légal retirés).
+- **Audit site adjuja.com, remédiation B1-B8 partielle** (2026-08-13, rapport source
+  `hafid-taches-docs/audit-strategy/Adjuja_Audit_Site_Web.docx`) :
+  - B2/I5 : grille repriced Essentiel 490 / Pro 990 / Cabinet 2900 MAD (392/792/2320
+    annuel), `enterprise` passe self-serve (`SELF_SERVE_PLAN_CODES`), détail complet et
+    justification dans `context/feature-specs/01-billing-subscriptions/api.md` (révision
+    2026-08-12). I5 (contradiction "50 AOs/mois" + "Génération illimitée" affichées
+    ensemble sur la carte Essentiel) corrigé le 2026-08-13 : `f_unlimited_gen` retiré de
+    `starterFeats` (Essentiel a un vrai plafond dur à 50, pas d'"illimité" à afficher) et
+    dédupliqué de `proFeats` (redondant avec `f_ao_illimite`, même claim).
+  - I4 (mention nominative des providers LLM sur la page tarifs) : déjà corrigé avant
+    cette session, `f_providers` lit "Rédaction assistée par IA" sans nommer
+    GPT-4o/Claude/Mistral. Les noms de providers restent visibles dans
+    `settings.providers.*` (écran authentifié de choix de modèle), ce qui est légitime,
+    seule la page marketing publique était concernée par I4.
+  - B5 : `--l-text-dim` (index.css, palette landing) était #3D5278 sur fond #080B1C, ratio
+    ~2.5:1, illisible -- corrigé à #8CA0BC (~7.8:1, WCAG AA), corrige d'un coup footer +
+    labels FeaturesSection + tout usage `var(--l-dim)`. Plus 3 rgba hardcodés
+    (PricingSection : toggle mensuel/annuel, unités "MAD/mois", footnote) migrés vers ce
+    même token. Fallback `color:#fff` ajouté sur le gradient-clip-text des gros chiffres
+    (Card Analyse, HowItWorksSection) au cas où `background-clip:text` ne s'applique pas.
+  - B7 : 3 champs de qualification à l'inscription (entreprise, secteur_activite,
+    nb_ao_par_an) -- migration Alembic `011_user_qualification_fields.py`, colonnes sur
+    `users`, `UserCreate`/`UserPublic` étendus, `RegisterPage.tsx` avec select secteur
+    (12 options, indépendant de la nomenclature `SecteurPicker`/ao-watcher, volontairement
+    plus simple pour un formulaire public). Vérifié end-to-end (POST /auth/register réel,
+    ligne vérifiée en DB).
+  - B8 : 3 pages légales créées et routées (`/mentions-legales`, `/cgu`,
+    `/confidentialite`), contenu complet en FR/EN via i18n (`locales.legal.*`), charte
+    d'engagements (6 points, loi 09-08) intégrée à la page confidentialité avec ancre
+    `#charte-donnees`. Case à cocher obligatoire (CGU + confidentialité) sur
+    `RegisterPage.tsx`, bouton submit désactivé tant qu'elle n'est pas cochée. **Mentions
+    légales volontairement incomplètes** : pas de RC/ICE/capital social/hébergeur -- la
+    société n'est pas encore immatriculée à ce stade, demande explicite de l'utilisateur de
+    ne pas fabriquer ces informations. À compléter dès l'immatriculation faite.
+  - Effet de bord : le port hôte Postgres du compose dev est passé de 5432 à 5434
+    (`docker-compose.dev.yml` + `.env`) -- 5432 était pris par `aurs_postgres_dev`, un
+    autre projet local sur la même machine. Le réseau Docker interne (`postgres:5432`,
+    utilisé par les autres conteneurs du compose) est inchangé.
+  - **Réécriture homepage (section 6 du rapport), 2026-08-13** :
+    - **B3 corrigé pour de vrai** : `FeaturesSection.tsx` (les "4 modules") existait déjà en
+      code mais n'était importé nulle part dans `LandingPage.tsx` -- section entièrement
+      invisible sur le site réel. Rien de ce que contenait ce fichier n'avait donc d'effet
+      tant qu'il n'était pas câblé. Corrigé : import + rendu ajoutés, et son contenu
+      remplacé (Suivi/Pipeline -> Veille/Go-No-Go, avec 2 nouveaux mockups `VeilleMockup`/
+      `GoNoGoMockup`) pour que veille et Go/No-Go, jusque-là absentes de tout le site
+      (constat B3), soient enfin visibles.
+      Slots : A=Veille, B=Go/No-Go (nouveaux), C=Analyse CPS (`DocMockup` réutilisé),
+      D=Rédaction (`WritingMockup` réutilisé).
+    - 6.1 Hero : `HeroSection.tsx` n'avait aucun appel `t()` (texte 100% en dur) et son CTA
+      pointait vers `onEnterApp` (login) au lieu de `onGoRegister` -- nouveaux visiteurs
+      envoyés vers un formulaire de connexion. Copie reprise mot pour mot du rapport
+      (6.1), CTA corrigé vers l'inscription. Clés déplacées vers `landing.hero.*` (arbre
+      i18n réellement utilisé par les composants actifs, pas le `hero.*` top-level qui
+      s'est révélé lui aussi orphelin -- deux arbres i18n parallèles existaient déjà dans
+      ce fichier avant cette session, non nettoyés, seul celui utilisé a été touché).
+    - 6.4 Comment ça marche : 3 étapes reformulées mot pour mot (rapport), la carte de
+      l'étape 1 changée de "Analyse" vers "Veille" (nouveau composant) pour matcher le sens
+      du nouveau texte, `CardExport` supprimé (plus référencé).
+    - 6.5 Bloc confiance : nouvelle section `TrustSection.tsx`, 6 engagements repris tels
+      quels du rapport, lien vers `/confidentialite#charte-donnees`. Placée avant les
+      tarifs comme demandé.
+    - 6.6 Tarifs : ligne d'ancrage ajoutée ("Pro revient à ~56 MAD/jour ouvré, moins d'une
+      heure de consultant") + ligne "1 AO gratuit à l'inscription, sans CB" au-dessus des
+      cartes (clés `freeTrial`/`freeTrialCta` existaient déjà mais n'étaient jamais
+      rendues nulle part -- même symptôme que `FeaturesSection`, du contenu écrit mais non
+      câblé). **I5 corrigé au passage** : `starterFeats` affichait "50 AOs/mois" ET
+      "Génération illimitée" en même temps (contradiction textuelle exacte du constat I5),
+      alors qu'Essentiel a un vrai plafond dur (`plans.py::max_ao_per_month=50`) --
+      `f_unlimited_gen` retiré de `starterFeats`, dédupliqué de `proFeats` (redondant avec
+      `f_ao_illimite`).
+    - 6.7 FAQ : nouvelle section `FaqSection.tsx`, 8 objections rédigées (pas de document
+      "stratégie chapitre 15" trouvé dans le dépôt, confirmé absent avec l'utilisateur qui
+      a demandé de rédiger directement), confidentialité et prix en premier comme demandé.
+    - 6.8 Footer : liens légaux ajoutés (déjà fait, voir plus haut), icônes LinkedIn/X
+      supprimées (`href="#"` mortes), liens nav du footer et de la nav principale
+      convertis de `<button onClick>` vers `<a href>` réels (I1, crawlabilité).
+    - I7 : nav "Inscription"/"Accéder" concurrents corrigés -- poids visuel inversé,
+      "Liste d'attente" (ex-Inscription) devient le bouton plein primaire, "Se connecter"
+      (ex-Accéder) devient un lien texte secondaire.
+    - I4 vérifié déjà propre (pas fait dans cette session, confirmé en relisant le code) :
+      `f_providers` ne nomme aucun provider LLM sur la page tarifs.
+    - Non fait, hors scope choisi : 6.2 (vidéo de démo, aucun asset vidéo disponible,
+      pas de bouton "Voir la démo" ajouté pour ne pas promettre une preuve qui n'existe
+      pas), mobile réel non testé (point 1 du rapport, nécessite un téléphone physique).
+    - **Vérification finale** : `tsc --noEmit` propre, `vite build` propre (chunks >500kB
+      pré-existants, pas aggravés). `pytest` : 6 failed + 7 errors, tous confirmés
+      pré-existants et sans rapport avec les fichiers touchés cette session (billing,
+      user, migration 011, tout le frontend) -- les 7 `ERROR` viennent d'un
+      `ConnectionRefusedError` au démarrage du lifespan FastAPI faute de MinIO
+      (`aurs_minio_dev`, un autre projet local, occupe déjà le port 9000), les 6 `FAILED`
+      touchent `test_worker_db`/`test_worker_config`/génération/rate-limiting, aucun
+      recoupement avec le code modifié. Migration 011 appliquée et vérifiée en réel
+      (`POST /auth/register` avec entreprise/secteur_activite/nb_ao_par_an, ligne
+      confirmée en base puis nettoyée).
 
 ## En cours
 
@@ -171,6 +265,9 @@ toujours pas construite.
   profondeur -- contournement SQL manuel appliqué, mais si un futur service ajoute des
   tables via le même pattern (`Base.metadata.create_all(engine, checkfirst=True)`), vérifier
   en DB directement plutôt que de faire confiance au message de succès.
+- **Mentions légales incomplètes** : `/mentions-legales` n'a ni RC, ni ICE, ni capital
+  social, ni identité de l'hébergeur -- à ajouter dès que la société est immatriculée et
+  que le fournisseur d'hébergement de prod est confirmé.
 - **Bucket MinIO `offria` côté ao-watcher** : pas de `_ensure_bucket()`/`bucket_exists()`
   avant `put_object` dans `download_tasks.py`/`download_bdc_tasks.py`, contrairement au
   client MinIO de l'app principale qui a ce garde-fou. Si le bucket est un jour supprimé ou

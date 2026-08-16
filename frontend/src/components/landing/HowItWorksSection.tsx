@@ -1,7 +1,88 @@
 import { useTranslation } from "react-i18next";
 
 /* ------------------------------------------------------------------ */
-/* Card 1 -- Analyse DAO                                                */
+/* Card 1 -- Veille                                                     */
+/* ------------------------------------------------------------------ */
+
+function CardVeille() {
+  const aos = [
+    { ref: "AO-2026-114", acheteur: "Commune urbaine de Kénitra", secteur: "BTP", nouveau: true  },
+    { ref: "AO-2026-112", acheteur: "ONEE - Branche Eau",         secteur: "BTP", nouveau: true  },
+    { ref: "AO-2026-108", acheteur: "Région Rabat-Salé-Kénitra",  secteur: "Ingénierie", nouveau: false },
+  ];
+
+  return (
+    <div
+      className="w-full rounded-[14px] overflow-hidden"
+      style={{
+        background: "rgba(8,12,27,0.9)",
+        border: "1px solid rgba(43,121,232,0.18)",
+        boxShadow: "inset 0 1px 0 rgba(255,255,255,0.05)",
+      }}
+    >
+      <div
+        className="px-6 py-4 flex items-center justify-between"
+        style={{ borderBottom: "1px solid rgba(255,255,255,0.06)", background: "rgba(255,255,255,0.03)" }}
+      >
+        <span className="text-[12px] font-medium" style={{ color: "var(--l-text-muted)" }}>
+          Veille · secteur BTP
+        </span>
+        <span
+          className="flex items-center gap-[6px] text-[10px] font-bold uppercase tracking-[.14em]"
+          style={{ color: "var(--l-teal)", textShadow: "0 0 12px rgba(27,201,168,0.6)" }}
+        >
+          <span
+            className="w-[6px] h-[6px] rounded-full"
+            style={{ background: "var(--l-teal)", boxShadow: "0 0 6px rgba(27,201,168,0.9)", animation: "blink 1.4s step-end infinite" }}
+          />
+          En direct
+        </span>
+      </div>
+
+      <div className="px-6 pt-4 pb-5 flex flex-col gap-[10px]">
+        {aos.map(ao => (
+          <div
+            key={ao.ref}
+            className="flex items-center gap-4 rounded-[10px] px-4 py-3"
+            style={{
+              background: ao.nouveau ? "rgba(43,121,232,0.08)" : "rgba(255,255,255,0.02)",
+              border: `1px solid ${ao.nouveau ? "rgba(43,121,232,0.22)" : "rgba(255,255,255,0.05)"}`,
+            }}
+          >
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-[8px] mb-[3px]">
+                <span className="text-[13px] font-semibold" style={{ color: "#EEF4FF" }}>{ao.ref}</span>
+                {ao.nouveau && (
+                  <span
+                    className="text-[9px] font-bold uppercase tracking-[.08em] px-[6px] py-[2px] rounded-full"
+                    style={{ color: "var(--l-blue)", background: "rgba(43,121,232,0.15)" }}
+                  >
+                    Nouveau
+                  </span>
+                )}
+              </div>
+              <span
+                className="block text-[12px] overflow-hidden text-ellipsis whitespace-nowrap"
+                style={{ color: "var(--l-text-muted)" }}
+              >
+                {ao.acheteur}
+              </span>
+            </div>
+            <span
+              className="shrink-0 text-[10px] font-semibold px-[8px] py-[3px] rounded-full"
+              style={{ color: "var(--l-teal)", background: "rgba(27,201,168,0.12)" }}
+            >
+              {ao.secteur}
+            </span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/* Card 2 -- Analyse DAO                                                */
 /* ------------------------------------------------------------------ */
 
 function CardAnalyse() {
@@ -40,7 +121,7 @@ function CardAnalyse() {
             <polyline points="14 2 14 8 20 8" />
           </svg>
           <span className="text-[12px] font-medium tracking-wide" style={{ color: "var(--l-text-muted)" }}>
-            DAO-ONCF-2025.pdf
+            DAO-2026-041.pdf
           </span>
           <span
             className="ml-auto text-[10px] font-bold uppercase tracking-[.14em]"
@@ -96,6 +177,10 @@ function CardAnalyse() {
                 className="font-black leading-none tracking-[-0.04em]"
                 style={{
                   fontSize: "clamp(1.8rem,3vw,2.6rem)",
+                  /* color: fallback visible si background-clip:text n'est pas applique
+                     (sinon WebkitTextFillColor:transparent rend le texte invisible, pas
+                     juste peu contraste -- constat audit B5 "chiffres presque invisibles") */
+                  color: "#fff",
                   background: "linear-gradient(135deg,#fff 30%,var(--l-teal) 100%)",
                   WebkitBackgroundClip: "text",
                   WebkitTextFillColor: "transparent",
@@ -114,7 +199,7 @@ function CardAnalyse() {
 }
 
 /* ------------------------------------------------------------------ */
-/* Card 2 -- Génération                                                  */
+/* Card 3 -- Génération                                                  */
 /* ------------------------------------------------------------------ */
 
 function CardGeneration() {
@@ -246,102 +331,6 @@ function CardGeneration() {
 }
 
 /* ------------------------------------------------------------------ */
-/* Card 3 -- Export                                                      */
-/* ------------------------------------------------------------------ */
-
-function CardExport() {
-  const files = [
-    { label: "Note méthodologique",   size: "2.4 MB", done: true  },
-    { label: "Acte d'engagement",     size: "0.6 MB", done: true  },
-    { label: "CPS paraphé",           size: "1.8 MB", done: true  },
-    { label: "Bordereau des prix",    size: "0.8 MB", done: false },
-  ];
-
-  return (
-    <div
-      className="w-full rounded-[14px] overflow-hidden"
-      style={{
-        background: "rgba(8,12,27,0.9)",
-        border: "1px solid rgba(43,121,232,0.18)",
-        boxShadow: "inset 0 1px 0 rgba(255,255,255,0.05)",
-      }}
-    >
-      <div
-        className="px-6 py-4 flex items-center justify-between"
-        style={{ borderBottom: "1px solid rgba(255,255,255,0.06)", background: "rgba(255,255,255,0.03)" }}
-      >
-        <span className="text-[12px] font-medium" style={{ color: "var(--l-text-muted)" }}>
-          AO-2025-041 · Dossier final
-        </span>
-        <span
-          className="text-[10px] font-bold uppercase tracking-[.14em]"
-          style={{ color: "#22c55e", textShadow: "0 0 12px rgba(34,197,94,0.6)" }}
-        >
-          Prêt a soumettre
-        </span>
-      </div>
-
-      <div className="px-6 pt-4 pb-5 flex flex-col gap-[8px]">
-        {files.map((f) => (
-          <div key={f.label} className="flex items-center gap-4">
-            <div
-              className="w-9 h-9 rounded-[9px] flex items-center justify-center shrink-0"
-              style={{
-                background: f.done ? "rgba(43,121,232,0.15)" : "rgba(255,255,255,0.03)",
-                border: f.done ? "none" : "1px solid rgba(255,255,255,0.07)",
-                boxShadow: f.done ? "0 0 12px rgba(43,121,232,0.2)" : "none",
-              }}
-            >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
-                stroke={f.done ? "var(--l-blue)" : "rgba(168,196,232,0.3)"}
-                strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-                <polyline points="14 2 14 8 20 8" />
-              </svg>
-            </div>
-            <span
-              className="flex-1 text-[14px] font-medium"
-              style={{ color: f.done ? "#EEF4FF" : "rgba(168,196,232,0.3)" }}
-            >
-              {f.label}
-            </span>
-            <span className="text-[12px]" style={{ color: "var(--l-text-muted)" }}>{f.size}</span>
-            {f.done ? (
-              <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                <circle cx="10" cy="10" r="10" fill="rgba(34,197,94,0.12)" />
-                <path d="M6 10.2l2.5 2.5 5.5-6"
-                  stroke="#22c55e" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-            ) : (
-              <span className="text-[10px] font-bold uppercase tracking-[.08em]"
-                style={{ color: "rgba(168,196,232,0.3)" }}>
-                En attente
-              </span>
-            )}
-          </div>
-        ))}
-
-        <div className="mt-3 pt-4" style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}>
-          <button
-            className="w-full py-[12px] rounded-[10px] flex items-center justify-center gap-[11px] cursor-pointer border-0 font-bold text-[15px] text-white tracking-[-0.01em]"
-            style={{
-              background: "linear-gradient(135deg,var(--l-indigo),var(--l-blue))",
-              boxShadow: "0 8px 36px rgba(43,121,232,0.45), 0 0 0 1px rgba(43,121,232,0.3)",
-            }}
-          >
-            Télécharger le dossier complet
-            <svg width="15" height="15" fill="none" viewBox="0 0 24 24"
-              stroke="white" strokeWidth={2.5}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M5 12h14M12 5l7 7-7 7" />
-            </svg>
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-/* ------------------------------------------------------------------ */
 /* Section principale                                                    */
 /* ------------------------------------------------------------------ */
 
@@ -349,9 +338,9 @@ export default function HowItWorksSection() {
   const { t } = useTranslation();
 
   const steps = [
-    { num: "01", title: t("landing.how.t1Title"), desc: t("landing.how.t1Desc"), card: <CardAnalyse /> },
-    { num: "02", title: t("landing.how.t2Title"), desc: t("landing.how.t2Desc"), card: <CardGeneration /> },
-    { num: "03", title: t("landing.how.t3Title"), desc: t("landing.how.t3Desc"), card: <CardExport /> },
+    { num: "01", title: t("landing.how.t1Title"), desc: t("landing.how.t1Desc"), card: <CardVeille /> },
+    { num: "02", title: t("landing.how.t2Title"), desc: t("landing.how.t2Desc"), card: <CardAnalyse /> },
+    { num: "03", title: t("landing.how.t3Title"), desc: t("landing.how.t3Desc"), card: <CardGeneration /> },
   ];
 
   return (

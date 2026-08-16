@@ -104,6 +104,9 @@ class User(Base):
     verification_token: Mapped[str | None] = mapped_column(String(36), nullable=True, index=True)
     generations_used: Mapped[int]        = mapped_column(Integer, default=0)
     max_generations: Mapped[int]         = mapped_column(Integer, default=0)
+    entreprise: Mapped[str]              = mapped_column(String(255), default="")
+    secteur_activite: Mapped[str]        = mapped_column(String(100), default="")
+    nb_ao_par_an: Mapped[int | None]     = mapped_column(Integer, nullable=True)
 
     org: Mapped["Organization | None"]   = relationship(back_populates="users")
     launches: Mapped[list["Launch"]]     = relationship(back_populates="user", cascade="all, delete-orphan")

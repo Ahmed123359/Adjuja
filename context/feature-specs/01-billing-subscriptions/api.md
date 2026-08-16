@@ -44,6 +44,51 @@ event. Fixed by switching the delimiter to `__` (not present in UUIDs or plan co
 encoding the plan: `sub__{plan_code}__{org_id}__{random}`. Verified end-to-end with a
 full UUID org_id round-tripping correctly through create_checkout -> parse_webhook.
 
+## Revision 2026-08-12 : full grid repriced, Enterprise moved to self-serve too
+
+Source: site audit `hafid-taches-docs/audit-strategy/Adjuja_Audit_Site_Web.docx`
+(constat B2, 2026-08-12), plan approved via `EnterPlanMode`/`ExitPlanMode` and confirmed
+directly by the user before implementation, not re-litigated during coding per their
+explicit instruction to follow the report's own decisions without re-asking.
+
+The old grid (Starter 55 MAD, Pro 299 MAD self-serve, Entreprise sur devis) is replaced
+by **Essentiel 490 MAD, Pro 990 MAD, Cabinet 2900 MAD** (392/792/2320 MAD annual, ~20%
+off, same ratio as before), all three self-serve via CMI. `SELF_SERVE_PLAN_CODES` now
+includes `enterprise`. Internal `Plan.code` values (`free`/`starter`/`pro`/`enterprise`)
+are unchanged on purpose, only `label` and the new `price_mad`/`price_mad_annual` fields
+changed, so no existing `Subscription.plan_code` row in DB is invalidated and no
+migration was needed.
+
+**Why the old grid was wrong** (audit's own framing, not re-derived here): 55 MAD/month
+for 50 AO generations is roughly 1.10 MAD per dossier, and the report's cost analysis
+concluded the compute cost of analyzing one real CPS plus generating a full technical
+offer very likely exceeds that per-dossier price, making the entry tier structurally
+loss-making, worse the more an actual customer uses it. Separately, a 55 MAD price point
+undermines every claim about expertise, regulatory compliance, and confidentiality that
+the rest of the product's positioning depends on, and makes a later price increase to
+something like 490 MAD nearly impossible to justify to existing customers. The new grid
+anchors on the cost of a consultant's working day instead of a generic software price.
+
+**Pro's fair-use ceiling (300 AO/month, see prior revision) was reconsidered, not
+changed**: at 990 MAD instead of 299 MAD the per-appel margin is meaningfully better, but
+absent real usage data showing the ceiling is actually being hit by legitimate customers,
+lowering the safety margin without evidence isn't justified. Left at 300, flagged in
+`progress-tracker.md` as a number to revisit once there's real usage data, not a report
+finding.
+
+**Cabinet (ex-Entreprise) losing "Sur devis"**: the previous entry for Entreprise
+(on-premise deployment, SSO, dedicated onboarding, uncapped everything) was deliberately
+kept sales-assisted earlier in this same session, reasoning that on-premise/SSO genuinely
+vary per client and don't fit a flat self-serve price. The audit's own recommended grid
+does not preserve that distinction, it prices a third tier ("Cabinet 2900 MAD") anchored
+on consultant-day cost with no "contact us" step. Followed as instructed: `enterprise` is
+self-serve now, `max_users`/`max_ao_per_month`/`max_documents` stay uncapped (`None`) to
+preserve the tier's existing value proposition, `has_sso=True` unchanged. The pricing
+card's feature list still advertises SSO and "Déploiement on-premise" even though those
+specific commitments can't literally be fulfilled by a same-day self-serve checkout;
+that tension is real and unresolved by the report itself, noted in
+`progress-tracker.md` rather than silently smoothed over.
+
 ## Feature -> mechanism mapping
 
 Grounded in what actually exists today, not invented:

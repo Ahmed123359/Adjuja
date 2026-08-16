@@ -14,6 +14,11 @@ class UserCreate(BaseModel):
     prenom:   str = Field(..., min_length=1, description="Prénom")
     email:    EmailStr = Field(..., description="Adresse e-mail (identifiant unique)")
     password: str = Field(..., description="Mot de passe")
+    # Qualification pilotes (audit B7) : permet de trier la liste d'attente par
+    # profil avant d'ouvrir l'accès par vagues, cf. context/feature-specs.
+    entreprise:       str = Field("", description="Nom de l'entreprise")
+    secteur_activite: str = Field("", description="Secteur d'activité de l'entreprise")
+    nb_ao_par_an:     int | None = Field(None, ge=0, description="Nombre d'AO traités par an")
 
     @field_validator("password")
     @classmethod
@@ -45,6 +50,9 @@ class UserPublic(BaseModel):
     email_verified:   bool = True
     generations_used: int  = 0
     max_generations:  int  = 0
+    entreprise:       str  = ""
+    secteur_activite: str  = ""
+    nb_ao_par_an:     int | None = None
 
 
 class Token(BaseModel):

@@ -1,23 +1,7 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
+import { Link } from "react-router-dom";
 
-function IconLinkedin() {
-  return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
-      <path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z" />
-      <rect x="2" y="9" width="4" height="12" />
-      <circle cx="4" cy="4" r="2" />
-    </svg>
-  );
-}
-
-function IconX() {
-  return (
-    <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor">
-      <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.742l7.735-8.835L1.254 2.25H8.08l4.259 5.63 5.905-5.63zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
-    </svg>
-  );
-}
 
 function ColTitle({ children }: { children: React.ReactNode }) {
   return (
@@ -27,9 +11,9 @@ function ColTitle({ children }: { children: React.ReactNode }) {
   );
 }
 
-function NavLink({ children }: { children: React.ReactNode }) {
+function NavLink({ href, children }: { href: string; children: React.ReactNode }) {
   return (
-    <a href="#" className="block mb-4 text-[15px] text-l-text-muted hover:text-l-text no-underline transition-colors">
+    <a href={href} className="block mb-4 text-[15px] text-l-text-muted hover:text-l-text no-underline transition-colors">
       {children}
     </a>
   );
@@ -69,7 +53,11 @@ export default function LandingFooter({ onEnterApp }: { onEnterApp: () => void }
     setTimeout(() => setToast(null), 4000);
   }
 
-  const NAV_LINKS   = ["navHome", "navFeatures", "navPricing"] as const;
+  const NAV_LINKS = [
+    { key: "navHome",     href: "/" },
+    { key: "navFeatures", href: "/#features" },
+    { key: "navPricing",  href: "/#pricing" },
+  ] as const;
   const CONTACT     = [
     { label: t("landing.footer.contactEmail"),   value: t("landing.footer.contactEmailValue") },
     { label: t("landing.footer.contactPhone"),   value: t("landing.footer.contactPhoneValue") },
@@ -90,8 +78,8 @@ export default function LandingFooter({ onEnterApp }: { onEnterApp: () => void }
           {/* Navigation */}
           <div>
             <ColTitle>{t("landing.footer.navTitle")}</ColTitle>
-            {NAV_LINKS.map(k => (
-              <NavLink key={k}>{t(`landing.footer.${k}`)}</NavLink>
+            {NAV_LINKS.map(({ key, href }) => (
+              <NavLink key={key} href={href}>{t(`landing.footer.${key}`)}</NavLink>
             ))}
           </div>
 
@@ -139,9 +127,22 @@ export default function LandingFooter({ onEnterApp }: { onEnterApp: () => void }
       {/* Bottom bar */}
       <div className="border-t border-white/[0.07]">
         <div className="max-w-[1280px] mx-auto px-10 py-6 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <p className="m-0 text-[14px] text-l-text-dim">
-            {t("landing.footer.copyright")}
-          </p>
+          <div className="flex flex-col sm:flex-row items-center gap-2 sm:gap-5">
+            <p className="m-0 text-[14px] text-l-text-dim">
+              {t("landing.footer.copyright")}
+            </p>
+            <div className="flex items-center gap-4">
+              <Link to="/mentions-legales" className="text-[13px] text-l-text-dim hover:text-l-text no-underline transition-colors">
+                {t("legal.mentions.title")}
+              </Link>
+              <Link to="/cgu" className="text-[13px] text-l-text-dim hover:text-l-text no-underline transition-colors">
+                {t("legal.cgu.title")}
+              </Link>
+              <Link to="/confidentialite" className="text-[13px] text-l-text-dim hover:text-l-text no-underline transition-colors">
+                {t("legal.confidentialite.title")}
+              </Link>
+            </div>
+          </div>
           <div className="flex items-center gap-6">
             <a
               href="https://continuum.ma"
@@ -152,14 +153,6 @@ export default function LandingFooter({ onEnterApp }: { onEnterApp: () => void }
               <span className="text-[15px] font-medium text-l-text">Made by</span>
               <img src="/continuium-light.png" alt="Continuum" className="h-9 w-auto object-contain" />
             </a>
-            <div className="flex items-center gap-5">
-              <a href="#" aria-label="LinkedIn" className="text-l-text-dim hover:text-l-text transition-colors">
-                <IconLinkedin />
-              </a>
-              <a href="#" aria-label="X" className="text-l-text-dim hover:text-l-text transition-colors">
-                <IconX />
-              </a>
-            </div>
           </div>
         </div>
       </div>

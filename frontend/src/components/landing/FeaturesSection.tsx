@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
 
 const FEATURES_CSS = `
@@ -6,7 +6,7 @@ const FEATURES_CSS = `
   display: grid;
   grid-template-columns: 1fr 1fr 1fr;
   grid-template-rows: auto auto;
-  gap: 12px;
+  gap: 14px;
 }
 .feat-a { grid-column: 1; grid-row: 1; }
 .feat-b { grid-column: 2; grid-row: 1; }
@@ -14,17 +14,37 @@ const FEATURES_CSS = `
 .feat-d { grid-column: 1 / 3; grid-row: 2; }
 
 .feat-card {
-  background: var(--l-surface);
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  background:
+    radial-gradient(120% 100% at 15% -10%, rgba(43,121,232,0.10), transparent 55%),
+    linear-gradient(180deg, rgba(255,255,255,0.05), rgba(255,255,255,0) 40%),
+    var(--l-surface);
   border: 1px solid var(--l-border);
-  border-radius: var(--l-radius);
-  padding: 22px;
-  display: flex; flex-direction: column; gap: 16px;
-  transition: border-color .2s;
+  border-radius: 18px;
+  padding: 24px;
+  display: flex; flex-direction: column; gap: 18px;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.06),
+    0 1px 1px rgba(0,0,0,0.2),
+    0 16px 40px -16px rgba(0,0,0,0.6);
+  transition: border-color .25s, box-shadow .25s, transform .25s;
 }
-.feat-card:hover { border-color: var(--l-border-strong); }
+.feat-card:hover {
+  border-color: var(--l-border-strong);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.09),
+    0 1px 1px rgba(0,0,0,0.25),
+    0 26px 56px -18px rgba(0,0,0,0.7);
+  transform: translateY(-3px);
+}
 
 .feat-card-accent {
-  background: var(--l-surface-2);
+  background:
+    radial-gradient(120% 100% at 15% -10%, rgba(43,121,232,0.16), transparent 55%),
+    linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0) 40%),
+    var(--l-surface-2);
   border: 1px solid var(--l-border-strong);
 }
 
@@ -36,12 +56,104 @@ const FEATURES_CSS = `
   .feat-d { grid-column: 1 / 3; grid-row: 3; }
 }
 @media (max-width: 580px) {
-  .feat-grid { grid-template-columns: 1fr; }
+  .feat-grid { grid-template-columns: 1fr; gap: 12px; }
   .feat-a, .feat-b, .feat-c, .feat-d { grid-column: 1 !important; grid-row: auto !important; }
+  .feat-card { padding: 18px; border-radius: 14px; }
 }
 `;
 
 /* ----- Mockups (toujours dark, tokens CSS) ----- */
+
+function VeilleMockup() {
+  const aos = [
+    { ref: "AO-2026-114", secteur: "BTP",        nouveau: true },
+    { ref: "AO-2026-112", secteur: "BTP",        nouveau: true },
+    { ref: "AO-2026-108", secteur: "Ingénierie", nouveau: false },
+  ];
+  return (
+    <div style={{
+      background: "var(--l-mk-bg)", border: "1px solid var(--l-mk-border)",
+      borderRadius: "var(--l-radius)", overflow: "hidden", fontSize: 10,
+    }}>
+      <div style={{
+        background: "var(--l-mk-surf)", padding: "7px 12px",
+        display: "flex", alignItems: "center", justifyContent: "space-between",
+        borderBottom: "1px solid var(--l-mk-border)",
+      }}>
+        <span style={{ color: "var(--l-text-dim)" }}>Secteur BTP</span>
+        <span style={{
+          display: "flex", alignItems: "center", gap: 5,
+          color: "#22c55e", fontWeight: 700, fontSize: 8.5, textTransform: "uppercase" as const, letterSpacing: ".08em",
+        }}>
+          <span style={{ width: 5, height: 5, borderRadius: "50%", background: "#22c55e", animation: "blink 1.4s step-end infinite" }} />
+          En direct
+        </span>
+      </div>
+      <div style={{ padding: "10px 12px", display: "flex", flexDirection: "column", gap: 6 }}>
+        {aos.map(ao => (
+          <div key={ao.ref} style={{
+            display: "flex", alignItems: "center", justifyContent: "space-between",
+            padding: "6px 9px", borderRadius: "var(--l-radius)",
+            background: ao.nouveau ? "var(--l-blue-a)" : "transparent",
+          }}>
+            <span style={{ color: "var(--l-text)", fontWeight: 600 }}>{ao.ref}</span>
+            {ao.nouveau
+              ? <span style={{ color: "var(--l-blue)", fontWeight: 700, fontSize: 8.5, textTransform: "uppercase" as const }}>Nouveau</span>
+              : <span style={{ color: "var(--l-text-dim)", fontSize: 8.5 }}>{ao.secteur}</span>}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function GoNoGoMockup() {
+  const criteres = [
+    { label: "Budget compatible",       ok: true },
+    { label: "Délai réalisable",        ok: true },
+    { label: "Références suffisantes",  ok: true },
+    { label: "Certification requise",   ok: false },
+  ];
+  return (
+    <div style={{
+      background: "var(--l-mk-bg)", border: "1px solid var(--l-mk-border)",
+      borderRadius: "var(--l-radius)", overflow: "hidden", fontSize: 10,
+    }}>
+      <div style={{
+        background: "var(--l-mk-surf)", padding: "7px 12px",
+        borderBottom: "1px solid var(--l-mk-border)",
+      }}>
+        <span style={{ color: "var(--l-text-dim)" }}>AO-2026-114 · Verdict</span>
+      </div>
+      <div style={{ padding: "12px", display: "flex", gap: 10, alignItems: "center" }}>
+        <div style={{
+          width: 46, height: 46, borderRadius: "50%", flexShrink: 0,
+          background: "rgba(34,197,94,0.14)", border: "2px solid #22c55e",
+          display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column",
+        }}>
+          <span style={{ color: "#22c55e", fontWeight: 800, fontSize: 12, lineHeight: 1 }}>GO</span>
+          <span style={{ color: "#22c55e", fontSize: 7.5, marginTop: 1 }}>82/100</span>
+        </div>
+        <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 4 }}>
+          {criteres.map(c => (
+            <div key={c.label} style={{ display: "flex", alignItems: "center", gap: 5 }}>
+              <span style={{
+                width: 12, height: 12, borderRadius: "50%", flexShrink: 0,
+                display: "flex", alignItems: "center", justifyContent: "center",
+                background: c.ok ? "rgba(34,197,94,0.15)" : "rgba(239,68,68,0.15)",
+              }}>
+                <span style={{ color: c.ok ? "#22c55e" : "#ef4444", fontWeight: 800, fontSize: 7.5 }}>
+                  {c.ok ? "✓" : "✕"}
+                </span>
+              </span>
+              <span style={{ color: "var(--l-text-muted)", fontSize: 9 }}>{c.label}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
 
 function DocMockup() {
   const rows = [
@@ -65,7 +177,7 @@ function DocMockup() {
         {["#ff5f57","#febc2e","#28c840"].map(c => (
           <div key={c} style={{ width: 7, height: 7, borderRadius: "50%", background: c }} />
         ))}
-        <span style={{ color: "var(--l-text-dim)", marginLeft: 6 }}>DAO-ONCF-2025.pdf</span>
+        <span style={{ color: "var(--l-text-dim)", marginLeft: 6 }}>DAO-2026-041.pdf</span>
       </div>
       <div style={{ padding: "12px", display: "flex", gap: 8 }}>
         <div style={{ flex: 1 }}>
@@ -167,117 +279,6 @@ function WritingMockup() {
   );
 }
 
-function AOTableMockup() {
-  const rows = [
-    { ref: "AO-2025-041", acheteur: "ONCF",             statut: "Gagné",   color: "#22c55e" },
-    { ref: "AO-2025-038", acheteur: "Ministère Santé",  statut: "En cours", color: "var(--l-blue)" },
-    { ref: "AO-2025-035", acheteur: "Marsa Maroc",      statut: "En cours", color: "var(--l-blue)" },
-    { ref: "AO-2025-032", acheteur: "OCP Group",        statut: "Soumis",   color: "#f59e0b" },
-    { ref: "AO-2025-029", acheteur: "Commune Rabat",    statut: "Gagné",   color: "#22c55e" },
-  ];
-  return (
-    <div style={{
-      background: "var(--l-mk-bg)", border: "1px solid var(--l-mk-border)",
-      borderRadius: "var(--l-radius)", overflow: "hidden", fontSize: 10,
-    }}>
-      <div style={{
-        background: "var(--l-mk-surf)", padding: "7px 12px",
-        borderBottom: "1px solid var(--l-mk-border)", display: "flex", gap: 12,
-      }}>
-        {["Référence", "Acheteur", "Statut"].map(h => (
-          <span key={h} style={{
-            color: "var(--l-text-dim)", fontWeight: 600, fontSize: 9,
-            textTransform: "uppercase" as const, letterSpacing: ".05em",
-            flex: h === "Acheteur" ? 1 : ("none" as any),
-            minWidth: h === "Référence" ? 72 : h === "Statut" ? 58 : "auto",
-          }}>{h}</span>
-        ))}
-      </div>
-      {rows.map((r, i) => (
-        <div key={r.ref} style={{
-          padding: "7px 12px",
-          borderBottom: i < rows.length - 1 ? "1px solid var(--l-mk-border)" : "none",
-          display: "flex", gap: 12, alignItems: "center",
-        }}>
-          <span style={{ color: "var(--l-text-muted)", minWidth: 72 }}>{r.ref}</span>
-          <span style={{
-            color: "var(--l-text)", flex: 1,
-            overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" as const,
-          }}>{r.acheteur}</span>
-          <div style={{ display: "flex", alignItems: "center", gap: 4, minWidth: 58 }}>
-            <div style={{ width: 5, height: 5, borderRadius: "50%", background: r.color, flexShrink: 0 }} />
-            <span style={{ color: r.color }}>{r.statut}</span>
-          </div>
-        </div>
-      ))}
-    </div>
-  );
-}
-
-function PipelineMockup() {
-  const steps = [
-    { label: "DAO reçu",   done: true,  active: false },
-    { label: "Analyse",    done: true,  active: false },
-    { label: "Rédaction",  done: false, active: true  },
-    { label: "Validation", done: false, active: false },
-    { label: "Soumis",     done: false, active: false },
-  ];
-  return (
-    <div style={{
-      background: "var(--l-mk-bg)", border: "1px solid var(--l-mk-border)",
-      borderRadius: "var(--l-radius)", padding: "16px",
-    }}>
-      <div style={{ display: "flex", alignItems: "flex-start" }}>
-        {steps.map((s, i) => (
-          <React.Fragment key={s.label}>
-            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6, flex: 1 }}>
-              <div style={{
-                width: 30, height: 30, borderRadius: "50%",
-                background: s.done ? "var(--l-blue)" : s.active ? "var(--l-blue-a)" : "var(--l-mk-surf)",
-                border: s.active ? "2px solid var(--l-blue)" : s.done ? "none" : "1.5px solid var(--l-mk-border)",
-                display: "flex", alignItems: "center", justifyContent: "center",
-              }}>
-                {s.done
-                  ? <svg width="12" height="12" viewBox="0 0 10 10" fill="none">
-                      <path d="M1.5 5l2.5 2.5 4.5-5" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                    </svg>
-                  : <div style={{
-                      width: 7, height: 7, borderRadius: "50%",
-                      background: s.active ? "var(--l-blue)" : "var(--l-mk-border)",
-                    }} />
-                }
-              </div>
-              <span style={{
-                fontSize: 9, textAlign: "center", lineHeight: 1.3,
-                color: s.active ? "var(--l-blue)" : s.done ? "var(--l-text-muted)" : "var(--l-text-dim)",
-                fontWeight: s.active ? 600 : 400,
-              }}>{s.label}</span>
-            </div>
-            {i < steps.length - 1 && (
-              <div style={{
-                height: 1.5, flex: 0.4, marginTop: 14,
-                background: s.done ? "var(--l-blue)" : "var(--l-mk-border)", borderRadius: 1,
-              }} />
-            )}
-          </React.Fragment>
-        ))}
-      </div>
-      <div style={{
-        marginTop: 12, padding: "9px 11px",
-        background: "var(--l-blue-a)", borderRadius: "var(--l-radius)",
-      }}>
-        <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 5 }}>
-          <span style={{ color: "var(--l-text)", fontSize: 10, fontWeight: 500 }}>AO-2025-041 Rédaction mémoire</span>
-          <span style={{ color: "var(--l-blue)", fontSize: 10, fontWeight: 600 }}>68%</span>
-        </div>
-        <div style={{ height: 4, background: "var(--l-mk-border)", borderRadius: 2, overflow: "hidden" }}>
-          <div style={{ height: "100%", width: "68%", background: "var(--l-blue)", borderRadius: 2 }} />
-        </div>
-      </div>
-    </div>
-  );
-}
-
 /* ----- Section principale ----- */
 
 export default function FeaturesSection() {
@@ -294,18 +295,12 @@ export default function FeaturesSection() {
     <section id="features" style={{ background: "var(--l-bg)", padding: "112px 32px 120px" }}>
       <div style={{ maxWidth: 1120, margin: "0 auto" }}>
 
-        {/* Header aligné à gauche */}
-        <div style={{ marginBottom: 56 }}>
-          <p style={{
-            fontSize: 11, fontWeight: 700, letterSpacing: ".12em",
-            textTransform: "uppercase", color: "var(--l-blue)", margin: "0 0 16px",
-          }}>
-            Fonctionnalités
-          </p>
+        {/* Header centré */}
+        <div className="animate-on-scroll" style={{ marginBottom: 64, textAlign: "center" }}>
           <h2 style={{
-            fontSize: "clamp(1.8rem, 3vw, 2.6rem)",
-            fontWeight: 700, lineHeight: 1.12, letterSpacing: "-0.025em",
-            color: "var(--l-text)", margin: 0, maxWidth: 520,
+            fontSize: "clamp(2rem, 3.6vw, 3rem)",
+            fontWeight: 700, lineHeight: 1.14, letterSpacing: "-0.025em",
+            color: "var(--l-text)", margin: "0 auto", maxWidth: 620,
           }}>
             {t("landing.features.title")}
             <br />
@@ -314,44 +309,44 @@ export default function FeaturesSection() {
         </div>
 
         {/* Bento grid */}
-        <div className="feat-grid">
+        <div className="feat-grid animate-on-scroll">
 
-          {/* A - Analyse DAO */}
+          {/* A - Veille */}
           <div className="feat-a feat-card">
-            <DocMockup />
+            <VeilleMockup />
             <div>
-              <p style={{ margin: "0 0 6px", fontSize: 15, fontWeight: 700, color: "var(--l-text)" }}>
-                {t("landing.features.analyse.title")}
+              <p style={{ margin: "0 0 6px", fontSize: 16.5, fontWeight: 700, letterSpacing: "-0.015em", color: "var(--l-text)" }}>
+                {t("landing.features.veille.title")}
               </p>
               <p style={{ margin: 0, fontSize: 13, lineHeight: 1.68, color: "var(--l-text-muted)" }}>
-                {t("landing.features.analyse.desc")}
+                {t("landing.features.veille.desc")}
               </p>
             </div>
           </div>
 
-          {/* B - Génération */}
+          {/* B - Go/No-Go */}
           <div className="feat-b feat-card">
-            <WritingMockup />
+            <GoNoGoMockup />
             <div>
-              <p style={{ margin: "0 0 6px", fontSize: 15, fontWeight: 700, color: "var(--l-text)" }}>
-                {t("landing.features.gen.title")}
+              <p style={{ margin: "0 0 6px", fontSize: 16.5, fontWeight: 700, letterSpacing: "-0.015em", color: "var(--l-text)" }}>
+                {t("landing.features.gonogo.title")}
               </p>
               <p style={{ margin: 0, fontSize: 13, lineHeight: 1.68, color: "var(--l-text-muted)" }}>
-                {t("landing.features.gen.desc")}
+                {t("landing.features.gonogo.desc")}
               </p>
             </div>
           </div>
 
-          {/* C - Suivi (tall, accent) */}
+          {/* C - Analyse du CPS (tall, accent) */}
           <div className="feat-c feat-card feat-card-accent">
             <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 16 }}>
-              <AOTableMockup />
+              <DocMockup />
               <div>
-                <p style={{ margin: "0 0 6px", fontSize: 15, fontWeight: 700, color: "var(--l-text)" }}>
-                  {t("landing.features.suivi.title")}
+                <p style={{ margin: "0 0 6px", fontSize: 16.5, fontWeight: 700, letterSpacing: "-0.015em", color: "var(--l-text)" }}>
+                  {t("landing.features.analyse.title")}
                 </p>
                 <p style={{ margin: 0, fontSize: 13, lineHeight: 1.68, color: "var(--l-text-muted)" }}>
-                  {t("landing.features.suivi.desc")}
+                  {t("landing.features.analyse.desc")}
                 </p>
               </div>
             </div>
@@ -370,15 +365,15 @@ export default function FeaturesSection() {
             </button>
           </div>
 
-          {/* D - Pipeline (wide) */}
+          {/* D - Rédaction (wide) */}
           <div className="feat-d feat-card">
-            <PipelineMockup />
+            <WritingMockup />
             <div>
-              <p style={{ margin: "0 0 6px", fontSize: 15, fontWeight: 700, color: "var(--l-text)" }}>
-                {t("landing.features.pipeline.title")}
+              <p style={{ margin: "0 0 6px", fontSize: 16.5, fontWeight: 700, letterSpacing: "-0.015em", color: "var(--l-text)" }}>
+                {t("landing.features.gen.title")}
               </p>
               <p style={{ margin: 0, fontSize: 13, lineHeight: 1.68, color: "var(--l-text-muted)" }}>
-                {t("landing.features.pipeline.desc")}
+                {t("landing.features.gen.desc")}
               </p>
             </div>
           </div>

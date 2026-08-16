@@ -272,7 +272,9 @@
   /* Text */
   --l-text:          #EEF4FF;
   --l-text-muted:    #6B8BB3;
-  --l-text-dim:      #3D5278;
+  /* Anciennement #3D5278 : ratio de contraste ~2.5:1 sur --l-bg, illisible (audit
+     adjuja.com B5, 2026-08-12). #8CA0BC atteint ~7.8:1, conforme WCAG AA. */
+  --l-text-dim:      #8CA0BC;
 
   /* Brand */
   --l-blue:          #2B79E8;
