@@ -1,8 +1,8 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { EligibilityVerdict, EligibilityVerdictType, ScrapedAo } from '../../types';
 import WatcherStatusBadge from './WatcherStatusBadge';
-import { updateScrapedAoStatus, importScrapedAo, analyzeScrapedAo } from '../../api';
+import { updateScrapedAoStatus, importScrapedAo, analyzeScrapedAo, fetchScrapedAo } from '../../api';
 import { useIsMobile } from '../../hooks/useIsMobile';
 import { formatTitre, splitReservationClause } from '../../utils/formatTitre';
 
@@ -179,8 +179,43 @@ export default function AoDetailPanel({ ao: initialAo, onClose, onUpdated }: Pro
     }
   };
 
-  const isDownloading = ao.status === 'favorited' && !ao.zip_downloaded_at && !ao.zip_error;
-  const hasZipError   = ao.status === 'favorited' && !!ao.zip_error;
+  const noZipLink      = ao.status === 'favorited' && !ao.zip_url && !ao.zip_downloaded_at && !ao.zip_error;
+  const isDownloading  = ao.status === 'favorited' && !!ao.zip_url && !ao.zip_downloaded_at && !ao.zip_error;
+  const hasZipError    = ao.status === 'favorited' && !!ao.zip_error;
+
+  /** Le passage en "favorited" déclenche un téléchargement asynchrone côté ao-watcher
+   * (Celery) -- mais seulement si zip_url a été capté au scraping (~31% des AOs
+   * marchespublics n'en ont pas, voir noZipLink ci-dessus). update() ci-dessus ne
+   * renvoie que l'état au moment du clic -- sans ce polling, le panneau restait bloqué
+   * sur "Téléchargement en cours..." indéfiniment même une fois le fichier prêt côté
+   * backend, tant que l'utilisateur ne fermait pas et rouvrait pas le panneau
+   * manuellement.
+   *
+   * noZipLink est aussi surveillé : le scraper n'enrichit une AO qu'une seule fois à
+   * sa découverte, donc zip_url peut être NULL simplement parce que l'acheteur a mis
+   * en ligne le DCE après notre passage -- le backend revérifie en direct
+   * (refresh_and_download_ao_zip) quand on favorise sans zip_url connu. Borné à 15
+   * tentatives (~45s) pour ne pas boucler indéfiniment sur une AO qui n'a vraiment
+   * aucun document. */
+  useEffect(() => {
+    if (!isDownloading && !noZipLink) return;
+    let attempts = 0;
+    const interval = setInterval(async () => {
+      attempts += 1;
+      if (attempts > 15) {
+        clearInterval(interval);
+        return;
+      }
+      try {
+        const refreshed = await fetchScrapedAo(ao.id);
+        setAo(refreshed);
+        onUpdated(refreshed);
+      } catch {
+        // Erreur réseau ponctuelle : on retente au prochain tick, pas la peine d'afficher une erreur.
+      }
+    }, 3000);
+    return () => clearInterval(interval);
+  }, [isDownloading, noZipLink, ao.id]);
   const zipReady      = ao.status === 'favorited' && !!ao.zip_downloaded_at && !!ao.classified_docs;
   const canImport     = zipReady && ao.status === 'favorited';
 
@@ -442,6 +477,18 @@ export default function AoDetailPanel({ ao: initialAo, onClose, onUpdated }: Pro
                 </div>
               )}
 
+              {noZipLink && (
+                <div style={{
+                  padding: '10px 14px', borderRadius: 8,
+                  background: 'rgba(107,139,179,0.08)',
+                  border: '1px solid var(--l-card-border)',
+                }}>
+                  <p style={{ margin: 0, fontSize: 12, color: 'var(--l-sub)' }}>
+                    {t('veille.detail.noZipLink')}
+                  </p>
+                </div>
+              )}
+
               {zipReady && (
                 <div style={{
                   display: 'flex', alignItems: 'center', gap: 8,
@@ -588,6 +635,8 @@ export default function AoDetailPanel({ ao: initialAo, onClose, onUpdated }: Pro
                 <p style={{ margin: 0, fontSize: 13, color: 'var(--l-dim)' }}>
                   {isDownloading
                     ? t('veille.detail.downloadingZip')
+                    : noZipLink
+                    ? t('veille.detail.noZipLink')
                     : t('veille.detail.noDesc')}
                 </p>
               )}

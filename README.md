@@ -300,7 +300,7 @@ JWT_SECRET_KEY=<32+ caractères>
 
 # Email
 RESEND_API_KEY=re_...
-NOTIFICATION_FROM_EMAIL=noreply@adjuja.com
+NOTIFICATION_FROM_EMAIL=contact@adjuja.com
 
 # Notification service
 ADMIN_SECRET=<secret>
@@ -371,4 +371,4 @@ Les architectures détaillées de chaque module sont dans `conception/` :
 
 ---
 
-Made by [Continuum](https://continuum.ma)
+Made by [Continuium](https://www.continuium.com/)

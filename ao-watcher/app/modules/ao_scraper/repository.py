@@ -1,7 +1,7 @@
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 
 import structlog
-from sqlalchemy import func, select, update
+from sqlalchemy import delete, func, select, update
 from sqlalchemy.dialects.postgresql import array
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -190,6 +190,14 @@ class AoRepository:
         await self.db.commit()
         return await self.get_by_id(ao_id)
 
+    async def update_zip_url(self, ao_id: int, zip_url: str) -> None:
+        await self.db.execute(
+            update(ScrapedAo)
+            .where(ScrapedAo.id == ao_id)
+            .values(zip_url=zip_url, updated_at=datetime.now(timezone.utc))
+        )
+        await self.db.commit()
+
     async def update_zip_result(
         self,
         ao_id: int,
@@ -210,6 +218,20 @@ class AoRepository:
             update(ScrapedAo).where(ScrapedAo.id == ao_id).values(**values)
         )
         await self.db.commit()
+
+    async def delete_expired_unactioned(self, before: date) -> int:
+        """Nettoyage : supprime les AO jamais favorisees/importees dont la date
+        limite est depassee. Les AO favorited/imported sont preservees (docs
+        deja telecharges, potentiellement encore utiles). Aucun fichier MinIO
+        a nettoyer ici : new/seen n'ont jamais declenche de telechargement."""
+        result = await self.db.execute(
+            delete(ScrapedAo).where(
+                ScrapedAo.date_limite < before,
+                ScrapedAo.status.in_(["new", "seen"]),
+            )
+        )
+        await self.db.commit()
+        return result.rowcount
 
     async def update_analyse_json(self, ao_id: int, analyse_json: dict) -> None:
         await self.db.execute(

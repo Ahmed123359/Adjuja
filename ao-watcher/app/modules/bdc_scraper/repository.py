@@ -1,6 +1,6 @@
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 
-from sqlalchemy import func, select, update
+from sqlalchemy import delete, func, select, update
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -149,6 +149,19 @@ class BdcRepository:
         )
         await self.db.commit()
         return await self.get_by_id(bdc_id)
+
+    async def delete_expired_unactioned(self, before: date) -> int:
+        """Nettoyage : supprime les BDC jamais favorises dont la date limite
+        est depassee. Les BDC favorises sont preserves. Aucun fichier MinIO
+        a nettoyer ici : new/seen n'ont jamais declenche de telechargement."""
+        result = await self.db.execute(
+            delete(ScrapedBdc).where(
+                ScrapedBdc.date_limite < before,
+                ScrapedBdc.status.in_(["new", "seen"]),
+            )
+        )
+        await self.db.commit()
+        return result.rowcount
 
     async def update_zip_result(
         self,

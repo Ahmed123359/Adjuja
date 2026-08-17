@@ -1,8 +1,8 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { ScrapedBdc } from '../../types';
 import WatcherStatusBadge from './WatcherStatusBadge';
-import { updateBdcStatus } from '../../api';
+import { updateBdcStatus, fetchScrapedBdcOne } from '../../api';
 import { useIsMobile } from '../../hooks/useIsMobile';
 
 type Props = {
@@ -90,6 +90,23 @@ export default function BdcDetailPanel({ bdc: initialBdc, onClose, onUpdated }: 
   const isDownloading = bdc.status === 'favorited' && !bdc.zip_downloaded_at && !bdc.zip_error;
   const hasZipError   = bdc.status === 'favorited' && !!bdc.zip_error;
   const zipReady      = bdc.status === 'favorited' && !!bdc.zip_downloaded_at;
+
+  /** Meme correctif que AoDetailPanel : sans ce polling, le panneau reste bloqué sur
+   * "Téléchargement en cours..." indéfiniment meme apres que le fichier soit prêt côté
+   * ao-watcher, tant que l'utilisateur ne ferme/rouvre pas le panneau manuellement. */
+  useEffect(() => {
+    if (!isDownloading) return;
+    const interval = setInterval(async () => {
+      try {
+        const refreshed = await fetchScrapedBdcOne(bdc.id);
+        setBdc(refreshed);
+        onUpdated(refreshed);
+      } catch {
+        // Erreur réseau ponctuelle : on retente au prochain tick.
+      }
+    }, 3000);
+    return () => clearInterval(interval);
+  }, [isDownloading, bdc.id]);
 
   const update = async (status: string) => {
     setLoadingStatus(true);

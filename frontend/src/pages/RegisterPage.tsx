@@ -34,7 +34,7 @@ export default function RegisterPage({ onSuccess, onGoLogin }: Props) {
       if (typeof google !== 'undefined' && googleBtnRef.current) {
         clearInterval(interval);
         google.accounts.id.initialize({
-          client_id: '283835865463-t0o734rbl4behuh80g3upc228eq572ur.apps.googleusercontent.com',
+          client_id: '862141749635-8j66o1ns8ieknmbs3hqm72f7ffs7njaj.apps.googleusercontent.com',
           callback: async (response: { credential: string }) => {
             setError(''); setLoading(true);
             try { await loginWithGoogle(response.credential); onSuccess(); }

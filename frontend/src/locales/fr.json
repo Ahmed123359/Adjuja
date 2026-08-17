@@ -122,7 +122,7 @@
             },
             {
               "q": "Si j'ai un problème ou une question, qui m'aide ?",
-              "a": "Notre équipe est joignable à support@adjuja.com. Pendant la phase pilote, chaque cabinet bénéficie d'un accompagnement direct pour prendre le service en main."
+              "a": "Notre équipe est joignable à contact@adjuja.com. Pendant la phase pilote, chaque cabinet bénéficie d'un accompagnement direct pour prendre le service en main."
             }
           ]
         }
@@ -155,7 +155,7 @@
       "legalSecurity": "Sécurité",
       "legalRgpd": "RGPD",
       "contactEmail": "Email",
-      "contactEmailValue": "support@adjuja.com",
+      "contactEmailValue": "contact@adjuja.com",
       "contactPhone": "Téléphone",
       "contactPhoneValue": "+212 661-396413",
       "contactAddress": "Adresse",
@@ -612,6 +612,7 @@
       "downloadingZip": "Téléchargement du DAO en cours...",
       "zipReady": "DAO disponible",
       "zipError": "Erreur téléchargement DAO",
+      "noZipLink": "Aucun lien de téléchargement direct n'a été trouvé pour ce dossier. Consultez-le directement sur le portail source.",
       "openSource": "Voir sur le portail",
       "showMore": "Voir plus",
       "showLess": "Voir moins",
@@ -700,13 +701,13 @@
           "heading": "Éditeur du site",
           "paragraphs": [
             "Le site adjuja.com est édité par l'équipe ADJUJA, basée à Témara, au Maroc. ADJUJA est actuellement un service en phase de lancement ; les informations d'immatriculation de la société seront ajoutées sur cette page dès leur disponibilité.",
-            "Contact : support@adjuja.com · +212 661-396413"
+            "Contact : contact@adjuja.com · +212 661-396413"
           ]
         },
         {
           "heading": "Responsable de publication",
           "paragraphs": [
-            "La publication du site est assurée par l'équipe ADJUJA, joignable à l'adresse support@adjuja.com pour toute question relative à son contenu."
+            "La publication du site est assurée par l'équipe ADJUJA, joignable à l'adresse contact@adjuja.com pour toute question relative à son contenu."
           ]
         },
         {
@@ -773,7 +774,7 @@
         {
           "heading": "Suspension et résiliation",
           "paragraphs": [
-            "ADJUJA peut suspendre un compte en cas d'usage abusif du service ou de défaut de paiement, après notification par email lorsque cela est possible. Vous pouvez résilier votre compte à tout moment depuis votre espace ou par simple demande à support@adjuja.com."
+            "ADJUJA peut suspendre un compte en cas d'usage abusif du service ou de défaut de paiement, après notification par email lorsque cela est possible. Vous pouvez résilier votre compte à tout moment depuis votre espace ou par simple demande à contact@adjuja.com."
           ]
         },
         {
@@ -797,7 +798,7 @@
         {
           "heading": "Responsable du traitement",
           "paragraphs": [
-            "ADJUJA est responsable du traitement des données personnelles collectées via ce site et cette application. Pour toute question, contactez-nous à support@adjuja.com."
+            "ADJUJA est responsable du traitement des données personnelles collectées via ce site et cette application. Pour toute question, contactez-nous à contact@adjuja.com."
           ]
         },
         {
@@ -854,7 +855,7 @@
         {
           "heading": "Vos droits",
           "paragraphs": [
-            "Conformément à la loi 09-08, vous disposez d'un droit d'accès, de rectification, de suppression et d'opposition sur vos données personnelles. Vous pouvez exercer ces droits à tout moment par simple demande à support@adjuja.com."
+            "Conformément à la loi 09-08, vous disposez d'un droit d'accès, de rectification, de suppression et d'opposition sur vos données personnelles. Vous pouvez exercer ces droits à tout moment par simple demande à contact@adjuja.com."
           ]
         },
         {
@@ -872,7 +873,7 @@
         {
           "heading": "Contact",
           "paragraphs": [
-            "Pour toute question relative à vos données personnelles ou à cette politique, écrivez-nous à support@adjuja.com."
+            "Pour toute question relative à vos données personnelles ou à cette politique, écrivez-nous à contact@adjuja.com."
           ]
         }
       ]

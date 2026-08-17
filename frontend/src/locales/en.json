@@ -122,7 +122,7 @@
             },
             {
               "q": "If I run into an issue or have a question, who helps?",
-              "a": "Our team is reachable at support@adjuja.com. During the pilot phase, every firm gets direct support to get up and running with the service."
+              "a": "Our team is reachable at contact@adjuja.com. During the pilot phase, every firm gets direct support to get up and running with the service."
             }
           ]
         }
@@ -155,7 +155,7 @@
       "legalSecurity": "Security",
       "legalRgpd": "GDPR",
       "contactEmail": "Email",
-      "contactEmailValue": "support@adjuja.com",
+      "contactEmailValue": "contact@adjuja.com",
       "contactPhone": "Phone",
       "contactPhoneValue": "+212 661-396413",
       "contactAddress": "Address",
@@ -610,6 +610,7 @@
       "downloadingZip": "Downloading tender documents...",
       "zipReady": "Documents available",
       "zipError": "Download error",
+      "noZipLink": "No direct download link was found for this file. Check it directly on the source portal.",
       "openSource": "View on portal",
       "showMore": "Show more",
       "showLess": "Show less",
@@ -698,13 +699,13 @@
           "heading": "Site publisher",
           "paragraphs": [
             "adjuja.com is published by the ADJUJA team, based in Temara, Morocco. ADJUJA is currently in its launch phase; the company's registration details will be added to this page as soon as they are available.",
-            "Contact: support@adjuja.com - +212 661-396413"
+            "Contact: contact@adjuja.com - +212 661-396413"
           ]
         },
         {
           "heading": "Publication manager",
           "paragraphs": [
-            "The site is published by the ADJUJA team, reachable at support@adjuja.com for any question about its content."
+            "The site is published by the ADJUJA team, reachable at contact@adjuja.com for any question about its content."
           ]
         },
         {
@@ -771,7 +772,7 @@
         {
           "heading": "Suspension and termination",
           "paragraphs": [
-            "ADJUJA may suspend an account in the event of abusive use of the service or non-payment, after notice by email when possible. You may terminate your account at any time from your dashboard or by simply asking at support@adjuja.com."
+            "ADJUJA may suspend an account in the event of abusive use of the service or non-payment, after notice by email when possible. You may terminate your account at any time from your dashboard or by simply asking at contact@adjuja.com."
           ]
         },
         {
@@ -795,7 +796,7 @@
         {
           "heading": "Data controller",
           "paragraphs": [
-            "ADJUJA is responsible for processing the personal data collected through this site and application. For any question, contact us at support@adjuja.com."
+            "ADJUJA is responsible for processing the personal data collected through this site and application. For any question, contact us at contact@adjuja.com."
           ]
         },
         {
@@ -852,7 +853,7 @@
         {
           "heading": "Your rights",
           "paragraphs": [
-            "In accordance with law 09-08, you have a right of access, rectification, deletion and objection over your personal data. You can exercise these rights at any time by simply asking at support@adjuja.com."
+            "In accordance with law 09-08, you have a right of access, rectification, deletion and objection over your personal data. You can exercise these rights at any time by simply asking at contact@adjuja.com."
           ]
         },
         {
@@ -870,7 +871,7 @@
         {
           "heading": "Contact",
           "paragraphs": [
-            "For any question about your personal data or this policy, write to us at support@adjuja.com."
+            "For any question about your personal data or this policy, write to us at contact@adjuja.com."
           ]
         }
       ]

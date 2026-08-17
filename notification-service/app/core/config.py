@@ -12,7 +12,7 @@ class Settings(BaseSettings):
 
     resend_api_key: str = ""
     notification_channel: str = "email_resend"
-    notification_from_email: str = "noreply@adjuja.com"
+    notification_from_email: str = "contact@adjuja.com"
     notification_from_name: str = "ADJUJA Veille"
 
     admin_secret: str = "dev-admin-secret"

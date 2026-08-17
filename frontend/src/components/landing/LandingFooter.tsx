@@ -145,7 +145,7 @@ export default function LandingFooter({ onEnterApp }: { onEnterApp: () => void }
           </div>
           <div className="flex items-center gap-6">
             <a
-              href="https://continuum.ma"
+              href="https://www.continuium.com/"
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-center gap-3 no-underline opacity-90 hover:opacity-100 transition-opacity"

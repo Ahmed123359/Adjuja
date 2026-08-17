@@ -390,6 +390,53 @@ class MPEPlatformScraper(IAOScraper):
         )
 
     # ------------------------------------------------------------------ #
+    #  Document download (Playwright  formulaire de demande DCE)          #
+    # ------------------------------------------------------------------ #
+
+    async def download_document(self, zip_url: str) -> tuple[bytes, str] | None:
+        """
+        Sur les portails MPE, le lien "Telecharger" du DCE ne pointe jamais
+        vers un fichier direct : il mene a un formulaire de demande
+        (EntrepriseDemandeTelechargementDce) qui exige nom/prenom/email avant
+        de faire apparaitre le vrai bouton de telechargement. Confirme en
+        conditions reelles (raisonSocial/ICE non obligatoires, formulaire
+        rempli avec Nom="Adjuja", Prenom="Adjuja", Email="contact@adjuja.com"
+        -> soumission acceptee -> zip complet recupere)."""
+        async with async_playwright() as pw:
+            context = await self._get_context(pw)
+            page = await context.new_page()
+            try:
+                await page.goto(zip_url, timeout=30000)
+
+                nom_input = page.locator("input[id$='EntrepriseFormulaireDemande_nom']")
+                if await nom_input.count():
+                    await nom_input.fill("Adjuja")
+                    await page.locator("input[id$='EntrepriseFormulaireDemande_prenom']").fill("Adjuja")
+                    await page.locator("input[id$='EntrepriseFormulaireDemande_email']").fill("contact@adjuja.com")
+                    await page.locator("input[id$='EntrepriseFormulaireDemande_accepterConditions']").check()
+                    await page.locator("input[id$='_validateButton']").click()
+                    await page.wait_for_load_state("networkidle", timeout=15000)
+
+                dl_btn = page.locator("a[id$='EntrepriseDownloadDce_completeDownload']")
+                if not await dl_btn.count():
+                    log.warning("No download button after DCE form flow", url=zip_url)
+                    return None
+
+                async with page.expect_download(timeout=30000) as dl_info:
+                    await dl_btn.click()
+                download = await dl_info.value
+                path = await download.path()
+                if not path:
+                    return None
+                return Path(path).read_bytes(), download.suggested_filename
+            except Exception as e:
+                log.error("download_document failed", url=zip_url, error=str(e))
+                return None
+            finally:
+                await page.close()
+                await self._close()
+
+    # ------------------------------------------------------------------ #
     #  Health check                                                        #
     # ------------------------------------------------------------------ #
 

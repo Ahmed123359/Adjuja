@@ -12,6 +12,7 @@ celery_app = Celery(
         "app.workers.tasks.download_tasks",
         "app.workers.tasks.scrape_bdc_tasks",
         "app.workers.tasks.download_bdc_tasks",
+        "app.workers.tasks.cleanup_tasks",
     ],
 )
 
@@ -31,6 +32,10 @@ celery_app.conf.update(
         "scrape-bdc": {
             "task": "app.workers.tasks.scrape_bdc_tasks.run_scrape_bdc_pipeline",
             "schedule": crontab(hour=f"*/{settings.scrape_interval_hours}", minute=15),
+        },
+        "cleanup-expired-watcher-items": {
+            "task": "app.workers.tasks.cleanup_tasks.cleanup_expired_watcher_items",
+            "schedule": crontab(hour=2, minute=0),
         },
     },
 )

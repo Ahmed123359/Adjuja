@@ -1,16 +1,13 @@
 import io
-import json
-import random
 import re
 import zipfile
-from urllib.parse import urljoin
+from urllib.parse import parse_qs, urlparse
 
-import httpx
 import structlog
-from bs4 import BeautifulSoup
 from minio import Minio
 
 from app.core.config import settings
+from app.modules.ao_scraper.mpe import MPEPlatformScraper
 from app.modules.ao_scraper.repository import AoRepository
 from app.workers.celery_app import celery_app
 from app.workers.utils import run_async, task_db
@@ -23,10 +20,6 @@ CLASSIFICATION_RULES = [
     (re.compile(r"acte.*engagement|engagement", re.I), "acte_engagement"),
     (re.compile(r"bordereau|bpu|dpq|prix\s*unit", re.I), "bordereau_des_prix"),
     (re.compile(r"plan|ccag|cahier.*charge", re.I), "ccag"),
-]
-
-USER_AGENTS = [
-    "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/129.0.0.0 Safari/537.36",
 ]
 
 
@@ -74,16 +67,11 @@ async def _download_and_classify(ao_id: int) -> dict:
     if not ao or not ao.zip_url:
         raise ValueError(f"AO {ao_id} has no zip_url")
 
-    headers = {
-        "User-Agent": random.choice(USER_AGENTS),
-        "Accept": "application/zip,application/octet-stream,*/*",
-        "Referer": ao.url_source,
-    }
-
-    # Download  could be a form POST or direct GET
-    content = await _fetch_document(ao.zip_url, ao.url_source, headers)
-    if not content:
+    scraper = MPEPlatformScraper(ao.source)
+    result = await scraper.download_document(ao.zip_url)
+    if not result:
         raise ValueError("Empty response from download URL")
+    content, filename = result
 
     # Classify and upload
     classified_docs = {}
@@ -92,13 +80,22 @@ async def _download_and_classify(ao_id: int) -> dict:
     if zipfile.is_zipfile(io.BytesIO(content)):
         with zipfile.ZipFile(io.BytesIO(content)) as zf:
             fallback_n = 1
+            label_counts: dict[str, int] = {}
             for name in zf.namelist():
-                if name.endswith("/"):
+                base = name.rsplit("/", 1)[-1]
+                if name.endswith("/") or base.startswith("~$") or base.startswith("~WRL") or base.lower().endswith(".tmp"):
                     continue
                 label = _classify(name)
                 if not label:
                     label = f"autre_doc_{fallback_n}"
                     fallback_n += 1
+                else:
+                    # Consultations multi-lots : plusieurs fichiers peuvent matcher le
+                    # meme label (un CPS par lot) -- suffixer pour ne pas s'ecraser
+                    # silencieusement sur la meme cle MinIO.
+                    label_counts[label] = label_counts.get(label, 0) + 1
+                    if label_counts[label] > 1:
+                        label = f"{label}_{label_counts[label]}"
                 file_data = zf.read(name)
                 minio_key = f"ao-watcher/{ao_id}/{label}.pdf"
                 minio.put_object(
@@ -112,8 +109,8 @@ async def _download_and_classify(ao_id: int) -> dict:
                 log.info("File uploaded", ao_id=ao_id, label=label, key=minio_key)
     else:
         # Single file (PDF or other)
-        ext = ao.zip_url.split(".")[-1].lower() if "." in ao.zip_url else "pdf"
-        label = _classify(ao.zip_url) or "dossier"
+        ext = filename.split(".")[-1].lower() if "." in filename else "pdf"
+        label = _classify(filename) or "dossier"
         minio_key = f"ao-watcher/{ao_id}/{label}.{ext}"
         minio.put_object(
             settings.minio_bucket,
@@ -138,49 +135,54 @@ async def _download_and_classify(ao_id: int) -> dict:
     return {"ao_id": ao_id, "files": list(classified_docs.keys())}
 
 
-async def _fetch_document(zip_url: str, referer: str, headers: dict) -> bytes | None:
-    """
-    The DCE download page on MPE portals shows an optional contact form.
-    We POST it with empty fields (anonymous download allowed).
-    """
-    async with httpx.AsyncClient(headers=headers, follow_redirects=True, timeout=60) as client:
-        # GET the download form page first to extract __VIEWSTATE
-        resp = await client.get(zip_url)
-        if resp.status_code != 200:
-            return None
+@celery_app.task(
+    name="app.workers.tasks.download_tasks.refresh_and_download_ao_zip",
+    bind=True,
+    max_retries=2,
+    default_retry_delay=30,
+)
+def refresh_and_download_ao_zip(self, ao_id: int) -> dict:
+    """Le scraper n'enrichit une consultation qu'une seule fois, a sa
+    decouverte -- si l'acheteur met en ligne le DCE plus tard, notre
+    zip_url reste NULL indefiniment. Declenche quand l'utilisateur favorise
+    une AO sans zip_url connu : re-visite la page de detail en direct avant
+    de conclure qu'il n'y a vraiment rien a telecharger."""
+    log.info("Refreshing AO detail before giving up on download", ao_id=ao_id)
+    try:
+        found = run_async(_refresh_zip_url(ao_id))
+        if found:
+            log.info("zip_url found on refresh, downloading", ao_id=ao_id)
+            download_ao_zip.delay(ao_id)
+        else:
+            log.info("No zip_url on refresh either", ao_id=ao_id)
+        return {"ao_id": ao_id, "zip_url_found": found}
+    except Exception as exc:
+        log.error("Refresh failed", ao_id=ao_id, error=str(exc))
+        raise self.retry(exc=exc)
 
-        soup = BeautifulSoup(resp.text, "html.parser")
-        form = soup.find("form")
 
-        if form:
-            # Build form data from hidden inputs
-            form_data = {}
-            for inp in form.find_all("input"):
-                name = inp.get("name", "")
-                value = inp.get("value", "")
-                if name:
-                    form_data[name] = value
+async def _refresh_zip_url(ao_id: int) -> bool:
+    async with task_db() as db:
+        repo = AoRepository(db)
+        ao = await repo.get_by_id(ao_id)
 
-            # Submit form with empty contact fields (anonymous)
-            action = form.get("action", zip_url)
-            if not action.startswith("http"):
-                from urllib.parse import urljoin
-                action = urljoin(zip_url, action)
+    if not ao:
+        raise ValueError(f"AO {ao_id} not found")
+    if ao.zip_url:
+        return True
 
-            post_resp = await client.post(action, data=form_data, headers={**headers, "Referer": zip_url})
-            if post_resp.headers.get("content-type", "").startswith("application/"):
-                return post_resp.content
-            # Might redirect to actual file
-            if post_resp.is_redirect:
-                file_resp = await client.get(post_resp.headers["location"])
-                return file_resp.content
-            return post_resp.content
+    qs = parse_qs(urlparse(ao.url_source).query)
+    org = qs.get("orgAcronyme", [""])[0]
 
-        # No form  try direct GET of the URL
-        if resp.headers.get("content-type", "").startswith("application/"):
-            return resp.content
+    scraper = MPEPlatformScraper(ao.source)
+    detail = await scraper.fetch_detail(ao.external_id, org)
+    if not detail or not detail.zip_url:
+        return False
 
-    return None
+    async with task_db() as db:
+        repo = AoRepository(db)
+        await repo.update_zip_url(ao_id, detail.zip_url)
+    return True
 
 
 async def _save_error(ao_id: int, error: str) -> None:

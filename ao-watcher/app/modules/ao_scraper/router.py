@@ -92,9 +92,16 @@ async def update_status(
     updated = await repo.update_status(ao_id, body.status)
 
     # Trigger lazy ZIP download when user favorites
-    if body.status == "favorited" and ao.zip_url and not ao.zip_downloaded_at:
-        from app.workers.tasks.download_tasks import download_ao_zip
-        download_ao_zip.delay(ao_id)
+    if body.status == "favorited" and not ao.zip_downloaded_at:
+        if ao.zip_url:
+            from app.workers.tasks.download_tasks import download_ao_zip
+            download_ao_zip.delay(ao_id)
+        else:
+            # zip_url peut manquer simplement parce que le DCE a ete mis en
+            # ligne par l'acheteur apres notre scrape initial -- on re-verifie
+            # avant d'afficher "aucun lien" a l'utilisateur.
+            from app.workers.tasks.download_tasks import refresh_and_download_ao_zip
+            refresh_and_download_ao_zip.delay(ao_id)
 
     return updated
 

@@ -140,7 +140,7 @@ export default function LegalPageLayout({ title, updated, sections }: Props) {
             {t("legal.ctaSubtitle")}
           </p>
           <a
-            href="mailto:support@adjuja.com"
+            href="mailto:contact@adjuja.com"
             className="inline-block rounded-[12px] px-7 py-3 text-[14px] font-semibold no-underline"
             style={{ background: "var(--l-blue)", color: "#fff" }}
           >

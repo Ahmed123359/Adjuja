@@ -233,6 +233,69 @@ toujours pas construite.
       (`POST /auth/register` avec entreprise/secteur_activite/nb_ao_par_an, ligne
       confirmée en base puis nettoyée).
 
+- **AO Watcher : fix réel du téléchargement DCE bloqué** (2026-08-17) : root cause identifiée
+  en conditions réelles (curl + Playwright contre le vrai portail marchespublics.gov.ma,
+  refConsultation=1029951) -- `zip_url` (100% des 1188 AO qui en ont un, 0 lien direct) pointe
+  systématiquement vers le formulaire `EntrepriseDemandeTelechargementDce` du portail, jamais
+  vers un fichier. L'ancien code (`_fetch_document` dans `download_tasks.py`) POSTait ce
+  formulaire avec des champs vides via `httpx` -- le portail refusait silencieusement (retour
+  sur la page de la consultation) et l'ancien code uploadait quand même ce HTML sur MinIO en le
+  marquant "téléchargé avec succès" (`zip_downloaded_at` renseigné, contenu invalide). Fix :
+  nouvelle méthode `MPEPlatformScraper.download_document()` (`ao-watcher/app/modules/
+  ao_scraper/mpe.py`) qui pilote un vrai navigateur Playwright -- remplit Nom="Adjuja",
+  Prénom="Adjuja", Email="contact@adjuja.com" (raisonSocial/ICE confirmés non obligatoires par
+  les marqueurs `champ-oblig` du formulaire lui-même), coche les CGU, valide, puis clique le
+  bouton "Télécharger le Dossier de consultation" qui n'apparaît qu'après validation.
+  `download_tasks.py` réécrit pour appeler cette méthode (ancien code httpx supprimé) et pour
+  filtrer les fichiers verrous/temp Word (`~$*.doc`, `~WRL*.tmp`) présents dans les vrais zips
+  du portail, qui auraient sinon été uploadés comme faux `autre_doc_N.pdf`. Vérifié en réel de
+  bout en bout (zip 6,9 Mo avec CPS/RC/AE authentiques récupéré via la classe de prod elle-même,
+  pas juste un script jetable).
+- **AO Watcher : "aucun lien" pas toujours définitif + collision de labels multi-lots**
+  (2026-08-17, suite directe du fix ci-dessus, découvert en testant en conditions réelles) :
+  le scraper n'enrichit une consultation (`fetch_detail`, donc `zip_url`) qu'une seule fois, à
+  sa découverte -- si l'acheteur met en ligne le DCE après notre passage, `zip_url` reste NULL
+  indéfiniment même si le lien existe bel et bien sur le portail (confirmé sur un cas réel : AO
+  6388/refConsultation=1029951, scrapé le 16/08 sans lien, lien présent le 17/08). Fix : nouvelle
+  tâche Celery `refresh_and_download_ao_zip` (`download_tasks.py`) + `AoRepository.update_zip_url`
+  -- quand l'utilisateur favorise une AO sans `zip_url` connu, `router.py` revérifie en direct la
+  page de détail avant d'afficher "aucun lien" ; si trouvé, chaîne vers `download_ao_zip`. Le
+  polling frontend (`AoDetailPanel.tsx`) couvre maintenant aussi l'état `noZipLink`, borné à 15
+  tentatives (~45s) pour ne pas boucler indéfiniment sur une AO qui n'a vraiment aucun document.
+  Séparément, testé sur ce même AO 6388 (3 lots, donc 3 fichiers CPS distincts dans le zip) :
+  `_classify()` collapsait les 3 CPS sur la même clé MinIO `cps.pdf`, les 2 premiers étant
+  silencieusement écrasés par le 3e (perte de données réelle, constatée en DB avant fix -- un
+  seul `"cps"` dans `classified_docs` malgré 3 fichiers uploadés). Fix : suffixe `_2`, `_3`... sur
+  collision de label, même pattern que `autre_doc_N`. Les deux fixes vérifiés en réel sur ce même
+  AO (`cps`, `cps_2`, `cps_3` tous distincts en DB après re-téléchargement). Les ~31,5% d'AO sans
+  aucun lien `linkDownloadDce` du tout sur leur page de détail (548/1736, cas différent de celui
+  ci-dessus) restent un problème distinct, géré côté frontend par le message `noZipLink`.
+- **Job de nettoyage des AO/BDC expirées** (2026-08-17) : nouvelle tâche Celery quotidienne
+  `cleanup_expired_watcher_items` (`ao-watcher/app/workers/tasks/cleanup_tasks.py`, beat à 02h00
+  Africa/Casablanca) + `AoRepository.delete_expired_unactioned` / `BdcRepository.
+  delete_expired_unactioned`. Décision validée avec Ahmed : supprime uniquement les AO/BDC au
+  statut `new`/`seen` (jamais favorisées/importées) dont `date_limite < aujourd'hui`,
+  suppression définitive immédiate (pas de délai de grâce, pas d'archivage). Les AO/BDC
+  `favorited`/`imported` sont préservées même expirées (documents déjà téléchargés). Vérifié
+  en conditions réelles sur la base actuelle : 1037 AO + 3897 BDC supprimées, 0 restante après
+  coup, `favorited`/`imported` intacts. **Bug d'environnement découvert et corrigé au passage**
+  (sans lien avec le code applicatif) : après le redémarrage de Docker Desktop, `docker start`
+  sur `adjuja-postgres-1`/`adjuja-redis-1` les a laissés avec un réseau Docker vide (`{}`) --
+  `docker network connect` fait à la main (sans passer par `docker compose`) ne pose PAS l'alias
+  DNS du nom de service (`postgres`/`redis`) que `DATABASE_URL`/`REDIS_URL` utilisent, seulement
+  le nom du conteneur -- résolution DNS cassée en silence pour tous les autres conteneurs tant
+  que `--alias postgres`/`--alias redis` n'est pas explicitement passé. À refaire ainsi si ça se
+  reproduit : `docker network connect --alias <nom_service> adjuja_ao_network <conteneur>`.
+- **Refonte pages auth + nav landing** (session du 2026-08-17, non documenté avant faute de
+  mise à jour intermédiaire) : `AuthLayout.tsx` (nouveau, split-screen login/register avec
+  showcase produit), Google Sign-In reconfiguré avec le nouveau `GOOGLE_CLIENT_ID` (bouton
+  natif Google rendu invisible, déclenché par un bouton custom pour respecter le design
+  system -- jamais de pill/rounded-full), fix du menu mobile transparent (bug de containing
+  block CSS `backdrop-filter`, résolu via `createPortal` vers `document.body`), polling ajouté
+  sur `AoDetailPanel`/`BdcDetailPanel` pour ne plus rester bloqué sur "téléchargement en cours"
+  indéfiniment. Rebrand email site-wide `support@`/`noreply@` -> `contact@adjuja.com`, lien
+  agence corrigé vers `https://www.continuium.com/` (Continuium, pas Continuum).
+
 ## En cours
 
 - Notification service en prod, fonctionnel mais sans aucune org configurée -- pas encore
@@ -273,6 +336,14 @@ toujours pas construite.
   client MinIO de l'app principale qui a ce garde-fou. Si le bucket est un jour supprimé ou
   recréé sans lui, le téléchargement de DAO échoue silencieusement avec `NoSuchBucket`.
   Pas corrigé au niveau code, seulement recréé manuellement en prod le 2026-07-05.
+- **Fichiers de dossier AO renommés `.pdf` même quand ce ne sont pas des PDF** : constaté sur
+  un vrai zip récupéré (2026-08-17) -- la majorité des documents (CPS, RC, AE) sont en réalité
+  des `.doc` Word, mais `download_tasks.py` (`_download_and_classify`, branche zip) uploade
+  systématiquement chaque membre en `{label}.pdf` / `content_type=application/pdf` sans
+  regarder l'extension réelle. Si un pipeline en aval (parsing CPS, OCR, go/no-go) suppose du
+  PDF, ces fichiers `.doc` renommés `.pdf` casseront l'ouverture. Pas corrigé (hors scope du
+  fix de téléchargement de cette session) -- à vérifier si un pipeline en aval ouvre ces
+  fichiers comme du vrai PDF avant de le corriger.
 
 ## Roadmap (voir `conception/1.Roadmap/roadmap_technique.md` pour le détail complet)
 
