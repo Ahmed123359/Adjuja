@@ -150,7 +150,14 @@ async def import_to_pipeline(
             resp.raise_for_status()
             data = resp.json()
     except httpx.HTTPStatusError as e:
-        raise HTTPException(status_code=502, detail=f"Main app rejected import: {e.response.text}")
+        # Relaie le vrai statut (ex: 402 plafond de plan atteint) + le message
+        # propre du detail, plutot que d'envelopper le JSON brut dans une string
+        # sous un 502 generique -- illisible cote frontend.
+        try:
+            main_detail = e.response.json().get("detail", e.response.text)
+        except Exception:
+            main_detail = e.response.text
+        raise HTTPException(status_code=e.response.status_code, detail=main_detail)
     except Exception as e:
         raise HTTPException(status_code=502, detail=f"Main app unreachable: {e}")
 
@@ -184,14 +191,27 @@ async def download_zip(
 
     minio = _minio_client()
     buffer = io.BytesIO()
+    missing = []
     with zipfile.ZipFile(buffer, "w", zipfile.ZIP_DEFLATED) as zf:
         for label, minio_key in ao.classified_docs.items():
+            resp = None
             try:
                 resp = minio.get_object(settings.minio_bucket, minio_key)
                 zf.writestr(minio_key.rsplit("/", 1)[-1], resp.read())
+            except Exception:
+                # Objet manquant sur MinIO (ex: volume perdu depuis) -- ne bloque pas
+                # tout le zip pour un fichier, on liste juste ce qui a echoue.
+                missing.append(label)
             finally:
-                resp.close()
-                resp.release_conn()
+                if resp is not None:
+                    resp.close()
+                    resp.release_conn()
+
+    if missing and len(missing) == len(ao.classified_docs):
+        raise HTTPException(
+            status_code=404,
+            detail="Les documents de cette AO ne sont plus disponibles sur le stockage.",
+        )
 
     buffer.seek(0)
     filename = f"AO-{ao_id}-documents.zip"
