@@ -966,6 +966,18 @@ export async function importScrapedAo(id: number): Promise<{ ao_id: string; mess
   return json;
 }
 
+export async function downloadScrapedAoZip(id: number): Promise<void> {
+  const res = await fetch(`${WATCHER_BASE}/aos/${id}/download`, { headers: authHeaders() });
+  if (!res.ok) throw new Error('Erreur téléchargement des documents.');
+  const blob = await res.blob();
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href     = url;
+  a.download = `AO-${id}-documents.zip`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
 export async function analyzeScrapedAo(id: number): Promise<EligibilityVerdict> {
   const res = await fetch(`${WATCHER_BASE}/aos/${id}/verdict`, { method: 'POST', headers: authHeaders() });
   const json = await res.json();

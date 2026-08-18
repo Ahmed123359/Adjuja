@@ -610,6 +610,8 @@
       "importBtn": "Importer dans le pipeline",
       "importDone": "Importé avec succès",
       "downloadingZip": "Téléchargement du DAO en cours...",
+      "downloadZipBtn": "Télécharger le ZIP",
+      "downloadingZipBtn": "Téléchargement...",
       "zipReady": "DAO disponible",
       "zipError": "Erreur téléchargement DAO",
       "noZipLink": "Aucun lien de téléchargement direct n'a été trouvé pour ce dossier. Consultez-le directement sur le portail source.",

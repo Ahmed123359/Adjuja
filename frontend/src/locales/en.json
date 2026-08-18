@@ -608,6 +608,8 @@
       "importBtn": "Import to pipeline",
       "importDone": "Successfully imported",
       "downloadingZip": "Downloading tender documents...",
+      "downloadZipBtn": "Download ZIP",
+      "downloadingZipBtn": "Downloading...",
       "zipReady": "Documents available",
       "zipError": "Download error",
       "noZipLink": "No direct download link was found for this file. Check it directly on the source portal.",

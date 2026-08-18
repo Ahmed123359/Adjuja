@@ -532,7 +532,9 @@ function OverviewTab({ profileCheck }: { profileCheck: ProfileCheck | null }) {
         />
       </div>
 
-      <SubscriptionCard />
+      {/* Masquee temporairement : CMI pas encore configure en prod, le bouton
+          "Upgrade" menerait a un echec de checkout (503 "CMI non configure"). */}
+      {/* <SubscriptionCard /> */}
 
       <SectionCard title={t("dashboard.overview.recentTitle")}>
         {loading ? (

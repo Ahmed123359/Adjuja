@@ -295,6 +295,23 @@ toujours pas construite.
   sur `AoDetailPanel`/`BdcDetailPanel` pour ne plus rester bloqué sur "téléchargement en cours"
   indéfiniment. Rebrand email site-wide `support@`/`noreply@` -> `contact@adjuja.com`, lien
   agence corrigé vers `https://www.continuium.com/` (Continuium, pas Continuum).
+- **Redéploiement prod + 4 bugs d'infra réels trouvés et corrigés** (2026-08-17/18, détail
+  complet dans la mémoire auto [[project-prod-deployment-issues]]) : (1) DNS apex
+  `adjuja.com` avait 4 IP parasites Google en plus de la bonne -- site inaccessible de façon
+  consistante (5/5, pas intermittent), corrigé en supprimant les 4 A records parasites côté
+  registrar (Genious) ; (2) `frontend/nginx.conf` ne mettait aucun `Cache-Control` sur
+  `index.html` -- Google Sign-In marchait en incognito mais jamais en navigation normale
+  (vieux bundle JS caché indéfiniment), fix : `no-cache` sur `index.html`, cache long
+  immutable sur `/assets/` ; (3) `Dockerfile` (stages `final` et `api-dev`) ne copiait
+  jamais `alembic/`/`alembic.ini` dans l'image -- `alembic upgrade head` impossible en prod,
+  fix : `COPY` ajouté aux deux stages ; (4) découverte associée : le schema DB prod n'avait
+  **jamais** été suivi par Alembic (`alembic_version` inexistante, schema créé via
+  `create_all()` à un moment) -- `alembic stamp 010` puis `upgrade head` a appliqué
+  uniquement le vrai gap (migration 011, colonnes `entreprise`/`secteur_activite`/
+  `nb_ao_par_an`), stamp vérifié sûr après comparaison exacte des tables prod contre le
+  schema dev totalement migré. **Rappel process pour toute future migration prod** :
+  toujours vérifier `SELECT * FROM alembic_version` en prod AVANT de lancer `upgrade head`
+  en aveugle. Login (normal + Google) confirmé fonctionnel en prod après ces 4 fixes.
 
 ## En cours
 

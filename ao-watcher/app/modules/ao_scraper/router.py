@@ -158,6 +158,50 @@ async def import_to_pipeline(
     return ImportResult(ao_id=data["id"], message="AO imported successfully")
 
 
+@router.get("/{ao_id}/download")
+async def download_zip(
+    ao_id: int,
+    db: AsyncSession = Depends(get_db),
+    _auth: str = Depends(_require_auth_header),
+):
+    """Rassemble les documents classifies d'une AO (stockes individuellement sur
+    MinIO, jamais comme un seul zip) en un zip unique genere a la volee, pour
+    telechargement direct sans passer par l'import dans le pipeline."""
+    import io
+    import zipfile
+
+    from fastapi.responses import StreamingResponse
+
+    from app.workers.tasks.download_tasks import _minio_client
+    from app.core.config import settings
+
+    repo = AoRepository(db)
+    ao = await repo.get_by_id(ao_id)
+    if not ao:
+        raise HTTPException(status_code=404, detail="AO not found")
+    if not ao.classified_docs:
+        raise HTTPException(status_code=400, detail="Aucun document disponible pour cette AO.")
+
+    minio = _minio_client()
+    buffer = io.BytesIO()
+    with zipfile.ZipFile(buffer, "w", zipfile.ZIP_DEFLATED) as zf:
+        for label, minio_key in ao.classified_docs.items():
+            try:
+                resp = minio.get_object(settings.minio_bucket, minio_key)
+                zf.writestr(minio_key.rsplit("/", 1)[-1], resp.read())
+            finally:
+                resp.close()
+                resp.release_conn()
+
+    buffer.seek(0)
+    filename = f"AO-{ao_id}-documents.zip"
+    return StreamingResponse(
+        buffer,
+        media_type="application/zip",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
+
+
 @router.post("/{ao_id}/verdict", response_model=VerdictOut)
 async def get_verdict(
     ao_id: int,

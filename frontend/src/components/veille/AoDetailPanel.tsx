@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { EligibilityVerdict, EligibilityVerdictType, ScrapedAo } from '../../types';
 import WatcherStatusBadge from './WatcherStatusBadge';
-import { updateScrapedAoStatus, importScrapedAo, analyzeScrapedAo, fetchScrapedAo } from '../../api';
+import { updateScrapedAoStatus, importScrapedAo, analyzeScrapedAo, fetchScrapedAo, downloadScrapedAoZip } from '../../api';
 import { useIsMobile } from '../../hooks/useIsMobile';
 import { formatTitre, splitReservationClause } from '../../utils/formatTitre';
 
@@ -134,6 +134,8 @@ export default function AoDetailPanel({ ao: initialAo, onClose, onUpdated }: Pro
   const [verdict, setVerdict] = useState<EligibilityVerdict | null>(null);
   const [analyzeError, setAnalyzeError] = useState<string | null>(null);
   const [titreExpanded, setTitreExpanded] = useState(false);
+  const [downloadingZip, setDownloadingZip] = useState(false);
+  const [downloadError, setDownloadError] = useState<string | null>(null);
 
   const update = async (status: string) => {
     setLoadingStatus(true);
@@ -162,6 +164,18 @@ export default function AoDetailPanel({ ao: initialAo, onClose, onUpdated }: Pro
       setError(e instanceof Error ? e.message : 'Erreur import');
     } finally {
       setLoadingImport(false);
+    }
+  };
+
+  const doDownloadZip = async () => {
+    setDownloadingZip(true);
+    setDownloadError(null);
+    try {
+      await downloadScrapedAoZip(ao.id);
+    } catch (e: unknown) {
+      setDownloadError(e instanceof Error ? e.message : 'Erreur téléchargement');
+    } finally {
+      setDownloadingZip(false);
     }
   };
 
@@ -503,6 +517,21 @@ export default function AoDetailPanel({ ao: initialAo, onClose, onUpdated }: Pro
                     {t('veille.detail.zipReady')} ({Object.keys(ao.classified_docs!).length} docs)
                   </span>
                 </div>
+              )}
+
+              {zipReady && (
+                <ActionBtn variant="secondary" onClick={doDownloadZip} disabled={downloadingZip}>
+                  {downloadingZip ? <Spinner /> : (
+                    <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M12 3v13.5m0 0L7.5 12m4.5 4.5L16.5 12" />
+                    </svg>
+                  )}
+                  {downloadingZip ? t('veille.detail.downloadingZipBtn') : t('veille.detail.downloadZipBtn')}
+                </ActionBtn>
+              )}
+
+              {downloadError && (
+                <p style={{ margin: 0, fontSize: 12, color: '#dc2626' }}>{downloadError}</p>
               )}
 
               {canImport && (
