@@ -658,6 +658,59 @@ function OverviewTab({ profileCheck }: { profileCheck: ProfileCheck | null }) {
 }
 
 // ── Profile ────────────────────────────────────────────────
+
+/** Doit rester un composant au niveau module (pas defini a l'interieur de
+ * ProfileTab) -- sinon une nouvelle fonction Field est recreee a chaque
+ * re-render (chaque frappe), React la traite comme un type de composant
+ * different et remonte l'input, ce qui fait perdre le focus a chaque
+ * caractere tape. */
+function Field({
+  fieldKey,
+  form,
+  onChange,
+  t,
+  required,
+  placeholder,
+  half,
+}: {
+  fieldKey: keyof CompanyProfileForm;
+  form: CompanyProfileForm;
+  onChange: (key: keyof CompanyProfileForm, value: string) => void;
+  t: ReturnType<typeof useTranslation>["t"];
+  required?: boolean;
+  placeholder?: string;
+  half?: boolean;
+}) {
+  return (
+    <div style={{ gridColumn: half ? undefined : "1 / -1" }}>
+      <label
+        style={{
+          display: "block",
+          fontSize: 11.5,
+          fontWeight: 600,
+          color: "var(--l-sub)",
+          marginBottom: 4,
+        }}
+      >
+        {t(`dashboard.profile.fields.${fieldKey}`)}
+        {required && (
+          <span style={{ color: "#dc2626", marginLeft: 2 }}>*</span>
+        )}
+      </label>
+      <input
+        value={(form[fieldKey] as string) ?? ""}
+        onChange={(e) => onChange(fieldKey, e.target.value)}
+        placeholder={placeholder}
+        style={inputStyle}
+        onFocus={(e) => (e.currentTarget.style.borderColor = "var(--l-blue)")}
+        onBlur={(e) =>
+          (e.currentTarget.style.borderColor = "var(--l-card-border)")
+        }
+      />
+    </div>
+  );
+}
+
 function ProfileTab({ onProfileSaved }: { onProfileSaved: () => void }) {
   const { t } = useTranslation();
   const [form, setForm] = useState<CompanyProfileForm>(EMPTY_FORM);
@@ -789,47 +842,6 @@ function ProfileTab({ onProfileSaved }: { onProfileSaved: () => void }) {
       ? t("dashboard.profile.incompleteProfile")
       : t("dashboard.profile.notConfigured");
 
-  function Field({
-    fieldKey,
-    required,
-    placeholder,
-    half,
-  }: {
-    fieldKey: keyof CompanyProfileForm;
-    required?: boolean;
-    placeholder?: string;
-    half?: boolean;
-  }) {
-    return (
-      <div style={{ gridColumn: half ? undefined : "1 / -1" }}>
-        <label
-          style={{
-            display: "block",
-            fontSize: 11.5,
-            fontWeight: 600,
-            color: "var(--l-sub)",
-            marginBottom: 4,
-          }}
-        >
-          {t(`dashboard.profile.fields.${fieldKey}`)}
-          {required && (
-            <span style={{ color: "#dc2626", marginLeft: 2 }}>*</span>
-          )}
-        </label>
-        <input
-          value={(form[fieldKey] as string) ?? ""}
-          onChange={(e) => handleChange(fieldKey, e.target.value)}
-          placeholder={placeholder}
-          style={inputStyle}
-          onFocus={(e) => (e.currentTarget.style.borderColor = "var(--l-blue)")}
-          onBlur={(e) =>
-            (e.currentTarget.style.borderColor = "var(--l-card-border)")
-          }
-        />
-      </div>
-    );
-  }
-
   return (
     <form
       onSubmit={handleSave}
@@ -877,19 +889,19 @@ function ProfileTab({ onProfileSaved }: { onProfileSaved: () => void }) {
             gap: "12px 16px",
           }}
         >
-          <Field
+          <Field form={form} onChange={handleChange} t={t}
             fieldKey="nom_entreprise"
             required
             placeholder="SARL Mon Entreprise"
           />
-          <Field
+          <Field form={form} onChange={handleChange} t={t}
             fieldKey="secteur"
             required
             placeholder="Informatique, BTP..."
             half
           />
-          <Field fieldKey="ville" placeholder="Casablanca" half />
-          <Field fieldKey="adresse" required />
+          <Field form={form} onChange={handleChange} t={t} fieldKey="ville" placeholder="Casablanca" half />
+          <Field form={form} onChange={handleChange} t={t} fieldKey="adresse" required />
         </div>
       </SectionCard>
 
@@ -992,13 +1004,13 @@ function ProfileTab({ onProfileSaved }: { onProfileSaved: () => void }) {
             gap: "14px 16px",
           }}
         >
-          <Field fieldKey="ice" required placeholder="15 chiffres" half />
-          <Field fieldKey="rc" placeholder="12345" half />
-          <Field fieldKey="if_fiscal" half />
-          <Field fieldKey="cnss" half />
-          <Field fieldKey="capital_social" half />
-          <Field fieldKey="rib" half />
-          <Field fieldKey="forme_juridique" half />
+          <Field form={form} onChange={handleChange} t={t} fieldKey="ice" required placeholder="15 chiffres" half />
+          <Field form={form} onChange={handleChange} t={t} fieldKey="rc" placeholder="12345" half />
+          <Field form={form} onChange={handleChange} t={t} fieldKey="if_fiscal" half />
+          <Field form={form} onChange={handleChange} t={t} fieldKey="cnss" half />
+          <Field form={form} onChange={handleChange} t={t} fieldKey="capital_social" half />
+          <Field form={form} onChange={handleChange} t={t} fieldKey="rib" half />
+          <Field form={form} onChange={handleChange} t={t} fieldKey="forme_juridique" half />
         </div>
       </SectionCard>
 
@@ -1011,9 +1023,9 @@ function ProfileTab({ onProfileSaved }: { onProfileSaved: () => void }) {
             gap: "14px 16px",
           }}
         >
-          <Field fieldKey="gerant_nom" required half />
-          <Field fieldKey="gerant_prenom" required half />
-          <Field fieldKey="gerant_cin" half />
+          <Field form={form} onChange={handleChange} t={t} fieldKey="gerant_nom" required half />
+          <Field form={form} onChange={handleChange} t={t} fieldKey="gerant_prenom" required half />
+          <Field form={form} onChange={handleChange} t={t} fieldKey="gerant_cin" half />
         </div>
       </SectionCard>
 
@@ -1026,8 +1038,8 @@ function ProfileTab({ onProfileSaved }: { onProfileSaved: () => void }) {
             gap: "14px 16px",
           }}
         >
-          <Field fieldKey="telephone" half />
-          <Field fieldKey="email" half />
+          <Field form={form} onChange={handleChange} t={t} fieldKey="telephone" half />
+          <Field form={form} onChange={handleChange} t={t} fieldKey="email" half />
         </div>
       </SectionCard>
 
