@@ -56,6 +56,8 @@ WORKDIR /app
 COPY --from=builder /install /usr/local
 COPY app/ ./app/
 COPY company_defaults.json ./
+COPY alembic/ ./alembic/
+COPY alembic.ini ./
 RUN chown -R appuser:appgroup /app
 USER appuser
 EXPOSE 8000
@@ -89,6 +91,10 @@ COPY app/ ./app/
 
 # Copie le fichier de configuration des valeurs par défaut
 COPY company_defaults.json ./
+
+# Copie les migrations Alembic (nécessaire pour `alembic upgrade head` en prod)
+COPY alembic/ ./alembic/
+COPY alembic.ini ./
 
 # Copie le build React depuis le frontend-builder
 COPY --from=frontend-builder /frontend/dist ./frontend/dist/
