@@ -223,6 +223,8 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
+      args:
+        VITE_GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
     restart: unless-stopped
     ports:
       - "8090:80"   # Accès via http://<ip>:8090  (mettre derrière nginx/caddy pour SSL)
@@ -333,6 +335,7 @@ services:
       NOTIFICATION_FROM_EMAIL: ${NOTIFICATION_FROM_EMAIL:-contact@adjuja.com}
       NOTIFICATION_FROM_NAME: ADJUJA Veille
       ADMIN_SECRET: ${ADMIN_SECRET}
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY}
     depends_on:
       postgres:
         condition: service_healthy

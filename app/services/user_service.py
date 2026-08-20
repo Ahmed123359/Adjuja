@@ -16,42 +16,57 @@ class UserService:
     def __init__(self, db: AsyncSession) -> None:
         self._db = db
 
-    async def create(self, data: UserCreate, unlimited: bool = False) -> tuple[UserPublic, str]:
-        user_id            = str(uuid.uuid4())
-        created_at         = datetime.now(timezone.utc).isoformat()
-        hashed             = _pwd_ctx.hash(data.password)
-        verification_token = str(uuid.uuid4())
-        email_verified     = True if unlimited else False
-        max_generations    = 0    if unlimited else 1
+    @staticmethod
+    def hash_password(password: str) -> str:
+        return _pwd_ctx.hash(password)
+
+    async def create(
+        self,
+        *,
+        nom: str,
+        prenom: str,
+        email: str,
+        hashed_pwd: str,
+        entreprise: str = "",
+        secteur_activite: str = "",
+        nb_ao_par_an: int | None = None,
+        unlimited: bool = False,
+        email_verified: bool = False,
+    ) -> UserPublic:
+        """Cree la ligne `users` reelle. Appele soit immediatement (admin, pas de
+        verification requise), soit apres confirmation OTP reussie -- jamais avant,
+        voir POST /auth/register et /auth/verify-otp."""
+        user_id          = str(uuid.uuid4())
+        created_at       = datetime.now(timezone.utc).isoformat()
+        max_generations  = 0 if unlimited else 1
 
         user = User(
             id=user_id,
-            nom=data.nom,
-            prenom=data.prenom,
-            email=data.email,
-            hashed_pwd=hashed,
+            nom=nom,
+            prenom=prenom,
+            email=email,
+            hashed_pwd=hashed_pwd,
             created_at=created_at,
             email_verified=email_verified,
-            verification_token=verification_token,
             max_generations=max_generations,
-            entreprise=data.entreprise,
-            secteur_activite=data.secteur_activite,
-            nb_ao_par_an=data.nb_ao_par_an,
+            entreprise=entreprise,
+            secteur_activite=secteur_activite,
+            nb_ao_par_an=nb_ao_par_an,
         )
         self._db.add(user)
         try:
             await self._db.commit()
         except IntegrityError:
             await self._db.rollback()
-            raise ValueError(f"L'adresse e-mail '{data.email}' est déjà utilisée.")
+            raise ValueError(f"L'adresse e-mail '{email}' est déjà utilisée.")
 
         return UserPublic(
-            id=user_id, nom=data.nom, prenom=data.prenom, email=data.email,
+            id=user_id, nom=nom, prenom=prenom, email=email,
             created_at=created_at, email_verified=email_verified,
             generations_used=0, max_generations=max_generations,
-            entreprise=data.entreprise, secteur_activite=data.secteur_activite,
-            nb_ao_par_an=data.nb_ao_par_an,
-        ), verification_token
+            entreprise=entreprise, secteur_activite=secteur_activite,
+            nb_ao_par_an=nb_ao_par_an,
+        )
 
     async def get_by_email(self, email: str) -> UserPublic | None:
         result = await self._db.execute(select(User).where(User.email == email))
@@ -97,21 +112,6 @@ class UserService:
             created_at=created_at, email_verified=True,
             generations_used=0, max_generations=1,
         )
-
-    async def verify_email(self, token: str) -> UserPublic | None:
-        result = await self._db.execute(
-            select(User).where(User.verification_token == token, User.email_verified == False)  # noqa: E712
-        )
-        row = result.scalar_one_or_none()
-        if row is None:
-            return None
-        await self._db.execute(
-            update(User).where(User.id == row.id).values(
-                email_verified=True, verification_token=None
-            )
-        )
-        await self._db.commit()
-        return await self.get_by_id(row.id)
 
     async def increment_generations(self, user_id: str) -> None:
         await self._db.execute(

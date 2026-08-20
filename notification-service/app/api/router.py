@@ -1,8 +1,9 @@
 from datetime import datetime, timezone
+from typing import Literal
 
 from fastapi import APIRouter, Depends, Header, HTTPException, Query
 from jose import JWTError, jwt
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from sqlalchemy import text
 
 from app.channels.base import NotificationContent
@@ -10,6 +11,9 @@ from app.channels.factory import NotificationChannelFactory
 from app.core.config import settings
 from app.core.database import get_session
 from app.core.models import NotificationPreference
+from app.services.recipients import resolve_org_email
+from app.templates.ao_digest import AoItem
+from app.templates.registry import TemplateRegistry
 
 router = APIRouter()
 
@@ -57,13 +61,15 @@ class PreferenceIn(BaseModel):
     enabled: bool = True
     secteur_codes: list[str] = []
     notify_bdc: bool = False
+    cadence_unit: Literal["day", "week", "month"] = "day"
+    cadence_value: int = Field(1, ge=1, le=30)
+    send_hour: int = Field(8, ge=0, le=23)
+    max_items: int = Field(50, ge=1, le=200)
 
 
-class PreferenceOut(BaseModel):
+class PreferenceOut(PreferenceIn):
     org_id: str
-    enabled: bool
-    secteur_codes: list[str]
-    notify_bdc: bool
+    last_notified_at: datetime | None
     created_at: datetime
     updated_at: datetime
 
@@ -87,6 +93,11 @@ def get_preferences(org_id: str, caller_org: str = Depends(_require_jwt)):
         enabled=pref.enabled,
         secteur_codes=pref.secteur_codes or [],
         notify_bdc=pref.notify_bdc,
+        cadence_unit=pref.cadence_unit,
+        cadence_value=pref.cadence_value,
+        send_hour=pref.send_hour,
+        max_items=pref.max_items,
+        last_notified_at=pref.last_notified_at,
         created_at=pref.created_at,
         updated_at=pref.updated_at,
     )
@@ -100,12 +111,20 @@ def upsert_preferences(org_id: str, body: PreferenceIn, caller_org: str = Depend
         session.execute(
             text("""
                 INSERT INTO notifications.notification_preferences
-                    (org_id, enabled, secteur_codes, notify_bdc, created_at, updated_at)
-                VALUES (:org_id, :enabled, CAST(:codes AS jsonb), :notify_bdc, :now, :now)
+                    (org_id, enabled, secteur_codes, notify_bdc,
+                     cadence_unit, cadence_value, send_hour, max_items,
+                     created_at, updated_at)
+                VALUES (:org_id, :enabled, CAST(:codes AS jsonb), :notify_bdc,
+                        :cadence_unit, :cadence_value, :send_hour, :max_items,
+                        :now, :now)
                 ON CONFLICT (org_id) DO UPDATE
                 SET enabled       = EXCLUDED.enabled,
                     secteur_codes = EXCLUDED.secteur_codes,
                     notify_bdc    = EXCLUDED.notify_bdc,
+                    cadence_unit  = EXCLUDED.cadence_unit,
+                    cadence_value = EXCLUDED.cadence_value,
+                    send_hour     = EXCLUDED.send_hour,
+                    max_items     = EXCLUDED.max_items,
                     updated_at    = EXCLUDED.updated_at
             """),
             {
@@ -113,6 +132,10 @@ def upsert_preferences(org_id: str, body: PreferenceIn, caller_org: str = Depend
                 "enabled": body.enabled,
                 "codes": str(body.secteur_codes).replace("'", '"'),
                 "notify_bdc": body.notify_bdc,
+                "cadence_unit": body.cadence_unit,
+                "cadence_value": body.cadence_value,
+                "send_hour": body.send_hour,
+                "max_items": body.max_items,
                 "now": now,
             },
         )
@@ -128,8 +151,76 @@ def upsert_preferences(org_id: str, body: PreferenceIn, caller_org: str = Depend
         enabled=pref.enabled,
         secteur_codes=pref.secteur_codes or [],
         notify_bdc=pref.notify_bdc,
+        cadence_unit=pref.cadence_unit,
+        cadence_value=pref.cadence_value,
+        send_hour=pref.send_hour,
+        max_items=pref.max_items,
+        last_notified_at=pref.last_notified_at,
         created_at=pref.created_at,
         updated_at=pref.updated_at,
+    )
+
+
+class TestSendResult(BaseModel):
+    sent: bool
+    recipient: str | None = None
+    ao_count: int = 0
+    reason: str | None = None
+
+
+@router.post("/preferences/{org_id}/test-send", response_model=TestSendResult)
+def test_send(org_id: str, body: PreferenceIn, caller_org: str = Depends(_require_jwt)):
+    """
+    Envoi immédiat d'un digest de test à l'adresse résolue de l'org, avec les secteurs
+    actuellement dans le formulaire (pas besoin d'avoir sauvegardé). Bypass le lookback
+    de cadence et la déduplication de notification_log -- but volontairement différent
+    du batch réel (prévisualiser "à quoi ressemblerait mon digest maintenant"), donc
+    n'écrit ni notification_log ni last_notified_at : n'affecte jamais le vrai cycle.
+    """
+    _check_org_access(org_id, caller_org)
+    if not body.secteur_codes:
+        raise HTTPException(status_code=400, detail="Sélectionnez au moins un secteur avant de tester l'envoi.")
+
+    with get_session() as session:
+        recipient = resolve_org_email(session, org_id)
+        if not recipient:
+            return TestSendResult(sent=False, reason="no_email")
+
+        aos_rows = session.execute(
+            text("""
+                SELECT sa.id, sa.titre, sa.acheteur, sa.categorie, sa.date_limite, sa.url_source, sa.external_id
+                FROM watcher.scraped_aos sa
+                WHERE sa.secteur_codes IS NOT NULL
+                  AND sa.secteur_codes ?| :codes
+                ORDER BY sa.date_publication DESC
+                LIMIT :max_items
+            """),
+            {"codes": body.secteur_codes, "max_items": body.max_items},
+        ).fetchall()
+
+    if not aos_rows:
+        return TestSendResult(sent=False, recipient=recipient, reason="no_matching_aos")
+
+    ao_items = [
+        AoItem(
+            titre=row.titre,
+            acheteur=row.acheteur,
+            categorie=row.categorie,
+            date_limite=row.date_limite,
+            url_source=row.url_source,
+            reference=row.external_id,
+        )
+        for row in aos_rows
+    ]
+    content = TemplateRegistry.get("ao_digest").render({"aos": ao_items})
+    channel = NotificationChannelFactory.create(settings.notification_channel)
+    sent = channel.send(recipient, content)
+
+    return TestSendResult(
+        sent=sent,
+        recipient=recipient,
+        ao_count=len(aos_rows),
+        reason=None if sent else "send_failed",
     )
 
 

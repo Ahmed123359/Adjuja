@@ -160,6 +160,7 @@ class Settings(BaseSettings):
     """Algorithme de signature JWT (HS256 par défaut)."""
 
     google_client_id: str = ""
+    google_client_secret: str = ""
     """Client ID Google OAuth (depuis Google Cloud Console). Vide = Google auth désactivée."""
 
     resend_api_key: str = ""

@@ -20,9 +20,6 @@ class Settings(BaseSettings):
     jwt_secret_key: str = "change-me-in-production"
     jwt_algorithm: str = "HS256"
 
-    notification_hour: int = 8    # 08:00 Africa/Casablanca
-    notification_minute: int = 0
-
     @field_validator("resend_api_key")
     @classmethod
     def warn_missing_api_key(cls, v: str) -> str:

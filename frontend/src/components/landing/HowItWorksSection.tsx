@@ -6,9 +6,9 @@ import { useTranslation } from "react-i18next";
 
 function CardVeille() {
   const aos = [
-    { ref: "AO-2026-114", acheteur: "Commune urbaine de Kénitra", secteur: "BTP", nouveau: true  },
-    { ref: "AO-2026-112", acheteur: "ONEE - Branche Eau",         secteur: "BTP", nouveau: true  },
-    { ref: "AO-2026-108", acheteur: "Région Rabat-Salé-Kénitra",  secteur: "Ingénierie", nouveau: false },
+    { ref: "AO-2026-114", acheteur: "Commune urbaine · Région Nord", secteur: "BTP", nouveau: true  },
+    { ref: "AO-2026-112", acheteur: "Office national · Secteur eau", secteur: "BTP", nouveau: true  },
+    { ref: "AO-2026-108", acheteur: "Conseil régional · Centre",     secteur: "Ingénierie", nouveau: false },
   ];
 
   return (
@@ -154,7 +154,7 @@ function CardAnalyse() {
             style={{ background: "var(--l-teal)", boxShadow: "0 0 8px rgba(27,201,168,0.7)" }}
           />
           <span className="text-[12px]" style={{ color: "var(--l-text-muted)" }}>
-            3 criteres mis en evidence
+            3 critères mis en évidence
           </span>
         </div>
       </div>
@@ -318,7 +318,7 @@ function CardGeneration() {
                     }}
                   />
                   <span className="text-[11px]" style={{ color: "rgba(168,196,232,0.4)" }}>
-                    en cours de redaction...
+                    en cours de rédaction…
                   </span>
                 </div>
               )}

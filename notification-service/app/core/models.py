@@ -35,6 +35,13 @@ class NotificationPreference(Base):
     enabled: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
     secteur_codes: Mapped[list] = mapped_column(JSONB, nullable=False, default=list)
     notify_bdc: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    cadence_unit: Mapped[str] = mapped_column(String(10), nullable=False, default="day")
+    cadence_value: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
+    send_hour: Mapped[int] = mapped_column(Integer, nullable=False, default=8)
+    max_items: Mapped[int] = mapped_column(Integer, nullable=False, default=50)
+    last_notified_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
     )

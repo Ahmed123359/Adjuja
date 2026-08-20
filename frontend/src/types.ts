@@ -81,6 +81,7 @@ export interface HistoryEntry extends HistorySummary {
 
 export interface User {
   id:               string;
+  org_id?:          string | null;
   nom:              string;
   prenom:           string;
   email:            string;

@@ -105,6 +105,21 @@ export async function register(params: {
   return false;
 }
 
+export async function verifyOtp(email: string, otp: string): Promise<void> {
+  let res: Response;
+  try {
+    res = await fetch('/api/v1/auth/verify-otp', {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ email, otp }),
+    });
+  } catch (err) { wrapNetworkError(err); }
+  const data = await safeJson<{ detail?: unknown; access_token?: string }>(res);
+  if (!res.ok) throw new Error(typeof data?.detail === 'string' ? data.detail : 'Code invalide. Réessayez.');
+  if (!data?.access_token) throw new Error('Réponse inattendue du serveur. Réessayez.');
+  setToken(data.access_token);
+}
+
 export async function login(email: string, password: string): Promise<void> {
   let res: Response;
   try {
@@ -123,13 +138,42 @@ export async function login(email: string, password: string): Promise<void> {
   setToken(data.access_token);
 }
 
-export async function loginWithGoogle(credential: string): Promise<void> {
+const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID as string;
+const GOOGLE_OAUTH_STATE_KEY = 'google_oauth_state';
+
+export function googleCallbackUrl(): string {
+  return `${window.location.origin}/auth/google/callback`;
+}
+
+/** Redirection reelle vers Google -- plus de SDK, plus de bouton cache, plus de clic
+ * synthetique. `state` protege contre le CSRF (verifie au retour dans GoogleCallbackPage). */
+export function startGoogleLogin(): void {
+  const state = crypto.randomUUID();
+  sessionStorage.setItem(GOOGLE_OAUTH_STATE_KEY, state);
+  const params = new URLSearchParams({
+    client_id:     GOOGLE_CLIENT_ID,
+    redirect_uri:  googleCallbackUrl(),
+    response_type: 'code',
+    scope:         'openid email profile',
+    state,
+    prompt:        'select_account',
+  });
+  window.location.href = `https://accounts.google.com/o/oauth2/v2/auth?${params}`;
+}
+
+export function consumeGoogleOAuthState(): string | null {
+  const state = sessionStorage.getItem(GOOGLE_OAUTH_STATE_KEY);
+  sessionStorage.removeItem(GOOGLE_OAUTH_STATE_KEY);
+  return state;
+}
+
+export async function loginWithGoogleCode(code: string): Promise<void> {
   let res: Response;
   try {
-    res = await fetch('/api/v1/auth/google', {
+    res = await fetch('/api/v1/auth/google/callback', {
       method:  'POST',
       headers: { 'Content-Type': 'application/json' },
-      body:    JSON.stringify({ credential }),
+      body:    JSON.stringify({ code, redirect_uri: googleCallbackUrl() }),
     });
   } catch (err) { wrapNetworkError(err); }
   const data = await safeJson<{ detail?: unknown; access_token?: string }>(res);
@@ -1057,5 +1101,76 @@ export async function startCheckout(planCode: string): Promise<{ redirect_url: s
   if (!res.ok) {
     throw new Error(typeof data.detail === 'string' ? data.detail : 'Impossible de démarrer le paiement.');
   }
+  return data;
+}
+
+// ── Notification preferences ────────────────────────────────────────────────
+
+const NOTIFICATIONS_BASE = '/notifications';
+
+export type NotificationPreferences = {
+  org_id: string;
+  enabled: boolean;
+  secteur_codes: string[];
+  notify_bdc: boolean;
+  cadence_unit: 'day' | 'week' | 'month';
+  cadence_value: number;
+  send_hour: number;
+  max_items: number;
+  last_notified_at: string | null;
+};
+
+export async function fetchNotificationPreferences(orgId: string): Promise<NotificationPreferences | null> {
+  let res: Response;
+  try {
+    res = await fetch(`${NOTIFICATIONS_BASE}/preferences/${orgId}`, { headers: authHeaders() });
+  } catch (err) { wrapNetworkError(err); }
+  if (res.status === 404) return null; // pas encore configuré, pas une erreur
+  const data = await safeJson<NotificationPreferences>(res);
+  if (!res.ok) throw new Error('Erreur chargement des préférences de notification.');
+  if (!data) throw new Error('Réponse inattendue du serveur. Réessayez.');
+  return data;
+}
+
+export async function updateNotificationPreferences(
+  orgId: string,
+  body: Omit<NotificationPreferences, 'org_id' | 'last_notified_at'>,
+): Promise<NotificationPreferences> {
+  let res: Response;
+  try {
+    res = await fetch(`${NOTIFICATIONS_BASE}/preferences/${orgId}`, {
+      method:  'PUT',
+      headers: { 'Content-Type': 'application/json', ...authHeaders() },
+      body:    JSON.stringify(body),
+    });
+  } catch (err) { wrapNetworkError(err); }
+  const data = await safeJson<NotificationPreferences & { detail?: unknown }>(res);
+  if (!res.ok) throw new Error(typeof data?.detail === 'string' ? data.detail : 'Erreur sauvegarde des préférences.');
+  if (!data) throw new Error('Réponse inattendue du serveur. Réessayez.');
+  return data;
+}
+
+export type NotificationTestSendResult = {
+  sent: boolean;
+  recipient: string | null;
+  ao_count: number;
+  reason: string | null;
+};
+
+export async function sendTestNotification(
+  orgId: string,
+  body: Omit<NotificationPreferences, 'org_id' | 'last_notified_at'>,
+): Promise<NotificationTestSendResult> {
+  let res: Response;
+  try {
+    res = await fetch(`${NOTIFICATIONS_BASE}/preferences/${orgId}/test-send`, {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json', ...authHeaders() },
+      body:    JSON.stringify(body),
+    });
+  } catch (err) { wrapNetworkError(err); }
+  const data = await safeJson<NotificationTestSendResult & { detail?: unknown }>(res);
+  if (!res.ok) throw new Error(typeof data?.detail === 'string' ? data.detail : "Erreur lors de l'envoi du test.");
+  if (!data) throw new Error('Réponse inattendue du serveur. Réessayez.');
   return data;
 }

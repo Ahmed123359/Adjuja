@@ -14,6 +14,11 @@ export default defineConfig({
         changeOrigin: true,
         rewrite: (path: string) => path.replace(/^\/watcher/, ''),
       },
+      '/notifications': {
+        target: process.env.VITE_NOTIFICATIONS_TARGET ?? 'http://localhost:8002',
+        changeOrigin: true,
+        rewrite: (path: string) => path.replace(/^\/notifications/, ''),
+      },
     },
   },
   build: {

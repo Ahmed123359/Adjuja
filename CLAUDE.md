@@ -1,4 +1,28 @@
-# OffrIA Instructions pour Claude Code
+# ADJUJA Instructions pour Claude Code
+
+## Début de session
+
+OBLIGATOIRE, première action de toute session, avant toute autre chose :
+
+1. Lire `context/progress-tracker.md` pour connaître l'état réel du projet (ce qui est
+   fait, en cours, en question) -- jamais l'état supposé/attendu.
+2. Lire ceux des fichiers suivants pertinents pour la tâche en cours :
+   `context/project-overview.md` (portée produit), `context/architecture-context.md`
+   (stack, limites de service, invariants), `context/code-standards.md` (conventions),
+   `context/ui-context.md` (design), `context/ai-workflow-rules.md` (discipline de
+   travail).
+
+Ne pas dupliquer leur contenu ici -- les relire à chaque session, ils évoluent avec le
+projet et une copie figée dans ce fichier finirait par dériver.
+
+Une feature en cours de construction vit dans `context/feature-spec/<nom>/` (voir
+`context/ai-workflow-rules.md` pour le format) -- la lire avant de continuer un travail
+déjà commencé.
+
+## Agents
+
+Ne jamais utiliser l'outil Agent (subagents) sur ce projet, quelle que soit la tâche.
+Tout le travail se fait directement dans la session courante.
 
 ## Lancer l'application
 
@@ -28,7 +52,7 @@ pytest --cov=app        # avec couverture
 - Les routes FastAPI ne contiennent pas de logique métier uniquement validation + appel service + gestion HTTP
 - Toute route protégée doit avoir `Depends(get_current_user)`
 - Nouveaux services → singleton via `@lru_cache` dans `dependencies.py`
-- Ne jamais modifier le schéma SQLite sans en discuter d'abord (migration manuelle requise)
+- Ne jamais modifier le schéma PostgreSQL sans en discuter d'abord (migration Alembic requise)
 
 ## Conventions frontend (TypeScript/React)
 
@@ -42,8 +66,7 @@ pytest --cov=app        # avec couverture
 - Toujours proposer un plan avant de modifier un service existant
 - Mettre à jour `conception/1.Roadmap/roadmap_technique.md` quand un item est terminé (`[ ]` → `[x]`)
 - Mettre à jour `conception/2. Architecture/architecture.md` si l'architecture change
-- **Lire `context/ai-workflow-rules.md` et `context/progress-tracker.md` en début de session** : discipline de travail (vérifier en réel, pas supposer) et état vivant du projet. `SUIVI.md` est obsolète, remplacé par ces deux fichiers (2026-07-18).
-- **Mettre à jour `context/progress-tracker.md` dès qu'un changement significatif est fait** (pas seulement en fin de session) : section Complété, En cours, Questions ouvertes
+- **Mettre à jour `context/progress-tracker.md` dès qu'un changement significatif est fait** (pas seulement en fin de session) : section Complété, En cours, Questions ouvertes. `SUIVI.md` est obsolète, remplacé par ce fichier (2026-07-18).
 
 ## Sécurité
 

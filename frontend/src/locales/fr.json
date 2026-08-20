@@ -29,7 +29,7 @@
         "desc": "Adjuja surveille en continu les portails de marchés publics marocains et vous signale les AO qui correspondent à votre secteur."
       },
       "gonogo": {
-        "title": "Analyse Go/No-Go",
+        "title": "Analyse d'opportunité",
         "desc": "Un score de pertinence et un verdict clair avant de vous engager : budget, délais, références, tout est vérifié en quelques secondes."
       },
       "analyse": {
@@ -137,7 +137,7 @@
       "bullet3": "Support inclus"
     },
     "footer": {
-      "tagline": "ADJUJA automatise la rédaction de vos réponses aux appels d'offres publics au Maroc.",
+      "tagline": "Adjuja est le copilote IA des appels d'offres publics au Maroc : veille, analyse d'opportunité, analyse du CPS et rédaction assistée.",
       "emailPlaceholder": "Votre adresse email",
       "subscribe": "S'abonner",
       "newsletterTitle": "Restez informé",
@@ -212,7 +212,7 @@
     "footnote2": "Tous les prix sont HT · TVA applicable",
     "freeTrial": "1 AO gratuit à l'inscription, sans carte bancaire",
     "freeTrialCta": "Essayez gratuitement 1 AO sans CB",
-    "dayAnchor": "L'abonnement Pro revient à environ 56 MAD par jour ouvré, moins d'une heure de consultant.",
+    "dayAnchor": "L'abonnement Pro revient à environ 45 MAD par jour ouvré, moins d'une heure de consultant.",
     "plans": {
       "starter_name": "Essentiel",
       "starter_tagline": "Pour un indépendant qui répond à plusieurs AOs par mois",
@@ -260,7 +260,7 @@
   "auth": {
     "showcase": {
       "title": "Un copilote complet pour vos appels d'offres.",
-      "subtitle": "Veille, analyse Go/No-Go et rédaction assistée, conçus pour les marchés publics marocains."
+      "subtitle": "Veille, analyse d'opportunité et rédaction assistée, conçus pour les marchés publics marocains."
     },
     "login": {
       "title": "Connexion",
@@ -275,7 +275,9 @@
       "createAccount": "Créer un compte",
       "or": "ou",
       "verified": "Email vérifié ! Connectez-vous pour accéder à votre génération gratuite.",
-      "continueWithGoogle": "Continuer avec Google"
+      "continueWithGoogle": "Continuer avec Google",
+      "googleCallbackLoading": "Connexion avec Google…",
+      "googleCallbackError": "Connexion Google invalide. Réessayez."
     },
     "register": {
       "title": "Créer un compte",
@@ -319,8 +321,11 @@
     },
     "verify": {
       "title": "Vérifiez votre email",
-      "sent": "Un lien de confirmation a été envoyé à",
-      "instruction": "Cliquez sur le lien dans l'email pour activer votre compte et accéder à votre génération gratuite.",
+      "sent": "Un code de vérification a été envoyé à",
+      "instruction": "Saisissez le code à 6 chiffres reçu par email pour activer votre compte et accéder à votre génération gratuite.",
+      "confirm": "Confirmer",
+      "verifying": "Vérification…",
+      "otpError": "Code invalide. Réessayez.",
       "goLogin": "Aller à la connexion"
     }
   },
@@ -378,6 +383,40 @@
       "upgradeLoading": "Redirection...",
       "upgradeError": "Impossible de démarrer le paiement."
     },
+    "notifications": {
+      "title": "Notifications",
+      "hint": "Recevez un email récapitulatif des nouveaux appels d'offres correspondant aux secteurs suivis ci-dessous.",
+      "enabledLabel": "Activer les notifications par email",
+      "sectorsLabel": "Secteurs suivis",
+      "sectorsHint": "Indépendant des secteurs d'activité de votre profil : vous pouvez surveiller des secteurs hors de votre domaine déclaré.",
+      "cadenceLabel": "Fréquence",
+      "cadenceEvery": "Tous les",
+      "cadenceUnit": {
+        "day": "jour(s)",
+        "week": "semaine(s)",
+        "month": "mois"
+      },
+      "hourLabel": "Heure d'envoi",
+      "maxItemsLabel": "Nombre maximum d'AOs par email",
+      "save": "Enregistrer",
+      "saving": "Enregistrement...",
+      "saved": "Préférences enregistrées.",
+      "error": "Erreur lors de la sauvegarde des préférences.",
+      "loadError": "Erreur chargement des préférences de notification.",
+      "lastNotifiedLabel": "Dernière notification",
+      "lastNotifiedNever": "Jamais",
+      "lastNotifiedDaysAgo": "Il y a {{count}} jour",
+      "lastNotifiedDaysAgo_other": "Il y a {{count}} jours",
+      "lastNotifiedToday": "Aujourd'hui",
+      "testSend": "Envoyer un test",
+      "testSending": "Envoi...",
+      "testHint": "Envoie un vrai email à votre adresse avec les AOs correspondant aux secteurs sélectionnés ci-dessus, sans attendre la cadence programmée. Pour tester en local.",
+      "testResultSent": "Email de test envoyé à {{email}} ({{count}} AO).",
+      "testResultNoAos": "Aucun appel d'offres ne correspond actuellement à ces secteurs.",
+      "testResultNoEmail": "Aucune adresse email trouvée pour votre compte.",
+      "testResultFailed": "Échec de l'envoi. Vérifiez la configuration du service de notifications.",
+      "testResultError": "Erreur lors de l'envoi du test."
+    },
     "profile": {
       "save": "Enregistrer",
       "saving": "Enregistrement...",
@@ -399,7 +438,7 @@
         "contact": "Contact"
       },
       "activitesHint": "Sélectionnez les secteurs qui correspondent à votre activité. Utilisé pour filtrer la veille des marchés et, bientôt, pour les notifications d'AOs correspondant à votre profil.",
-      "qualificationsHint": "Ces informations servent à évaluer automatiquement votre éligibilité (Go/No-Go) sur les AOs scrapés, en comparant ces données aux exigences extraites du CPS et du RC.",
+      "qualificationsHint": "Ces informations servent à évaluer automatiquement votre éligibilité (analyse d'opportunité) sur les AOs scrapés, en comparant ces données aux exigences extraites du CPS et du RC.",
       "addClassification": "Ajouter une classification",
       "addCertification": "Ajouter",
       "addReference": "Ajouter une référence",

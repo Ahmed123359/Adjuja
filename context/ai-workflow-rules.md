@@ -2,15 +2,49 @@
 
 ## Approche
 
-ADJUJA est un projet existant, pas un chantier greenfield. Ce fichier ne remplace pas
-`CLAUDE.md` (conventions de code, sécurité) ni `conception/2. Architecture/architecture.md`
-(architecture technique) ni `conception/1.Roadmap/roadmap_technique.md` (roadmap) : il
-ajoute la discipline manquante entre les deux -- comment travailler session après session
-sans perdre le fil, et comment garder une trace fiable de l'état réel du système.
+ADJUJA est un projet existant, pas un chantier greenfield, développé en spec-driven
+development : les fichiers de `context/` définissent quoi construire, comment, et l'état
+réel d'avancement. Toujours implémenter contre ces specs, ne pas inventer de comportement
+non défini ici ou dans `conception/`.
 
-`progress-tracker.md` (même dossier) est la trace vivante. Il remplace `SUIVI.md`, resté
-figé à une session ancienne malgré l'instruction de `CLAUDE.md` de le tenir à jour --
-preuve qu'un fichier qu'on "doit" mettre à jour sans discipline associée finit par pourrir.
+Fichiers de ce dossier et leur rôle :
+
+- `project-overview.md` -- portée produit, objectifs, flux utilisateur, ce qui est dans
+  et hors scope.
+- `architecture-context.md` -- stack, limites de service, modèle de stockage/auth/
+  sécurité, invariants. Référence condensée ; `conception/2. Architecture/architecture.md`
+  reste la source technique complète.
+- `code-standards.md` -- conventions de code condensées depuis `CLAUDE.md` (qui reste la
+  source canonique), plus les patterns confirmés réels en cours d'implémentation.
+- `ui-context.md` -- tokens de design, patterns rejetés, conventions de composants.
+- `progress-tracker.md` -- trace vivante de l'état réel du système. Remplace `SUIVI.md`,
+  resté figé à une session ancienne malgré l'instruction de `CLAUDE.md` de le tenir à
+  jour -- preuve qu'un fichier qu'on "doit" mettre à jour sans discipline associée finit
+  par pourrir.
+- `feature-spec/<nom>/` -- un dossier par feature, voir "Structure des features"
+  ci-dessous.
+
+Ne pas dupliquer le contenu de ces fichiers ailleurs (CLAUDE.md, mémoire auto) : les lire
+à chaque session plutôt que d'en garder une copie qui dérive.
+
+## Structure des features
+
+Le travail est planifié dans `feature-spec/<nom-feature>/`, un dossier par feature,
+tranche verticale complète : `00-overview.md` (Deliverable / Depends on / Build order /
+Check when the feature is done) puis, selon ce que la feature touche, `api.md`,
+`client.md`. Une feature n'est pas terminée tant que chaque fichier de son dossier n'est
+pas terminé -- le `00-overview.md` définit la vraie définition de "fait", pas un seul
+fichier isolé.
+
+Dans une feature, implémenter un fichier à la fois, dans l'ordre indiqué par son
+`00-overview.md` (généralement `api.md` avant `client.md`, le frontend consommant ce que
+le backend expose). `context/feature-spec/chatbot/` est l'exemple de référence actuel de
+ce format.
+
+Règles universelles (ce fichier, `code-standards.md`, `architecture-context.md`,
+`ui-context.md`) ne sont jamais dupliquées à l'intérieur d'un dossier de feature -- une
+feature ne contient que ce qui lui est spécifique (overview/api/client), jamais sa
+propre copie des règles de travail ou des conventions de code.
 
 ## Discipline de mise à jour
 
@@ -61,9 +95,13 @@ Tout le travail se fait directement dans la session courante, qui a déjà le co
 
 ## Garder les docs à jour
 
-- Architecture ou limites de service modifiées -> `conception/2. Architecture/architecture.md`
+- Architecture ou limites de service modifiées -> `architecture-context.md` (condensé) et
+  `conception/2. Architecture/architecture.md` (détail complet)
 - Item de roadmap terminé -> `conception/1.Roadmap/roadmap_technique.md` (`[ ]` -> `[x]`)
-- Conventions de code changées -> `CLAUDE.md`
+- Conventions de code changées -> `CLAUDE.md` (source canonique) et `code-standards.md`
+  (condensé) ensemble, jamais l'un sans l'autre
+- Tokens de design ou conventions UI changés -> `ui-context.md`
+- Portée produit changée -> `project-overview.md`
 - État d'avancement, décisions de session, bugs réels trouvés -> `progress-tracker.md`
 
 Un changement d'architecture qui ne met à jour aucun de ces fichiers n'est pas terminé.

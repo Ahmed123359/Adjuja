@@ -52,6 +52,16 @@ def set(key: str, value: Any, ttl: int = 86400) -> None:
         logger.warning("Cache set error: %s", e)
 
 
+def delete(key: str) -> None:
+    r = _client()
+    if not r:
+        return
+    try:
+        r.delete(key)
+    except Exception as e:
+        logger.warning("Cache delete error: %s", e)
+
+
 def exists(key: str) -> bool:
     r = _client()
     if not r:

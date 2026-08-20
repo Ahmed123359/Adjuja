@@ -5,6 +5,7 @@ import App from './App';
 import LandingPage from './pages/LandingPage';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
+import GoogleCallbackPage from './pages/GoogleCallbackPage';
 import NotFoundPage from './pages/NotFoundPage';
 import MentionsLegalesPage from './pages/MentionsLegalesPage';
 import CguPage from './pages/CguPage';
@@ -112,6 +113,10 @@ function AppRouter() {
             onGoLogin={() => navigate('/login')}
           />
         )}
+      />
+      <Route
+        path="/auth/google/callback"
+        element={<GoogleCallbackPage onSuccess={handleAuthSuccess} />}
       />
       <Route path="/mentions-legales" element={<MentionsLegalesPage />} />
       <Route path="/cgu" element={<CguPage />} />

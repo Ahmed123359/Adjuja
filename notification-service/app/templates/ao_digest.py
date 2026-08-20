@@ -4,6 +4,8 @@ from datetime import date
 from app.channels.base import NotificationContent
 from app.templates.base import NotificationTemplate
 
+LOGO_URL = "https://adjuja.com/logo-adjuja.png"
+
 
 @dataclass
 class AoItem:
@@ -12,6 +14,7 @@ class AoItem:
     categorie: str | None
     date_limite: date | None
     url_source: str
+    reference: str | None = None
 
 
 _HTML = """\
@@ -20,35 +23,51 @@ _HTML = """\
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="color-scheme" content="light">
   <title>{subject}</title>
 </head>
-<body style="margin:0;padding:0;background:#F4F6FB;font-family:'Segoe UI',Arial,sans-serif;">
-  <table width="100%" cellpadding="0" cellspacing="0" style="background:#F4F6FB;padding:32px 0;">
+<body style="margin:0;padding:0;background:#EEF1F9;font-family:'Segoe UI',Arial,sans-serif;">
+  <div style="display:none;max-height:0;overflow:hidden;mso-hide:all;opacity:0;">
+    {preheader}&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;
+  </div>
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#EEF1F9;padding:32px 0;">
     <tr>
       <td align="center">
         <table width="600" cellpadding="0" cellspacing="0"
-               style="background:#ffffff;border-radius:12px;overflow:hidden;
-                      box-shadow:0 2px 8px rgba(8,11,28,0.08);">
+               style="background:#ffffff;border-radius:16px;overflow:hidden;
+                      box-shadow:0 4px 24px rgba(8,11,28,0.10);">
 
           <!-- Header -->
           <tr>
-            <td style="background:linear-gradient(135deg,#3248CE 0%,#2B79E8 100%);
-                       padding:32px 40px 28px;">
-              <p style="margin:0;font-size:22px;font-weight:700;color:#ffffff;
-                        letter-spacing:-0.3px;">ADJUJA Veille</p>
-              <p style="margin:6px 0 0;font-size:14px;color:rgba(255,255,255,0.75);">
-                {ao_count} nouvel{plural} appel{plural} d&apos;offres correspond{plural_v} à vos secteurs
+            <td style="background:linear-gradient(120deg,#3248CE 0%,#2B79E8 55%,#1BC9A8 100%);
+                       padding:28px 36px;">
+              <table cellpadding="0" cellspacing="0">
+                <tr>
+                  <td style="padding-right:12px;vertical-align:middle;">
+                    <img src="{logo_url}" width="40" height="40" alt="ADJUJA"
+                         style="display:block;border-radius:10px;">
+                  </td>
+                  <td style="vertical-align:middle;">
+                    <p style="margin:0;font-size:19px;font-weight:800;color:#ffffff;
+                              letter-spacing:-0.2px;">ADJUJA</p>
+                    <p style="margin:1px 0 0;font-size:12px;color:rgba(255,255,255,0.82);">
+                      Veille des appels d&apos;offres
+                    </p>
+                  </td>
+                </tr>
+              </table>
+              <p style="margin:18px 0 0;font-size:14.5px;color:#ffffff;font-weight:600;">
+                {header_line}
               </p>
             </td>
           </tr>
 
           <!-- Body -->
           <tr>
-            <td style="padding:32px 40px 8px;">
-              <p style="margin:0 0 24px;font-size:15px;color:#3D4560;line-height:1.6;">
+            <td style="padding:28px 36px 8px;">
+              <p style="margin:0 0 22px;font-size:14.5px;color:#3D4560;line-height:1.6;">
                 Bonjour,<br><br>
-                Voici les appels d&apos;offres publiés aujourd&apos;hui qui correspondent
-                à vos secteurs d&apos;activité préférés.
+                Voici les appels d&apos;offres qui correspondent à vos secteurs suivis.
               </p>
               {ao_cards}
             </td>
@@ -56,30 +75,30 @@ _HTML = """\
 
           <!-- CTA -->
           <tr>
-            <td style="padding:8px 40px 32px;text-align:center;">
-              <a href="https://app.adjuja.com/veille"
-                 style="display:inline-block;background:#1BC9A8;color:#080B1C;
+            <td style="padding:8px 36px 32px;text-align:center;">
+              <a href="https://app.adjuja.com/app"
+                 style="display:inline-block;background:#1BC9A8;color:#062A22;
                         font-weight:700;font-size:14px;text-decoration:none;
-                        border-radius:8px;padding:12px 28px;letter-spacing:0.2px;">
-                Voir tous les AOs sur ADJUJA
+                        border-radius:10px;padding:13px 30px;letter-spacing:0.1px;">
+                Voir tous les appels d&apos;offres
               </a>
             </td>
           </tr>
 
           <!-- Footer -->
           <tr>
-            <td style="background:#F4F6FB;border-top:1px solid #E8ECF5;
-                       padding:20px 40px;text-align:center;">
-              <p style="margin:0;font-size:12px;color:#9AA3BF;line-height:1.6;">
-                Vous recevez cet email parce que vous avez activé les alertes secteur sur ADJUJA.<br>
-                <a href="https://app.adjuja.com/settings/notifications"
-                   style="color:#3248CE;text-decoration:none;">
+            <td style="background:#F6F8FC;border-top:1px solid #E8ECF5;
+                       padding:22px 36px;text-align:center;">
+              <p style="margin:0;font-size:12px;color:#9AA3BF;line-height:1.7;">
+                Vous recevez cet email car les notifications sont activées sur votre compte ADJUJA.<br>
+                <a href="https://app.adjuja.com/app"
+                   style="color:#3248CE;text-decoration:none;font-weight:600;">
                   Gérer mes préférences
                 </a>
                 &nbsp;&middot;&nbsp;
-                <a href="https://app.adjuja.com/settings/notifications?unsubscribe=1"
+                <a href="https://adjuja.com"
                    style="color:#9AA3BF;text-decoration:none;">
-                  Se désabonner
+                  adjuja.com
                 </a>
               </p>
             </td>
@@ -95,12 +114,12 @@ _HTML = """\
 
 _AO_CARD = """\
 <table width="100%" cellpadding="0" cellspacing="0"
-       style="border:1px solid #E8ECF5;border-radius:8px;margin-bottom:16px;
-              overflow:hidden;">
+       style="border:1px solid #E8ECF5;border-left:3px solid #1BC9A8;border-radius:10px;
+              margin-bottom:14px;overflow:hidden;">
   <tr>
-    <td style="padding:16px 20px;">
-      <p style="margin:0 0 4px;font-size:13px;font-weight:600;color:#1BC9A8;
-                text-transform:uppercase;letter-spacing:0.5px;">
+    <td style="padding:16px 18px;">
+      <p style="margin:0 0 6px;font-size:11.5px;font-weight:700;color:#1BC9A8;
+                text-transform:uppercase;letter-spacing:0.6px;">
         {categorie}
       </p>
       <p style="margin:0 0 8px;font-size:15px;font-weight:700;color:#080B1C;
@@ -112,8 +131,14 @@ _AO_CARD = """\
       </p>
       <table cellpadding="0" cellspacing="0">
         <tr>
-          <td style="padding-right:16px;">
-            <span style="font-size:12px;color:#9AA3BF;">Date limite</span><br>
+          <td style="padding-right:24px;">
+            <span style="font-size:11.5px;color:#9AA3BF;">Référence</span><br>
+            <span style="font-size:13px;font-weight:600;color:#2D3748;">
+              {reference}
+            </span>
+          </td>
+          <td>
+            <span style="font-size:11.5px;color:#9AA3BF;">Date limite</span><br>
             <span style="font-size:13px;font-weight:600;color:{deadline_color};">
               {date_limite}
             </span>
@@ -159,6 +184,7 @@ class AoDigestTemplate(NotificationTemplate):
                 categorie=ao.categorie or "Appel d'offres",
                 titre=ao.titre,
                 acheteur=ao.acheteur or "Acheteur non précisé",
+                reference=ao.reference or "Non précisée",
                 date_limite=_format_date(ao.date_limite),
                 deadline_color=_deadline_color(ao.date_limite),
                 url_source=ao.url_source,
@@ -166,15 +192,18 @@ class AoDigestTemplate(NotificationTemplate):
             for ao in aos
         )
 
-        plural = "s" if n > 1 else ""
-        plural_v = "ent" if n > 1 else ""
-        subject = f"ADJUJA  {n} nouvel{'s' if n > 1 else ''} AO{'s' if n > 1 else ''} pour vous"
+        if n == 1:
+            subject = "ADJUJA : 1 nouvel appel d'offres pour vous"
+            header_line = "1 nouvel appel d'offres correspond à vos secteurs"
+        else:
+            subject = f"ADJUJA : {n} nouveaux appels d'offres pour vous"
+            header_line = f"{n} nouveaux appels d'offres correspondent à vos secteurs"
 
         html = _HTML.format(
             subject=subject,
-            ao_count=n,
-            plural=plural,
-            plural_v=plural_v,
+            preheader=header_line,
+            logo_url=LOGO_URL,
+            header_line=header_line,
             ao_cards=cards_html,
         )
 
@@ -185,11 +214,13 @@ class AoDigestTemplate(NotificationTemplate):
         lines = [subject, "=" * len(subject), ""]
         for ao in aos:
             lines.append(f"- {ao.titre}")
+            if ao.reference:
+                lines.append(f"  Référence : {ao.reference}")
             if ao.acheteur:
                 lines.append(f"  Acheteur : {ao.acheteur}")
             if ao.date_limite:
                 lines.append(f"  Date limite : {_format_date(ao.date_limite)}")
             lines.append(f"  Lien : {ao.url_source}")
             lines.append("")
-        lines.append("Gérer vos préférences : https://app.adjuja.com/settings/notifications")
+        lines.append("Gérer vos préférences : https://app.adjuja.com/app")
         return "\n".join(lines)

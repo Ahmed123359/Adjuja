@@ -28,12 +28,9 @@ celery_app.conf.update(
     task_acks_late=True,
     worker_prefetch_multiplier=1,
     beat_schedule={
-        "daily-notification-batch": {
+        "notification-due-check": {
             "task": "app.workers.tasks.batch_tasks.run_notification_batch",
-            "schedule": crontab(
-                hour=settings.notification_hour,
-                minute=settings.notification_minute,
-            ),
+            "schedule": crontab(minute=0),  # toutes les heures, pile à l'heure
         },
     },
 )

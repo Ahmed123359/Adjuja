@@ -1,13 +1,9 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
-import { register, getPasswordRules, loginWithGoogle, type PasswordRules } from '../api';
+import { register, verifyOtp, getPasswordRules, startGoogleLogin, type PasswordRules } from '../api';
 import AuthLayout from '../components/auth/AuthLayout';
 import CustomSelect from '../components/CustomSelect';
-
-declare const google: {
-  accounts: { id: { initialize: (cfg: object) => void; renderButton: (el: HTMLElement, cfg: object) => void } };
-};
 
 type Props = { onSuccess: () => void; onGoLogin: () => void };
 
@@ -24,41 +20,12 @@ export default function RegisterPage({ onSuccess, onGoLogin }: Props) {
   const [error,     setError]     = useState('');
   const [loading,   setLoading]   = useState(false);
   const [emailSent, setEmailSent] = useState(false);
+  const [otp,       setOtp]       = useState('');
+  const [otpLoading, setOtpLoading] = useState(false);
+  const [otpError,   setOtpError]   = useState('');
   const [rules,     setRules]     = useState<PasswordRules>({ min_length: 8, require_digit: true });
-  const googleBtnRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => { getPasswordRules().then(setRules); }, []);
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      if (typeof google !== 'undefined' && googleBtnRef.current) {
-        clearInterval(interval);
-        google.accounts.id.initialize({
-          client_id: '862141749635-8j66o1ns8ieknmbs3hqm72f7ffs7njaj.apps.googleusercontent.com',
-          callback: async (response: { credential: string }) => {
-            setError(''); setLoading(true);
-            try { await loginWithGoogle(response.credential); onSuccess(); }
-            catch (err) { setError(err instanceof Error ? err.message : 'Erreur Google.'); }
-            finally { setLoading(false); }
-          },
-        });
-        google.accounts.id.renderButton(googleBtnRef.current, {
-          theme: 'filled_black', size: 'large', width: 280,
-          text: 'continue_with', shape: 'rectangular', logo_alignment: 'center',
-        });
-      }
-    }, 100);
-    return () => clearInterval(interval);
-  }, []);
-
-  /** Le bouton natif de Google (rendu par renderButton dans un iframe) ne peut pas
-   * recevoir de padding/rayon/hauteur personnalisés via CSS -- c'est un iframe cross-origin.
-   * On le garde monté mais invisible, et notre propre bouton (avec exactement le padding et
-   * le style du reste du formulaire) déclenche son clic interne par-dessus. */
-  function triggerGoogleButton() {
-    const btn = googleBtnRef.current?.querySelector('div[role="button"]') as HTMLElement | null;
-    btn?.click();
-  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault(); setError(''); setLoading(true);
@@ -72,6 +39,13 @@ export default function RegisterPage({ onSuccess, onGoLogin }: Props) {
     } catch (err) {
       setError(err instanceof Error ? err.message : t('auth.register.submitting'));
     } finally { setLoading(false); }
+  }
+
+  async function handleVerifyOtp(e: React.FormEvent) {
+    e.preventDefault(); setOtpError(''); setOtpLoading(true);
+    try { await verifyOtp(email, otp); onSuccess(); }
+    catch (err) { setOtpError(err instanceof Error ? err.message : t('auth.verify.otpError')); }
+    finally { setOtpLoading(false); }
   }
 
   const inputStyle: React.CSSProperties = {
@@ -110,14 +84,43 @@ export default function RegisterPage({ onSuccess, onGoLogin }: Props) {
           <h2 style={{ fontSize: 20, fontWeight: 700, color: 'var(--l-text)', margin: '0 0 10px', letterSpacing: '-0.01em' }}>{t('auth.verify.title')}</h2>
           <p style={{ fontSize: 14, color: 'var(--l-sub)', margin: '0 0 6px' }}>{t('auth.verify.sent')}</p>
           <p style={{ fontSize: 14, fontWeight: 600, color: 'var(--l-blue)', margin: '0 0 16px' }}>{email}</p>
-          <p style={{ fontSize: 13, color: 'var(--l-dim)', margin: '0 0 28px', lineHeight: 1.6 }}>
+          <p style={{ fontSize: 13, color: 'var(--l-dim)', margin: '0 0 24px', lineHeight: 1.6 }}>
             {t('auth.verify.instruction')}
           </p>
 
+          {otpError && (
+            <div style={{ marginBottom: 14, padding: '9px 12px', borderRadius: 10, background: 'rgba(220,38,38,0.07)', border: '1px solid rgba(220,38,38,0.2)', color: '#dc2626', fontSize: 12.5, textAlign: 'left' }}>
+              {otpError}
+            </div>
+          )}
+
+          <form onSubmit={handleVerifyOtp} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+            <input
+              type="text" inputMode="numeric" maxLength={6} autoFocus
+              value={otp}
+              onChange={e => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
+              placeholder="000000"
+              required
+              style={{
+                width: '100%', padding: '13px', borderRadius: 12,
+                border: '1px solid var(--l-card-border)', background: 'var(--l-surface-2, rgba(255,255,255,0.04))',
+                color: 'var(--l-text)', fontSize: 24, fontWeight: 700, letterSpacing: '10px', textAlign: 'center',
+                outline: 'none', boxSizing: 'border-box', fontFamily: 'inherit', transition: 'border-color .15s',
+              }}
+              onFocus={e => e.currentTarget.style.borderColor = 'var(--l-blue)'}
+              onBlur={e => e.currentTarget.style.borderColor = 'var(--l-card-border)'}
+            />
+            <button type="submit" disabled={otpLoading || otp.length !== 6}
+              style={{ width: '100%', padding: '13px', borderRadius: 12, border: 'none', background: otpLoading || otp.length !== 6 ? 'var(--l-dim)' : 'var(--l-blue)', color: '#fff', fontSize: 15, fontWeight: 700, cursor: otpLoading || otp.length !== 6 ? 'not-allowed' : 'pointer', fontFamily: 'inherit', transition: 'opacity .15s' }}
+              onMouseEnter={e => { if (!otpLoading && otp.length === 6) e.currentTarget.style.opacity = '.88'; }}
+              onMouseLeave={e => e.currentTarget.style.opacity = '1'}
+            >
+              {otpLoading ? t('auth.verify.verifying') : t('auth.verify.confirm')}
+            </button>
+          </form>
+
           <button onClick={onGoLogin}
-            style={{ width: '100%', padding: '13px', borderRadius: 12, border: 'none', background: 'var(--l-blue)', color: '#fff', fontSize: 15, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', transition: 'opacity .15s' }}
-            onMouseEnter={e => e.currentTarget.style.opacity = '.88'}
-            onMouseLeave={e => e.currentTarget.style.opacity = '1'}
+            style={{ width: '100%', padding: '10px', marginTop: 12, borderRadius: 12, border: 'none', background: 'none', color: 'var(--l-sub)', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}
           >
             {t('auth.verify.goLogin')}
           </button>
@@ -246,14 +249,9 @@ export default function RegisterPage({ onSuccess, onGoLogin }: Props) {
         <div style={{ flex: 1, height: 1, background: 'var(--l-card-border)' }} />
       </div>
 
-      {/* Bouton natif Google, invisible : garde le flux OAuth fonctionnel sans imposer
-          son propre style. Ne pas mettre display:none (casse le clic dans certains
-          navigateurs) -- juste hors-flux et transparent. */}
-      <div ref={googleBtnRef} style={{ position: 'absolute', opacity: 0, pointerEvents: 'none', width: 1, height: 1, overflow: 'hidden' }} />
-
       <button
         type="button"
-        onClick={triggerGoogleButton}
+        onClick={startGoogleLogin}
         style={{ width: '100%', padding: '10px 16px', borderRadius: 10, border: 'none', background: '#131314', color: '#fff', fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 9, transition: 'opacity .15s' }}
         onMouseEnter={e => e.currentTarget.style.opacity = '.88'}
         onMouseLeave={e => e.currentTarget.style.opacity = '1'}

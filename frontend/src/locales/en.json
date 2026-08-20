@@ -29,7 +29,7 @@
         "desc": "Adjuja continuously monitors Moroccan public tender portals and flags the ones that match your sector."
       },
       "gonogo": {
-        "title": "Go/No-Go analysis",
+        "title": "Opportunity analysis",
         "desc": "A relevance score and a clear verdict before you commit: budget, deadlines, references, all checked in seconds."
       },
       "analyse": {
@@ -137,7 +137,7 @@
       "bullet3": "Support included"
     },
     "footer": {
-      "tagline": "ADJUJA automates the drafting of your responses to public tenders in Morocco.",
+      "tagline": "Adjuja is the AI copilot for public tenders in Morocco: monitoring, opportunity analysis, CPS analysis and assisted drafting.",
       "emailPlaceholder": "Your email address",
       "subscribe": "Subscribe",
       "newsletterTitle": "Stay updated",
@@ -212,7 +212,7 @@
     "footnote2": "All prices excl. VAT · VAT applicable",
     "freeTrial": "1 free tender at sign-up, no credit card required",
     "freeTrialCta": "Try for free 1 tender, no credit card",
-    "dayAnchor": "The Pro plan costs about 56 MAD per working day, less than an hour of consulting.",
+    "dayAnchor": "The Pro plan costs about 45 MAD per working day, less than an hour of consulting.",
     "plans": {
       "starter_name": "Essential",
       "starter_tagline": "For a freelancer responding to several tenders a month",
@@ -260,7 +260,7 @@
   "auth": {
     "showcase": {
       "title": "A complete copilot for your public tenders.",
-      "subtitle": "Monitoring, Go/No-Go analysis and assisted drafting, built for Moroccan public tenders."
+      "subtitle": "Monitoring, opportunity analysis and assisted drafting, built for Moroccan public tenders."
     },
     "login": {
       "title": "Sign in",
@@ -275,7 +275,9 @@
       "createAccount": "Create an account",
       "or": "or",
       "verified": "Email verified! Sign in to access your free generation.",
-      "continueWithGoogle": "Continue with Google"
+      "continueWithGoogle": "Continue with Google",
+      "googleCallbackLoading": "Signing in with Google…",
+      "googleCallbackError": "Invalid Google sign-in. Please try again."
     },
     "register": {
       "title": "Create an account",
@@ -319,8 +321,11 @@
     },
     "verify": {
       "title": "Check your email",
-      "sent": "A confirmation link was sent to",
-      "instruction": "Click the link in the email to activate your account and access your free generation.",
+      "sent": "A verification code was sent to",
+      "instruction": "Enter the 6-digit code you received by email to activate your account and access your free generation.",
+      "confirm": "Confirm",
+      "verifying": "Verifying…",
+      "otpError": "Invalid code. Please try again.",
       "goLogin": "Go to sign in"
     }
   },
@@ -378,6 +383,40 @@
       "upgradeLoading": "Redirecting...",
       "upgradeError": "Could not start checkout."
     },
+    "notifications": {
+      "title": "Notifications",
+      "hint": "Get a digest email of new tenders matching the sectors you follow below.",
+      "enabledLabel": "Enable email notifications",
+      "sectorsLabel": "Sectors followed",
+      "sectorsHint": "Independent from your profile's activity sectors: you can watch sectors outside your declared domain.",
+      "cadenceLabel": "Frequency",
+      "cadenceEvery": "Every",
+      "cadenceUnit": {
+        "day": "day(s)",
+        "week": "week(s)",
+        "month": "month(s)"
+      },
+      "hourLabel": "Send hour",
+      "maxItemsLabel": "Max tenders per email",
+      "save": "Save",
+      "saving": "Saving...",
+      "saved": "Preferences saved.",
+      "error": "Error saving notification preferences.",
+      "loadError": "Error loading notification preferences.",
+      "lastNotifiedLabel": "Last notification",
+      "lastNotifiedNever": "Never",
+      "lastNotifiedDaysAgo": "{{count}} day ago",
+      "lastNotifiedDaysAgo_other": "{{count}} days ago",
+      "lastNotifiedToday": "Today",
+      "testSend": "Send a test",
+      "testSending": "Sending...",
+      "testHint": "Sends a real email to your address with tenders matching the sectors selected above, without waiting for the scheduled cadence. For local testing.",
+      "testResultSent": "Test email sent to {{email}} ({{count}} tenders).",
+      "testResultNoAos": "No tender currently matches these sectors.",
+      "testResultNoEmail": "No email address found for your account.",
+      "testResultFailed": "Send failed. Check the notification service configuration.",
+      "testResultError": "Error sending the test."
+    },
     "profile": {
       "save": "Save",
       "saving": "Saving...",
@@ -399,7 +438,7 @@
         "contact": "Contact"
       },
       "activitesHint": "Select the sectors that match your activity. Used to filter tender monitoring and, soon, to notify you about tenders matching your profile.",
-      "qualificationsHint": "This information is used to automatically assess your eligibility (Go/No-Go) on scraped tenders, by comparing it against requirements extracted from the CPS and RC.",
+      "qualificationsHint": "This information is used to automatically assess your eligibility (opportunity analysis) on scraped tenders, by comparing it against requirements extracted from the CPS and RC.",
       "addClassification": "Add a classification",
       "addCertification": "Add",
       "addReference": "Add a reference",

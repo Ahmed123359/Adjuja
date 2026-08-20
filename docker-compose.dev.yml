@@ -67,6 +67,8 @@ services:
       JWT_SECRET_KEY: ${JWT_SECRET_KEY:-change-me-in-production-32chars!!}
       QDRANT_URL: http://qdrant:6333
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
+      RESEND_API_KEY: ${RESEND_API_KEY:-}
     depends_on:
       postgres:
         condition: service_healthy

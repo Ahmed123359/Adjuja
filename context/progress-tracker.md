@@ -20,10 +20,169 @@ pour que le checkout fonctionne réellement en prod -- aujourd'hui il répond
 
 Notification service fonctionnel en prod mais aucune org n'a encore de préférences
 configurées (`enabled=true` + `secteur_codes`) -- aucun email ne part tant que ça n'existe
-pas côté UI ou manuellement en DB. UI frontend pour gérer `PUT /preferences/{org_id}`
-toujours pas construite.
+pas en DB. UI frontend pour gérer `PUT /preferences/{org_id}` construite le 2026-08-20
+(voir Complété), reste à ce qu'un premier org réel configure ses préférences via l'UI en
+prod pour valider l'envoi bout en bout avec Resend actif.
 
 ## Complété (résumé, voir mémoire auto pour le détail complet par sujet)
+
+- **Préférences de notification enrichies (cadence + secteurs indépendants)** (2026-08-20,
+  spec dans `context/feature-spec/notification-preferences/`, build order suivi :
+  `api.md` puis `client.md`) : `NotificationPreference` gagne `cadence_unit`
+  (day/week/month) + `cadence_value`, `send_hour` (0-23, par org, remplace le crontab
+  global `settings.notification_hour`/`notification_minute` -- supprimés de `config.py`,
+  plus rien ne les référence), `max_items` (remplace le `LIMIT 50` codé en dur) et
+  `last_notified_at` (remplace le lookback fixe `NOW() - 24h`). Beat passe d'un crontab
+  quotidien fixe à un tick horaire (`crontab(minute=0)`) qui sélectionne les orgs dues
+  (heure configurée atteinte ET cadence écoulée depuis `last_notified_at`, ou jamais
+  notifiée). `notify_org` ne met à jour `last_notified_at` qu'après un envoi réellement
+  réussi (`sent=True`) -- une org sans nouveauté reste éligible au tick suivant plutôt que
+  d'être repoussée d'une cadence entière pour rien. `PUT/GET /preferences/{org_id}`
+  étendus (Pydantic `Field(ge=..., le=...)` sur les nouvelles bornes), `last_notified_at`
+  jamais écrit par ce endpoint (lecture seule, uniquement mis à jour par `notify_org`).
+  Pas d'Alembic sur ce service (`init_db.py` gère le schema via `create_all`, jamais
+  d'ALTER sur table existante) -- `ALTER TABLE` documenté dans l'en-tête d'`init_db.py`,
+  à exécuter une fois par environnement (dev + prod).
+  **Bug réel trouvé et corrigé au passage, jamais détecté avant faute de donnée réelle** :
+  la requête de matching AO de `notify_org` utilisait `sa.secteur_codes && CAST(:codes AS
+  jsonb)` -- `&&` est un opérateur de tableau, pas un opérateur jsonb, il n'existe pas pour
+  ce type et lève une erreur SQL à l'exécution (`UndefinedFunction`). Jamais rencontré en
+  prod car "0 org avec préférences actives" depuis le lancement (voir plus bas) -- ce
+  chemin de code n'avait donc jamais tourné en conditions réelles avant cette session.
+  Corrigé en `sa.secteur_codes ?| :codes` (jsonb "contient une de ces clés"), l'opérateur
+  correct pour ce type de colonne, compatible avec l'index GIN existant
+  (`idx_scraped_aos_secteur_codes`, sans opclass = `jsonb_ops` par défaut, supporte `?|`).
+  Frontend : nouvelle section `NotificationPreferencesSection` (component module-scope,
+  auto-suffisant comme `SubscriptionCard`) rendue dans `ProfileTab` juste après la section
+  "Secteurs d'activité", hors du `<form>` du profil (sauvegarde indépendante, son propre
+  bouton). Réutilise `SecteurPicker`/`CategorieSelect` sur un état propre
+  (`prefs.secteur_codes`), jamais couplé à `secteurs_interet` du profil -- pré-rempli
+  depuis `secteurs_interet` seulement à la toute première configuration (aucune ligne
+  préférence existante), sans écriture arrière vers le profil ensuite. `org_id` résolu via
+  `getMe()` (`user.org_id || user.id`, même pattern que le backend) -- **gap réel comblé au
+  passage** : le type `User` frontend n'avait jamais déclaré `org_id` alors que le backend
+  le renvoie déjà sur `/auth/me` depuis le fix multi-tenant de la session billing (bug
+  historique jamais remarqué faute d'utilisation client-side jusqu'ici). Proxy
+  `/notifications/` ajouté à `nginx.conf` (prod) et `vite.config.ts` (dev), même forme que
+  `/watcher/` -- inerte tant que `notification-api` n'est pas défini dans
+  `docker-compose.dev.yml` (toujours absent, note existante inchangée, non modifié cette
+  session).
+  **Vérifié en conditions réelles**, pas juste par lecture de code : DB dev n'avait jamais
+  eu le schema `notifications` créé (`init_db.py` reproduit ici le bug déjà documenté --
+  schema créé, tables absentes -- contournement SQL manuel identique à celui de prod).
+  Image Docker buildée, conteneurs `notification-api`/`notification-worker` lancés à la
+  main contre la DB/Redis dev réels : cycle complet `PUT /preferences` (404 avant, valeurs
+  cadence/heure/max_items round-trippées après) -> `POST /admin/trigger` -> tick Beat
+  simulé (due-check SQL vérifié directement, hors et dans la fenêtre de cooldown) ->
+  `notify_org` a réellement matché des AO scrapés réels par code secteur (`FO19`) une fois
+  le bug `?|` corrigé -> tentative d'envoi Resend échouée en dev (pas de clé API, attendu,
+  chemin `sent=False` confirmé) -> `last_notified_at` confirmé NON mis à jour dans ce cas
+  (comportement voulu). Cooldown testé isolément : org non éligible juste après
+  `last_notified_at = NOW()`, éligible de nouveau après recul de 2 jours (cadence
+  day/1). Frontend : `tsc --noEmit` et `npm run build` propres (chunks >500kB
+  pré-existants, pas aggravés). Conteneurs/données de test nettoyés après coup ; les
+  tables `notifications.*` restent en place en DB dev (schema à jour, colonnes incluses
+  directement puisque créées après la mise à jour du modèle -- pas besoin d'ALTER séparé
+  en dev). **Non vérifié** : rendu visuel réel dans un navigateur (aucun outil de capture
+  d'écran/browser disponible dans cette session) -- vérifié uniquement par compilation et
+  relecture de code, à confirmer visuellement avant mise en prod.
+
+- **Référence AO ajoutée au digest de notification** (2026-08-21c) : `AoItem.reference`
+  (nouveau champ, `notification-service/app/templates/ao_digest.py`) alimenté par
+  `watcher.scraped_aos.external_id` (le refConsultation numérique du portail source, ex.
+  `1032869` -- pas de colonne `reference` dédiée, `external_id` est la donnée réellement
+  équivalente, déjà exposée côté frontend `types.ts` mais jamais affichée nulle part).
+  Affiché dans la carte AO du digest (colonne "Référence" à côté de "Date limite") et
+  dans le texte brut. `notify_org` (batch réel) et le nouvel endpoint `test-send`
+  alimentent tous deux ce champ (même `SELECT ... sa.external_id` ajouté aux deux
+  requêtes). Vérifié en conditions réelles : nouvel envoi de test via `/test-send`,
+  email reçu avec la référence affichée.
+
+- **Renommage produit "Go/No-Go" -> "Analyse d'opportunité"** (2026-08-21b, demande
+  explicite) : toutes les occurrences visibles côté utilisateur/robots (fr.json + en.json
+  -- titre de la carte fonctionnalité, tagline footer, subtitle auth showcase, hint
+  qualifications profil ; `frontend/index.html` -- meta description, OG, Twitter,
+  JSON-LD description/featureList/FAQ) remplacées. En anglais, traduit en
+  "Opportunity analysis" plutôt que de garder le terme français. **Volontairement non
+  touché** : identifiants de code (`GoNoGoMockup`, commentaire `{/* B - Go/No-Go */}`
+  dans `FeaturesSection.tsx`), le badge "GO"/score dans le mockup (verdict, pas le nom
+  de la fonctionnalité), tout le backend (`eligibility_service.py`, `ao_routes.py`,
+  `analysis.py` côté ao-watcher -- docstrings/commentaires internes jamais vus par un
+  utilisateur, champ `verdict` reste `go`/`no_go` en DB). Clé i18n morte
+  `veille.tabGoNoGo` repérée (plus référencée nulle part dans le code, valeur déjà
+  "Analyse") -- laissée telle quelle, hors scope. `tsc --noEmit` + JSON validés.
+
+- **Contre-audit site : vérification des 4 chantiers restants** (2026-08-21, rapport
+  source `Adjuja_Contre_Audit_Site_Developpeur.docx`) : 2 des 4 chantiers marqués
+  "critiques" par le rapport (métadonnées HTML servies, sitemap pointant vers
+  `offria.cloud`) étaient en réalité déjà résolus en prod au moment de la vérification --
+  confirmé en interrogeant `https://adjuja.com` directement (title/description/OG/Twitter
+  corrects, aucune balise `keywords`, `maximum-scale` déjà retiré, sitemap ne référence
+  plus `offria.cloud`). Le rapport datait sa vérification du 18 août ; le commit
+  `b38e772` (16 août) avait déjà appliqué le correctif, probablement pas encore propagé
+  en prod au moment exact de l'audit. **Bug réel trouvé au passage, absent du rapport** :
+  `frontend/nginx.conf` ne déclare aucun `charset` -- `Content-Type: text/html` part sans
+  `charset=utf-8`, les accents ne sont interprétés correctement que parce que les
+  navigateurs retombent sur la balise `<meta charset>` interne ; un outil qui lit le
+  header HTTP en premier (certains bots) verrait du mojibake. Corrigé (`charset utf-8;`
+  ajouté au bloc `server`).
+  **Chantiers réellement corrigés cette session** : sitemap.xml complété avec les 3 pages
+  légales (seule la home y figurait) ; noms d'organismes publics réels
+  (« Commune urbaine de Kénitra », « ONEE - Branche Eau », « Région Rabat-Salé-Kénitra »)
+  trouvés dans `HowItWorksSection.tsx::CardVeille` (pas dans `FeaturesSection.tsx` où
+  l'audit semblait les situer -- la maquette de cette section-là n'affiche pas
+  d'acheteur) remplacés par des libellés génériques ; 2 des 3 fautes résiduelles
+  corrigées (« criteres »/« evidence » et « redaction » sans accents dans
+  `HowItWorksSection.tsx` -- la 3e, « ETAPE 01/03 », introuvable dans le code actuel,
+  déjà résolue avant cette session) ; ancrage tarifaire 56 MAD → 45 MAD (`dayAnchor`,
+  fr.json ET en.json -- le calcul erroné existait aussi côté anglais, non signalé par le
+  rapport) ; texte du footer newsletter (`footer.tagline`) repositionné de
+  "automatise la rédaction" vers le discours copilote, fr et en.
+  **Laissés en décision utilisateur, pas auto-corrigés** : (1) crédit agence "Made by"
+  Continuium en pied de page (`LandingFooter.tsx`) -- relation contractuelle possible
+  avec l'agence, pas une décision technique ; (2) imagerie Terre/Lune de la hero section
+  vs. charte de marque (cartes d'Afrique/architecture marocaine) ; (3) compteur
+  "656 AOs surveillés" (`AuthLayout.tsx`) -- vérifié : c'était un chiffre réel à un
+  moment donné mais périmé, la base compte aujourd'hui 1028 AO (dev, prod probablement
+  proche ou supérieur) -- à mettre à jour ou brancher en direct, pas à retirer comme le
+  suggérait le rapport en cas de doute.
+  **Canonical dynamique par page** (seul point du rapport non traité) : nécessiterait un
+  SSR/prérendu réel pour être visible des robots (le rapport le note lui-même comme
+  "solution de fond", pas requise pour le lancement) -- laissé tel quel (canonical fixe
+  sur `https://adjuja.com` pour toutes les routes), un correctif JS-only n'aurait rien
+  réglé côté crawlers, exactement le problème que le chantier n°1 dénonçait.
+  `tsc --noEmit` propre, JSON locales et sitemap.xml validés.
+
+- **Refonte templates email (digest AO + OTP) + bouton test d'envoi local** (2026-08-20b) :
+  les deux templates HTML (`notification-service/app/templates/ao_digest.py`,
+  `app/services/email_service.py::send_verification_otp_email`) refaits avec un vrai
+  en-tête logo (`https://adjuja.com/logo-adjuja.png`, dégradé tricolore ADJUJA en fond),
+  preheader caché pour l'aperçu boîte de réception, mêmes tokens de couleur que le design
+  system. **Bug de grammaire française corrigé au passage** : le sujet/corps du digest
+  AO avait un double espace et un mauvais accord pluriel (`nouvels` au lieu de
+  `nouveaux`), résidu visible d'un ancien em-dash retiré sans recomposer la phrase --
+  remplacé par des segments entièrement calculés en Python (singulier/pluriel explicites)
+  plutôt qu'une concaténation de suffixes. Liens `/settings/notifications` et `/veille`
+  (routes qui n'existent pas dans ce SPA, l'onglet profil est un simple `useState` non
+  synchronisé à l'URL) corrigés vers `https://app.adjuja.com/app`, la seule route réelle.
+  Nouveau bouton "Envoyer un test" dans `NotificationPreferencesSection` (dashboard) :
+  nouvel endpoint `POST /preferences/{org_id}/test-send` (JWT, pas de secret admin) qui
+  envoie un vrai digest immédiat aux secteurs actuellement dans le formulaire (pas besoin
+  d'avoir sauvegardé), sans lookback de cadence ni dédup `notification_log` -- n'écrit
+  jamais `last_notified_at`, donc n'affecte jamais le vrai cycle de notification.
+  **Deux bugs réels trouvés en testant en conditions réelles** (jamais détectés avant
+  faute d'un point d'entrée API qui les exerçait) : `TemplateRegistry` et
+  `NotificationChannelFactory` ne sont peuplés qu'à l'import de `celery_app.py` (le
+  worker) -- le process API (`main.py`) ne les avait jamais importés, donc tout appel à
+  `TemplateRegistry.get()`/`NotificationChannelFactory.create()` depuis une route FastAPI
+  levait une erreur (`ValueError`, registres vides). Corrigé en importable/enregistrant
+  les deux dans `main.py` au démarrage, même pattern que `celery_app.py`. Vérifié
+  bout en bout en conditions réelles : `POST /test-send` a réellement envoyé un email
+  (template digest complet, logo inclus) à une adresse réelle via Resend
+  (`sent:true, ao_count:3`, confirmé par les logs `notification-api`) ; template OTP
+  vérifié par exécution réelle de `send_verification_otp_email` (httpx mocké pour ne pas
+  envoyer un vrai email, HTML généré inspecté -- contient bien le code et l'URL du logo,
+  aucune erreur de f-string).
 
 - **Billing & Subscriptions** (2026-07-18, feature-spec complet dans
   `context/feature-specs/01-billing-subscriptions/`) : `Plan` config (free/starter/pro/
@@ -312,11 +471,81 @@ toujours pas construite.
   schema dev totalement migré. **Rappel process pour toute future migration prod** :
   toujours vérifier `SELECT * FROM alembic_version` en prod AVANT de lancer `upgrade head`
   en aveugle. Login (normal + Google) confirmé fonctionnel en prod après ces 4 fixes.
+- **Refonte Google Sign-In : authorization code flow au lieu du hack bouton caché**
+  (2026-08-19). Root cause du bug "bouton ne répond plus après un premier clic sur
+  mobile" : l'ancien flux rendait le vrai bouton Google invisible (`renderButton` dans un
+  iframe) et forwardait des clics synthétiques dessus (`querySelector('div[role="button"]')
+  .click()`) -- fragile par construction, l'état interne de l'iframe Google peut changer
+  après une interaction et rien ne garantit qu'un clic synthétique retrouve un élément
+  cliquable la fois suivante. Remplacé par un vrai flow OAuth : bouton custom ->
+  `window.location.href` vers l'URL d'autorisation Google réelle (avec `state` CSRF en
+  sessionStorage) -> callback `GoogleCallbackPage.tsx` (nouvelle page,
+  `/auth/google/callback`) -> `POST /api/v1/auth/google/callback` (nouvelle route, backend
+  échange le code via `GOOGLE_CLIENT_SECRET` déjà en `.env` mais jamais utilisé jusqu'ici) ->
+  même logique verify/find-or-create/JWT qu'avant. Ancienne route `POST /auth/google`
+  (ID-token direct) supprimée, plus de script GSI dans `index.html`, plus de hack dans
+  `LoginPage.tsx`/`RegisterPage.tsx`. **Bug corrigé au passage, signalé par l'utilisateur** :
+  le client ID Google était hardcodé en dur dans le code (`api.ts`) -- maintenant
+  `import.meta.env.VITE_GOOGLE_CLIENT_ID`, injecté via `frontend/.env`
+  (gitignored, dev local) + `frontend/.env.example` (tracké) + build arg Docker
+  (`docker-compose.yml`/`Dockerfile`, source `GOOGLE_CLIENT_ID` du `.env` racine).
+  **Non fait, nécessite action utilisateur** : Google Cloud Console a besoin des nouvelles
+  Authorized redirect URIs (`https://adjuja.com/auth/google/callback`,
+  `https://www.adjuja.com/auth/google/callback`, `http://localhost:5173/auth/google/callback`)
+  -- liste séparée des Authorized JavaScript origins déjà configurées, sinon 400 côté Google.
+  `tsc --noEmit` + `py_compile` propres, non commité, nécessite rebuild Docker `api` +
+  `frontend` (aucun volume mount pour `app/` dans ni dev ni prod, confirmé).
+- **Refonte inscription : compte créé seulement après OTP, plus avant** (2026-08-19).
+  L'utilisateur a signalé que l'inscription créait un compte réel immédiatement, sans
+  jamais envoyer d'email de vérification -- root cause double : (1) `RESEND_API_KEY`
+  jamais câblé dans le service `api` du compose dev (seul notification-service l'avait),
+  `send_verification_email` faisait un no-op silencieux vers un log serveur invisible ; (2)
+  même une fois l'email fonctionnel, l'ancien flux créait la ligne `users` AVANT toute
+  vérification (lien cliquable, pas OTP) -- la vérification était cosmétique, jamais
+  bloquante. Refait : `POST /auth/register` ne crée plus de compte, génère un OTP à 6
+  chiffres, stocke l'inscription en attente dans Redis (`app/cache/cache.py`, réutilisé tel
+  quel, TTL 15 min, mot de passe déjà hashé jamais stocké en clair, 5 tentatives max) et
+  envoie le code par email. Nouvelle route `POST /auth/verify-otp` vérifie le code et SEUL
+  ce point crée réellement la ligne `users` (`UserService.create()` retravaillé en
+  kwargs explicites, `email_verified` découplé de `unlimited` -- avant les deux étaient
+  couplés, un utilisateur OTP-confirmé non-admin a maintenant `email_verified=True` sans
+  hériter des quotas illimités admin). Ancienne route `GET /verify-email` (lien-based) et
+  `UserService.verify_email()` supprimées, dead code après le changement, pas laissées en
+  place. **Bug de branding trouvé et corrigé au passage** : `email_service.py` disait
+  encore "OffrIA"/`noreply@offria.cloud`, raté lors du rebrand -- passé à
+  `ADJUJA <contact@adjuja.com>`. `docker-compose.dev.yml` : `RESEND_API_KEY` ajouté au
+  service `api` (gap réel trouvé, corrigé). Frontend : écran statique "vérifiez votre
+  email" remplacé par un vrai formulaire de saisie du code à 6 chiffres. `tsc --noEmit` +
+  `py_compile` propres, non commité, nécessite rebuild Docker `api`.
 
 ## En cours
 
 - Notification service en prod, fonctionnel mais sans aucune org configurée -- pas encore
   vérifié en conditions réelles avec un vrai envoi d'email à une org réelle.
+- **Restructuration `context/` en spec-driven complet** (2026-08-19), inspirée d'un autre
+  projet de l'utilisateur (`Souss-creation/context/`) : `context/` a maintenant, à la
+  racine, `project-overview.md`, `architecture-context.md`, `code-standards.md`,
+  `ui-context.md` (nouveaux, condensés depuis `CLAUDE.md`/`conception/` et la mémoire auto
+  design-system), en plus de `ai-workflow-rules.md`/`progress-tracker.md` déjà existants.
+  Chaque feature vit dans son propre `feature-spec/<nom>/` (dossier renommé au singulier
+  par l'utilisateur, ancien `feature-specs/01-billing-subscriptions/` supprimé par
+  l'utilisateur lui-même pendant cette session -- pas recréé, l'utilisateur a dit de
+  construire sur l'état actuel, pas de restaurer ce qui a été supprimé volontairement).
+  Règle clé : les fichiers universels (workflow, architecture, conventions, UI) ne sont
+  JAMAIS dupliqués à l'intérieur d'un dossier de feature -- une feature ne contient que
+  `00-overview.md`/`api.md`/`client.md` qui lui sont spécifiques.
+- **Chatbot RAG (marchés publics + aide plateforme)** : spec complète écrite dans
+  `context/feature-spec/chatbot/` (`00-overview.md` + `api.md` + `client.md`). Aucune
+  implémentation commencée. Décisions verrouillées : pas de microservice `rag-etl` (corpus
+  de 3 documents, script ponctuel suffit), tout indexé dans la collection globale
+  `offria_kb` (pas per-org), chunking par Article/section plutôt que par paragraphe, un
+  seul pipeline RAG pour la réglementation ET l'aide plateforme (pas de scission
+  RAG/statique). Bug trouvé (pas supposé) : `ChatService._retrieve_rag` filtre
+  aujourd'hui sur `doc_type=["references"]` via `retrieve_for_section("Références
+  similaires", ...)` -- nouveau contenu jamais surfacé tant que ça n'est pas corrigé, fix
+  détaillé dans `api.md`. Voir aussi mémoire auto [[project-chatbot-procurement-rag]] pour
+  le détail de l'audit RAG et le brouillon `hafid-taches-docs/chatbot/
+  guide_plateforme_adjuja.md` (à valider avant indexation).
 
 ## Questions ouvertes
 
@@ -337,10 +566,18 @@ toujours pas construite.
   réécrit pour utiliser `startSign`/`getSignStatus`/`cancelSign` comme `DocumentsTab.tsx`.
 - **`RemplissageTab.tsx`** utilise encore l'ancien `runFiller` (wrapper de compatibilité) --
   même traitement asynchrone que `FillerTab.tsx` à appliquer.
-- **UI frontend préférences de notification** : jamais construite. `PUT /preferences/{org_id}`
-  existe côté API mais aucune org ne peut s'y abonner sans appel curl manuel.
 - **`notify_bdc`** : flag existant en DB (`notification_preferences.notify_bdc`) mais jamais
-  implémenté côté logique d'envoi.
+  implémenté côté logique d'envoi. Toujours pas exposé dans l'UI préférences (2026-08-20,
+  décision verrouillée dans `context/feature-spec/notification-preferences/api.md` :
+  cadence BDC séparée, hors scope de cette feature).
+- **ALTER TABLE `notification_preferences` en prod** : appliqué en dev (2026-08-20, colonnes
+  créées directement via `init_db.py` sur une DB vierge, pas testé comme un vrai `ALTER` sur
+  une table existante avec des lignes) -- à exécuter manuellement en prod avant déploiement
+  du nouveau code (SQL documenté dans l'en-tête d'`init_db.py`), sinon `PUT /preferences`
+  échouera sur les colonnes manquantes dès le premier appel.
+- **Rendu visuel réel de la section notifications (`ProfileTab`)** : jamais ouvert dans un
+  navigateur (2026-08-20, pas d'outil de capture d'écran disponible cette session) --
+  vérifié seulement par `tsc`/`vite build`, à confirmer visuellement avant mise en prod.
 - **Cause exacte du bug `init_db.py`** (schema créé, tables non créées) non investiguée en
   profondeur -- contournement SQL manuel appliqué, mais si un futur service ajoute des
   tables via le même pattern (`Base.metadata.create_all(engine, checkfirst=True)`), vérifier

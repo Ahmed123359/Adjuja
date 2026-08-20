@@ -1,12 +1,8 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { login, loginWithGoogle } from '../api';
+import { login, startGoogleLogin } from '../api';
 import AuthLayout from '../components/auth/AuthLayout';
-
-declare const google: {
-  accounts: { id: { initialize: (cfg: object) => void; renderButton: (el: HTMLElement, cfg: object) => void } };
-};
 
 type Props = { onSuccess: () => void; onGoRegister: () => void };
 
@@ -18,38 +14,6 @@ export default function LoginPage({ onSuccess, onGoRegister }: Props) {
   const [loading,  setLoading]  = useState(false);
   const [searchParams] = useSearchParams();
   const justVerified = searchParams.get('verified') === 'true';
-  const googleBtnRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      if (typeof google !== 'undefined' && googleBtnRef.current) {
-        clearInterval(interval);
-        google.accounts.id.initialize({
-          client_id: '862141749635-8j66o1ns8ieknmbs3hqm72f7ffs7njaj.apps.googleusercontent.com',
-          callback: async (response: { credential: string }) => {
-            setError(''); setLoading(true);
-            try { await loginWithGoogle(response.credential); onSuccess(); }
-            catch (err) { setError(err instanceof Error ? err.message : 'Erreur Google.'); }
-            finally { setLoading(false); }
-          },
-        });
-        google.accounts.id.renderButton(googleBtnRef.current, {
-          theme: 'filled_black', size: 'large', width: 280,
-          text: 'continue_with', shape: 'rectangular', logo_alignment: 'center',
-        });
-      }
-    }, 100);
-    return () => clearInterval(interval);
-  }, []);
-
-  /** Le bouton natif de Google (rendu par renderButton dans un iframe) ne peut pas
-   * recevoir de padding/rayon/hauteur personnalisés via CSS -- c'est un iframe cross-origin.
-   * On le garde monté mais invisible, et notre propre bouton (avec exactement le padding et
-   * le style du reste du formulaire) déclenche son clic interne par-dessus. */
-  function triggerGoogleButton() {
-    const btn = googleBtnRef.current?.querySelector('div[role="button"]') as HTMLElement | null;
-    btn?.click();
-  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault(); setError(''); setLoading(true);
@@ -123,14 +87,9 @@ export default function LoginPage({ onSuccess, onGoRegister }: Props) {
         <div style={{ flex: 1, height: 1, background: 'var(--l-card-border)' }} />
       </div>
 
-      {/* Bouton natif Google, invisible : garde le flux OAuth fonctionnel sans imposer
-          son propre style. Ne pas mettre display:none (casse le clic dans certains
-          navigateurs) -- juste hors-flux et transparent. */}
-      <div ref={googleBtnRef} style={{ position: 'absolute', opacity: 0, pointerEvents: 'none', width: 1, height: 1, overflow: 'hidden' }} />
-
       <button
         type="button"
-        onClick={triggerGoogleButton}
+        onClick={startGoogleLogin}
         style={{ width: '100%', padding: '14px 16px', borderRadius: 12, border: 'none', background: '#131314', color: '#fff', fontSize: 15, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, transition: 'opacity .15s' }}
         onMouseEnter={e => e.currentTarget.style.opacity = '.88'}
         onMouseLeave={e => e.currentTarget.style.opacity = '1'}
