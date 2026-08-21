@@ -76,7 +76,7 @@ _HTML = """\
           <!-- CTA -->
           <tr>
             <td style="padding:8px 36px 32px;text-align:center;">
-              <a href="https://app.adjuja.com/app"
+              <a href="https://adjuja.com/app"
                  style="display:inline-block;background:#1BC9A8;color:#062A22;
                         font-weight:700;font-size:14px;text-decoration:none;
                         border-radius:10px;padding:13px 30px;letter-spacing:0.1px;">
@@ -91,7 +91,7 @@ _HTML = """\
                        padding:22px 36px;text-align:center;">
               <p style="margin:0;font-size:12px;color:#9AA3BF;line-height:1.7;">
                 Vous recevez cet email car les notifications sont activées sur votre compte ADJUJA.<br>
-                <a href="https://app.adjuja.com/app"
+                <a href="https://adjuja.com/app"
                    style="color:#3248CE;text-decoration:none;font-weight:600;">
                   Gérer mes préférences
                 </a>
@@ -113,41 +113,20 @@ _HTML = """\
 """
 
 _AO_CARD = """\
-<table width="100%" cellpadding="0" cellspacing="0"
-       style="border:1px solid #E8ECF5;border-left:3px solid #1BC9A8;border-radius:10px;
-              margin-bottom:14px;overflow:hidden;">
+<table width="100%" cellpadding="0" cellspacing="0" style="border-top:1px solid #E8ECF5;">
   <tr>
-    <td style="padding:16px 18px;">
-      <p style="margin:0 0 6px;font-size:11.5px;font-weight:700;color:#1BC9A8;
-                text-transform:uppercase;letter-spacing:0.6px;">
-        {categorie}
+    <td style="padding:18px 0;">
+      <p style="margin:0 0 5px;font-size:15.5px;font-weight:700;line-height:1.4;">
+        <a href="{url_source}" style="color:#080B1C;text-decoration:none;">{titre}</a>
       </p>
-      <p style="margin:0 0 8px;font-size:15px;font-weight:700;color:#080B1C;
-                line-height:1.4;">
-        {titre}
+      <p style="margin:0 0 6px;font-size:13px;color:#6B7494;">
+        {acheteur_line}
       </p>
-      <p style="margin:0 0 12px;font-size:13px;color:#6B7494;">
-        {acheteur}
-      </p>
-      <table cellpadding="0" cellspacing="0">
-        <tr>
-          <td style="padding-right:24px;">
-            <span style="font-size:11.5px;color:#9AA3BF;">Référence</span><br>
-            <span style="font-size:13px;font-weight:600;color:#2D3748;">
-              {reference}
-            </span>
-          </td>
-          <td>
-            <span style="font-size:11.5px;color:#9AA3BF;">Date limite</span><br>
-            <span style="font-size:13px;font-weight:600;color:{deadline_color};">
-              {date_limite}
-            </span>
-          </td>
-        </tr>
-      </table>
-      <p style="margin:12px 0 0;">
-        <a href="{url_source}"
-           style="font-size:13px;color:#3248CE;text-decoration:none;font-weight:600;">
+      <p style="margin:0;font-size:12.5px;color:#9AA3BF;">
+        Réf. {reference} &nbsp;&middot;&nbsp; Limite le
+        <span style="color:{deadline_color};font-weight:600;">{date_limite}</span>
+        &nbsp;&middot;&nbsp;
+        <a href="{url_source}" style="color:#3248CE;text-decoration:none;font-weight:600;">
           Voir le dossier &rarr;
         </a>
       </p>
@@ -170,8 +149,13 @@ def _deadline_color(d: date | None) -> str:
 
 def _format_date(d: date | None) -> str:
     if d is None:
-        return "Non précisée"
+        return "non précisée"
     return d.strftime("%d/%m/%Y")
+
+
+def _acheteur_line(ao: "AoItem") -> str:
+    parts = [p for p in (ao.acheteur, ao.categorie) if p]
+    return " &middot; ".join(parts) if parts else "Acheteur non précisé"
 
 
 class AoDigestTemplate(NotificationTemplate):
@@ -181,10 +165,9 @@ class AoDigestTemplate(NotificationTemplate):
 
         cards_html = "".join(
             _AO_CARD.format(
-                categorie=ao.categorie or "Appel d'offres",
                 titre=ao.titre,
-                acheteur=ao.acheteur or "Acheteur non précisé",
-                reference=ao.reference or "Non précisée",
+                acheteur_line=_acheteur_line(ao),
+                reference=ao.reference or "non précisée",
                 date_limite=_format_date(ao.date_limite),
                 deadline_color=_deadline_color(ao.date_limite),
                 url_source=ao.url_source,
@@ -222,5 +205,5 @@ class AoDigestTemplate(NotificationTemplate):
                 lines.append(f"  Date limite : {_format_date(ao.date_limite)}")
             lines.append(f"  Lien : {ao.url_source}")
             lines.append("")
-        lines.append("Gérer vos préférences : https://app.adjuja.com/app")
+        lines.append("Gérer vos préférences : https://adjuja.com/app")
         return "\n".join(lines)

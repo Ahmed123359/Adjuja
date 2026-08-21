@@ -87,6 +87,22 @@ prod pour valider l'envoi bout en bout avec Resend actif.
   d'écran/browser disponible dans cette session) -- vérifié uniquement par compilation et
   relecture de code, à confirmer visuellement avant mise en prod.
 
+- **Design carte AO du digest revu + bug de domaine corrigé** (2026-08-21d, retour direct
+  de l'utilisateur -- "clairement généré par IA") : `_AO_CARD` (`ao_digest.py`) refaite en
+  liste éditoriale (titre + une ligne meta muette acheteur/catégorie + une ligne
+  référence/date/lien séparées par des points médians, hairline `border-top` entre
+  éléments) au lieu de boîtes bordurées avec étiquette majuscule colorée ("TRAVAUX") et
+  grille Référence/Date en deux colonnes façon composant de dashboard -- exactement les
+  patterns listés comme signal IA dans `context/ui-context.md` (eyebrow label, carte à
+  accent coloré, grille de stats). **Bug réel corrigé au passage** : tous les liens du
+  template pointaient vers `https://app.adjuja.com/...` (sous-domaine qui n'existe pas)
+  au lieu de `https://adjuja.com/app` (un seul domaine, l'app est sur un chemin, pas un
+  sous-domaine) -- CTA, lien "Gérer mes préférences" et texte brut, 3 occurrences. Non
+  re-vérifié par un envoi réel cette fois : la stack Docker dev locale (postgres/redis/
+  api/...) a disparu entre les deux sessions (probablement un `docker compose down` ou
+  reset Docker Desktop côté utilisateur, sans rapport) -- `py_compile` propre, à valider
+  visuellement directement en prod après déploiement.
+
 - **Référence AO ajoutée au digest de notification** (2026-08-21c) : `AoItem.reference`
   (nouveau champ, `notification-service/app/templates/ao_digest.py`) alimenté par
   `watcher.scraped_aos.external_id` (le refConsultation numérique du portail source, ex.

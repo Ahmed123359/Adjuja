@@ -123,6 +123,12 @@ services:
       --concurrency=4
       --loglevel=info
       --hostname=celery-io@%h
+    # Le HEALTHCHECK du Dockerfile teste http://localhost:8000/health -- pertinent pour
+    # `api` (uvicorn), sans objet ici puisque ce service lance un worker Celery, rien
+    # n'écoute jamais sur ce port. Sans ce disable, le conteneur reste "unhealthy" en
+    # permanence bien que le worker fonctionne normalement (vérifié via les logs).
+    healthcheck:
+      disable: true
     env_file:
       - .env
     environment:
@@ -162,6 +168,9 @@ services:
       --concurrency=2
       --loglevel=info
       --hostname=celery-cpu@%h
+    # Voir le commentaire equivalent sur celery-io -- meme cause, meme fix.
+    healthcheck:
+      disable: true
     env_file:
       - .env
     environment:
@@ -198,6 +207,9 @@ services:
     command: >
       celery -A app.celery_app.celery_app beat
       --loglevel=info
+    # Voir le commentaire equivalent sur celery-io -- meme cause, meme fix.
+    healthcheck:
+      disable: true
     env_file:
       - .env
     environment:
