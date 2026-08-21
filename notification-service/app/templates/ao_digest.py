@@ -113,13 +113,15 @@ _HTML = """\
 """
 
 _AO_CARD = """\
-<table width="100%" cellpadding="0" cellspacing="0" style="border-top:1px solid #E8ECF5;">
+<table width="100%" cellpadding="0" cellspacing="0"
+       style="background:#FAFBFD;border:1px solid #E8ECF5;border-radius:12px;
+              margin-bottom:12px;">
   <tr>
-    <td style="padding:18px 0;">
+    <td style="padding:18px 20px;">
       <p style="margin:0 0 5px;font-size:15.5px;font-weight:700;line-height:1.4;">
         <a href="{url_source}" style="color:#080B1C;text-decoration:none;">{titre}</a>
       </p>
-      <p style="margin:0 0 6px;font-size:13px;color:#6B7494;">
+      <p style="margin:0 0 12px;font-size:13px;color:#6B7494;">
         {acheteur_line}
       </p>
       <p style="margin:0;font-size:12.5px;color:#9AA3BF;">
