@@ -16,6 +16,7 @@ const DEFAULT_FILTERS: WatcherFilters = {
   status:           'all',
   search:           '',
   categorie:        '',
+  mode_passation:   '',
   region:           '',
   date_limite_from: '',
   secteur_codes:    [],
@@ -304,7 +305,7 @@ export default function VeillePage() {
 
   const activeTab = filters.status as StatusTab;
   const hasActiveTextFilters = !!(
-    filters.search || filters.categorie || filters.region || filters.date_limite_from
+    filters.search || filters.categorie || filters.mode_passation || filters.region || filters.date_limite_from
     || filters.secteur_codes.length > 0
   );
   const total = data?.total ?? 0;

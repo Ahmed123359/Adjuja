@@ -367,6 +367,7 @@ export interface ScrapedAo {
   date_publication: string | null;
   date_limite:      string | null;
   categorie:        string | null;
+  mode_passation:   string | null;
   secteur:          string | null;
   region:           string | null;
   ville:            string | null;
@@ -404,10 +405,16 @@ export interface WatcherFilters {
   status:           'all' | ScrapedAoStatus;
   search:           string;
   categorie:        string;
+  mode_passation:   string;
   region:           string;
   date_limite_from: string;
   secteur_codes:    string[];
   page:             number;
+}
+
+export interface ModePassation {
+  code:  string;
+  label: string;
 }
 
 // ── Nomenclature des secteurs d'activite (taxonomie Sodipress) ──────────────

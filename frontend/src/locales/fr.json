@@ -602,6 +602,8 @@
       "title": "Filtres",
       "search": "Rechercher un AO, un acheteur...",
       "activites": "Activités",
+      "modePassation": "Mode de passation",
+      "modePassationAll": "Tous les modes de passation",
       "categorie": "Catégorie principale",
       "categorieAll": "Toutes les catégories",
       "categoriePh": "Ex: Travaux",

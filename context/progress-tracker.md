@@ -87,6 +87,48 @@ prod pour valider l'envoi bout en bout avec Resend actif.
   d'écran/browser disponible dans cette session) -- vérifié uniquement par compilation et
   relecture de code, à confirmer visuellement avant mise en prod.
 
+- **Filtre "Mode de passation" (veille AO)** (2026-08-21e, demande explicite) : nomenclature
+  officielle marchespublics.gov.ma (28 entrées, extraites verbatim du vrai HTML du
+  formulaire de recherche avancée le 2026-08-21 -- `ao-watcher/app/core/mode_passation.py`,
+  même pattern que `nature_prestation.py`, apostrophes droites/courbes incohérentes de la
+  source volontairement préservées telles quelles). **Gap réel trouvé en creusant** : le
+  config JSON du scraper (`marchespublics.config.json` et les 2 autres portails) mappait
+  déjà `"procedure": "typeProcedure"` dans `detail.fields` depuis le début, mais
+  `MPEPlatformScraper.fetch_detail()` ne lisait jamais ce champ ni ne le renvoyait --
+  exactement la même classe de bug que d'autres trous trouvés ce soir (config déclare,
+  code ignore). Corrigé : `AoData.mode_passation` (nouveau champ) alimenté via
+  `get_field("procedure")`, un seul scraper pour les 3 portails donc un seul fix couvre
+  tout. Uniquement disponible via la page détail (pas la page listing) -- même
+  traitement que `ville`/`date_publication` dans `AoRepository.upsert_many` : `COALESCE`
+  à l'upsert pour ne jamais écraser une valeur déjà enrichie par un re-scrape listing-only.
+  Chaîne complète : colonne `watcher.scraped_aos.mode_passation` (+ index), filtre
+  `AoRepository.list_aos(mode_passation=...)` (égalité stricte, pas `ilike` -- valeur
+  fixe de nomenclature, pas texte libre), nouvel endpoint public `GET /aos/mode-passation`
+  (pas d'auth, donnée de référence statique, même pattern que `/secteurs`), filtre
+  `CustomSelect` dans `VeilleFilters.tsx` positionné juste avant "Catégorie principale"
+  comme demandé. Pas d'Alembic sur ao-watcher (même limitation que notification-service)
+  -- `ALTER TABLE` manuel documenté dans l'en-tête d'`init_db.py`, à exécuter une fois
+  par environnement. **Backfill non fait** : les ~1000+ AO déjà scrapés n'auront
+  `mode_passation` qu'après un nouveau passage sur leur page détail -- le filtre ne
+  montrera des résultats que pour les AO scrapés/re-enrichis après ce déploiement, pas
+  rétroactivement, sauf décision explicite de relancer un enrichissement complet
+  (implique de re-taper la charge sur le vrai portail gouvernemental, pas fait sans
+  validation). `tsc --noEmit` + `py_compile` propres.
+
+- **Bug systémique `res.json()` avant `res.ok` (bloc CV/Équipe)** (2026-08-21e) : même
+  classe de bug que celui corrigé plus tôt côté notifications, trouvé en investiguant un
+  vrai rapport utilisateur ("Unexpected token '<'..." sur l'onglet Équipe en prod) --
+  `fetchStaffCvs`/`createStaffCv`/`updateStaffCv`/`deleteStaffCv`/`uploadCvPdf`/
+  `fetchAoTeam`/`extractCvFromPdf` dans `api.ts` appelaient toutes `res.json()` avant de
+  vérifier `res.ok`. Root cause exacte de l'occurrence signalée non confirmée avec
+  certitude (logs `api` ne montrent aucune trace de la requête `staff-cvs/extract` au
+  moment de l'échec -- nginx a renvoyé un 500 avant même de proxifier, corrélé à un
+  upload démarré depuis un mobile Android d'après le user-agent du log nginx, hypothèse
+  de connexion coupée en cours d'upload, pas confirmée à 100%). Le fix ne résout donc pas
+  forcément la cause racine de cet incident précis, mais transforme toute future
+  occurrence similaire (erreur réseau, page d'erreur HTML, timeout) en message clair au
+  lieu d'un crash JS brut. `tsc --noEmit` propre.
+
 - **Design carte AO du digest revu + bug de domaine corrigé** (2026-08-21d, retour direct
   de l'utilisateur -- "clairement généré par IA") : `_AO_CARD` (`ao_digest.py`) refaite en
   liste éditoriale (titre + une ligne meta muette acheteur/catégorie + une ligne

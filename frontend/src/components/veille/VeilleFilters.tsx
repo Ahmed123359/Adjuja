@@ -1,8 +1,11 @@
+import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { AoCategorie, WatcherFilters } from '../../types';
+import type { AoCategorie, ModePassation, WatcherFilters } from '../../types';
 import { useIsMobile } from '../../hooks/useIsMobile';
+import { fetchModesPassation } from '../../api';
 import SecteurPicker from './SecteurPicker';
 import CategorieSelect from './CategorieSelect';
+import CustomSelect from '../CustomSelect';
 
 const CATEGORIES: AoCategorie[] = ['Travaux', 'Fournitures', 'Services'];
 
@@ -49,14 +52,24 @@ function FilterSection({ label, children }: { label: string; children: React.Rea
 export default function VeilleFilters({ filters, onChange, onReset, onClose }: Props) {
   const { t } = useTranslation();
   const isMobile = useIsMobile();
+  const [modesPassation, setModesPassation] = useState<ModePassation[]>([]);
+
+  useEffect(() => {
+    fetchModesPassation().then(setModesPassation).catch(() => { /* non-fatal: select reste vide */ });
+  }, []);
 
   const categorieOptions: { value: AoCategorie | ''; label: string }[] = [
     { value: '', label: t('veille.filters.categorieAll') },
     ...CATEGORIES.map(cat => ({ value: cat, label: t(`veille.categories.${cat}`) })),
   ];
 
+  const modePassationOptions: { value: string; label: string }[] = [
+    { value: '', label: t('veille.filters.modePassationAll') },
+    ...modesPassation.map(m => ({ value: m.label, label: m.label })),
+  ];
+
   const hasActiveFilters =
-    filters.search || filters.categorie || filters.region || filters.date_limite_from
+    filters.search || filters.categorie || filters.mode_passation || filters.region || filters.date_limite_from
     || filters.secteur_codes.length > 0;
 
   return (
@@ -175,6 +188,17 @@ export default function VeilleFilters({ filters, onChange, onReset, onClose }: P
             onBlur={e   => (e.currentTarget.style.borderColor = 'var(--l-card-border)')}
           />
         </div>
+
+        {/* Mode de passation : nomenclature officielle marchespublics.gov.ma */}
+        <FilterSection label={t('veille.filters.modePassation')}>
+          <CustomSelect
+            value={filters.mode_passation}
+            onChange={mode => onChange({ mode_passation: mode, page: 1 })}
+            options={modePassationOptions}
+            placeholder={t('veille.filters.modePassationAll')}
+            style={inputStyle}
+          />
+        </FilterSection>
 
         {/* Categorie principale : choisie en premier, cadre la liste d'activites ci-dessous */}
         <FilterSection label={t('veille.filters.categorie')}>

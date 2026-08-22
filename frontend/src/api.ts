@@ -855,55 +855,78 @@ export async function deleteCompanyDocument(docId: string): Promise<void> {
 // ── Phase 5  CVs / Equipe ───────────────────────────────────────────────────
 
 export async function fetchStaffCvs(): Promise<import('./types').StaffCv[]> {
-  const res = await fetch('/api/v1/staff-cvs', { headers: authHeaders() });
-  const json = await res.json();
+  let res: Response;
+  try {
+    res = await fetch('/api/v1/staff-cvs', { headers: authHeaders() });
+  } catch (err) { wrapNetworkError(err); }
+  const data = await safeJson<import('./types').StaffCv[]>(res);
   if (!res.ok) throw new Error('Erreur chargement CVs.');
-  return json;
+  if (!data) throw new Error('Réponse inattendue du serveur. Réessayez.');
+  return data;
 }
 
 export async function createStaffCv(data: import('./types').StaffCvForm): Promise<import('./types').StaffCv> {
-  const res = await fetch('/api/v1/staff-cvs', {
-    method: 'POST', headers: { ...authHeaders(), 'Content-Type': 'application/json' },
-    body: JSON.stringify(data),
-  });
-  const json = await res.json();
-  if (!res.ok) throw new Error(json.detail ?? 'Erreur création CV.');
+  let res: Response;
+  try {
+    res = await fetch('/api/v1/staff-cvs', {
+      method: 'POST', headers: { ...authHeaders(), 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    });
+  } catch (err) { wrapNetworkError(err); }
+  const json = await safeJson<{ detail?: unknown } & import('./types').StaffCv>(res);
+  if (!res.ok) throw new Error(typeof json?.detail === 'string' ? json.detail : 'Erreur création CV.');
+  if (!json) throw new Error('Réponse inattendue du serveur. Réessayez.');
   return json;
 }
 
 export async function updateStaffCv(cvId: string, data: import('./types').StaffCvForm): Promise<import('./types').StaffCv> {
-  const res = await fetch(`/api/v1/staff-cvs/${cvId}`, {
-    method: 'PUT', headers: { ...authHeaders(), 'Content-Type': 'application/json' },
-    body: JSON.stringify(data),
-  });
-  const json = await res.json();
-  if (!res.ok) throw new Error(json.detail ?? 'Erreur mise à jour CV.');
+  let res: Response;
+  try {
+    res = await fetch(`/api/v1/staff-cvs/${cvId}`, {
+      method: 'PUT', headers: { ...authHeaders(), 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    });
+  } catch (err) { wrapNetworkError(err); }
+  const json = await safeJson<{ detail?: unknown } & import('./types').StaffCv>(res);
+  if (!res.ok) throw new Error(typeof json?.detail === 'string' ? json.detail : 'Erreur mise à jour CV.');
+  if (!json) throw new Error('Réponse inattendue du serveur. Réessayez.');
   return json;
 }
 
 export async function deleteStaffCv(cvId: string): Promise<void> {
-  const res = await fetch(`/api/v1/staff-cvs/${cvId}`, {
-    method: 'DELETE', headers: authHeaders(),
-  });
+  let res: Response;
+  try {
+    res = await fetch(`/api/v1/staff-cvs/${cvId}`, {
+      method: 'DELETE', headers: authHeaders(),
+    });
+  } catch (err) { wrapNetworkError(err); }
   if (!res.ok) throw new Error('Erreur suppression CV.');
 }
 
 export async function uploadCvPdf(cvId: string, file: File): Promise<import('./types').StaffCv> {
   const form = new FormData();
   form.append('file', file);
-  const res = await fetch(`/api/v1/staff-cvs/${cvId}/upload`, {
-    method: 'POST', headers: authHeaders(), body: form,
-  });
-  const json = await res.json();
-  if (!res.ok) throw new Error(json.detail ?? 'Erreur upload CV PDF.');
+  let res: Response;
+  try {
+    res = await fetch(`/api/v1/staff-cvs/${cvId}/upload`, {
+      method: 'POST', headers: authHeaders(), body: form,
+    });
+  } catch (err) { wrapNetworkError(err); }
+  const json = await safeJson<{ detail?: unknown } & import('./types').StaffCv>(res);
+  if (!res.ok) throw new Error(typeof json?.detail === 'string' ? json.detail : 'Erreur upload CV PDF.');
+  if (!json) throw new Error('Réponse inattendue du serveur. Réessayez.');
   return json;
 }
 
 export async function fetchAoTeam(aoId: string): Promise<import('./types').AoTeamMember[]> {
-  const res = await fetch(`/api/v1/staff-cvs/ao/${aoId}/team`, { headers: authHeaders() });
-  const json = await res.json();
+  let res: Response;
+  try {
+    res = await fetch(`/api/v1/staff-cvs/ao/${aoId}/team`, { headers: authHeaders() });
+  } catch (err) { wrapNetworkError(err); }
+  const data = await safeJson<import('./types').AoTeamMember[]>(res);
   if (!res.ok) throw new Error('Erreur chargement équipe.');
-  return json;
+  if (!data) throw new Error('Réponse inattendue du serveur. Réessayez.');
+  return data;
 }
 
 export interface CvExtractResult {
@@ -919,11 +942,15 @@ export interface CvExtractResult {
 export async function extractCvFromPdf(file: File): Promise<CvExtractResult> {
   const form = new FormData();
   form.append('file', file);
-  const res = await fetch('/api/v1/staff-cvs/extract', {
-    method: 'POST', headers: authHeaders(), body: form,
-  });
-  const json = await res.json();
-  if (!res.ok) throw new Error(json.detail ?? "Erreur extraction CV.");
+  let res: Response;
+  try {
+    res = await fetch('/api/v1/staff-cvs/extract', {
+      method: 'POST', headers: authHeaders(), body: form,
+    });
+  } catch (err) { wrapNetworkError(err); }
+  const json = await safeJson<{ detail?: unknown } & CvExtractResult>(res);
+  if (!res.ok) throw new Error(typeof json?.detail === 'string' ? json.detail : "Erreur extraction CV.");
+  if (!json) throw new Error('Réponse inattendue du serveur. Réessayez.');
   return json;
 }
 
@@ -959,6 +986,7 @@ export async function fetchScrapedAos(
   if (filters.status !== 'all') p.set('status', filters.status);
   if (filters.search)           p.set('search', filters.search);
   if (filters.categorie)        p.set('categorie', filters.categorie);
+  if (filters.mode_passation)   p.set('mode_passation', filters.mode_passation);
   if (filters.region)           p.set('region', filters.region);
   if (filters.date_limite_from) p.set('date_limite_from', filters.date_limite_from);
   for (const code of filters.secteur_codes) p.append('secteur_codes', code);
@@ -969,6 +997,20 @@ export async function fetchScrapedAos(
   const json = await safeJson<ScrapedAoList>(res);
   if (!json) throw new Error('Erreur chargement veille.');
   return json;
+}
+
+let modesPassationCache: Promise<import('./types').ModePassation[]> | null = null;
+
+export async function fetchModesPassation(): Promise<import('./types').ModePassation[]> {
+  if (!modesPassationCache) {
+    modesPassationCache = fetch(`${WATCHER_BASE}/aos/mode-passation`)
+      .then(res => {
+        if (!res.ok) throw new Error('Erreur chargement modes de passation.');
+        return res.json();
+      })
+      .catch(e => { modesPassationCache = null; throw e; });
+  }
+  return modesPassationCache;
 }
 
 let secteursCache: Promise<Secteur[]> | null = null;

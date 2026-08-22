@@ -16,6 +16,7 @@ class AoOut(BaseModel):
     date_publication: date | None
     date_limite: date | None
     categorie: str | None
+    mode_passation: str | None
     secteur: str | None
     region: str | None
     ville: str | None
@@ -53,6 +54,11 @@ class SecteurOut(BaseModel):
     label: str
     activites: list[str]
     categorie: str
+
+
+class ModePassationOut(BaseModel):
+    code: str
+    label: str
 
 
 class VerdictOut(BaseModel):

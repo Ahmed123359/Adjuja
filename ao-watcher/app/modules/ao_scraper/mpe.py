@@ -355,6 +355,7 @@ class MPEPlatformScraper(IAOScraper):
         lieu = _collapse_duplicate_title(lieu_raw) if lieu_raw else lieu_raw
         caution_raw = get_field("caution")
         secteur = get_field("secteur")
+        mode_passation = get_field("procedure")
 
         # Budget  uses a dynamic repeater ID
         budget_el = soup.select_one(detail_cfg.get("budget_selector", ""))
@@ -387,6 +388,7 @@ class MPEPlatformScraper(IAOScraper):
             budget_estime=_parse_amount(budget_raw),
             caution=_parse_amount(caution_raw),
             zip_url=zip_url,
+            mode_passation=mode_passation or None,
         )
 
     # ------------------------------------------------------------------ #

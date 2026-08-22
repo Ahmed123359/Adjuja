@@ -30,6 +30,7 @@ class ScrapedAo(Base):
         Index("idx_scraped_aos_status", "status"),
         Index("idx_scraped_aos_region", "region"),
         Index("idx_scraped_aos_categorie", "categorie"),
+        Index("idx_scraped_aos_mode_passation", "mode_passation"),
         Index("idx_scraped_aos_deadline", "date_limite"),
         Index("idx_scraped_aos_source", "source"),
         Index("idx_scraped_aos_secteur_codes", "secteur_codes", postgresql_using="gin"),
@@ -49,6 +50,7 @@ class ScrapedAo(Base):
     date_publication: Mapped[date | None] = mapped_column(Date)
     date_limite: Mapped[date | None] = mapped_column(Date)
     categorie: Mapped[str | None] = mapped_column(String(100))
+    mode_passation: Mapped[str | None] = mapped_column(String(255))
     secteur: Mapped[str | None] = mapped_column(Text)
     region: Mapped[str | None] = mapped_column(String(100))
     ville: Mapped[str | None] = mapped_column(Text)

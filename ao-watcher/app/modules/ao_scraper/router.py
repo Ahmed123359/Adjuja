@@ -2,10 +2,11 @@ from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
+from app.core.mode_passation import MODES_PASSATION
 from app.core.taxonomie import SECTEURS
 from app.modules.ao_scraper.analysis import AnalysisError, analyze_ao
 from app.modules.ao_scraper.repository import AoRepository
-from app.modules.ao_scraper.schemas import AoListOut, AoOut, ImportResult, SecteurOut, StatusUpdate, VerdictOut
+from app.modules.ao_scraper.schemas import AoListOut, AoOut, ImportResult, ModePassationOut, SecteurOut, StatusUpdate, VerdictOut
 
 router = APIRouter(prefix="/aos", tags=["ao-watcher"])
 secteurs_router = APIRouter(prefix="/secteurs", tags=["taxonomie"])
@@ -19,6 +20,13 @@ async def list_secteurs():
         SecteurOut(code=s.code, label=s.label, activites=list(s.activites), categorie=s.categorie)
         for s in SECTEURS
     ]
+
+
+@router.get("/mode-passation", response_model=list[ModePassationOut])
+async def list_modes_passation():
+    """Nomenclature complete des modes de passation (reference statique,
+    voir app.core.mode_passation). Pas d'auth : donnee de reference publique."""
+    return [ModePassationOut(code=m.code, label=m.label) for m in MODES_PASSATION]
 
 VALID_STATUSES = {"new", "seen", "favorited", "imported"}
 
@@ -37,6 +45,7 @@ async def list_aos(
     status: str | None = Query(None),
     region: str | None = Query(None),
     categorie: str | None = Query(None),
+    mode_passation: str | None = Query(None),
     search: str | None = Query(None),
     date_limite_from: str | None = Query(None),
     secteur_codes: list[str] | None = Query(None),
@@ -50,6 +59,7 @@ async def list_aos(
         status=status,
         region=region,
         categorie=categorie,
+        mode_passation=mode_passation,
         search=search,
         date_limite_from=date_limite_from,
         secteur_codes=secteur_codes,

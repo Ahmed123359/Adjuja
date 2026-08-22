@@ -41,6 +41,7 @@ class AoRepository:
         status: str | None = None,
         region: str | None = None,
         categorie: str | None = None,
+        mode_passation: str | None = None,
         search: str | None = None,
         date_limite_from: str | None = None,
         secteur_codes: list[str] | None = None,
@@ -55,6 +56,8 @@ class AoRepository:
             q = q.where(ScrapedAo.region.ilike(f"%{region}%"))
         if categorie:
             q = q.where(ScrapedAo.categorie.ilike(f"%{categorie}%"))
+        if mode_passation:
+            q = q.where(ScrapedAo.mode_passation == mode_passation)
         if search:
             q = q.where(
                 ScrapedAo.titre.ilike(f"%{search}%")
@@ -142,6 +145,7 @@ class AoRepository:
                 "date_publication": ao.date_publication,
                 "date_limite": ao.date_limite,
                 "categorie": ao.categorie,
+                "mode_passation": ao.mode_passation,
                 "secteur": ao.secteur,
                 "region": ao.region,
                 "ville": ao.ville,
@@ -171,10 +175,12 @@ class AoRepository:
                 "zip_url": stmt.excluded.zip_url,
                 "secteur_codes": stmt.excluded.secteur_codes,
                 "updated_at": datetime.now(timezone.utc),
-                # Preserve non-null values : listing peut ne pas avoir ville/date_publication,
+                # Preserve non-null values : listing peut ne pas avoir ville/date_publication/
+                # mode_passation (detail-only, absent de listing.cols dans le config scraper),
                 # mais la page detail les a -- on ne les efface jamais avec NULL.
                 "date_publication": func.coalesce(stmt.excluded.date_publication, ScrapedAo.date_publication),
                 "ville": func.coalesce(stmt.excluded.ville, ScrapedAo.ville),
+                "mode_passation": func.coalesce(stmt.excluded.mode_passation, ScrapedAo.mode_passation),
                 # Preserve: status, classified_docs, zip_minio_key, zip_downloaded_at
             },
         )

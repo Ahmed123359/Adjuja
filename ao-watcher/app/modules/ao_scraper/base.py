@@ -21,6 +21,7 @@ class AoData:
     caution: Decimal | None = None
     description: str | None = None
     zip_url: str | None = None
+    mode_passation: str | None = None
 
 
 class IAOScraper(ABC):

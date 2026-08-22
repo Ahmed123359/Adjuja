@@ -5,6 +5,16 @@ Safe to re-run (idempotent).
 Usage:
   cd ao-watcher
   DATABASE_URL=postgresql+asyncpg://... python init_db.py
+
+Base.metadata.create_all(checkfirst=True) creates missing tables but never ALTERs an
+already-existing one. After adding `mode_passation` to `ScrapedAo` (filtre "Mode de
+passation", 2026-08-21), run this once per environment (dev + prod) against the
+already-existing table:
+
+  ALTER TABLE watcher.scraped_aos
+    ADD COLUMN IF NOT EXISTS mode_passation VARCHAR(255);
+  CREATE INDEX IF NOT EXISTS idx_scraped_aos_mode_passation
+    ON watcher.scraped_aos (mode_passation);
 """
 
 import asyncio

@@ -600,6 +600,8 @@
       "title": "Filters",
       "search": "Search a tender, a buyer...",
       "activites": "Activities",
+      "modePassation": "Procurement procedure",
+      "modePassationAll": "All procurement procedures",
       "categorie": "Main category",
       "categorieAll": "All categories",
       "categoriePh": "E.g. Works",
