@@ -277,7 +277,24 @@
       "verified": "Email verified! Sign in to access your free generation.",
       "continueWithGoogle": "Continue with Google",
       "googleCallbackLoading": "Signing in with Google…",
-      "googleCallbackError": "Invalid Google sign-in. Please try again."
+      "googleCallbackError": "Invalid Google sign-in. Please try again.",
+      "forgotPassword": "Forgot password?"
+    },
+    "forgot": {
+      "title": "Forgot password",
+      "subtitle": "Get a code by email to reset it",
+      "email": "Email",
+      "emailPlaceholder": "you@example.com",
+      "submit": "Send code",
+      "submitting": "Sending…",
+      "backToLogin": "Back to sign in",
+      "otpTitle": "Check your email",
+      "otpSent": "A reset code was sent to",
+      "newPassword": "New password",
+      "newPasswordPlaceholder": "••••••••",
+      "resetSubmit": "Reset password",
+      "resetting": "Resetting…",
+      "resetError": "Invalid code. Please try again."
     },
     "register": {
       "title": "Create an account",

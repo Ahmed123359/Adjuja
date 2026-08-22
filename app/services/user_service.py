@@ -113,6 +113,12 @@ class UserService:
             generations_used=0, max_generations=1,
         )
 
+    async def update_password(self, user_id: str, hashed_pwd: str) -> None:
+        await self._db.execute(
+            update(User).where(User.id == user_id).values(hashed_pwd=hashed_pwd)
+        )
+        await self._db.commit()
+
     async def increment_generations(self, user_id: str) -> None:
         await self._db.execute(
             update(User).where(User.id == user_id).values(

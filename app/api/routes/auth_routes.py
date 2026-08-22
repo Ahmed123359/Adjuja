@@ -13,13 +13,18 @@ from app.api.dependencies import get_current_user, get_user_service
 from app.cache import cache
 from app.config.settings import Settings, get_settings
 from app.limiter import limiter
-from app.models.user import Token, UserCreate, UserPublic, PASSWORD_MIN_LENGTH, PASSWORD_REQUIRE_DIGIT
-from app.services.email_service import send_verification_otp_email
+from pydantic import field_validator
+
+from app.models.user import Token, UserCreate, UserPublic, PASSWORD_MIN_LENGTH, PASSWORD_REQUIRE_DIGIT, validate_password_strength
+from app.services.email_service import send_password_reset_otp_email, send_verification_otp_email
 from app.services.user_service import UserService
 
 _OTP_TTL_SECONDS   = 15 * 60
 _OTP_MAX_ATTEMPTS  = 5
 _OTP_CACHE_PREFIX  = "pending_registration:"
+_RESET_TTL_SECONDS  = 15 * 60
+_RESET_MAX_ATTEMPTS = 5
+_RESET_CACHE_PREFIX = "password_reset:"
 
 router = APIRouter(prefix="/auth", tags=["Authentification"])
 logger = logging.getLogger(__name__)
@@ -181,6 +186,103 @@ async def verify_otp(
     cache.delete(key)
     logger.info("Inscription confirmée via OTP  user_id=%s email=%s", user.id, user.email)
     return Token(access_token=_make_token(user.id, settings))
+
+
+class ForgotPasswordRequest(BaseModel):
+    email: str
+
+
+class ForgotPasswordResponse(BaseModel):
+    message: str = "otp_sent"
+
+
+class ResetPasswordRequest(BaseModel):
+    email:        str
+    otp:          str
+    new_password: str
+
+    @field_validator("new_password")
+    @classmethod
+    def valider_mot_de_passe(cls, v: str) -> str:
+        return validate_password_strength(v)
+
+
+@router.post(
+    "/forgot-password",
+    response_model=ForgotPasswordResponse,
+    summary="Démarrer une réinitialisation de mot de passe (envoie un code par email)",
+)
+@limiter.limit("5/minute")
+async def forgot_password(
+    request:  Request,
+    data:     ForgotPasswordRequest,
+    users:    UserService = Depends(get_user_service),
+    settings: Settings    = Depends(get_settings),
+) -> ForgotPasswordResponse:
+    """
+    Toujours la même réponse, que l'email existe ou non : sinon un email inconnu
+    répond différemment d'un email connu, ce qui permet à un attaquant de
+    vérifier quels comptes existent (énumération). Le compte Google-only (pas de
+    vrai mot de passe, hashed_pwd="__google_oauth__") peut aussi réinitialiser :
+    ça lui ajoute simplement un mot de passe, ce qui est un service rendu, pas
+    un problème -- l'utilisateur pourra ensuite se connecter par email/mdp OU
+    Google, les deux methodes cohabitent deja pour les autres comptes.
+    """
+    user = await users.get_by_email(data.email)
+    if user:
+        otp = f"{secrets.randbelow(1_000_000):06d}"
+        cache.set(
+            f"{_RESET_CACHE_PREFIX}{data.email.lower()}",
+            {"otp": otp, "attempts": 0, "user_id": user.id},
+            ttl=_RESET_TTL_SECONDS,
+        )
+        await send_password_reset_otp_email(to_email=data.email, otp=otp, resend_api_key=settings.resend_api_key)
+        logger.info("Code de réinitialisation envoyé  email=%s", data.email)
+    else:
+        logger.info("Réinitialisation demandée pour un email inconnu  email=%s", data.email)
+
+    return ForgotPasswordResponse()
+
+
+@router.post(
+    "/reset-password",
+    response_model=Token,
+    summary="Confirmer la réinitialisation via le code reçu par email",
+)
+@limiter.limit("10/minute")
+async def reset_password(
+    request:  Request,
+    data:     ResetPasswordRequest,
+    users:    UserService = Depends(get_user_service),
+    settings: Settings    = Depends(get_settings),
+) -> Token:
+    key     = f"{_RESET_CACHE_PREFIX}{data.email.lower()}"
+    pending = cache.get(key)
+
+    if not pending:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Code expiré ou introuvable. Recommencez la réinitialisation.",
+        )
+
+    if pending["attempts"] >= _RESET_MAX_ATTEMPTS:
+        cache.delete(key)
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Trop de tentatives. Recommencez la réinitialisation.",
+        )
+
+    if data.otp != pending["otp"]:
+        pending["attempts"] += 1
+        cache.set(key, pending, ttl=_RESET_TTL_SECONDS)
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Code invalide.")
+
+    hashed_pwd = UserService.hash_password(data.new_password)
+    await users.update_password(pending["user_id"], hashed_pwd)
+    cache.delete(key)
+
+    logger.info("Mot de passe réinitialisé  user_id=%s email=%s", pending["user_id"], data.email)
+    return Token(access_token=_make_token(pending["user_id"], settings))
 
 
 @router.post(

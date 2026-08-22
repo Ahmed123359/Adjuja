@@ -6,6 +6,7 @@ import LandingPage from './pages/LandingPage';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import GoogleCallbackPage from './pages/GoogleCallbackPage';
+import ForgotPasswordPage from './pages/ForgotPasswordPage';
 import NotFoundPage from './pages/NotFoundPage';
 import MentionsLegalesPage from './pages/MentionsLegalesPage';
 import CguPage from './pages/CguPage';
@@ -102,6 +103,7 @@ function AppRouter() {
           <LoginPage
             onSuccess={handleAuthSuccess}
             onGoRegister={() => navigate('/register')}
+            onGoForgotPassword={() => navigate('/forgot-password')}
           />
         )}
       />
@@ -109,6 +111,15 @@ function AppRouter() {
         path="/register"
         element={user ? <Navigate to="/app" replace /> : (
           <RegisterPage
+            onSuccess={handleAuthSuccess}
+            onGoLogin={() => navigate('/login')}
+          />
+        )}
+      />
+      <Route
+        path="/forgot-password"
+        element={user ? <Navigate to="/app" replace /> : (
+          <ForgotPasswordPage
             onSuccess={handleAuthSuccess}
             onGoLogin={() => navigate('/login')}
           />

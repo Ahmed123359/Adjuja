@@ -4,9 +4,9 @@ import { useTranslation } from 'react-i18next';
 import { login, startGoogleLogin } from '../api';
 import AuthLayout from '../components/auth/AuthLayout';
 
-type Props = { onSuccess: () => void; onGoRegister: () => void };
+type Props = { onSuccess: () => void; onGoRegister: () => void; onGoForgotPassword: () => void };
 
-export default function LoginPage({ onSuccess, onGoRegister }: Props) {
+export default function LoginPage({ onSuccess, onGoRegister, onGoForgotPassword }: Props) {
   const { t } = useTranslation();
   const [email,    setEmail]    = useState('');
   const [password, setPassword] = useState('');
@@ -64,9 +64,16 @@ export default function LoginPage({ onSuccess, onGoRegister }: Props) {
           />
         </div>
         <div>
-          <label style={labelStyle}>{t('auth.login.password')}</label>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <label style={{ ...labelStyle, marginBottom: 0 }}>{t('auth.login.password')}</label>
+            <button type="button" onClick={onGoForgotPassword}
+              style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--l-blue)', fontWeight: 600, fontSize: 13, fontFamily: 'inherit', padding: 0 }}
+            >
+              {t('auth.login.forgotPassword')}
+            </button>
+          </div>
           <input type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder={t('auth.login.passwordPlaceholder')} required
-            style={inputStyle}
+            style={{ ...inputStyle, marginTop: 7 }}
             onFocus={e => e.currentTarget.style.borderColor = 'var(--l-blue)'}
             onBlur={e => e.currentTarget.style.borderColor = 'var(--l-card-border)'}
           />

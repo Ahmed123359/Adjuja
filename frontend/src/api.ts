@@ -120,6 +120,39 @@ export async function verifyOtp(email: string, otp: string): Promise<void> {
   setToken(data.access_token);
 }
 
+export async function forgotPassword(email: string): Promise<void> {
+  let res: Response;
+  try {
+    res = await fetch('/api/v1/auth/forgot-password', {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ email }),
+    });
+  } catch (err) { wrapNetworkError(err); }
+  const data = await safeJson<{ detail?: unknown }>(res);
+  if (!res.ok) throw new Error(typeof data?.detail === 'string' ? data.detail : 'Erreur. Réessayez.');
+}
+
+export async function resetPassword(email: string, otp: string, newPassword: string): Promise<void> {
+  let res: Response;
+  try {
+    res = await fetch('/api/v1/auth/reset-password', {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ email, otp, new_password: newPassword }),
+    });
+  } catch (err) { wrapNetworkError(err); }
+  const data = await safeJson<{ detail?: unknown; access_token?: string }>(res);
+  if (!res.ok) {
+    if (Array.isArray(data?.detail)) {
+      throw new Error((data.detail as { msg: string }[]).map(e => e.msg).join(' '));
+    }
+    throw new Error(typeof data?.detail === 'string' ? data.detail : 'Code invalide. Réessayez.');
+  }
+  if (!data?.access_token) throw new Error('Réponse inattendue du serveur. Réessayez.');
+  setToken(data.access_token);
+}
+
 export async function login(email: string, password: string): Promise<void> {
   let res: Response;
   try {

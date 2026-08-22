@@ -9,6 +9,26 @@ PASSWORD_REQUIRE_DIGIT: bool = True
 # ──────────────────────────────────────────────────────────────────────────────
 
 
+def validate_password_strength(v: str) -> str:
+    """
+    Valide la force du mot de passe côté backend.
+
+    Cette validation est indispensable côté serveur car le frontend peut être
+    contourné : un appel curl direct ignore complètement les contrôles JavaScript.
+
+    Les règles sont lues depuis les constantes PASSWORD_* définies dans ce module,
+    qui sont aussi exposées via l'endpoint /auth/password-rules. Modifier les
+    constantes suffit pour mettre à jour backend ET frontend. Partagée entre
+    UserCreate (inscription) et ResetPasswordRequest (mot de passe oublié) --
+    mêmes règles, un seul endroit à modifier.
+    """
+    if len(v) < PASSWORD_MIN_LENGTH:
+        raise ValueError(f"Le mot de passe doit contenir au moins {PASSWORD_MIN_LENGTH} caractères.")
+    if PASSWORD_REQUIRE_DIGIT and not any(c.isdigit() for c in v):
+        raise ValueError("Le mot de passe doit contenir au moins un chiffre.")
+    return v
+
+
 class UserCreate(BaseModel):
     nom:      str = Field(..., min_length=1, description="Nom de famille")
     prenom:   str = Field(..., min_length=1, description="Prénom")
@@ -23,21 +43,7 @@ class UserCreate(BaseModel):
     @field_validator("password")
     @classmethod
     def valider_mot_de_passe(cls, v: str) -> str:
-        """
-        Valide la force du mot de passe côté backend.
-
-        Cette validation est indispensable côté serveur car le frontend peut être
-        contourné : un appel curl direct ignore complètement les contrôles JavaScript.
-
-        Les règles sont lues depuis les constantes PASSWORD_* définies dans ce module,
-        qui sont aussi exposées via l'endpoint /auth/password-rules.
-        Modifier les constantes suffit pour mettre à jour backend ET frontend.
-        """
-        if len(v) < PASSWORD_MIN_LENGTH:
-            raise ValueError(f"Le mot de passe doit contenir au moins {PASSWORD_MIN_LENGTH} caractères.")
-        if PASSWORD_REQUIRE_DIGIT and not any(c.isdigit() for c in v):
-            raise ValueError("Le mot de passe doit contenir au moins un chiffre.")
-        return v
+        return validate_password_strength(v)
 
 
 class UserPublic(BaseModel):

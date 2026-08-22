@@ -277,7 +277,24 @@
       "verified": "Email vérifié ! Connectez-vous pour accéder à votre génération gratuite.",
       "continueWithGoogle": "Continuer avec Google",
       "googleCallbackLoading": "Connexion avec Google…",
-      "googleCallbackError": "Connexion Google invalide. Réessayez."
+      "googleCallbackError": "Connexion Google invalide. Réessayez.",
+      "forgotPassword": "Mot de passe oublié ?"
+    },
+    "forgot": {
+      "title": "Mot de passe oublié",
+      "subtitle": "Recevez un code par email pour le réinitialiser",
+      "email": "Email",
+      "emailPlaceholder": "vous@exemple.com",
+      "submit": "Envoyer le code",
+      "submitting": "Envoi…",
+      "backToLogin": "Retour à la connexion",
+      "otpTitle": "Vérifiez votre email",
+      "otpSent": "Un code de réinitialisation a été envoyé à",
+      "newPassword": "Nouveau mot de passe",
+      "newPasswordPlaceholder": "••••••••",
+      "resetSubmit": "Réinitialiser le mot de passe",
+      "resetting": "Réinitialisation…",
+      "resetError": "Code invalide. Réessayez."
     },
     "register": {
       "title": "Créer un compte",
