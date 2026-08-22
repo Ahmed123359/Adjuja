@@ -198,11 +198,15 @@ CV :
 
     settings = get_settings()
     client   = Mistral(api_key=settings.mistral_api_key)
-    response = client.chat.complete(
-        model="mistral-small-latest",
-        messages=[{"role": "user", "content": prompt}],
-        response_format={"type": "json_object"},
-    )
+    try:
+        response = client.chat.complete(
+            model="mistral-small-latest",
+            messages=[{"role": "user", "content": prompt}],
+            response_format={"type": "json_object"},
+        )
+    except Exception as e:
+        logger.error("Extraction CV : appel Mistral échoué : %s", e)
+        raise HTTPException(status_code=502, detail="Service d'extraction IA indisponible. Réessayez dans un instant.")
     raw = response.choices[0].message.content or "{}"
     try:
         extracted = json.loads(raw)

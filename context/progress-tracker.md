@@ -87,6 +87,31 @@ prod pour valider l'envoi bout en bout avec Resend actif.
   d'écran/browser disponible dans cette session) -- vérifié uniquement par compilation et
   relecture de code, à confirmer visuellement avant mise en prod.
 
+- **Diagnostic réel "Erreur extraction CV" + bug de fusion scraper trouvés en testant en
+  local** (2026-08-22, suite à une demande explicite d'arrêter de deviner et de tester
+  pour de vrai) :
+  - **Cause racine réelle de "Erreur extraction CV"** : `MISTRAL_API_KEY` invalide --
+    confirmé en rejouant un vrai upload CV en local avec un vrai PDF et un vrai JWT
+    (`client.chat.complete()` lève `mistralai.models.sdkerror.SDKError: Status 401
+    Invalid API Key`). Rien à voir avec un bug de code -- clé à vérifier/roter côté
+    utilisateur, en local ET en prod (root cause probablement identique dans les deux
+    environnements). **Gap réel trouvé au passage** : `staff_cvs_routes.py::
+    extract_cv_from_pdf` n'avait aucun `try/except` autour de l'appel Mistral -- toute
+    erreur (clé invalide, rate limit, timeout) remontait en 500 brut. Corrigé : catch +
+    `HTTPException(502, "Service d'extraction IA indisponible...")`, revérifié en
+    conditions réelles (même requête, même clé invalide, réponse propre 502 au lieu
+    d'un 500 nu).
+  - **Bug réel trouvé en testant le scraper mode_passation en conditions réelles** (voir
+    entrée dédiée ci-dessous) : `scrape_tasks.py::enrich()` ne recopiait jamais
+    `detail.mode_passation` sur l'objet `ao` avant l'upsert -- même une fois le champ
+    correctement extrait par `fetch_detail()`, il aurait été perdu silencieusement à
+    chaque scrape réel. Jamais visible en testant `fetch_detail()` isolément (ce que
+    j'avais fait avant), seulement en suivant tout le chemin réel jusqu'à l'upsert.
+    Corrigé et reverifié : extraction confirmée sur une vraie page live
+    (`mode_passation: "Appel d'offres ouvert"` sur l'AO 1028876 réel), filtre API
+    confirmé fonctionnel bout en bout (1 résultat exact sur 899 AO après avoir posé la
+    valeur manuellement, exclut bien les NULL).
+
 - **Filtre "Mode de passation" (veille AO)** (2026-08-21e, demande explicite) : nomenclature
   officielle marchespublics.gov.ma (28 entrées, extraites verbatim du vrai HTML du
   formulaire de recherche avancée le 2026-08-21 -- `ao-watcher/app/core/mode_passation.py`,
