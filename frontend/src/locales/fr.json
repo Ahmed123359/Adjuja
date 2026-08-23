@@ -475,6 +475,7 @@
       },
       "activitesHint": "Sélectionnez les secteurs qui correspondent à votre activité. Utilisé pour filtrer la veille des marchés et, bientôt, pour les notifications d'AOs correspondant à votre profil.",
       "qualificationsHint": "Ces informations servent à évaluer automatiquement votre éligibilité (analyse d'opportunité) sur les AOs scrapés, en comparant ces données aux exigences extraites du CPS et du RC.",
+      "addAgrement": "Ajouter un agrément",
       "addClassification": "Ajouter une classification",
       "addCertification": "Ajouter",
       "addReference": "Ajouter une référence",
@@ -483,6 +484,9 @@
       "fields": {
         "nom_entreprise": "Raison sociale",
         "secteur": "Secteur d'activité",
+        "agrements": "Agréments",
+        "agrementDomaine": "Domaine / objet",
+        "agrementNumero": "Numéro d'agrément",
         "classifications": "Classifications (qualification BTP)",
         "domaine": "Domaine",
         "categorie": "Catégorie",

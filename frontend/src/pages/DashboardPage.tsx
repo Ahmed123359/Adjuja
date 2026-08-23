@@ -226,7 +226,6 @@ function SectionCard({
         background: "var(--l-card)",
         border: "1px solid var(--l-card-border)",
         borderRadius: 14,
-        overflow: "hidden",
       }}
     >
       <div
@@ -1245,6 +1244,9 @@ function ProfileTab({ onProfileSaved }: { onProfileSaved: () => void }) {
     setSaved(false);
   };
 
+  const agrements = Array.isArray(form.extra?.agrements)
+    ? (form.extra!.agrements as Record<string, string>[])
+    : [];
   const classifications = Array.isArray(form.extra?.classifications)
     ? (form.extra!.classifications as Record<string, string>[])
     : [];
@@ -1427,6 +1429,21 @@ function ProfileTab({ onProfileSaved }: { onProfileSaved: () => void }) {
           {t("dashboard.profile.qualificationsHint")}
         </p>
         <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
+          <div>
+            <label style={{ display: "block", fontSize: 11.5, fontWeight: 600, color: "var(--l-sub)", marginBottom: 6 }}>
+              {t("dashboard.profile.fields.agrements")}
+            </label>
+            <StructuredListField
+              rows={agrements}
+              onChange={(rows) => updateExtra("agrements", rows)}
+              addLabel={t("dashboard.profile.addAgrement")}
+              fields={[
+                { key: "domaine", placeholder: t("dashboard.profile.fields.agrementDomaine") },
+                { key: "numero", placeholder: t("dashboard.profile.fields.agrementNumero") },
+              ]}
+            />
+          </div>
+
           <div>
             <label style={{ display: "block", fontSize: 11.5, fontWeight: 600, color: "var(--l-sub)", marginBottom: 6 }}>
               {t("dashboard.profile.fields.classifications")}

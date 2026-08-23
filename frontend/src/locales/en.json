@@ -475,6 +475,7 @@
       },
       "activitesHint": "Select the sectors that match your activity. Used to filter tender monitoring and, soon, to notify you about tenders matching your profile.",
       "qualificationsHint": "This information is used to automatically assess your eligibility (opportunity analysis) on scraped tenders, by comparing it against requirements extracted from the CPS and RC.",
+      "addAgrement": "Add an accreditation",
       "addClassification": "Add a classification",
       "addCertification": "Add",
       "addReference": "Add a reference",
@@ -483,6 +484,9 @@
       "fields": {
         "nom_entreprise": "Company name",
         "secteur": "Industry",
+        "agrements": "Accreditations",
+        "agrementDomaine": "Domain / purpose",
+        "agrementNumero": "Accreditation number",
         "classifications": "Classifications (construction qualification)",
         "domaine": "Domain",
         "categorie": "Category",

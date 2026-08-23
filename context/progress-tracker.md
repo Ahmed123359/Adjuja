@@ -26,6 +26,24 @@ prod pour valider l'envoi bout en bout avec Resend actif.
 
 ## Complété (résumé, voir mémoire auto pour le détail complet par sujet)
 
+- **Fix menus déroulants coupés dans Profil entreprise + champ Agréments** (2026-08-23,
+  signalé par l'utilisateur) : `SectionCard` (`DashboardPage.tsx`) avait `overflow: hidden`
+  sur son conteneur racine -- coupait tout menu déroulant absolument positionné qui doit
+  sortir des limites de la carte (`CategorieSelect`, `SecteurPicker`, `CustomSelect`).
+  Symptôme rapporté ("liste d'activités plus courte que dans Veille") : même donnée,
+  même composant partagé (`fetchSecteurs()`), juste coupée visuellement -- Veille utilise
+  `FilterSection` (pas de `overflow:hidden`), jamais eu ce bug. Vérifié avant de retirer
+  la propriété : le contenu interne a toujours 16px de padding, rien ne touche jamais les
+  coins arrondis, donc `overflow:hidden` ne servait à rien visuellement. Nouveau champ
+  "Agréments" (`StructuredListField`, domaine + numéro) ajouté juste avant Classifications
+  dans la section Qualifications, stocké dans `extra.agrements` (JSONB libre, même pattern
+  que classifications/certifications, aucun changement backend). **Non fait, à discuter**:
+  `eligibility_service.py` compare déjà `extra.classifications`/`extra.certifications` aux
+  exigences extraites du CPS pour le verdict d'analyse d'opportunité -- `agrements` n'y est
+  pas encore branché, capturé sur le profil mais pas encore utilisé dans le calcul
+  d'éligibilité. `tsc --noEmit` propre.
+
+
 - **Réinitialisation de mot de passe par email + invitation d'équipe** (2026-08-22/23,
   demande explicite) :
   - **Reset mot de passe** : `POST /auth/forgot-password` (email -> OTP 6 chiffres,
