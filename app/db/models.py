@@ -82,11 +82,14 @@ class Organization(Base):
     __tablename__ = "organizations"
 
     id: Mapped[str]           = mapped_column(String(36), primary_key=True)
+    owner_id: Mapped[str]     = mapped_column(String(36), ForeignKey("users.id"), nullable=False)
     name: Mapped[str]         = mapped_column(String(255))
     slug: Mapped[str]         = mapped_column(String(100), unique=True, index=True)
     created_at: Mapped[str]   = mapped_column(String(50))
 
-    users: Mapped[list["User"]]    = relationship(back_populates="org", cascade="all, delete-orphan")
+    # foreign_keys explicite : owner_id est aussi une FK vers users.id, donc SQLAlchemy
+    # ne peut plus deviner tout seul quelle colonne relie Organization a User ici.
+    users: Mapped[list["User"]]    = relationship(back_populates="org", cascade="all, delete-orphan", foreign_keys="User.org_id")
     launches: Mapped[list["Launch"]] = relationship(back_populates="org", cascade="all, delete-orphan")
 
 
@@ -108,7 +111,7 @@ class User(Base):
     secteur_activite: Mapped[str]        = mapped_column(String(100), default="")
     nb_ao_par_an: Mapped[int | None]     = mapped_column(Integer, nullable=True)
 
-    org: Mapped["Organization | None"]   = relationship(back_populates="users")
+    org: Mapped["Organization | None"]   = relationship(back_populates="users", foreign_keys=[org_id])
     launches: Mapped[list["Launch"]]     = relationship(back_populates="user", cascade="all, delete-orphan")
 
 

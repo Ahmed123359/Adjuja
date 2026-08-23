@@ -26,6 +26,60 @@ prod pour valider l'envoi bout en bout avec Resend actif.
 
 ## Complété (résumé, voir mémoire auto pour le détail complet par sujet)
 
+- **Réinitialisation de mot de passe par email + invitation d'équipe** (2026-08-22/23,
+  demande explicite) :
+  - **Reset mot de passe** : `POST /auth/forgot-password` (email -> OTP 6 chiffres,
+    même infra que l'inscription : Redis 15 min, rate limit, template email) +
+    `POST /auth/reset-password` (OTP + nouveau mdp -> `UserService.update_password` +
+    connexion auto). Réponse identique email connu/inconnu (pas d'énumération de
+    comptes). Vérifié en conditions réelles : email reçu, mauvais code rejeté, bon
+    code change vraiment le mot de passe en DB, login confirmé avec le nouveau mdp.
+    Nouvelle page `ForgotPasswordPage.tsx`, lien sur `LoginPage`.
+  - **Invitation d'équipe** : `POST /org/invite` (vérifie `check_seat_limit`, déjà
+    écrit avant mais jamais câblé nulle part -- premier vrai appelant), email avec
+    lien (pas OTP, contrairement au reset : c'est quelqu'un d'autre qui donne
+    l'accès, pas l'invité qui prouve son identité) via `send_org_invite_email`
+    (nouveau template, structure email partagée factorisée en `_link_email_html`/
+    `_otp_email_html`). `GET /org/invite/{token}` (preview public) +
+    `POST /org/accept-invite` (crée le compte avec org_id = org de l'inviteur) +
+    `GET /org/members` + `DELETE /org/members/{user_id}` (détache, org_id -> NULL,
+    ne supprime jamais le compte). Emails déjà inscrits refusés proprement (pas de
+    fusion de données en v1). Nouvelle page `AcceptInvitePage.tsx`, section
+    "Membres de l'organisation" dans `ProfileTab` (inviter + lister + retirer).
+    **2 bugs réels trouvés en testant en conditions réelles** (pas en isolation) :
+    (1) `users.org_id` a une contrainte FK vers `organizations.id`, une table
+    jamais peuplée avant cette feature -- le raccourci `org_id ?? id` utilisé
+    partout ailleurs marche pour la LECTURE (jamais stocké), mais écrire un org_id
+    explicite sur un membre invité exige une vraie ligne `Organization` à
+    référencer. Fix : `UserService.ensure_own_org()` crée la ligne (+ migration
+    Alembic 012, `organizations.owner_id` FK vers `users.id`, ajoutée au passage
+    car nécessaire pour distinguer "le propriétaire" une fois que son org_id n'est
+    plus égal à son propre id) ; (2) ajouter `owner_id` (2e FK vers `users`) a cassé
+    la relation SQLAlchemy `Organization.users` (chemins de FK ambigus) --
+    `AmbiguousForeignKeysError` en conditions réelles, corrigé avec `foreign_keys`
+    explicite des deux côtés de la relation. Sans ce test réel (juste "ça compile"),
+    retirer un membre aurait en fait retiré le propriétaire et laissé le vrai membre
+    en place -- vérifié avec le fix : propriétaire protégé (400), membre retirable
+    (204), compte gardé mais détaché (pas supprimé).
+    **Non traité, hors scope demandé** : pas de rôles (tout membre peut inviter/
+    retirer d'autres membres, sauf le propriétaire qui est protégé) ; email déjà
+    inscrit = invitation bloquée, pas de fusion de données.
+    **Point relevé en creusant, pas corrigé (hors scope)** : aucun code de
+    `subscription_service.py`/billing ne crée jamais de vraie ligne `Organization`
+    non plus -- si un webhook CMI crée un jour un `Subscription` avec
+    `org_id = user.org_id ?? user.id` sans org réelle, même violation de FK
+    potentielle. CMI n'est pas encore configuré en prod (paiement pas encore live),
+    donc pas encore un problème réel, mais à garder en tête le jour où ça le devient.
+  - `app/services/jwt_service.py` (nouveau) : `_make_token` dupliqué dans
+    `auth_routes.py` extrait en fonction partagée (`create_access_token`), réutilisée
+    par `org_routes.py` -- plus de duplication entre les deux fichiers de routes.
+  - Nécessite `APP_FRONTEND_URL` dans l'env prod pour que les liens d'invitation
+    pointent vers le bon domaine (variable déjà présente dans `settings.py` mais
+    jamais utilisée avant, défaut `http://localhost:5173`) -- à ajouter en prod
+    sinon les emails d'invitation contiendront des liens vers localhost.
+  - `tsc --noEmit` propre.
+
+
 - **Préférences de notification enrichies (cadence + secteurs indépendants)** (2026-08-20,
   spec dans `context/feature-spec/notification-preferences/`, build order suivi :
   `api.md` puis `client.md`) : `NotificationPreference` gagne `cadence_unit`

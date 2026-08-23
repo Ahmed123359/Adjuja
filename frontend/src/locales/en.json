@@ -296,6 +296,13 @@
       "resetting": "Resetting…",
       "resetError": "Invalid code. Please try again."
     },
+    "invite": {
+      "title": "{{name}} invites you to join their team on ADJUJA",
+      "accept": "Join the team",
+      "accepting": "Signing in…",
+      "acceptError": "Error accepting the invitation.",
+      "invalid": "Invitation expired or not found."
+    },
     "register": {
       "title": "Create an account",
       "subtitle": "Join ADJUJA for free",
@@ -433,6 +440,18 @@
       "testResultNoEmail": "No email address found for your account.",
       "testResultFailed": "Send failed. Check the notification service configuration.",
       "testResultError": "Error sending the test."
+    },
+    "members": {
+      "title": "Organization members",
+      "hint": "Invite colleagues to join your organization. They will have access to the same tenders, company profile, CVs and documents as you.",
+      "invitePlaceholder": "email@example.com",
+      "invite": "Invite",
+      "inviting": "Sending...",
+      "inviteSent": "Invitation sent to {{email}}.",
+      "inviteError": "Error sending the invitation.",
+      "remove": "Remove",
+      "removing": "Removing...",
+      "removeError": "Error removing the member."
     },
     "profile": {
       "save": "Save",

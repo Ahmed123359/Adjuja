@@ -296,6 +296,13 @@
       "resetting": "Réinitialisation…",
       "resetError": "Code invalide. Réessayez."
     },
+    "invite": {
+      "title": "{{name}} vous invite à rejoindre son équipe sur ADJUJA",
+      "accept": "Rejoindre l'équipe",
+      "accepting": "Connexion…",
+      "acceptError": "Erreur lors de l'acceptation de l'invitation.",
+      "invalid": "Invitation expirée ou introuvable."
+    },
     "register": {
       "title": "Créer un compte",
       "subtitle": "Rejoignez ADJUJA gratuitement",
@@ -433,6 +440,18 @@
       "testResultNoEmail": "Aucune adresse email trouvée pour votre compte.",
       "testResultFailed": "Échec de l'envoi. Vérifiez la configuration du service de notifications.",
       "testResultError": "Erreur lors de l'envoi du test."
+    },
+    "members": {
+      "title": "Membres de l'organisation",
+      "hint": "Invitez des collègues à rejoindre votre organisation. Ils auront accès aux mêmes appels d'offres, profil entreprise, CVs et documents que vous.",
+      "invitePlaceholder": "email@exemple.com",
+      "invite": "Inviter",
+      "inviting": "Envoi...",
+      "inviteSent": "Invitation envoyée à {{email}}.",
+      "inviteError": "Erreur lors de l'invitation.",
+      "remove": "Retirer",
+      "removing": "Retrait...",
+      "removeError": "Erreur lors du retrait du membre."
     },
     "profile": {
       "save": "Enregistrer",

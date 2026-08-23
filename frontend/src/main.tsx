@@ -7,6 +7,7 @@ import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import GoogleCallbackPage from './pages/GoogleCallbackPage';
 import ForgotPasswordPage from './pages/ForgotPasswordPage';
+import AcceptInvitePage from './pages/AcceptInvitePage';
 import NotFoundPage from './pages/NotFoundPage';
 import MentionsLegalesPage from './pages/MentionsLegalesPage';
 import CguPage from './pages/CguPage';
@@ -128,6 +129,10 @@ function AppRouter() {
       <Route
         path="/auth/google/callback"
         element={<GoogleCallbackPage onSuccess={handleAuthSuccess} />}
+      />
+      <Route
+        path="/accept-invite"
+        element={user ? <Navigate to="/app" replace /> : <AcceptInvitePage onSuccess={handleAuthSuccess} />}
       />
       <Route path="/mentions-legales" element={<MentionsLegalesPage />} />
       <Route path="/cgu" element={<CguPage />} />

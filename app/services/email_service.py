@@ -8,6 +8,92 @@ _FROM       = "ADJUJA <contact@adjuja.com>"
 _LOGO_URL   = "https://adjuja.com/logo-adjuja.png"
 
 
+def _link_email_html(*, title: str, intro: str, button_label: str, button_url: str, footer_note: str) -> str:
+    preheader = title
+    return f"""\
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="color-scheme" content="light">
+  <title>{title}</title>
+</head>
+<body style="margin:0;padding:0;background:#EEF1F9;font-family:'Segoe UI',Arial,sans-serif;">
+  <div style="display:none;max-height:0;overflow:hidden;mso-hide:all;opacity:0;">
+    {preheader}&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;
+  </div>
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#EEF1F9;padding:32px 0;">
+    <tr>
+      <td align="center">
+        <table width="520" cellpadding="0" cellspacing="0"
+               style="background:#ffffff;border-radius:16px;overflow:hidden;
+                      box-shadow:0 4px 24px rgba(8,11,28,0.10);">
+
+          <!-- Header -->
+          <tr>
+            <td style="background:linear-gradient(120deg,#3248CE 0%,#2B79E8 55%,#1BC9A8 100%);
+                       padding:28px 36px;">
+              <table cellpadding="0" cellspacing="0">
+                <tr>
+                  <td style="padding-right:12px;vertical-align:middle;">
+                    <img src="{_LOGO_URL}" width="40" height="40" alt="ADJUJA"
+                         style="display:block;border-radius:10px;">
+                  </td>
+                  <td style="vertical-align:middle;">
+                    <p style="margin:0;font-size:19px;font-weight:800;color:#ffffff;
+                              letter-spacing:-0.2px;">ADJUJA</p>
+                    <p style="margin:1px 0 0;font-size:12px;color:rgba(255,255,255,0.82);">
+                      Réponse aux appels d&apos;offres
+                    </p>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- Body -->
+          <tr>
+            <td style="padding:32px 36px 28px;text-align:center;">
+              <p style="margin:0 0 6px;font-size:17px;font-weight:700;color:#080B1C;">
+                {title}
+              </p>
+              <p style="margin:0 0 26px;font-size:14px;color:#6B7494;line-height:1.6;">
+                {intro}
+              </p>
+              <a href="{button_url}"
+                 style="display:inline-block;background:#1BC9A8;color:#062A22;
+                        font-weight:700;font-size:14px;text-decoration:none;
+                        border-radius:10px;padding:13px 30px;letter-spacing:0.1px;">
+                {button_label}
+              </a>
+              <p style="margin:24px 0 0;font-size:12.5px;color:#9AA3BF;line-height:1.6;">
+                {footer_note}
+              </p>
+            </td>
+          </tr>
+
+          <!-- Footer -->
+          <tr>
+            <td style="background:#F6F8FC;border-top:1px solid #E8ECF5;
+                       padding:20px 36px;text-align:center;">
+              <p style="margin:0;font-size:12px;color:#9AA3BF;">
+                <a href="https://adjuja.com" style="color:#9AA3BF;text-decoration:none;">
+                  adjuja.com
+                </a>
+              </p>
+            </td>
+          </tr>
+
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
+"""
+
+
 def _otp_email_html(*, title: str, intro: str, otp: str, footer_note: str) -> str:
     preheader = f"{title} : {otp}"
     return f"""\
@@ -180,4 +266,39 @@ async def send_password_reset_otp_email(
         html=html,
         resend_api_key=resend_api_key,
         log_label="le code de réinitialisation",
+    )
+
+
+async def send_org_invite_email(
+    to_email:          str,
+    inviter_name:       str,
+    invite_url:         str,
+    resend_api_key:    str,
+) -> None:
+    """
+    Envoie une invitation à rejoindre une organisation ADJUJA, avec un lien (pas
+    un code) : contrairement à l'inscription ou au reset de mot de passe, ce
+    n'est pas l'invité qui prouve son identité, c'est quelqu'un d'autre qui lui
+    donne accès -- un lien classique "Rejoindre l'équipe" est le pattern standard,
+    plus fluide qu'un code à recopier.
+
+    Si resend_api_key est vide, logue simplement le lien (mode dev).
+    """
+    if not resend_api_key:
+        logger.info("DEV  invitation pour %s : %s", to_email, invite_url)
+        return
+
+    html = _link_email_html(
+        title="Vous êtes invité(e) sur ADJUJA",
+        intro=f"{inviter_name} vous invite à rejoindre son équipe sur ADJUJA, le copilote IA des appels d&apos;offres publics au Maroc.",
+        button_label="Rejoindre l&apos;équipe",
+        button_url=invite_url,
+        footer_note="Ce lien expire dans 7 jours. Si vous ne connaissez pas cette personne, ignorez cet email.",
+    )
+    await _send_via_resend(
+        to_email=to_email,
+        subject=f"{inviter_name} vous invite à rejoindre son équipe sur ADJUJA",
+        html=html,
+        resend_api_key=resend_api_key,
+        log_label="l'invitation d'équipe",
     )

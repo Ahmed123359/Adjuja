@@ -1,22 +1,19 @@
 import logging
 import secrets
-from datetime import datetime, timedelta, timezone
 
 import httpx
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from google.auth.transport import requests as google_requests
 from google.oauth2 import id_token as google_id_token
-from jose import jwt
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator
 
 from app.api.dependencies import get_current_user, get_user_service
 from app.cache import cache
 from app.config.settings import Settings, get_settings
 from app.limiter import limiter
-from pydantic import field_validator
-
 from app.models.user import Token, UserCreate, UserPublic, PASSWORD_MIN_LENGTH, PASSWORD_REQUIRE_DIGIT, validate_password_strength
 from app.services.email_service import send_password_reset_otp_email, send_verification_otp_email
+from app.services.jwt_service import create_access_token
 from app.services.user_service import UserService
 
 _OTP_TTL_SECONDS   = 15 * 60
@@ -44,15 +41,6 @@ class PasswordRules(BaseModel):
     """Règles de validation du mot de passe, exposées au frontend."""
     min_length:    int  = PASSWORD_MIN_LENGTH
     require_digit: bool = PASSWORD_REQUIRE_DIGIT
-
-
-def _make_token(user_id: str, settings: Settings) -> str:
-    expire = datetime.now(timezone.utc) + timedelta(minutes=settings.jwt_expire_minutes)
-    return jwt.encode(
-        {"sub": user_id, "exp": expire},
-        settings.jwt_secret_key,
-        algorithm=settings.jwt_algorithm,
-    )
 
 
 @router.get(
@@ -120,7 +108,7 @@ async def register(
         except ValueError as e:
             raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(e))
         logger.info("Inscription admin réussie  user_id=%s email=%s", user.id, user.email)
-        return RegisterResponse(message="admin_ok", access_token=_make_token(user.id, settings))
+        return RegisterResponse(message="admin_ok", access_token=create_access_token(user.id, settings))
 
     otp = f"{secrets.randbelow(1_000_000):06d}"
     cache.set(
@@ -185,7 +173,7 @@ async def verify_otp(
 
     cache.delete(key)
     logger.info("Inscription confirmée via OTP  user_id=%s email=%s", user.id, user.email)
-    return Token(access_token=_make_token(user.id, settings))
+    return Token(access_token=create_access_token(user.id, settings))
 
 
 class ForgotPasswordRequest(BaseModel):
@@ -282,7 +270,7 @@ async def reset_password(
     cache.delete(key)
 
     logger.info("Mot de passe réinitialisé  user_id=%s email=%s", pending["user_id"], data.email)
-    return Token(access_token=_make_token(pending["user_id"], settings))
+    return Token(access_token=create_access_token(pending["user_id"], settings))
 
 
 @router.post(
@@ -308,7 +296,7 @@ async def login(
         )
 
     logger.info("Connexion réussie  user_id=%s email=%s", user.id, user.email)
-    return Token(access_token=_make_token(user.id, settings))
+    return Token(access_token=create_access_token(user.id, settings))
 
 
 class GoogleCodeRequest(BaseModel):
@@ -371,7 +359,7 @@ async def login_google_callback(
 
     user = await users.get_or_create_google_user(email=email, prenom=prenom, nom=nom)
     logger.info("Connexion Google réussie  user_id=%s email=%s", user.id, email)
-    return Token(access_token=_make_token(user.id, settings))
+    return Token(access_token=create_access_token(user.id, settings))
 
 
 @router.get(
