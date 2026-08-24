@@ -1512,13 +1512,13 @@ function ProfileTab({ onProfileSaved }: { onProfileSaved: () => void }) {
             gap: "14px 16px",
           }}
         >
+          <Field form={form} onChange={handleChange} t={t} fieldKey="forme_juridique" half />
+          <Field form={form} onChange={handleChange} t={t} fieldKey="capital_social" half />
           <Field form={form} onChange={handleChange} t={t} fieldKey="ice" required placeholder="15 chiffres" half />
           <Field form={form} onChange={handleChange} t={t} fieldKey="rc" placeholder="12345" half />
           <Field form={form} onChange={handleChange} t={t} fieldKey="if_fiscal" half />
           <Field form={form} onChange={handleChange} t={t} fieldKey="cnss" half />
-          <Field form={form} onChange={handleChange} t={t} fieldKey="capital_social" half />
           <Field form={form} onChange={handleChange} t={t} fieldKey="rib" half />
-          <Field form={form} onChange={handleChange} t={t} fieldKey="forme_juridique" half />
         </div>
       </SectionCard>
 

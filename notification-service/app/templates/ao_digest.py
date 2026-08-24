@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 from datetime import date
+from decimal import Decimal
 
 from app.channels.base import NotificationContent
 from app.templates.base import NotificationTemplate
@@ -15,6 +16,10 @@ class AoItem:
     date_limite: date | None
     url_source: str
     reference: str | None = None
+    mode_passation: str | None = None
+    ville: str | None = None
+    budget_estime: Decimal | None = None
+    caution: Decimal | None = None
 
 
 _HTML = """\
@@ -112,26 +117,74 @@ _HTML = """\
 </html>
 """
 
+# Structure inspiree d'un format de digest AO courant (bandeau acheteur/reference,
+# lignes libelle/valeur en 2 colonnes, encadre titre) -- reproduite avec la palette
+# de marque ADJUJA (degrade bleu/teal) plutot que celle de la reference.
 _AO_CARD = """\
 <table width="100%" cellpadding="0" cellspacing="0"
-       style="background:#FAFBFD;border:1px solid #E8ECF5;border-radius:12px;
-              margin-bottom:12px;">
+       style="border:1px solid #E8ECF5;border-radius:12px;overflow:hidden;margin-bottom:14px;">
   <tr>
-    <td style="padding:18px 20px;">
-      <p style="margin:0 0 5px;font-size:15.5px;font-weight:700;line-height:1.4;">
-        <a href="{url_source}" style="color:#080B1C;text-decoration:none;">{titre}</a>
+    <td style="background:linear-gradient(120deg,#3248CE 0%,#2B79E8 60%,#1BC9A8 100%);padding:14px 18px;">
+      <table width="100%" cellpadding="0" cellspacing="0">
+        <tr>
+          <td style="font-size:13px;font-weight:700;color:#ffffff;line-height:1.4;">
+            {acheteur}
+          </td>
+          <td align="right" style="font-size:11.5px;font-weight:600;color:rgba(255,255,255,0.85);
+                                    white-space:nowrap;padding-left:12px;vertical-align:top;">
+            N&deg; {reference}
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+  <tr>
+    <td style="padding:0;">
+      <table width="100%" cellpadding="0" cellspacing="0">
+        <tr>
+          <td width="50%" style="padding:10px 18px;border-bottom:1px solid #E8ECF5;border-right:1px solid #E8ECF5;">
+            <span style="font-size:11.5px;color:#080B1C;">Date limite : </span>
+            <span style="font-size:11.5px;font-weight:700;color:{deadline_color};">{date_limite}</span>
+          </td>
+          <td width="50%" style="padding:10px 18px;border-bottom:1px solid #E8ECF5;">
+            <span style="font-size:11.5px;color:#080B1C;">Ville : </span>
+            <span style="font-size:11.5px;font-weight:700;color:#1BC9A8;">{ville}</span>
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+  <tr>
+    <td style="padding:10px 18px;border-bottom:1px solid #E8ECF5;">
+      <span style="font-size:11.5px;color:#080B1C;">Type : </span>
+      <span style="font-size:11.5px;font-weight:700;color:#2B79E8;">{mode_passation}</span>
+    </td>
+  </tr>
+  <tr>
+    <td style="padding:0;">
+      <table width="100%" cellpadding="0" cellspacing="0">
+        <tr>
+          <td width="50%" style="padding:10px 18px;border-right:1px solid #E8ECF5;">
+            <span style="font-size:11.5px;color:#080B1C;">Estimation : </span>
+            <span style="font-size:11.5px;font-weight:700;color:#1BC9A8;">{budget_estime}</span>
+          </td>
+          <td width="50%" style="padding:10px 18px;">
+            <span style="font-size:11.5px;color:#080B1C;">Caution : </span>
+            <span style="font-size:11.5px;font-weight:700;color:#1BC9A8;">{caution}</span>
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+  <tr>
+    <td style="padding:14px 18px 16px;background:#F6F8FC;">
+      <p style="margin:0 0 10px;font-size:13px;font-weight:700;color:#080B1C;line-height:1.5;">
+        {titre}
       </p>
-      <p style="margin:0 0 12px;font-size:13px;color:#6B7494;">
-        {acheteur_line}
-      </p>
-      <p style="margin:0;font-size:12.5px;color:#9AA3BF;">
-        Réf. {reference} &nbsp;&middot;&nbsp; Limite le
-        <span style="color:{deadline_color};font-weight:600;">{date_limite}</span>
-        &nbsp;&middot;&nbsp;
-        <a href="{url_source}" style="color:#3248CE;text-decoration:none;font-weight:600;">
-          Voir le dossier &rarr;
-        </a>
-      </p>
+      <a href="{url_source}"
+         style="font-size:12.5px;color:#3248CE;text-decoration:none;font-weight:600;">
+        Voir le dossier &rarr;
+      </a>
     </td>
   </tr>
 </table>
@@ -155,9 +208,11 @@ def _format_date(d: date | None) -> str:
     return d.strftime("%d/%m/%Y")
 
 
-def _acheteur_line(ao: "AoItem") -> str:
-    parts = [p for p in (ao.acheteur, ao.categorie) if p]
-    return " &middot; ".join(parts) if parts else "Acheteur non précisé"
+def _format_amount(v: Decimal | None) -> str:
+    if v is None:
+        return "non précisé"
+    formatted = f"{v:,.2f}".replace(",", " ").replace(".", ",")
+    return f"{formatted} DH"
 
 
 class AoDigestTemplate(NotificationTemplate):
@@ -168,10 +223,14 @@ class AoDigestTemplate(NotificationTemplate):
         cards_html = "".join(
             _AO_CARD.format(
                 titre=ao.titre,
-                acheteur_line=_acheteur_line(ao),
+                acheteur=ao.acheteur or "Acheteur non précisé",
                 reference=ao.reference or "non précisée",
                 date_limite=_format_date(ao.date_limite),
                 deadline_color=_deadline_color(ao.date_limite),
+                ville=ao.ville or "non précisée",
+                mode_passation=ao.mode_passation or "non précisé",
+                budget_estime=_format_amount(ao.budget_estime),
+                caution=_format_amount(ao.caution),
                 url_source=ao.url_source,
             )
             for ao in aos
@@ -203,8 +262,16 @@ class AoDigestTemplate(NotificationTemplate):
                 lines.append(f"  Référence : {ao.reference}")
             if ao.acheteur:
                 lines.append(f"  Acheteur : {ao.acheteur}")
+            if ao.mode_passation:
+                lines.append(f"  Type : {ao.mode_passation}")
             if ao.date_limite:
                 lines.append(f"  Date limite : {_format_date(ao.date_limite)}")
+            if ao.ville:
+                lines.append(f"  Ville : {ao.ville}")
+            if ao.budget_estime is not None:
+                lines.append(f"  Estimation : {_format_amount(ao.budget_estime)}")
+            if ao.caution is not None:
+                lines.append(f"  Caution : {_format_amount(ao.caution)}")
             lines.append(f"  Lien : {ao.url_source}")
             lines.append("")
         lines.append("Gérer vos préférences : https://adjuja.com/app")
