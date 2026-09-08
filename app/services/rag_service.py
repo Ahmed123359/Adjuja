@@ -23,6 +23,8 @@ DOCUMENT_TYPES: dict[str, str] = {
     "certifications": "Certifications et qualifications",
     "company":        "Présentation entreprise",
     "resources":      "Moyens humains et matériels",
+    "reglementation": "Réglementation des marchés publics",
+    "plateforme":     "Guide de la plateforme ADJUJA",
 }
 
 _SECTION_TYPE_MAP: dict[str, list[str]] = {
@@ -169,6 +171,48 @@ class RagService:
         except Exception as exc:
             logger.debug("RAG OT retrieval ignoré pour '%s' : %s", section, exc)
             return ""
+
+    async def retrieve_for_chat(self, question: str) -> tuple[str, list[str]]:
+        """
+        Recherche non filtrée pour l'assistant conversationnel : contrairement à
+        retrieve_for_section/retrieve_for_ot_section (filtrées par doc_type selon la
+        section d'un document généré), une question de chat peut porter sur
+        n'importe quel type de contenu indexé -- réglementation, guide plateforme,
+        références de l'entreprise, etc. La similarité vectorielle seule décide de
+        la pertinence, pas de filtre doc_type codé en dur.
+        """
+        if not self.is_ready or not question.strip():
+            return "", []
+
+        try:
+            vector = await self._embed(question)
+            results = await self._client.search(  # type: ignore[union-attr]
+                collection_name=_COLLECTION,
+                query_vector=vector,
+                limit=_N_CANDIDATES,
+                with_payload=True,
+            )
+            if not results:
+                return "", []
+
+            results = self._rerank(results, _RERANK_TOP_K)
+
+            lines = ["---", "## CONTEXTE DOCUMENTAIRE (base de connaissances interne)", ""]
+            sources: list[str] = []
+            for r in results:
+                payload  = r.payload or {}
+                label    = DOCUMENT_TYPES.get(payload.get("doc_type", ""), "")
+                doc_name = payload.get("doc_name", "")
+                sources.append(f"{label}  {doc_name}" if label else doc_name)
+                lines.append(f"**[{label}  {doc_name}]**")
+                lines.append(payload.get("content", ""))
+                lines.append("")
+
+            return "\n".join(lines), sources
+
+        except Exception as exc:
+            logger.debug("RAG chat retrieval ignoré : %s", exc)
+            return "", []
 
     async def _embed(self, text: str) -> list[float]:
         async with httpx.AsyncClient(timeout=15) as client:

@@ -62,7 +62,7 @@ export default function App({
 
   // Form
   const [aoText, setAoText] = useState("");
-  const [provider, setProviderRaw] = useState("anthropic");
+  const [provider, setProviderRaw] = useState("mistral");
   const [model, setModel] = useState("");
   const [company, setCompany] = useState<CompanyData>(DEFAULT_COMPANY);
   const [langue, setLangue] = useState<"fr" | "en">("fr");
@@ -101,7 +101,7 @@ export default function App({
     fetchModels()
       .then((data) => {
         setModels(data);
-        const def = cheapestModel(data, "anthropic");
+        const def = cheapestModel(data, "mistral");
         if (def) setModel(def.model_id);
       })
       .catch(() => {});

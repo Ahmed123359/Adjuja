@@ -141,27 +141,7 @@ class ChatService:
         Output: (bloc_markdown_rag, liste_de_titres_sources)
                 Si RAG indisponible → ("", [])
         """
-        if not self._rag_service.is_ready or not question.strip():
-            return "", []
-
-        # On réutilise retrieve_for_section avec un titre générique
-        # (le RAG cherche dans tous les doc_types sans filtre de section)
-        raw = await self._rag_service.retrieve_for_section(
-            section_title="Références similaires",  # doc_types les plus généraux
-            ao_context=question,
-        )
-
-        if not raw:
-            return "", []
-
-        # Extraire les titres des sources depuis le bloc Markdown RAG
-        sources: list[str] = []
-        for line in raw.splitlines():
-            if line.startswith("**[") and "**" in line[3:]:
-                title = line[3:line.index("**", 3)]
-                sources.append(title)
-
-        return raw, sources
+        return await self._rag_service.retrieve_for_chat(question)
 
     def _format_history(self, messages: list[ChatMessage]) -> str:
         """

@@ -363,11 +363,18 @@ def sign_pdf(
                 if not cachet_seulement:
                     _place_image_below(page, last_kw_rect, sig, sig_w, sig_h)
             else:
-                # Fallback absolu : cachet en bas à gauche uniquement
+                # Fallback absolu : aucun mot-clé trouvé sur la page -> cachet en bas
+                # à gauche ET signature en bas à droite (symétrique, comme le fallback
+                # utilisé par le mode paraphe plus bas dans cette fonction).
                 page.insert_image(
                     fitz.Rect(cac_mx, ph - cac_my - cac_h, cac_mx + cac_w, ph - cac_my),
                     stream=cac, keep_proportion=True,
                 )
+                if not cachet_seulement:
+                    page.insert_image(
+                        fitz.Rect(pw - sig_mx - sig_w, ph - sig_my - sig_h, pw - sig_mx, ph - sig_my),
+                        stream=sig, keep_proportion=True,
+                    )
 
         # Tampon "Lu et accepté" uniquement sur la dernière page
         if lu_et_accepte and is_last:
