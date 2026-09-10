@@ -1,18 +1,5 @@
 # ─────────────────────────────────────────────
-# Étape 1 : Build du frontend React (Node.js)
-# ─────────────────────────────────────────────
-FROM node:20-alpine AS frontend-builder
-
-WORKDIR /frontend
-
-COPY frontend/package*.json ./
-RUN npm install --legacy-peer-deps
-
-COPY frontend/ .
-RUN npm run build
-
-# ─────────────────────────────────────────────
-# Étape 2 : builder Python  installe les dépendances
+# Étape 1 : builder Python  installe les dépendances
 # ─────────────────────────────────────────────
 FROM python:3.12-slim AS builder
 
@@ -36,7 +23,7 @@ RUN pip install --upgrade pip && \
     pip install --no-cache-dir --prefix=/install -r requirements.txt
 
 # ─────────────────────────────────────────────
-# Étape 3a : dev  API seule, sans frontend (servi séparément)
+# Étape 2a : dev  API seule (le frontend est servi par adjuja-frontend)
 # ─────────────────────────────────────────────
 FROM python:3.12-slim AS api-dev
 
@@ -64,7 +51,7 @@ EXPOSE 8000
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
 
 # ─────────────────────────────────────────────
-# Étape 3b : image finale prod  légère, sans outils de build
+# Étape 2b : image finale prod  légère, sans outils de build
 # ─────────────────────────────────────────────
 FROM python:3.12-slim AS final
 
@@ -95,9 +82,6 @@ COPY company_defaults.json ./
 # Copie les migrations Alembic (nécessaire pour `alembic upgrade head` en prod)
 COPY alembic/ ./alembic/
 COPY alembic.ini ./
-
-# Copie le build React depuis le frontend-builder
-COPY --from=frontend-builder /frontend/dist ./frontend/dist/
 
 # Change le propriétaire des fichiers
 RUN chown -R appuser:appgroup /app

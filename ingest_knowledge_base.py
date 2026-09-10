@@ -17,16 +17,22 @@ Pre-requis : QDRANT_URL et MISTRAL_API_KEY dans l'environnement (meme config que
 RagService en prod), tesseract-ocr-fra + poppler-utils installes -- deja presents dans
 l'image Docker de l'API, executer dedans si absents sur l'hote :
 
-    docker compose exec api python ingest_knowledge_base.py
+    docker compose -f ../adjuja-infra/docker-compose.yml exec api python ingest_knowledge_base.py
 """
 import asyncio
 import re
 import uuid
+from pathlib import Path
 
 import docx
 import pytesseract
 from pdf2image import convert_from_path
 from qdrant_client.models import Distance, PointStruct, VectorParams
+
+# Les documents source vivent dans le depot voisin adjuja-docs, clone cote a cote
+# par adjuja-infra/scripts/clone.sh. Chemin resolu depuis ce fichier, pas depuis
+# le cwd, pour que le script marche aussi lance depuis ailleurs.
+_DOCS = Path(__file__).resolve().parent.parent / "adjuja-docs"
 
 from app.config.settings import get_settings
 from app.services.rag_service import _COLLECTION, RagService
@@ -102,21 +108,29 @@ async def main() -> None:
         print("RAG non configure (QDRANT_URL ou MISTRAL_API_KEY manquant) -- abandon.")
         return
 
+    if not _DOCS.is_dir():
+        print(
+            f"Depot adjuja-docs introuvable ({_DOCS}). Les documents source "
+            "vivent dans un depot voisin : lancer adjuja-infra/scripts/clone.sh "
+            "pour que adjuja-backend/ et adjuja-docs/ soient cote a cote. Abandon."
+        )
+        return
+
     await _ensure_collection(rag)
 
     sources = [
         (
-            "hafid-taches-docs/chatbot/decret_des_marches_publics_version_francais.pdf",
+            _DOCS / "hafid-taches-docs/chatbot/decret_des_marches_publics_version_francais.pdf",
             extract_decree_pdf, chunk_by_article,
             "Decret n2-22-431 relatif aux marches publics", "reglementation",
         ),
         (
-            "hafid-taches-docs/chatbot/2-16-344+interets+moratoires.pdf.docx",
+            _DOCS / "hafid-taches-docs/chatbot/2-16-344+interets+moratoires.pdf.docx",
             extract_docx, chunk_by_article,
             "Decret n2-16-344, delais de paiement et interets moratoires", "reglementation",
         ),
         (
-            "hafid-taches-docs/chatbot/guide_plateforme_adjuja.md",
+            _DOCS / "hafid-taches-docs/chatbot/guide_plateforme_adjuja.md",
             lambda p: open(p, encoding="utf-8").read(), chunk_by_heading,
             "Guide de la plateforme ADJUJA", "plateforme",
         ),
