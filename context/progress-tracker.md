@@ -689,18 +689,59 @@ prod pour valider l'envoi bout en bout avec Resend actif.
   Règle clé : les fichiers universels (workflow, architecture, conventions, UI) ne sont
   JAMAIS dupliqués à l'intérieur d'un dossier de feature -- une feature ne contient que
   `00-overview.md`/`api.md`/`client.md` qui lui sont spécifiques.
-- **Chatbot RAG (marchés publics + aide plateforme)** : spec complète écrite dans
-  `context/feature-spec/chatbot/` (`00-overview.md` + `api.md` + `client.md`). Aucune
-  implémentation commencée. Décisions verrouillées : pas de microservice `rag-etl` (corpus
-  de 3 documents, script ponctuel suffit), tout indexé dans la collection globale
-  `offria_kb` (pas per-org), chunking par Article/section plutôt que par paragraphe, un
-  seul pipeline RAG pour la réglementation ET l'aide plateforme (pas de scission
-  RAG/statique). Bug trouvé (pas supposé) : `ChatService._retrieve_rag` filtre
-  aujourd'hui sur `doc_type=["references"]` via `retrieve_for_section("Références
-  similaires", ...)` -- nouveau contenu jamais surfacé tant que ça n'est pas corrigé, fix
-  détaillé dans `api.md`. Voir aussi mémoire auto [[project-chatbot-procurement-rag]] pour
-  le détail de l'audit RAG et le brouillon `hafid-taches-docs/chatbot/
-  guide_plateforme_adjuja.md` (à valider avant indexation).
+- **Chatbot RAG (marchés publics + aide plateforme) -- code fait, ingestion reportée en
+  prod** (2026-09-08, spec dans `context/feature-spec/chatbot/`, build order suivi :
+  `api.md` puis `client.md`) : `api.md` et `client.md` sont tous deux implémentés --
+  trouvés déjà en place en code au début de cette session (commit `2635b21`, même jour,
+  message de commit trompeur "fixing the signature issue" qui ne mentionne pas ce
+  travail, jamais tracé ici avant maintenant). Vérifié en relisant le code réel, pas
+  supposé fait parce que la spec existe :
+  - `RagService.retrieve_for_chat()` (nouvelle méthode, `app/services/rag_service.py`)
+    présente, recherche non filtrée par `doc_type` comme spécifié ; `DOCUMENT_TYPES`
+    étend bien `reglementation`/`plateforme` avec les accents français corrects (le
+    bloc de code dans `api.md` lui-même est en ASCII sans accents, la vraie
+    implémentation ne l'est pas -- juste un artefact d'encodage de la spec, pas un
+    écart réel).
+  - `ChatService._retrieve_rag` appelle bien `retrieve_for_chat`, plus aucune trace de
+    l'ancien `retrieve_for_section("Références similaires", ...)`.
+  - `frontend/src/App.tsx` : provider par défaut passé à `"mistral"`. `FloatingChat.tsx`
+    confirmé inchangé (affichage des sources déjà présent avant cette feature).
+  - `ingest_knowledge_base.py` (racine du repo) existe et résout la Question ouverte
+    n1 de `api.md` (réutiliser `index_document()` vs. indexation autonome) en faveur de
+    l'option 2 : script autonome qui embed + upsert directement contre le client Qdrant
+    de `RagService`, sans passer par `index_document()` (qui écrit toujours dans
+    `offria_kb_{org_id}`, jamais la collection globale). Amélioration réelle par
+    rapport au brouillon de `api.md` : ids de chunks en `uuid5` dérivés de
+    `(doc_type, doc_name, index)` plutôt que le `hash() % 2**63` esquissé dans la spec
+    -- un re-run met à jour les mêmes points au lieu d'en dupliquer, l'idempotence
+    citée dans le docstring du script est réelle, pas juste affirmée.
+  - **Non vérifié en conditions réelles sur cette machine, décision explicite de
+    l'utilisateur** : le script a été lancé une fois en dev (`docker compose exec api
+    python ingest_knowledge_base.py`, dépendances/config confirmées présentes --
+    `QDRANT_URL`, `MISTRAL_API_KEY`, `tesseract-ocr-fra`, `poppler-utils` tous OK dans
+    le conteneur `api`) puis arrêté volontairement avant la fin de l'OCR du décret
+    (88 pages, PDF de 141 Mo à texte vectoriel non extractible, OCR lent) sur demande
+    explicite de l'utilisateur : "remove the ingested data from this machine, we will
+    ingest in prod". Confirmé directement contre Qdrant dev (`GET /collections/
+    offria_kb` -> `points_count: 0`) qu'aucun point n'avait été upserté avant l'arrêt
+    -- rien à nettoyer, la collection existe mais est vide. **Reste donc à faire, pas
+    fait par cette session** : exécuter `docker compose exec api python
+    ingest_knowledge_base.py` contre la stack prod, puis vérifier les 4 critères de
+    `00-overview.md` (réponse citant un vrai article de loi, réponse correcte sur le
+    fonctionnement d'ADJUJA, pas d'erreur "Clé API manquante" en session fraîche,
+    `GET /api/v1/rag/status` avec `chunk_count > 0` et `ready: true`).
+  - Décisions verrouillées (rappel, voir `api.md`/`00-overview.md` pour le détail) : pas
+    de microservice `rag-etl` (corpus de 3 documents, script ponctuel suffit), tout
+    indexé dans la collection globale `offria_kb` (pas per-org), chunking par
+    Article/section plutôt que par paragraphe, un seul pipeline RAG pour la
+    réglementation ET l'aide plateforme (pas de scission RAG/statique).
+  - `hafid-taches-docs/chatbot/guide_plateforme_adjuja.md` porte toujours son
+    disclaimer d'origine ("à vérifier et corriger par un humain avant indexation" --
+    ton, nuances commerciales, positionnement, pas l'exactitude factuelle qui est
+    dérivée du code réel) -- non retiré, non validé par l'utilisateur cette session,
+    à faire avant (ou juste après) l'ingestion prod si le ton doit être ajusté.
+  - Voir aussi mémoire auto [[project-chatbot-procurement-rag]] pour le détail de
+    l'audit RAG original.
 
 ## Questions ouvertes
 
