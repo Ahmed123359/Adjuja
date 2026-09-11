@@ -26,11 +26,14 @@ Tout le travail se fait directement dans la session courante.
 
 ## Structure du workspace
 
-Depuis le 2026-09-10, ADJUJA n'est plus un dépôt unique : chaque service est un **dépôt
-git indépendant**, clonés côte à côte dans ce dossier, qui n'est lui-même pas un dépôt.
+Depuis le 2026-09-12, ADJUJA est **de nouveau un dépôt unique**, à la racine de ce
+dossier. La découpe en dépôts par service du 2026-09-10 est annulée : cinq des six
+dépôts n'avaient aucun remote, leur code n'a donc jamais été poussé, et le dépôt
+racine les enregistrait en gitlinks vers des dépôts inexistants sur GitHub.
+L'organisation en dossiers par service, elle, reste inchangée.
 
 ```
-Adjuja/                   # dossier de travail, PAS un dépôt git
+Adjuja/                   # LE dépôt git (remote : Ahmed123359/Adjuja.git)
   adjuja-backend/         # dépôt — FastAPI, Celery, Alembic, tests, CI (port 8000)
   adjuja-frontend/        # dépôt — React / Vite / nginx (5173 dev, 8090 prod)
   adjuja-watcher/         # dépôt — veille AO, ex ao-watcher/ (port 8001)
@@ -43,14 +46,20 @@ Adjuja/                   # dossier de travail, PAS un dépôt git
 
 Conséquences pratiques :
 
-- **Un changement qui touche plusieurs services produit plusieurs commits, un par dépôt.**
-  Ne jamais tenter un commit unique transverse, il n'existe pas de dépôt racine.
-- Les chemins de build compose sont relatifs à `adjuja-infra/` (`context: ../adjuja-backend`),
-  donc les dépôts **doivent rester frères**. `adjuja-infra/scripts/clone.sh` s'en charge.
-- `CLAUDE.md` et `context/` ne sont dans aucun dépôt : aucune sauvegarde git, aucune
-  possibilité de `git checkout` en cas de suppression accidentelle.
-- Spec de la découpe et décisions prises : `context/feature-spec/separation-depots/`.
-- État d'avant la découpe : tag `pre-split-2026-09-10` dans `adjuja-backend`.
+- **Un changement transverse tient en un seul commit.** Les commandes git se lancent
+  depuis la racine, jamais depuis un sous-dossier de service.
+- Les chemins de build compose sont relatifs à `adjuja-infra/`
+  (`context: ../adjuja-backend`), donc les dossiers **doivent rester frères**.
+- `CLAUDE.md` et `context/` sont de nouveau versionnés (ils ne l'étaient plus entre
+  le 2026-09-10 et le 2026-09-12, sans aucune sauvegarde).
+- La clé SSH de ce dépôt est `~/.ssh/id_ed25519_continuium`, posée en
+  `core.sshcommand` local. C'est la seule qui authentifie le compte GitHub du
+  projet : les autres clés de la machine sont refusées.
+- Ne **jamais** versionner `Dossier AO HAFID/` : dossiers d'appels d'offres réels
+  avec CV, diplômes et pièces signées de personnes nommées. Exclu par `.gitignore`.
+- Historique de la découpe puis de son annulation :
+  `context/feature-spec/separation-depots/`. État d'avant la découpe : tag
+  `pre-split-2026-09-10`.
 
 ## Lancer l'application
 

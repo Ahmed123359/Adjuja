@@ -720,6 +720,46 @@ prod pour valider l'envoi bout en bout avec Resend actif.
 
 ## En cours
 
+- **Retour a un depot git unique + tout le travail pousse sur `develop`**
+  (2026-09-12). L'utilisateur signalait « des problemes quand je push ».
+  Diagnostic mene avant toute action, **trois causes reelles, toutes anterieures
+  a cette session** :
+  1. **La cle SSH configuree etait la mauvaise.** `core.sshcommand` forcait
+     `~/.ssh/id_ed25519_new`, refusee par GitHub. Les 4 cles de la machine ont ete
+     testees une a une : seule `id_ed25519_continuium` authentifie le compte
+     `Ahmed123359`. Corrigee.
+  2. **Cinq depots sur six n'avaient aucun remote**, et **aucun des six depots par
+     service n'existait sur GitHub** (verifie par `ls-remote` sur chaque URL). Le
+     depot racine improvise les enregistrait en **gitlinks (mode 160000)** vers ces
+     depots inexistants : son commit ne contenait donc **aucun fichier source**.
+     C'etait la cause principale.
+  3. Le `main` local portait le commit de decoupe `6e043a0`, qui **supprime 212
+     fichiers** (frontend, watcher, notification, conception, context...). Le
+     pousser aurait fait perdre tout cela sur GitHub. Evite en passant par
+     `develop`, sur proposition de l'utilisateur.
+  - **L'historique n'avait jamais ete perdu** : les 121 commits et le tag
+    `pre-split-2026-09-10` etaient intacts, et le distant `main` (`2635b21`) etait
+    simplement 2 commits en retard, sans divergence.
+  - **Decision de l'utilisateur** : pas de creation de depots sur GitHub, retour a
+    un depot unique a la racine avec un dossier par service. La decoupe du
+    2026-09-10 est donc annulee ; l'organisation en dossiers reste.
+  - **Deux problemes de securite trouves en chemin, un seul corrige** :
+    - `Dossier AO HAFID/` (CV, diplomes et pieces signees de personnes nommees)
+      etait **inclus dans le commit du depot racine improvise**. Exclu par le
+      nouveau `.gitignore`, et absent du commit pousse (verifie).
+    - **`JWT_SECRET_KEY` est publiee en clair dans `.env.example`, deja sur
+      GitHub depuis `2635b21`, et elle est identique a la cle reellement utilisee
+      (`adjuja-infra/.env`).** N'importe qui ayant acces au depot peut forger des
+      tokens valides. Remplacee par un placeholder dans le commit, **mais elle
+      reste exposee dans l'historique** : la rotation en production reste a faire,
+      c'est une decision d'exploitation (elle invalidera les sessions actives).
+  - Pousse sur `develop` (`6f54c19`, 424 fichiers, 326 renommages detectes) :
+    restructuration monorepo + mode accompagne backend + refonte frontend.
+    **`main` n'a pas bouge**, PR a ouvrir sur
+    https://github.com/Ahmed123359/Adjuja/pull/new/develop
+  - Les six `.git` d'origine sont sauvegardes hors du projet (dossier temporaire
+    horodate), rien n'a ete detruit.
+
 - **Refactoring frontend par domaine -- étape 1 (le socle) faite, étapes 2 à 4 à
   faire** (2026-09-12, spec `context/feature-spec/refactoring-frontend/`).
   Demandé par l'utilisateur en interrompant le mode accompagné : « une seule page
