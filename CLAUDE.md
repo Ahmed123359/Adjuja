@@ -24,21 +24,61 @@ déjà commencé.
 Ne jamais utiliser l'outil Agent (subagents) sur ce projet, quelle que soit la tâche.
 Tout le travail se fait directement dans la session courante.
 
+## Structure du workspace
+
+Depuis le 2026-09-10, ADJUJA n'est plus un dépôt unique : chaque service est un **dépôt
+git indépendant**, clonés côte à côte dans ce dossier, qui n'est lui-même pas un dépôt.
+
+```
+Adjuja/                   # dossier de travail, PAS un dépôt git
+  adjuja-backend/         # dépôt — FastAPI, Celery, Alembic, tests, CI (port 8000)
+  adjuja-frontend/        # dépôt — React / Vite / nginx (5173 dev, 8090 prod)
+  adjuja-watcher/         # dépôt — veille AO, ex ao-watcher/ (port 8001)
+  adjuja-notification/    # dépôt — notifications (port 8002)
+  adjuja-infra/           # dépôt — compose, .env, certbot, scripts/clone.sh
+  adjuja-docs/            # dépôt — conception/, business_plan/, hafid-taches-docs/
+  CLAUDE.md, context/     # ce fichier et les specs : NON VERSIONNÉS, à la racine
+  worker/, rd/            # R&D local, hors dépôts (worker/ est du code mort)
+```
+
+Conséquences pratiques :
+
+- **Un changement qui touche plusieurs services produit plusieurs commits, un par dépôt.**
+  Ne jamais tenter un commit unique transverse, il n'existe pas de dépôt racine.
+- Les chemins de build compose sont relatifs à `adjuja-infra/` (`context: ../adjuja-backend`),
+  donc les dépôts **doivent rester frères**. `adjuja-infra/scripts/clone.sh` s'en charge.
+- `CLAUDE.md` et `context/` ne sont dans aucun dépôt : aucune sauvegarde git, aucune
+  possibilité de `git checkout` en cas de suppression accidentelle.
+- Spec de la découpe et décisions prises : `context/feature-spec/separation-depots/`.
+- État d'avant la découpe : tag `pre-split-2026-09-10` dans `adjuja-backend`.
+
 ## Lancer l'application
 
+Toutes les commandes Docker se lancent depuis `adjuja-infra/`.
+
 ```bash
+cd adjuja-infra
+
 # Développement (hot-reload back + front)
 docker compose -f docker-compose.dev.yml up
 
 # Production
 docker compose up
+```
 
-# Sans Docker
+Sans Docker :
+
+```bash
+cd adjuja-backend
+cp ../adjuja-infra/.env .env         # settings.py lit un .env relatif au cwd
 uvicorn app.main:app --reload        # backend (port 8000)
-cd frontend && npm run dev            # frontend (port 5173)
+
+cd adjuja-frontend && npm run dev     # frontend (port 5173)
 ```
 
 ## Tests
+
+Depuis `adjuja-backend/` :
 
 ```bash
 pytest                  # tous les tests
@@ -56,16 +96,38 @@ pytest --cov=app        # avec couverture
 
 ## Conventions frontend (TypeScript/React)
 
-- Tous les appels API passent par `frontend/src/api.ts` avec `authHeaders()`
-- Ne jamais appeler le backend directement depuis un composant
-- Types dans `frontend/src/types.ts`
+Depuis le 2026-09-12, le frontend est organisé **par domaine métier** (voir
+`context/feature-spec/refactoring-frontend/`) :
+
+```
+adjuja-frontend/src/
+  features/<domaine>/   api.ts, types.ts, components/, la page du domaine
+                        ao, veille, company, billing, auth, org, tools, chat,
+                        generation, marches, notifications, landing, legal
+  shared/lib/http.ts    socle HTTP : jeton, authHeaders(), helpers de réponse
+  shared/layout/        coquille applicative (RightPanel, LeftPanel, Header...)
+  shared/ui/            composants transverses (CustomSelect, GlowMenu...)
+  api.ts, types.ts      barrels de rétrocompatibilité, ne rien y ajouter
+  pages/                seulement les pages sans domaine (404, ComingSoon)
+```
+
+`src/components/` n'existe plus. Un nouvel écran va dans `features/<domaine>/`,
+jamais dans `pages/` ni dans un `components/` à la racine.
+
+- Ne jamais appeler le backend directement depuis un composant : tout appel passe
+  par le `api.ts` du domaine, qui utilise `authHeaders()` de `shared/lib/http.ts`
+- Code nouveau : importer le domaine directement
+  (`import { fetchAoSteps } from "../features/ao/api"`), pas le barrel racine
+- `src/api.ts` et `src/types.ts` ne sont plus que des ré-exports pour ne pas casser
+  les imports existants. **Ne rien y ajouter de neuf**, ils se vident au fil des
+  migrations d'imports
 
 ## Règles générales
 
 - Ne jamais commiter les clés API (`.env` est gitignore)
 - Toujours proposer un plan avant de modifier un service existant
-- Mettre à jour `conception/1.Roadmap/roadmap_technique.md` quand un item est terminé (`[ ]` → `[x]`)
-- Mettre à jour `conception/2. Architecture/architecture.md` si l'architecture change
+- Mettre à jour `adjuja-docs/conception/1.Roadmap/roadmap_technique.md` quand un item est terminé (`[ ]` → `[x]`)
+- Mettre à jour `adjuja-docs/conception/2. Architecture/architecture.md` si l'architecture change
 - **Mettre à jour `context/progress-tracker.md` dès qu'un changement significatif est fait** (pas seulement en fin de session) : section Complété, En cours, Questions ouvertes. `SUIVI.md` est obsolète, remplacé par ce fichier (2026-07-18).
 
 ## Sécurité

@@ -26,6 +26,51 @@ prod pour valider l'envoi bout en bout avec Resend actif.
 
 ## Complété (résumé, voir mémoire auto pour le détail complet par sujet)
 
+- **Découpe du dépôt unique en dépôts par service** (2026-09-10, demandé par
+  l'utilisateur, référence explicite : le workspace `e-himaya` sur le Bureau). Spec
+  complète et décisions dans `context/feature-spec/separation-depots/`.
+
+  Avant : un seul dépôt dont la **racine était le backend** (`app/`, `alembic/`,
+  `tests/`, `Dockerfile`, `requirements.txt` au premier niveau), mélangé aux autres
+  services et aux documents produit. Après : six dépôts git indépendants, clonés frères
+  dans `Adjuja/` qui n'est plus un dépôt -- `adjuja-backend`, `adjuja-frontend`,
+  `adjuja-watcher` (ex `ao-watcher/`), `adjuja-notification` (ex `notification-service/`),
+  `adjuja-infra` (compose, `.env`, certbot, `scripts/clone.sh`, README d'entrée),
+  `adjuja-docs` (conception, business_plan, hafid-taches-docs).
+
+  Décisions prises avec l'utilisateur : le `.git` d'origine descend dans
+  `adjuja-backend` (qui hérite donc de l'historique complet, tag `pre-split-2026-09-10`
+  sur l'état d'avant) ; les cinq autres dépôts démarrent sur un commit initial, pas de
+  `git filter-repo` ; `CLAUDE.md` et `context/` restent **non versionnés** à la racine du
+  workspace ; aucun dépôt distant créé pour l'instant (découpe locale uniquement, d'où
+  le garde-fou `BASE_URL` non configuré dans `clone.sh`).
+
+  `rag_service/` supprimé : code mort depuis 2026-05-25, référencé par aucun compose.
+  Le RAG réel est `app/services/rag_service.py` + le container `qdrant`. Aucun dépôt
+  `adjuja-rag` créé, ce serait une promesse vide.
+
+  **Changement de comportement assumé** : `adjuja-backend/Dockerfile` avait une étape
+  `frontend-builder` qui buildait le SPA et le copiait dans l'image, monté sur `/ui` par
+  `app/main.py`. Un dépôt ne pouvant pas builder le code d'un autre, l'étape est
+  supprimée -- `:8000/ui` n'existe plus. Le montage étant conditionnel
+  (`if _FRONTEND_DIST.exists()`), l'API démarre sans. L'UI reste servie par le container
+  `frontend` (nginx, port 8090), déjà la vraie UI en prod. Bénéfice : fin du double build
+  du frontend à chaque image API.
+
+  Piège évité et documenté dans `wiring.md` : `ao-watcher` et `notification-service`
+  apparaissent partout dans le code, mais **uniquement** comme noms de service DNS, tags
+  OpenAPI, messages de log et commentaires -- jamais comme chemins. En particulier
+  `minio_key = f"ao-watcher/{ao_id}/…"` (`download_tasks.py:104,118`) est un préfixe de
+  clé d'objet MinIO : le renommer rendrait inaccessibles tous les documents déjà stockés
+  en prod. Aucun `sed` global n'a été fait, réécriture fichier par fichier.
+
+  Vérifié réellement : `docker compose config` passe sur les deux fichiers (dev et prod),
+  `pytest tests/unit/` passe (14 tests) depuis `adjuja-backend/`, conservation des
+  fichiers contrôlée (344 fichiers suivis répartis sur 6 dépôts contre 358 avant, l'écart
+  correspond exactement à `rag_service/` supprimé + `CLAUDE.md`/`context/` devenus non
+  versionnés). **Non vérifié** : le build Docker réel, Docker Desktop n'ayant pas tourné
+  pendant la session (voir Questions ouvertes).
+
 - **Fix menus déroulants coupés dans Profil entreprise + champ Agréments** (2026-08-23,
   signalé par l'utilisateur) : `SectionCard` (`DashboardPage.tsx`) avait `overflow: hidden`
   sur son conteneur racine -- coupait tout menu déroulant absolument positionné qui doit
@@ -675,6 +720,93 @@ prod pour valider l'envoi bout en bout avec Resend actif.
 
 ## En cours
 
+- **Refactoring frontend par domaine -- étape 1 (le socle) faite, étapes 2 à 4 à
+  faire** (2026-09-12, spec `context/feature-spec/refactoring-frontend/`).
+  Demandé par l'utilisateur en interrompant le mode accompagné : « une seule page
+  contient des milliers de lignes, pas de composants, pas de réutilisabilité ».
+  Diagnostic mesuré : `DashboardPage.tsx` 2485 lignes / **16 composants** / 53
+  `useState`, `AoPipelinePage.tsx` 1538, `RightPanel.tsx` 1272, `api.ts` 1381,
+  `types.ts` 542.
+  - **Trois décisions prises avec l'utilisateur** : déplacement pur d'abord
+    (factorisation dans une étape séparée), commencer par le socle `api.ts` +
+    `types.ts`, organisation par domaine métier (`features/<domaine>/`).
+    Raison de la première : **il n'existe aucun test frontend, aucun lint, aucun
+    vitest** -- le seul filet est `tsc && vite build`, donc on ne fait que des
+    déplacements que `tsc` vérifie mécaniquement.
+  - **Fait** : `api.ts` + `types.ts` découpés en 23 fichiers, le plus gros à 252
+    lignes. `features/{ao,veille,company,billing,auth,org,tools,chat,generation,
+    marches,notifications}/{api,types}.ts`, plus `shared/lib/http.ts` (jeton,
+    `authHeaders()`, helpers de réponse) et `shared/app.{api,types}.ts`.
+  - **Ce qui a rendu l'opération sûre** : `api.ts` et `types.ts` sont devenus des
+    **barrels de ré-export**, donc les 30+ fichiers qui importent `from "../api"`
+    n'ont pas bougé d'une ligne. Le risque est celui d'un déplacement de fichier,
+    pas d'une réécriture.
+  - **Vérifié, pas supposé** : 110 exports avant / 110 après (aucun perdu, plus 3
+    helpers HTTP promus de privés à partagés, nécessaires au découpage), 60 types
+    avant / 60 après, comparaison automatique et non à l'oeil. `tsc --noEmit`
+    propre, `npm run build` vert, **et serveur de dev réellement lancé** : `/`,
+    `main.tsx`, `api.ts`, `features/ao/api.ts`, `shared/lib/http.ts` répondent
+    tous 200, aucune erreur de transformation. `tsc` a révélé deux vraies erreurs
+    corrigées au passage (dépendance croisée `AppDefaults` -> `CompanyData`, et
+    un `import type` égaré au milieu de l'ancien `api.ts`).
+  - **Pas encore vérifié** : aucun parcours applicatif réel (connexion, pipeline
+    AO de bout en bout) n'a été rejoué dans un navigateur.
+  - Conventions mises à jour en même temps pour ne pas les laisser dériver :
+    `CLAUDE.md` et `context/code-standards.md` (l'ancienne règle « tous les
+    appels passent par `src/api.ts` » ne décrivait plus le code).
+  - **Étape 2 faite pour les deux pires fichiers** (2026-09-12, même méthode) :
+    - `AoPipelinePage.tsx` (1538) -> `features/ao/` : la page (567) plus
+      `components/{StatusBadge,ProgressBar,DocCard,DossierSection,AoDetailView}`.
+      Fait **avant** d'écrire le stepper du mode accompagné, précisément pour ne
+      pas ajouter des centaines de lignes à un fichier déjà trop gros.
+    - `DashboardPage.tsx` (2485, 16 composants) -> `features/company/` :
+      6 onglets dans `tabs/`, 6 composants dans `components/`, plus
+      `styles.ts`/`constants.ts`. Aucun fichier au-dessus de 458 lignes.
+    - **Bénéfice inattendu et réel** : le découpage a rendu visibles des
+      dépendances inter-domaines qui étaient invisibles dans le monolithe --
+      `OverviewTab` appelle l'API **ao**, `SubscriptionCard` l'API **billing**,
+      `OrgMembersSection` l'API **org**, `NotificationPreferencesSection` l'API
+      **notifications** et **auth**. Elles étaient noyées dans un unique import
+      de 33 fonctions ; elles sont maintenant déclarées là où elles existent.
+    - Vérifié : `tsc --noEmit` propre, `npm run build` vert, serveur de dev
+      lancé et modules réellement servis en 200. Comparaison automatique
+      avant/après : **2286 lignes significatives avant, 2286 après** pour
+      `DashboardPage`, les seules différences étant les 15 déclarations passées
+      en `export`. Idem pour `AoPipelinePage`.
+    - `AoDetailView.tsx` reste à 694 lignes : le découper davantage serait une
+      réécriture, pas un déplacement. Assumé, noté pour l'étape 3.
+  - **Étape 2 terminée en entier** (2026-09-12) : 50 fichiers de plus déplacés en
+    deux passes, par un script qui recalcule tous les imports relatifs du projet
+    (108 fichiers traités à chaque passe) plutôt qu'à la main. **`src/components/`
+    n'existe plus**, `src/pages/` ne garde que les deux pages sans domaine
+    (404, ComingSoon). 14 domaines : ao, veille, company, billing, auth, org,
+    tools, chat, generation, marches, notifications, landing, legal, plus
+    `shared/{layout,ui,lib}`.
+    - Vérifié : `tsc --noEmit` propre **du premier coup** après le déplacement de
+      masse, `npm run build` vert, serveur de dev lancé avec les modules servis
+      en 200. Comparaison automatique sur tout l'arbre : **19351 lignes
+      significatives avant, 19351 après**, les 4 différences étant des chemins
+      d'import réécrits (dont un `lazy(() => import(...))`, bien repointé).
+    - Les gros fichiers restants sont gros **en eux-mêmes**, plus par
+      accumulation : `RightPanel` 1272 (coquille applicative), `OffreTechniqueTab`
+      947, `ActeEngagementTab` 792, `AoDetailPanel` 727, `MarchesPage` 719,
+      `AoDetailView` 694. Les découper serait une réécriture, pas un déplacement.
+  - **Étape 3 (factorisation) non faite, et une découverte change sa nature** :
+    les **4 implémentations du polling Celery ne font pas la même chose** --
+    `AoDetailView` fait un backoff adaptatif 3/5/8/12s sans borne,
+    `tools/DocumentsTab` un `setInterval` fixe multi-jobs, `FillerTab` un
+    `setInterval` 4s mono-job, `veille/AoDetailPanel` un `setInterval` 3s **borné
+    à 15 tentatives** (le fix du 2026-08-17). Les unifier n'est donc **pas une
+    substitution mécanique mais une réécriture de 4 comportements différents**,
+    sans aucun test pour la rattraper. Idem pour les 2 `Spinner`, qui ne sont pas
+    identiques (bloc centré 20px aux tokens vs 14px blanc inline pour bouton).
+    À mener explicitement et séparément, pas en passant.
+  - **Étape 4 non décidée** : poser un filet `vitest`, écarté pour l'instant par
+    l'utilisateur. La couverture frontend reste à zéro, choix assumé.
+  - **Pas encore vérifié** : aucun parcours applicatif réel rejoué dans un
+    navigateur. `tsc` + build + modules servis en 200 ne prouvent pas qu'un écran
+    s'affiche correctement.
+
 - Notification service en prod, fonctionnel mais sans aucune org configurée -- pas encore
   vérifié en conditions réelles avec un vrai envoi d'email à une org réelle.
 - **Restructuration `context/` en spec-driven complet** (2026-08-19), inspirée d'un autre
@@ -689,20 +821,281 @@ prod pour valider l'envoi bout en bout avec Resend actif.
   Règle clé : les fichiers universels (workflow, architecture, conventions, UI) ne sont
   JAMAIS dupliqués à l'intérieur d'un dossier de feature -- une feature ne contient que
   `00-overview.md`/`api.md`/`client.md` qui lui sont spécifiques.
-- **Chatbot RAG (marchés publics + aide plateforme)** : spec complète écrite dans
-  `context/feature-spec/chatbot/` (`00-overview.md` + `api.md` + `client.md`). Aucune
-  implémentation commencée. Décisions verrouillées : pas de microservice `rag-etl` (corpus
-  de 3 documents, script ponctuel suffit), tout indexé dans la collection globale
-  `offria_kb` (pas per-org), chunking par Article/section plutôt que par paragraphe, un
-  seul pipeline RAG pour la réglementation ET l'aide plateforme (pas de scission
-  RAG/statique). Bug trouvé (pas supposé) : `ChatService._retrieve_rag` filtre
-  aujourd'hui sur `doc_type=["references"]` via `retrieve_for_section("Références
-  similaires", ...)` -- nouveau contenu jamais surfacé tant que ça n'est pas corrigé, fix
-  détaillé dans `api.md`. Voir aussi mémoire auto [[project-chatbot-procurement-rag]] pour
-  le détail de l'audit RAG et le brouillon `hafid-taches-docs/chatbot/
-  guide_plateforme_adjuja.md` (à valider avant indexation).
+- **Chatbot RAG (marchés publics + aide plateforme) -- code fait, ingestion reportée en
+  prod** (2026-09-08, spec dans `context/feature-spec/chatbot/`, build order suivi :
+  `api.md` puis `client.md`) : `api.md` et `client.md` sont tous deux implémentés --
+  trouvés déjà en place en code au début de cette session (commit `2635b21`, même jour,
+  message de commit trompeur "fixing the signature issue" qui ne mentionne pas ce
+  travail, jamais tracé ici avant maintenant). Vérifié en relisant le code réel, pas
+  supposé fait parce que la spec existe :
+  - `RagService.retrieve_for_chat()` (nouvelle méthode, `app/services/rag_service.py`)
+    présente, recherche non filtrée par `doc_type` comme spécifié ; `DOCUMENT_TYPES`
+    étend bien `reglementation`/`plateforme` avec les accents français corrects (le
+    bloc de code dans `api.md` lui-même est en ASCII sans accents, la vraie
+    implémentation ne l'est pas -- juste un artefact d'encodage de la spec, pas un
+    écart réel).
+  - `ChatService._retrieve_rag` appelle bien `retrieve_for_chat`, plus aucune trace de
+    l'ancien `retrieve_for_section("Références similaires", ...)`.
+  - `frontend/src/App.tsx` : provider par défaut passé à `"mistral"`. `FloatingChat.tsx`
+    confirmé inchangé (affichage des sources déjà présent avant cette feature).
+  - `ingest_knowledge_base.py` (racine du repo) existe et résout la Question ouverte
+    n1 de `api.md` (réutiliser `index_document()` vs. indexation autonome) en faveur de
+    l'option 2 : script autonome qui embed + upsert directement contre le client Qdrant
+    de `RagService`, sans passer par `index_document()` (qui écrit toujours dans
+    `offria_kb_{org_id}`, jamais la collection globale). Amélioration réelle par
+    rapport au brouillon de `api.md` : ids de chunks en `uuid5` dérivés de
+    `(doc_type, doc_name, index)` plutôt que le `hash() % 2**63` esquissé dans la spec
+    -- un re-run met à jour les mêmes points au lieu d'en dupliquer, l'idempotence
+    citée dans le docstring du script est réelle, pas juste affirmée.
+  - **Non vérifié en conditions réelles sur cette machine, décision explicite de
+    l'utilisateur** : le script a été lancé une fois en dev (`docker compose exec api
+    python ingest_knowledge_base.py`, dépendances/config confirmées présentes --
+    `QDRANT_URL`, `MISTRAL_API_KEY`, `tesseract-ocr-fra`, `poppler-utils` tous OK dans
+    le conteneur `api`) puis arrêté volontairement avant la fin de l'OCR du décret
+    (88 pages, PDF de 141 Mo à texte vectoriel non extractible, OCR lent) sur demande
+    explicite de l'utilisateur : "remove the ingested data from this machine, we will
+    ingest in prod". Confirmé directement contre Qdrant dev (`GET /collections/
+    offria_kb` -> `points_count: 0`) qu'aucun point n'avait été upserté avant l'arrêt
+    -- rien à nettoyer, la collection existe mais est vide. **Reste donc à faire, pas
+    fait par cette session** : exécuter `docker compose exec api python
+    ingest_knowledge_base.py` contre la stack prod, puis vérifier les 4 critères de
+    `00-overview.md` (réponse citant un vrai article de loi, réponse correcte sur le
+    fonctionnement d'ADJUJA, pas d'erreur "Clé API manquante" en session fraîche,
+    `GET /api/v1/rag/status` avec `chunk_count > 0` et `ready: true`).
+  - Décisions verrouillées (rappel, voir `api.md`/`00-overview.md` pour le détail) : pas
+    de microservice `rag-etl` (corpus de 3 documents, script ponctuel suffit), tout
+    indexé dans la collection globale `offria_kb` (pas per-org), chunking par
+    Article/section plutôt que par paragraphe, un seul pipeline RAG pour la
+    réglementation ET l'aide plateforme (pas de scission RAG/statique).
+  - `hafid-taches-docs/chatbot/guide_plateforme_adjuja.md` porte toujours son
+    disclaimer d'origine ("à vérifier et corriger par un humain avant indexation" --
+    ton, nuances commerciales, positionnement, pas l'exactitude factuelle qui est
+    dérivée du code réel) -- non retiré, non validé par l'utilisateur cette session,
+    à faire avant (ou juste après) l'ingestion prod si le ton doit être ajusté.
+  - Voir aussi mémoire auto [[project-chatbot-procurement-rag]] pour le détail de
+    l'audit RAG original.
+
+- **Initiative "Bidtndr" -- 9 chantiers scopés en feature-spec, aucun code écrit**
+  (2026-09-11, étendue le 2026-09-12 ; inspirée par l'utilisateur de la plateforme
+  concurrente Bidtndr, captures d'écran réelles de `bidtndr.com` fournies). Discussion
+  menée jusqu'au bout avant tout code (`ai-workflow-rules.md` respecté : ne pas
+  inventer de comportement non discuté). Neuf dossiers sous `context/feature-spec/`,
+  chacun avec un `00-overview.md` ancré dans le code réel (pas supposé) :
+  - **`mode-accompagne/` -- ajouté le 2026-09-12, priorité au-dessus des 8 autres.**
+    Deuxième régime de traitement d'un AO, étape par étape, avec l'IA en
+    accompagnement et une porte de validation entre chaque étape. Né d'une gêne
+    exprimée par l'utilisateur : le produit n'a aujourd'hui qu'un seul régime, le
+    "minimum de clics" (`ao_routes.py:466-476` lance un `chain` fire-and-forget,
+    l'utilisateur clique une fois et récupère un ZIP sans jamais rien pouvoir voir
+    ni corriger entre deux étapes) -- rassurant pour un AO à faible enjeu, effrayant
+    pour un AO important. **Les deux modes coexistent**, Express reste le défaut et
+    n'est pas touché. 7 étapes validées avec l'utilisateur (Documents /
+    Compréhension / Décision / Préparation / Rédaction / Remplissage / Signature),
+    dont **5 correspondent déjà à une tâche Celery existante** -- le moteur est à
+    désassembler et contrôler, pas à réécrire. Ce chantier change le modèle
+    d'interaction du produit là où les 8 autres ajoutent des fonctionnalités autour,
+    d'où la priorité. Deux conséquences relevées en lisant le code : rédaction et
+    remplissage tournent aujourd'hui **en parallèle** dans un `chord`
+    (`ao_tasks.py:330-374`) et deviennent séquentiels en mode accompagné (c'est une
+    orchestration différente, pas qu'une UI) ; et `ao.statut` existe déjà mais est
+    trop grossier (4-5 valeurs pour un parcours à 7 étapes), donc machine à états
+    persistée + migration Alembic à ajouter. L'assistant IA par étape recoupe celui
+    déjà prévu dans `preview-documents-ocr/` -- à construire une seule fois.
+  - `analyse-ao-enrichie/` (renommé depuis `analyse-cps-enrichie/` le 2026-09-12) --
+    matrice de risque + sections manquantes de la fiche AO (budget, clauses à
+    surveiller, questions MOA, jalons), extension du prompt
+    `ao-watcher/app/modules/ao_scraper/analysis.py`, aucun nouveau service.
+    Renommé parce que l'ancien nom laissait croire que seul le CPS était analysé :
+    **vérifié dans le code, le RC est déjà traité** (`analysis.py:53`
+    `_build_analyze_prompt(cps_text, rc_text)`, les deux clés MinIO lues, consigne
+    de repli si RC absent). Taxonomie des risques validée le 2026-09-12 (6 types :
+    financier, pénalités, éliminatoire, capacité technique, délai, administratif ;
+    le LLM retourne probabilité et impact séparément, la sévérité est calculée en
+    Python pour rester reproductible).
+    **Bug réel trouvé en vérifiant, pas encore corrigé** : `analysis.py:112-113` fait
+    `docs.get("cps")` / `docs.get("rc")`, une seule clé chacun -- or un AO multi-lots
+    stocke `cps`, `cps_2`, `cps_3`... depuis le fix de collision de labels du
+    2026-08-17. **Les lots 2 et suivants ne sont donc jamais analysés**, en silence
+    (cas de test réel connu : AO 6388 / refConsultation 1029951, 3 lots). S'y ajoute
+    une troncature muette à 60 000 caractères pour le CPS et 40 000 pour le RC
+    (lignes 121-122) : sur un gros CPS le modèle analyse un document amputé sans
+    qu'aucun signal ne remonte. Les deux à corriger dans ce chantier, c'est le même
+    code qu'on ouvre.
+  - `fit-score/` -- score pondéré 6 facteurs remplaçant la lecture brute du verdict
+    Go/No-Go (`eligibility_service.py` conservé en dessous, pas remplacé), facteurs
+    proposés par l'IA (qualifs 30%, conformité admin 15%, références similaires 20%,
+    capacité financière 15%, adéquation moyens 10%, géo+bonus 10%) -- **pondérations
+    non validées par l'utilisateur**, à confirmer avant `api.md`.
+  - `resultats-attribution/` -- scraping d'un 3e mode de listing MPE (résultats
+    d'attribution), **vérifié en conditions réelles** :
+    `marchespublics.gov.ma/bdc/entreprise/consultation/resultat` public, 317 939
+    résultats réels avec adjudicataire/montant/soumissionnaires au 2026-09-11. Le
+    portail principal (pas juste BDC) expose l'équivalent via `AvisAttribution`,
+    trouvé par recherche mais **pas encore confirmé avec un vrai fetch Playwright**.
+    Préalable bloquant pour `concurrents/`.
+  - `concurrents/` -- bloqué sur `resultats-attribution/`, critère de définition d'un
+    "concurrent" non tranché avec l'utilisateur.
+  - `preview-documents-ocr/` -- confirmé par recherche dans le frontend : **aucune
+    preview PDF n'existe aujourd'hui**, documents seulement téléchargeables. Bundle
+    preview + surlignage/cadrage de passage + citations IA sourcées (nécessite bbox de
+    texte, pas juste extraction brute) + assistant IA de préparation d'AO (réutilise
+    `ChatService`/`RagService` du chantier chatbot). **Décidé le 2026-09-12** : les
+    annotations/surlignages sont **persistés en base**, pas un état d'UI éphémère --
+    l'utilisateur veut pouvoir les réutiliser ailleurs qu'à l'endroit de création.
+    Ajoute donc une table d'annotations (migration Alembic) au scope ; le PDF source
+    dans MinIO n'est jamais modifié. Les surfaces de réutilisation concrètes restent
+    à lister au moment d'écrire `api.md`.
+  - `dashboard-collaboratif/` -- seul chantier absent du texte initial de
+    l'utilisateur, repéré sur les captures (mentions d'équipe, tâches, calendrier de
+    jalons), confirmé dans le scope par l'utilisateur le 2026-09-11. Entièrement neuf
+    (aucune notion de tâche/mention/jalon en base aujourd'hui), construit au-dessus de
+    l'org/membres déjà existants (invitation d'équipe, 2026-08-22/23). **Décidé le
+    2026-09-12** : ce chantier introduit un **premier rôle d'organisation**, resté
+    hors scope depuis l'invitation d'équipe (l'utilisateur a aussi validé que d'autres
+    rôles pourront suivre). Conséquence à ne pas sous-estimer : `POST /org/invite` et
+    `DELETE /org/members/{user_id}`, déjà en prod et testés en réel, appliquent
+    aujourd'hui la règle "tout membre peut tout, sauf le propriétaire protégé via
+    `organizations.owner_id`" -- ils devront consulter le rôle, donc ce chantier
+    modifie de l'existant, il n'ajoute pas seulement. Jeu de rôles et matrice de
+    permissions à arrêter en écrivant `api.md`. **Décidé aussi le 2026-09-12** : ce
+    tableau de bord **remplace** le dashboard actuel, il ne s'y ajoute pas. Portée
+    réelle vérifiée dans le code : `DashboardPage.tsx` n'est pas un tableau de bord
+    mais une zone de réglages à 6 onglets (`:2475-2480` -- overview, profile,
+    signature, documents, equipe, generation), donc le remplacer oblige à reloger les
+    5 onglets de réglage dans un espace "Mon entreprise / Paramètres" séparé. **C'est
+    une restructuration de la navigation de l'app**, pas une page de plus, et ces
+    onglets portent des fonctionnalités en production testées en réel -- le
+    déménagement doit rester routage + mise en page, jamais une réécriture.
+  - `securite-chiffrement-backup/` -- confirmé par recherche dans `adjuja-infra` :
+    **aucun chiffrement ni sauvegarde automatisée n'existe aujourd'hui**. Chantier
+    infra pur, indépendant des 7 autres, peut démarrer à tout moment.
+  - `download-dce-lenteur/` -- pas une nouvelle fonctionnalité, un bug de perf.
+    Cause probable identifiée en lisant `adjuja-watcher/app/modules/ao_scraper/
+    mpe.py::download_document` (ligne 398) : cycle complet de navigateur Chromium
+    (lancement + fermeture) à chaque tâche Celery de téléchargement, jamais réutilisé
+    entre deux favoris, plus un `wait_for_load_state("networkidle", timeout=15000)`
+    potentiellement toujours au max. **Pas confirmé par mesure réelle** -- première
+    étape du chantier est d'instrumenter avant de corriger, pas de fixer à l'aveugle.
+    **Décidé le 2026-09-12** : le chantier est **backend ET frontend**, l'utilisateur
+    ayant tranché que la lenteur ressentie vient des deux (temps réel trop long ET
+    retour visuel insuffisant). La mesure reste nécessaire, mais pour savoir quoi
+    optimiser côté backend, plus pour décider si le chantier est backend. Côté
+    frontend, `AoDetailPanel`/`BdcDetailPanel` ont déjà un polling avec un état
+    binaire "téléchargement en cours" (2026-08-17) -- ce qui manque est l'étape
+    courante, à exposer via le pattern état-Celery-en-Redis + polling déjà utilisé
+    par signature/paraphe/remplissage depuis le 2026-07-05.
+  - Ordre de dépendance discuté : `mode-accompagne` passe devant (change le modèle
+    d'interaction, les autres ajoutent autour) ; `analyse-ao-enrichie`/`fit-score`/
+    `download-dce-lenteur` peuvent démarrer immédiatement (s'appuient sur l'existant,
+    aucun nouveau scraping) ; `resultats-attribution` doit précéder `concurrents` ;
+    `securite-chiffrement-backup` est indépendant et peut être fait à tout moment ;
+    `preview-documents-ocr` et `dashboard-collaboratif` sont les plus lourds (nouvelle
+    UI + nouveau modèle de données), pas de dépendance dure envers les autres.
+    `analyse-ao-enrichie` alimente l'étape 2 de `mode-accompagne` (compréhension de
+    l'AO) et `fit-score` son étape 3 (décision), donc les trois se tiennent.
+  - **État réel au 2026-09-12** : `mode-accompagne/` a ses trois fichiers
+    (`00-overview.md`, `api.md`, `client.md`) et **son backend est implémenté**
+    (voir l'entrée dédiée ci-dessous). Les 8 autres chantiers n'ont toujours
+    qu'un `00-overview.md`, aucun `api.md`/`client.md`, aucun code.
+
+- **Mode accompagné -- backend implémenté** (2026-09-12, spec
+  `context/feature-spec/mode-accompagne/api.md`). Le frontend (`client.md`) n'est
+  **pas** commencé. Les trois préalables de la spec ont été levés en lisant le code
+  réel avant d'écrire quoi que ce soit, et deux d'entre eux ont changé la donne :
+  - **`analyse_json` est bien une copie locale par org, pas une référence
+    partagée** (Question ouverte n1 de la spec, tranchée) : `import_from_watcher`
+    reçoit le JSON dans le payload HTTP (`ao_routes.py:119`) et l'écrit dans la
+    colonne JSONB de sa propre ligne `appels_offres` (`models.py:180`). Une
+    correction utilisateur à l'étape 2 ne peut donc pas corrompre les données des
+    autres orgs -- la conception de la spec tient telle quelle.
+  - **Aucune dépendance cachée entre `task_generate_note_metho` et
+    `task_fill_documents`** (Question ouverte n2, tranchée) : la note écrit
+    `origine="genere"`, le filler ne lit que `origine="upload"`
+    (`ao_tasks.py:722-726`), et leurs suppressions préalables portent sur des
+    ensembles disjoints. Les rendre séquentielles est sûr. Seul effet partagé :
+    les deux écrivent `pipeline_pct` (50 et 70) sur la même ligne, donc en
+    parallèle le pourcentage peut redescendre de 70 à 50. Cosmétique, disparaît
+    en séquentiel.
+  - **Course réelle trouvée ailleurs, non corrigée, décision à prendre** :
+    `task_generate_note_metho` lit `AoTeamMember` (`ao_tasks.py:559-561`), qui est
+    le résultat de `task_match_team`, lancé en `.delay()` détaché **au même
+    instant que le chord** (`ao_tasks.py:367`). Rien ne garantit que le matching
+    soit fini quand la note charge l'équipe : **la note peut partir sans équipe,
+    en silence**. C'est un bug latent du **mode express en production**, pas une
+    conséquence de ce chantier. Corrigé côté accompagné (le matching est la tâche
+    de l'étape 4, donc attendu), **pas côté express** : le corriger obligerait à
+    modifier le chord de production, ce que la spec identifie comme le risque
+    principal du chantier. À arbitrer avec l'utilisateur.
+  - **Statut `abandonne` : aucun filtre frontend ne casse** (Question ouverte n4,
+    tranchée). Tous les filtres sont des tests positifs et `StatusBadge` a un
+    fallback (`AoPipelinePage.tsx:51`). Il reste à ajouter sa couleur et sa
+    traduction quand le frontend sera fait.
+  - Ce qui est livré : migration Alembic `013` (colonne `appels_offres.mode`
+    défaut `express`, table `ao_pipeline_steps`), modèles SQLAlchemy,
+    `app/services/pipeline_steps_service.py` (machine à états, `applicable_steps`
+    extraite et **partagée avec `task_build_pipeline`** pour que les deux modes ne
+    divergent pas, `advance_or_gate` appelée en fin de chaque tâche),
+    `app/services/step_assist_service.py` (assistance IA par étape réutilisant
+    `ChatService`), 6 routes (`GET /steps`, `POST /steps/{key}/validate`,
+    `POST /steps/{key}/rerun`, `GET|POST /steps/{key}/assist`, `POST /abandon`)
+    plus `POST /start-pipeline` étendu d'un corps `{mode}`, et un handler de
+    signal `task_failure` dans `celery_app.py`.
+  - **Manque comblé au passage** : il n'existait **aucune gestion d'échec globale**
+    des tâches du pipeline -- une tâche qui levait laissait l'AO en
+    `en_traitement` indéfiniment, dans les deux modes. Le handler de signal
+    Celery pose maintenant l'étape en `erreur` et l'AO en `erreur`. Branché en
+    signal, donc aucune tâche métier n'a été modifiée pour ça.
+  - **Vérifié en conditions réelles, pas supposé** : 27 tests unitaires verts
+    (dont 13 nouveaux sur `applicable_steps` et les définitions d'étapes), chaîne
+    de migration complète `001` -> `013` appliquée contre un vrai Postgres dans
+    une base jetable (`offria_mig_test`, supprimée après), schéma produit inspecté
+    au `\d` et non déduit du message de succès, aller-retour `downgrade 012` puis
+    `upgrade head` rejoué. La base dev n'a pas été touchée (elle n'est **pas**
+    gérée par Alembic : pas de table `alembic_version`, tables créées par
+    `init_db.py` -- à savoir avant tout déploiement).
+  - **Reste à faire sur le backend** : les corrections utilisateur des étapes 5
+    (texte de la note) et 6 (champs remplis) portent sur des artefacts MinIO, pas
+    sur la ligne AO. Le corps `corrections` de `validate` ne traite aujourd'hui
+    que l'étape 2 (fusion dans `analyse_json`), et **ignore explicitement** les
+    autres avec un log. Les routes documents dédiées restent à écrire.
+  - Les tests d'intégration `tests/integration/test_api.py` échouent sur des
+    `ConnectionError` (Redis/services absents de cette machine), état antérieur et
+    sans rapport avec ce chantier.
 
 ## Questions ouvertes
+
+- **Trois tests orphelins cassent la CI backend depuis le 2026-07-02, trouvé le
+  2026-09-10.** `tests/unit/test_worker_config.py`, `test_worker_db.py` et
+  `test_worker_scraper.py` font `import worker`, mais le commit `59e563b`
+  ("chore: nettoyage repo", 2026-07-02) a sorti `worker/` du suivi git et l'a mis dans
+  `.gitignore` **sans supprimer ses tests**. Résultat : `pytest tests/` échoue à la
+  collecte sur toute machine ou CI qui n'a pas le dossier `worker/` en local -- donc la
+  CI GitHub Actions est rouge depuis cette date. Ce n'est pas causé par la découpe en
+  dépôts, seulement révélé par elle (avant, le `worker/` local de la machine de dev
+  masquait le problème puisque pytest tournait depuis la racine).
+  `worker/` est du code mort, remplacé par `adjuja-watcher`. Décision à prendre :
+  supprimer les trois fichiers de test, ou déplacer `worker/` + ses tests dans un dépôt
+  à part si le code doit revivre. **Non fait sans arbitrage** : supprimer des tests est
+  un choix qui appartient à l'utilisateur.
+
+- **`POSTGRES_PASSWORD` et `ADMIN_SECRET` ne sont ni dans `.env` ni dans `.env.example`**
+  (constaté le 2026-09-10). `docker-compose.yml` (prod) les interpole sans valeur par
+  défaut, donc `docker compose config` avertit et un `up` en prod créerait Postgres avec
+  un mot de passe vide. Le compose dev ne le voit pas, il a des défauts
+  (`${POSTGRES_PASSWORD:-offria_dev}`). Antérieur à la découpe en dépôts (le fichier
+  `.env` a été déplacé tel quel, octet pour octet). À confirmer : le serveur de prod a
+  probablement son propre `.env` complet, auquel cas il ne reste qu'à compléter
+  `.env.example` pour que ce soit documenté.
+
+- **Build Docker non vérifié après la découpe** (2026-09-10). `docker compose config`
+  passe sur les deux fichiers, mais ce n'est que du parsing côté client : ça ne prouve
+  pas qu'une image se construit. Docker Desktop n'était pas démarré pendant la session
+  (`failed to connect to the docker API at npipe:////./pipe/dockerDesktopLinuxEngine`).
+  À faire au prochain démarrage de Docker, en particulier pour valider la suppression de
+  l'étape `frontend-builder` du Dockerfile backend :
+  `cd adjuja-infra && docker compose -f docker-compose.dev.yml build api` puis un `up`
+  avec vérification des logs réels des containers.
+
 
 - **402 en toast sur create_ao/upload_document** : `SubscriptionCard` (fait) gère son propre
   bouton checkout, mais les appels existants `POST /ao`, `POST /ao/from-watcher`,

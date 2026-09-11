@@ -1,0 +1,336 @@
+# docker-compose.dev.yml  surcharges pour le développement local
+# Usage : docker compose -f docker-compose.yml -f docker-compose.dev.yml up
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: offria
+      POSTGRES_USER: offria
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-offria_dev}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5434:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U offria"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    networks:
+      - ao_network
+
+  minio:
+    image: minio/minio:latest
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ACCESS_KEY:-offria_dev}
+      MINIO_ROOT_PASSWORD: ${MINIO_SECRET_KEY:-offria_dev_secret}
+    volumes:
+      - minio_data:/data
+    ports:
+      # 9000-9003 déjà pris par d'autres projets locaux sur cette machine (aurs_minio_dev,
+      # souss-infra-minio-1) -- même pattern que le remap Postgres 5432->5434 plus haut
+      # dans cette session. Le réseau Docker interne (minio:9000, utilisé par
+      # MINIO_ENDPOINT) est inchangé, seul le port hôte change.
+      - "9004:9000"
+      - "9005:9001"
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    networks:
+      - ao_network
+
+  api:
+    build:
+      context: ../adjuja-backend
+      dockerfile: Dockerfile
+      target: api-dev
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+    ports:
+      - "8000:8000"
+    environment:
+      APP_ENV: development
+      APP_DEBUG: "true"
+      DATABASE_URL: postgresql+asyncpg://offria:${POSTGRES_PASSWORD:-offria_dev}@postgres:5432/offria
+      REDIS_URL: redis://redis:6379/0
+      CELERY_BROKER_URL: redis://redis:6379/1
+      CELERY_RESULT_BACKEND: redis://redis:6379/2
+      MINIO_ENDPOINT: minio:9000
+      MINIO_PUBLIC_ENDPOINT: ${MINIO_PUBLIC_ENDPOINT:-localhost:9000}
+      MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY:-offria_dev}
+      MINIO_SECRET_KEY: ${MINIO_SECRET_KEY:-offria_dev_secret}
+      MISTRAL_API_KEY: ${MISTRAL_API_KEY:-}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY:-change-me-in-production-32chars!!}
+      QDRANT_URL: http://qdrant:6333
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
+      RESEND_API_KEY: ${RESEND_API_KEY:-}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+      qdrant:
+        condition: service_healthy
+    networks:
+      - ao_network
+    volumes:
+      - ../adjuja-backend/app:/app/app
+
+  # frontend:
+  #   build:
+  #     context: ../adjuja-frontend
+  #     dockerfile: Dockerfile
+  #     target: dev
+  #   working_dir: /app
+  #   volumes:
+  #     - ../adjuja-frontend:/app
+  #     - /app/node_modules        # Volume anonyme pour isoler node_modules du host
+  #   ports:
+  #     - "5173:5173"
+  #   environment:
+  #     - VITE_API_TARGET=http://api:8000
+  #   depends_on:
+  #     - api
+  #   networks:
+  #     - ao_network
+
+  qdrant:
+    image: qdrant/qdrant:v1.12.1
+    ports:
+      - "6333:6333"
+      - "6334:6334"
+    volumes:
+      - ./data/qdrant:/qdrant/storage
+    healthcheck:
+      test: ["CMD-SHELL", "bash -c '</dev/tcp/localhost/6333' 2>/dev/null && exit 0 || exit 1"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 5s
+    networks:
+      - ao_network
+
+  redis:
+    image: redis:7-alpine
+    command: redis-server --save 60 1 --loglevel warning
+    volumes:
+      - redis_data:/data
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    networks:
+      - ao_network
+
+  # Worker Celery  appels LLM, analyse CPS/RC, génération note métho
+  # concurrency=4 : 4 tâches LLM en parallèle (I/O bound)
+  celery-io:
+    build:
+      context: ../adjuja-backend
+      dockerfile: Dockerfile
+      target: api-dev
+    command: >
+      celery -A app.celery_app.celery_app worker
+      --queues=celery_io
+      --concurrency=4
+      --loglevel=info
+      --hostname=celery-io@%h
+    environment:
+      DATABASE_URL: postgresql+asyncpg://offria:${POSTGRES_PASSWORD:-offria_dev}@postgres:5432/offria
+      REDIS_URL: redis://redis:6379/0
+      CELERY_BROKER_URL: redis://redis:6379/1
+      CELERY_RESULT_BACKEND: redis://redis:6379/2
+      MINIO_ENDPOINT: minio:9000
+      MINIO_PUBLIC_ENDPOINT: ${MINIO_PUBLIC_ENDPOINT:-localhost:9000}
+      MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY:-offria_dev}
+      MINIO_SECRET_KEY: ${MINIO_SECRET_KEY:-offria_dev_secret}
+      MISTRAL_API_KEY: ${MISTRAL_API_KEY:-}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY:-change-me-in-production-32chars!!}
+      QDRANT_URL: http://qdrant:6333
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+      qdrant:
+        condition: service_healthy
+    networks:
+      - ao_network
+    volumes:
+      - ../adjuja-backend/app:/app/app
+
+  # Worker Celery  filler (CPU), signing, compilation ZIP
+  # concurrency=2 : traitement lourd fichiers PDF
+  celery-cpu:
+    build:
+      context: ../adjuja-backend
+      dockerfile: Dockerfile
+      target: api-dev
+    command: >
+      celery -A app.celery_app.celery_app worker
+      --queues=celery_cpu
+      --concurrency=2
+      --loglevel=info
+      --hostname=celery-cpu@%h
+    environment:
+      DATABASE_URL: postgresql+asyncpg://offria:${POSTGRES_PASSWORD:-offria_dev}@postgres:5432/offria
+      REDIS_URL: redis://redis:6379/0
+      CELERY_BROKER_URL: redis://redis:6379/1
+      CELERY_RESULT_BACKEND: redis://redis:6379/2
+      MINIO_ENDPOINT: minio:9000
+      MINIO_PUBLIC_ENDPOINT: ${MINIO_PUBLIC_ENDPOINT:-localhost:9000}
+      MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY:-offria_dev}
+      MINIO_SECRET_KEY: ${MINIO_SECRET_KEY:-offria_dev_secret}
+      MISTRAL_API_KEY: ${MISTRAL_API_KEY:-}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY:-change-me-in-production-32chars!!}
+      QDRANT_URL: http://qdrant:6333
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+      qdrant:
+        condition: service_healthy
+    networks:
+      - ao_network
+    volumes:
+      - ../adjuja-backend/app:/app/app
+
+  # Celery Beat  sweep quotidien billing (dunning + downgrade), voir app/tasks/billing_tasks.py
+  celery-beat:
+    build:
+      context: ../adjuja-backend
+      dockerfile: Dockerfile
+      target: api-dev
+    command: >
+      celery -A app.celery_app.celery_app beat
+      --loglevel=info
+    environment:
+      DATABASE_URL: postgresql+asyncpg://offria:${POSTGRES_PASSWORD:-offria_dev}@postgres:5432/offria
+      REDIS_URL: redis://redis:6379/0
+      CELERY_BROKER_URL: redis://redis:6379/1
+      CELERY_RESULT_BACKEND: redis://redis:6379/2
+      # notification-* désactivé par défaut en dev (voir note plus bas) : vide =
+      # le sweep tourne quand même, seul l'email de relance est silencieusement sauté.
+      NOTIFICATION_SERVICE_URL: ${NOTIFICATION_SERVICE_URL:-}
+      NOTIFICATION_ADMIN_SECRET: ${ADMIN_SECRET:-dev-admin-secret}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - ao_network
+    volumes:
+      - ../adjuja-backend/app:/app/app
+
+  # AO Watcher  scraping service (isolated, same DB)
+  ao-watcher-api:
+    build:
+      context: ../adjuja-watcher
+      dockerfile: Dockerfile
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8001 --reload
+    ports:
+      - "8001:8001"
+    environment:
+      DATABASE_URL: postgresql+asyncpg://offria:${POSTGRES_PASSWORD:-offria_dev}@postgres:5432/offria
+      REDIS_URL: redis://redis:6379/3
+      MINIO_ENDPOINT: minio:9000
+      MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY:-offria_dev}
+      MINIO_SECRET_KEY: ${MINIO_SECRET_KEY:-offria_dev_secret}
+      MINIO_BUCKET: offria
+      MAIN_APP_PORT: 8000
+      MISTRAL_API_KEY: ${MISTRAL_API_KEY:-}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    volumes:
+      - ../adjuja-watcher/app:/app/app
+      - ../adjuja-watcher/scrapers:/app/scrapers
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+    networks:
+      - ao_network
+
+  ao-watcher-worker:
+    build:
+      context: ../adjuja-watcher
+      dockerfile: Dockerfile
+    command: >
+      celery -A app.workers.celery_app.celery_app worker
+      --pool=prefork
+      --concurrency=2
+      --loglevel=info
+      --hostname=ao-watcher-worker@%h
+    environment:
+      DATABASE_URL: postgresql+asyncpg://offria:${POSTGRES_PASSWORD:-offria_dev}@postgres:5432/offria
+      REDIS_URL: redis://redis:6379/3
+      MINIO_ENDPOINT: minio:9000
+      MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY:-offria_dev}
+      MINIO_SECRET_KEY: ${MINIO_SECRET_KEY:-offria_dev_secret}
+      MINIO_BUCKET: offria
+      NOTIFICATION_SERVICE_URL: http://localhost:8002
+      NOTIFICATION_ADMIN_SECRET: ${ADMIN_SECRET:-dev-admin-secret}
+    volumes:
+      - ../adjuja-watcher/app:/app/app
+      - ../adjuja-watcher/scrapers:/app/scrapers
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+    networks:
+      - ao_network
+
+  ao-watcher-beat:
+    build:
+      context: ../adjuja-watcher
+      dockerfile: Dockerfile
+    command: >
+      celery -A app.workers.celery_app.celery_app beat
+      --loglevel=info
+    environment:
+      DATABASE_URL: postgresql+asyncpg://offria:${POSTGRES_PASSWORD:-offria_dev}@postgres:5432/offria
+      REDIS_URL: redis://redis:6379/3
+    volumes:
+      - ../adjuja-watcher/app:/app/app
+      - ../adjuja-watcher/scrapers:/app/scrapers
+    depends_on:
+      - redis
+    networks:
+      - ao_network
+
+  # notification-* : désactivés en dev (pas de réseau PyPI dans certains envs)
+  # Lancer séparément si besoin : docker compose -f docker-compose.dev.yml up notification-api
+
+volumes:
+  postgres_data:
+  minio_data:
+  redis_data:
+
+networks:
+  ao_network:

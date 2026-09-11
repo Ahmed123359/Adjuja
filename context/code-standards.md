@@ -9,7 +9,7 @@ together when a convention changes, do not let them drift apart.
 Review blockers, not style preferences.
 
 - No hardcoded colors, spacing, or copy in frontend components. CSS vars +
-  i18n (`frontend/src/locales/*.json`) only. See `ui-context.md`.
+  i18n (`adjuja-frontend/src/locales/*.json`) only. See `ui-context.md`.
 - No AI-generated design tells: no pill/`rounded-full` buttons, no eyebrow/kicker
   labels, no generic glow badges, no gradient-button default. See `ui-context.md`'s
   Rejected Patterns.
@@ -24,7 +24,10 @@ Review blockers, not style preferences.
 - New services are singletons via `@lru_cache` in `dependencies.py`, matching the
   existing pattern, not instantiated ad hoc per request.
 - Frontend never calls the backend directly from a component. Every call goes
-  through `frontend/src/api.ts` with `authHeaders()`.
+  through the calling domain's `features/<domain>/api.ts`, which uses
+  `authHeaders()` from `shared/lib/http.ts`. `src/api.ts` and `src/types.ts` are
+  backwards-compatibility barrels since the 2026-09-12 split: never add anything
+  new to them.
 - No secrets, credentials, or connection strings in source. `.env` only, gitignored.
 - No raw SQL string-concatenates user input. SQLAlchemy's parameterization is the
   default and expected path.
@@ -76,25 +79,57 @@ Review blockers, not style preferences.
 
 ## File Organization
 
-```
-app/
-├── api/routes/       FastAPI routers, thin
-├── services/         Business logic
-├── tasks/            Celery tasks (main app)
-├── providers/        LLM provider Strategy + Factory
-├── billing/provider/ Payment provider Strategy + Factory
-├── models/            SQLAlchemy models
-└── config/            Settings
+Chaque service est un dépôt git distinct, cloné frère des autres (voir
+`architecture-context.md`). Les arbres ci-dessous sont relatifs à la racine de leur
+propre dépôt.
 
-ao-watcher/app/         Same shape, independent service
-notification-service/app/  Same shape, independent service
-frontend/src/
-├── api.ts             Only place that calls the backend
-├── components/        Reusable + feature components
-├── pages/              Route-level components
-└── locales/            i18n
 ```
+adjuja-backend/
+├── app/
+│   ├── api/routes/   FastAPI routers, thin
+│   ├── services/     Business logic (dont rag_service.py)
+│   ├── tasks/        Celery tasks (main app)
+│   ├── providers/    LLM provider Strategy + Factory
+│   ├── billing/provider/ Payment provider Strategy + Factory
+│   ├── models/       SQLAlchemy models
+│   └── config/       Settings
+├── alembic/          Migrations
+└── tests/            pytest
+
+adjuja-watcher/app/         Same shape, independent service and repo
+adjuja-notification/app/    Same shape, independent service and repo
+
+adjuja-frontend/src/
+├── features/<domaine>/ api.ts, types.ts, components/, la page du domaine
+│                       ao, veille, company, billing, auth, org, tools, chat,
+│                       generation, marches, notifications, landing, legal
+├── shared/lib/http.ts  Socle HTTP : jeton, authHeaders(), helpers de reponse
+├── shared/layout/      Coquille applicative : RightPanel, LeftPanel, Header,
+│                       AppSidebar
+├── shared/ui/          CustomSelect, GlowMenu, LanguageSelector
+├── shared/             app.api.ts, app.types.ts, SettingsPage.tsx
+├── api.ts, types.ts    Barrels de retrocompatibilite, ne rien y ajouter
+├── hooks/              Hooks transverses (useIsMobile, useTheme, ...)
+├── pages/              Seulement les pages sans domaine (404, ComingSoon)
+└── locales/            i18n
+
+adjuja-infra/           docker-compose*.yml, .env, scripts/clone.sh
+adjuja-docs/            conception/, business_plan/, hafid-taches-docs/
+```
+
+La decoupe par domaine du 2026-09-12 est faite pour tout le code applicatif :
+`src/components/` a entierement disparu, `src/pages/` ne garde que les deux pages
+sans domaine (404, ComingSoon). Rien n'a change de comportement, seuls les
+emplacements et les imports. Un nouvel ecran va dans `features/<domaine>/`,
+jamais dans `pages/` ni dans un `components/` racine.
+
+Ce qui reste a faire (etape de factorisation, distincte du deplacement) :
+unifier les **quatre implementations differentes du polling Celery**
+(`features/ao/components/AoDetailView`, `features/tools/components/DocumentsTab`,
+`features/tools/components/FillerTab`, `features/veille/components/AoDetailPanel`)
+-- elles n'ont ni la meme mecanique ni la meme condition d'arret, donc c'est une
+reecriture a mener explicitement, pas une substitution mecanique.
 
 - One-off maintenance scripts (seeding, ingestion) live at the relevant service's
-  repo root, e.g. `seed_company_profile.py`, never inside `app/` since they are
+  repo root, e.g. `adjuja-backend/seed_company_profile.py`, never inside `app/` since they are
   not part of the running application.

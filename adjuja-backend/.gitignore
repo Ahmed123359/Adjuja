@@ -1,0 +1,26 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# Environnement local et secrets
+# (le .env de référence vit dans adjuja-infra/, celui-ci est la copie
+#  locale pour lancer uvicorn hors Docker -- voir README.md)
+.env
+.env.local
+.env.production
+*.env
+
+# Tests et couverture
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Scripts one-shot
+seed_company_profile.py
+
+# Divers
+*.log
+documents/
+knowledge_base/

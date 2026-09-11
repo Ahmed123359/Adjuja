@@ -1,6 +1,6 @@
 # Architecture Context
 
-Full technical detail lives in `conception/2. Architecture/architecture.md`. This
+Full technical detail lives in `adjuja-docs/conception/2. Architecture/architecture.md`. This
 file is the condensed reference used while implementing, kept current as
 architecture actually changes (see `context/ai-workflow-rules.md`'s "Keeping docs
 in sync").
@@ -16,9 +16,27 @@ in sync").
 | Queue | Celery + Redis | Separate Redis DB index per concern (main app io/cpu queues, ao-watcher, notification-service) |
 | Object storage | MinIO, self-hosted, S3-compatible | Generated documents, uploaded company docs, downloaded tender DCE zips -- shared bucket `offria` across main app and ao-watcher |
 | Vector store | Qdrant | RAG embeddings, collection `offria_kb` (global) and `offria_kb_{org_id}` (per-org, see chatbot feature's architecture note on the mismatch between these two) |
-| Frontend | React, Vite, TypeScript | Single SPA, `frontend/src/api.ts` is the only place that calls the backend |
+| Frontend | React, Vite, TypeScript | Single SPA, `adjuja-frontend/src/api.ts` is the only place that calls the backend |
 | Edge | nginx (in the `frontend` container) | Reverse proxy: `/api/` to main API, `/watcher/` to ao-watcher, serves the built SPA |
-| Orchestration | Docker Compose | Self-managed VPS (Hetzner), not a managed platform; separate `docker-compose.yml` (prod) and `docker-compose.dev.yml` (local) |
+| Orchestration | Docker Compose | Self-managed VPS (Hetzner), not a managed platform; separate `adjuja-infra/docker-compose.yml` (prod) and `adjuja-infra/docker-compose.dev.yml` (local) |
+
+## Repository Topology
+
+Since 2026-09-10 ADJUJA is **not one repo**. Each service is its own git repository,
+cloned side by side in a workspace folder that is itself not a repo (`e-himaya` model):
+`adjuja-backend`, `adjuja-frontend`, `adjuja-watcher`, `adjuja-notification`,
+`adjuja-infra` (orchestration, entry point), `adjuja-docs`.
+
+Consequences that bind day-to-day work:
+
+- A change spanning services produces **one commit per repo**. There is no root repo to
+  commit to.
+- Compose build contexts are relative to `adjuja-infra/` (`context: ../adjuja-backend`),
+  so the repos must stay siblings. `adjuja-infra/scripts/clone.sh` enforces the layout.
+- No repo can build another's code. This is why `adjuja-backend/Dockerfile` no longer
+  builds the SPA, and why `:8000/ui` no longer exists -- the SPA is served only by the
+  `frontend` nginx container.
+- `CLAUDE.md` and `context/` live unversioned at the workspace root, in no repo at all.
 
 ## System Boundaries
 
@@ -29,14 +47,14 @@ in sync").
   reused rather than inventing a second pattern -- this is the project's standing
   "one interface, swappable implementations, factory picks by name" convention,
   reach for it before inventing a different abstraction shape.
-- `ao-watcher/`, independent service, independent `app/` tree, own Dockerfile, own
+- `adjuja-watcher/`, independent service and independent git repo, independent `app/` tree, own Dockerfile, own
   Celery app. Talks to the main app over HTTP (`app/core/config.py`'s
   `main_app_host`/`main_app_port`), relays the caller's JWT rather than verifying
   it itself (`ao-watcher` has no access to `JWT_SECRET_KEY` or the `users` table).
-- `notification-service/`, independent service, same shape as `ao-watcher`. Talks
+- `adjuja-notification/`, independent service and independent git repo, same shape as `ao-watcher`. Talks
   to `ao-watcher` (event-driven trigger after a scrape) and is talked to by the
   main app's Celery Beat (billing dunning emails).
-- `frontend/`, single React SPA serving both the marketing landing page and the
+- `adjuja-frontend/`, single React SPA (own git repo) serving both the marketing landing page and the
   authenticated app, nginx-served in production.
 
 ## Storage Model
@@ -97,7 +115,7 @@ in sync").
 - This codebase runs one live instance for ADJUJA itself, it is not built to be
   forked for other clients (unlike some of the user's other projects). Do not
   introduce a `StoreSettings`-style per-tenant config layer speculatively.
-- Design tokens (palette, CSS vars) live in `frontend/src/index.css` and
+- Design tokens (palette, CSS vars) live in `adjuja-frontend/src/index.css` and
   `context/ui-context.md`'s Design Tokens section. A rebrand is a token edit.
 
 ## Invariants

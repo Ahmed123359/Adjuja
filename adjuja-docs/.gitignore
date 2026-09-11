@@ -1,0 +1,17 @@
+# Documents de travail internes (garder seulement les architecture.md)
+hafid-taches-docs/**
+!hafid-taches-docs/technical-offer/
+!hafid-taches-docs/technical-offer/architecture.md
+!hafid-taches-docs/scraping/
+!hafid-taches-docs/scraping/architecture.md
+!hafid-taches-docs/notification/
+!hafid-taches-docs/notification/architecture.md
+!hafid-taches-docs/documents-filler/
+
+# Anciennes présentations
+conception/5. Presentation/old/
+
+# Dossiers de données personnelles et documents confidentiels
+Dossier AO HAFID/
+__MACOSX/
+*.DS_Store

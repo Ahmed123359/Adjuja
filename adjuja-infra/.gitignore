@@ -1,0 +1,12 @@
+# Secrets -- .env.example est suivi, .env ne l'est jamais
+.env
+.env.prod
+.env.local
+
+# Volumes de données locaux (les .gitkeep restent suivis)
+data/*
+!data/.gitkeep
+certbot/*
+!certbot/.gitkeep
+
+*.log

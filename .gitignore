@@ -1,51 +1,61 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# ADJUJA -- monorepo : un depot a la racine, un dossier par service.
+# Adapte le 2026-09-12 depuis le .gitignore d'avant la decoupe : les motifs
+# larges (scripts/, data/) ont ete ancres a la racine avec "/", sinon ils
+# excluaient par erreur adjuja-infra/scripts/clone.sh.
+# ─────────────────────────────────────────────────────────────────────────────
+
 # Python
 __pycache__/
 *.py[cod]
 .venv/
 venv/
-*.env
-.env
 
 # Node / Frontend
-frontend/node_modules/
-frontend/dist/
 node_modules/
+dist/
 package-lock.json
 
-# Environnement local et secrets
+# Secrets et environnement local -- ne JAMAIS versionner
+.env
+*.env
 .env.local
 .env.production
 
-# Dossiers de données personnelles et documents confidentiels
+# Donnees personnelles et documents confidentiels.
+# Dossiers d'appels d'offres reels : CV, diplomes et pieces signees de personnes
+# nommees. Ne doivent jamais partir sur GitHub.
 Dossier AO HAFID/
 __MACOSX/
 *.DS_Store
 
-# R&D (notebooks, PDFs, scripts de test ponctuels)
+# R&D locale et code mort, hors depots (voir CLAUDE.md)
 rd/
 worker/
+converstations.txt
 
 # Scripts one-shot
 seed_company_profile.py
 
-# Claude Code
+# Claude Code : reglages locaux de la machine
 .claude/settings.json
+.claude/settings.local.json
 
-# Documents de travail internes (garder seulement les architecture.md)
-hafid-taches-docs/**
-!hafid-taches-docs/technical-offer/architecture.md
-!hafid-taches-docs/scraping/architecture.md
-!hafid-taches-docs/notification/architecture.md
-!hafid-taches-docs/documents-filler/
+# Documents de travail internes : on ne garde que les architecture.md
+adjuja-docs/hafid-taches-docs/**
+!adjuja-docs/hafid-taches-docs/technical-offer/architecture.md
+!adjuja-docs/hafid-taches-docs/scraping/architecture.md
+!adjuja-docs/hafid-taches-docs/notification/architecture.md
+!adjuja-docs/hafid-taches-docs/documents-filler/
 
-# Anciennes présentations
-conception/5. Presentation/old/
+# Anciennes presentations
+adjuja-docs/conception/5. Presentation/old/
 
-# Divers
-*.log
-data/
+# Donnees runtime des services (volumes, index, uploads)
+/data/
+adjuja-infra/data/
 documents/
 knowledge_base/
-scripts/
-QA/
-lovable/
+
+# Logs
+*.log
