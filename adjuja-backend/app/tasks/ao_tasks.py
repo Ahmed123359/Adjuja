@@ -376,16 +376,42 @@ def task_build_pipeline(self, ao_id: str) -> None:
     if needs_fill:
         tasks.append(task_fill_documents.si(ao_id))
 
-    # Matching équipe (toujours lancé si des profils sont requis dans analyse_json)
+    # Matching équipe, lancé si des profils sont requis dans analyse_json.
     profils_requis = analyse_json.get("profils_requis", [])
-    if profils_requis:
-        task_match_team.delay(ao_id)
 
     if not tasks:
+        # Rien à générer ni à remplir : le matching n'alimente alors aucune tâche
+        # en aval, il peut rester détaché.
+        if profils_requis:
+            task_match_team.delay(ao_id)
         task_sign_and_compile.delay(ao_id)
         return
 
-    chord(group(*tasks), task_sign_and_compile.si(ao_id)).delay()
+    pipeline = chord(group(*tasks), task_sign_and_compile.si(ao_id))
+
+    if profils_requis and needs_note_metho:
+        # COURSE CORRIGÉE (2026-09-12) : task_generate_note_metho lit AoTeamMember,
+        # que produit task_match_team. Ce dernier était lancé en .delay() détaché
+        # au même instant que le chord, donc rien ne garantissait qu'il ait fini :
+        # la note pouvait partir SANS équipe, en silence. Il précède maintenant le
+        # chord quand la note est au programme.
+        #
+        # Conséquence assumée : si le matching échoue, le pipeline s'arrête en
+        # erreur au lieu de produire une note incomplète. Un échec visible vaut
+        # mieux qu'un document silencieusement amputé.
+        chain(task_match_team.si(ao_id), pipeline).delay()
+        logger.info(
+            "[build_pipeline] match_team → chord lancé: %d tâches → sign_and_compile → index_results",
+            len(tasks),
+        )
+        return
+
+    if profils_requis:
+        # Pas de note métho à générer : personne ne lit AoTeamMember en aval,
+        # le matching peut rester détaché comme avant.
+        task_match_team.delay(ao_id)
+
+    pipeline.delay()
     logger.info("[build_pipeline] chord lancé: %d tâches → sign_and_compile → index_results", len(tasks))
 
 

@@ -114,12 +114,35 @@ elle ne doit pas se déclencher sur un clic distrait.
   stepper (`GET /steps` renvoie une liste vide).
 - `tsc --noEmit` propre, `npm run build` propre.
 
-## Open Questions
+## Questions tranchées le 2026-09-12, et état d'implémentation
 
-- Étape `non_applicable` : masquée du parcours ou affichée grisée avec sa
-  raison ? Affichée est plus honnête (l'utilisateur comprend pourquoi son AO a
-  5 étapes et pas 7), masquée est plus simple. Non tranché.
-- Édition de la note méthodologique à l'étape 5 : zone de texte simple ou
-  éditeur riche ? Le projet n'a aucun éditeur riche aujourd'hui, en introduire
-  un est une dépendance nouvelle à justifier. Défaut proposé : texte simple en
-  v1.
+- **Étape `non_applicable` : affichée, grisée, avec sa raison.** La masquer
+  rendrait le parcours incompréhensible (pourquoi 5 étapes et pas 7 ?). Elle est
+  non cliquable et porte un libellé « Sans objet ».
+- **Édition de la note à l'étape 5 : champ texte simple.** Le projet n'a aucun
+  éditeur riche ; en introduire un est une dépendance à justifier séparément.
+  Non implémenté à ce stade (voir Reste à faire).
+
+Implémenté : `hooks/useStepPolling.ts` et les composants `StepList`,
+`StepPanel`, `StepAssistant`, `ModeChoice`, `GuidedPipeline`, câblés dans
+`AoDetailView`.
+
+Le piège du polling est traité : en mode accompagné le polling express est
+désactivé (`isRunning` teste `!isGuided`) et remplacé par `useStepPolling`, qui
+s'arrête dès qu'aucune étape n'est `en_cours` et ne repart qu'après une
+validation ou une relance.
+
+Des tokens de couleur d'état (`--l-success/warn/error/info` et leurs fonds et
+bordures) ont été ajoutés dans `index.css`, en thème clair et sombre : il n'en
+existait aucun, et `ui-context.md` interdit un hex en dur dans du code neuf.
+
+## Reste à faire
+
+- Les panneaux des étapes 3 à 7 affichent un texte d'attente. Leur contenu réel
+  dépend de `fit-score` (étape 3, verdict et score) et de `analyse-ao-enrichie`
+  (étape 4, checklist des pièces).
+- L'édition de la note à l'étape 5 et la correction champ par champ à l'étape 6
+  portent sur des artefacts MinIO : le corps `corrections` de `validate` ne
+  traite pour l'instant que l'étape 2.
+- **Rien n'a été vérifié sur un AO réel** : les critères de recette demandent une
+  stack qui tourne.

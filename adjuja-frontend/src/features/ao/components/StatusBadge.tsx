@@ -32,6 +32,13 @@ const STATUT_BADGE: Record<
     color: "#dc2626",
     border: "rgba(220,38,38,0.20)",
   },
+  // Refus explicite a l'etape Decision du mode accompagne : ce n'est pas un
+  // echec, donc un traitement neutre et non le rouge de l'erreur.
+  abandonne: {
+    bg: "var(--l-input-bg)",
+    color: "var(--l-sub)",
+    border: "var(--l-card-border)",
+  },
 };
 
 export function StatusBadge({ statut }: { statut: string }) {

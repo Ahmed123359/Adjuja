@@ -57,12 +57,30 @@
       "subtitle": "Un cabinet qui dépose ses prix et ses références sur Adjuja doit pouvoir le faire les yeux fermés. Voici nos engagements.",
       "readMore": "Lire notre politique de confidentialité complète",
       "items": [
-        { "title": "Propriété totale", "desc": "Vos documents vous appartiennent. Adjuja n'en revendique aucun droit de propriété." },
-        { "title": "Cloisonnement total", "desc": "Aucune donnée d'un client n'est visible ou accessible par un autre." },
-        { "title": "Zéro usage concurrentiel", "desc": "Adjuja n'utilise jamais le contenu d'un dossier pour informer ou avantager un autre client." },
-        { "title": "Zéro entraînement sans accord", "desc": "Aucun modèle n'est entraîné sur vos données sans votre accord écrit préalable." },
-        { "title": "Suppression sous 72 heures", "desc": "Sur simple demande, pour tout ou partie de vos données." },
-        { "title": "Conformité loi 09-08", "desc": "Protection des personnes physiques à l'égard du traitement des données à caractère personnel." }
+        {
+          "title": "Propriété totale",
+          "desc": "Vos documents vous appartiennent. Adjuja n'en revendique aucun droit de propriété."
+        },
+        {
+          "title": "Cloisonnement total",
+          "desc": "Aucune donnée d'un client n'est visible ou accessible par un autre."
+        },
+        {
+          "title": "Zéro usage concurrentiel",
+          "desc": "Adjuja n'utilise jamais le contenu d'un dossier pour informer ou avantager un autre client."
+        },
+        {
+          "title": "Zéro entraînement sans accord",
+          "desc": "Aucun modèle n'est entraîné sur vos données sans votre accord écrit préalable."
+        },
+        {
+          "title": "Suppression sous 72 heures",
+          "desc": "Sur simple demande, pour tout ou partie de vos données."
+        },
+        {
+          "title": "Conformité loi 09-08",
+          "desc": "Protection des personnes physiques à l'égard du traitement des données à caractère personnel."
+        }
       ]
     },
     "faq": {
@@ -563,7 +581,8 @@
       "en_analyse": "En analyse",
       "en_traitement": "En traitement",
       "termine": "Terminé",
-      "erreur": "Erreur"
+      "erreur": "Erreur",
+      "abandonne": "Abandonné"
     },
     "docTypes": {
       "cps": "CPS",
@@ -590,6 +609,97 @@
       "traite": "Prêt",
       "erreur": "Erreur",
       "pending": "En attente"
+    },
+    "mode": {
+      "intro": "Choisissez comment traiter cet appel d'offres.",
+      "express": {
+        "title": "Express",
+        "desc": "Tout s'enchaîne automatiquement et vous récupérez le dossier complet, signé et compressé. Pour aller vite.",
+        "cta": "Lancer en Express"
+      },
+      "accompagne": {
+        "title": "Accompagné",
+        "desc": "Sept étapes, une validation entre chacune. Vous voyez et corrigez le travail avant qu'il ne passe à la suite.",
+        "cta": "Lancer en Accompagné"
+      }
+    },
+    "steps": {
+      "loading": "Chargement du parcours...",
+      "resultLabel": "RÉSULTAT DE CETTE ÉTAPE",
+      "validate": "Valider et continuer",
+      "redo": "Refaire cette étape",
+      "retry": "Relancer cette étape",
+      "rerunWarning": "Les étapes suivantes seront à refaire : leur résultat ne correspondrait plus à ce que vous allez changer ici.",
+      "rerunConfirm": "Oui, refaire",
+      "cancel": "Annuler",
+      "actionFailed": "L'action a échoué.",
+      "notApplicableReason": "Cet appel d'offres ne demande pas cette étape : elle est ignorée automatiquement.",
+      "statut": {
+        "a_faire": "À venir",
+        "en_cours": "En cours",
+        "attente_validation": "En attente de votre validation",
+        "validee": "Validée",
+        "non_applicable": "Sans objet",
+        "erreur": "Erreur"
+      },
+      "documents": {
+        "title": "Documents",
+        "help": "Vérifiez que chaque fichier est reconnu pour ce qu'il est.",
+        "empty": "Aucun document source pour l'instant.",
+        "placeholder": ""
+      },
+      "comprehension": {
+        "title": "Compréhension de l'AO",
+        "help": "Ce que l'analyse a retenu du CPS et du règlement de consultation.",
+        "empty": "L'analyse n'a encore rien produit.",
+        "placeholder": ""
+      },
+      "decision": {
+        "title": "Décision",
+        "help": "Au vu des exigences et de votre profil, décidez si vous soumissionnez.",
+        "placeholder": "Le verdict d'éligibilité s'affichera ici.",
+        "go": "Je soumissionne",
+        "noGo": "Abandonner cet AO"
+      },
+      "preparation": {
+        "title": "Préparation",
+        "help": "Les pièces à produire, ce qui manque à votre profil et l'équipe proposée.",
+        "placeholder": "La checklist des pièces s'affichera ici."
+      },
+      "redaction": {
+        "title": "Rédaction",
+        "help": "Relisez la note méthodologique avant de la valider.",
+        "placeholder": "La note méthodologique générée s'affichera ici."
+      },
+      "remplissage": {
+        "title": "Remplissage",
+        "help": "Vérifiez les documents administratifs remplis, champ par champ.",
+        "placeholder": "Les documents remplis s'afficheront ici."
+      },
+      "signature": {
+        "title": "Signature et dossier final",
+        "help": "Signez, compilez et récupérez le dossier complet.",
+        "placeholder": "Le dossier final s'affichera ici."
+      }
+    },
+    "assist": {
+      "title": "Assistant de cette étape",
+      "show": "Ouvrir",
+      "hide": "Fermer",
+      "placeholder": "Posez votre question sur cet appel d'offres...",
+      "send": "Envoyer",
+      "thinking": "Réflexion...",
+      "sources": "Sources :",
+      "failed": "L'assistant n'a pas pu répondre.",
+      "role": {
+        "documents": "Je peux expliquer à quoi sert chaque type de document dans un marché public et vous aider à vérifier leur classement.",
+        "comprehension": "Je peux expliquer les exigences de cet appel d'offres en langage clair, et signaler celles qui sont ambiguës.",
+        "decision": "Je peux justifier chaque point du verdict à partir des exigences réelles et de votre profil, sans vous pousser dans un sens ou dans l'autre.",
+        "preparation": "Je peux vous aider à lister les pièces à produire et repérer ce qui manque à votre profil.",
+        "redaction": "Je peux proposer des reformulations concrètes de votre note méthodologique.",
+        "remplissage": "Je peux repérer une valeur qui semble incohérente avec votre profil ou avec l'appel d'offres.",
+        "signature": "Je peux vérifier avec vous que le dossier est complet avant dépôt."
+      }
     }
   },
   "settings": {

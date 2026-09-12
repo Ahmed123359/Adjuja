@@ -57,12 +57,30 @@
       "subtitle": "A firm uploading its pricing and references to Adjuja should be able to do so with total confidence. Here is what we commit to.",
       "readMore": "Read our full privacy policy",
       "items": [
-        { "title": "Full ownership", "desc": "Your documents belong to you. Adjuja claims no ownership over them." },
-        { "title": "Total isolation", "desc": "No client's data is visible or accessible to another." },
-        { "title": "Zero competitive use", "desc": "Adjuja never uses one client's file to inform or benefit another." },
-        { "title": "No training without consent", "desc": "No model is trained on your data without your prior written consent." },
-        { "title": "Deletion within 72 hours", "desc": "On simple request, for all or part of your data." },
-        { "title": "Law 09-08 compliance", "desc": "Protection of individuals with regard to the processing of personal data." }
+        {
+          "title": "Full ownership",
+          "desc": "Your documents belong to you. Adjuja claims no ownership over them."
+        },
+        {
+          "title": "Total isolation",
+          "desc": "No client's data is visible or accessible to another."
+        },
+        {
+          "title": "Zero competitive use",
+          "desc": "Adjuja never uses one client's file to inform or benefit another."
+        },
+        {
+          "title": "No training without consent",
+          "desc": "No model is trained on your data without your prior written consent."
+        },
+        {
+          "title": "Deletion within 72 hours",
+          "desc": "On simple request, for all or part of your data."
+        },
+        {
+          "title": "Law 09-08 compliance",
+          "desc": "Protection of individuals with regard to the processing of personal data."
+        }
       ]
     },
     "faq": {
@@ -563,7 +581,8 @@
       "en_analyse": "Analysing",
       "en_traitement": "Processing",
       "termine": "Done",
-      "erreur": "Error"
+      "erreur": "Error",
+      "abandonne": "Dropped"
     },
     "docTypes": {
       "cps": "CPS",
@@ -588,6 +607,97 @@
       "traite": "Ready",
       "erreur": "Error",
       "pending": "Pending"
+    },
+    "mode": {
+      "intro": "Choose how to process this tender.",
+      "express": {
+        "title": "Express",
+        "desc": "Everything runs automatically and you get the complete signed package. For when you need speed.",
+        "cta": "Start in Express"
+      },
+      "accompagne": {
+        "title": "Guided",
+        "desc": "Seven steps, one approval between each. You see and correct the work before it moves on.",
+        "cta": "Start in Guided"
+      }
+    },
+    "steps": {
+      "loading": "Loading the workflow...",
+      "resultLabel": "RESULT OF THIS STEP",
+      "validate": "Approve and continue",
+      "redo": "Redo this step",
+      "retry": "Retry this step",
+      "rerunWarning": "The following steps will have to be redone: their result would no longer match what you are about to change here.",
+      "rerunConfirm": "Yes, redo it",
+      "cancel": "Cancel",
+      "actionFailed": "The action failed.",
+      "notApplicableReason": "This tender does not require this step, so it is skipped automatically.",
+      "statut": {
+        "a_faire": "Upcoming",
+        "en_cours": "In progress",
+        "attente_validation": "Waiting for your approval",
+        "validee": "Approved",
+        "non_applicable": "Not applicable",
+        "erreur": "Error"
+      },
+      "documents": {
+        "title": "Documents",
+        "help": "Check that each file is recognised for what it is.",
+        "empty": "No source document yet.",
+        "placeholder": ""
+      },
+      "comprehension": {
+        "title": "Understanding the tender",
+        "help": "What the analysis extracted from the specifications and the consultation rules.",
+        "empty": "The analysis has not produced anything yet.",
+        "placeholder": ""
+      },
+      "decision": {
+        "title": "Decision",
+        "help": "Given the requirements and your profile, decide whether you bid.",
+        "placeholder": "The eligibility verdict will appear here.",
+        "go": "I am bidding",
+        "noGo": "Drop this tender"
+      },
+      "preparation": {
+        "title": "Preparation",
+        "help": "The documents to produce, what is missing from your profile, and the proposed team.",
+        "placeholder": "The document checklist will appear here."
+      },
+      "redaction": {
+        "title": "Writing",
+        "help": "Review the methodology note before approving it.",
+        "placeholder": "The generated methodology note will appear here."
+      },
+      "remplissage": {
+        "title": "Form filling",
+        "help": "Check the filled administrative documents, field by field.",
+        "placeholder": "The filled documents will appear here."
+      },
+      "signature": {
+        "title": "Signature and final package",
+        "help": "Sign, compile and download the complete package.",
+        "placeholder": "The final package will appear here."
+      }
+    },
+    "assist": {
+      "title": "Assistant for this step",
+      "show": "Open",
+      "hide": "Close",
+      "placeholder": "Ask a question about this tender...",
+      "send": "Send",
+      "thinking": "Thinking...",
+      "sources": "Sources:",
+      "failed": "The assistant could not answer.",
+      "role": {
+        "documents": "I can explain what each document type is for in a public tender and help you check how they were classified.",
+        "comprehension": "I can explain this tender's requirements in plain language, and flag the ambiguous ones.",
+        "decision": "I can justify each point of the verdict from the actual requirements and your profile, without pushing you either way.",
+        "preparation": "I can help you list the documents to produce and spot what is missing from your profile.",
+        "redaction": "I can suggest concrete rewordings for your methodology note.",
+        "remplissage": "I can spot a value that looks inconsistent with your profile or with the tender.",
+        "signature": "I can check with you that the package is complete before submission."
+      }
     }
   },
   "settings": {

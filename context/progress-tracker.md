@@ -720,6 +720,58 @@ prod pour valider l'envoi bout en bout avec Resend actif.
 
 ## En cours
 
+- **Mode accompagne -- frontend implemente + course `task_match_team` corrigee**
+  (2026-09-12). Le chantier est donc complet backend ET frontend ; reste la
+  verification en conditions reelles.
+  - **Les deux questions ouvertes de `client.md` tranchees** (dans le sens que la
+    spec recommandait, non contredit) : une etape `non_applicable` est **affichee
+    grisee avec sa raison** (la masquer rendrait le parcours incomprehensible --
+    pourquoi 5 etapes et pas 7 ?), et l'edition de la note a l'etape 5 restera un
+    **champ texte simple** (le projet n'a aucun editeur riche, en introduire un
+    est une dependance a justifier separement).
+  - Livre : `features/ao/hooks/useStepPolling.ts`, et les composants
+    `StepList`, `StepPanel`, `StepAssistant`, `ModeChoice`, `GuidedPipeline`.
+    `AoDetailView` est cable dessus : choix du mode au lancement, parcours guide
+    a la place de la barre de progression.
+  - **Le piege du polling est traite**, c'est le point que `client.md` signalait :
+    le polling express ne s'arrete que sur `termine`/`erreur` et aurait tourne
+    **des heures** pendant qu'une etape attend une validation humaine. En mode
+    accompagne il est desactive (`isRunning` teste `!isGuided`) et remplace par
+    `useStepPolling`, qui s'arrete des qu'aucune etape n'est `en_cours` et ne
+    repart qu'apres une validation ou une relance.
+  - **Tokens de couleur ajoutes dans `index.css`** (`--l-success/warn/error/info`
+    et leurs fonds/bordures, en clair ET en sombre). Il n'en existait aucun pour
+    les etats : les composants anterieurs portent ces valeurs en hex inline, ce
+    que `ui-context.md` interdit pour du code neuf (« un besoin de couleur = une
+    var »). Le nouveau code n'a aucun hex en dur.
+  - i18n complet fr + en (mode, 7 etapes, 6 statuts, assistant, statut
+    `abandonne`), **verifie par script** : toutes les cles utilisees resolvent
+    dans les deux langues. Les accents francais ont ete repris apres une
+    premiere passe sans accents, qui violait `code-standards.md`.
+  - **Course `task_match_team` corrigee** (`ao_tasks.py`, mode express) :
+    `task_generate_note_metho` lit `AoTeamMember`, produit par `task_match_team`
+    qui etait lance **detache au meme instant que le chord** -- la note pouvait
+    donc partir **sans equipe, en silence**. Le matching precede desormais le
+    chord **quand une note metho est au programme** ; il reste detache sinon
+    (personne ne lit son resultat en aval). **Consequence assumee** : si le
+    matching echoue, le pipeline s'arrete en erreur au lieu de produire une note
+    incomplete -- un echec visible vaut mieux qu'un document ampute en silence.
+    C'est une modification du chord de production, que la spec identifiait comme
+    le risque principal du chantier : a verifier en reel en priorite.
+  - Verifie : `tsc --noEmit` propre, `npm run build` vert, modules servis en 200
+    par le serveur de dev, 27 tests backend au vert.
+  - **Pas encore verifie, et c'est l'essentiel qui reste** : aucun AO reel n'a
+    ete traite en mode accompagne. Les criteres de recette de `00-overview.md`
+    (arret effectif apres chaque etape verifie en base, mode express sans
+    regression, reprise apres fermeture du navigateur, correction reellement
+    reprise par l'etape suivante) demandent une stack qui tourne.
+  - **Reste a coder** : les corrections utilisateur des etapes 5 (texte de la
+    note) et 6 (champs remplis) portent sur des artefacts MinIO ; le corps
+    `corrections` de `validate` ne traite aujourd'hui que l'etape 2 et ignore les
+    autres avec un log. Les panneaux des etapes 3 a 7 affichent un texte
+    d'attente : leur contenu reel depend de `fit-score` (etape 3) et
+    `analyse-ao-enrichie` (etape 4).
+
 - **Retour a un depot git unique + tout le travail pousse sur `develop`**
   (2026-09-12). L'utilisateur signalait « des problemes quand je push ».
   Diagnostic mene avant toute action, **trois causes reelles, toutes anterieures

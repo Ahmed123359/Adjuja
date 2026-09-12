@@ -13,7 +13,9 @@ import {
   deleteAo,
   cancelAoPipeline,
 } from "../api";
-import type { AoResponse, AoDocumentOut } from "../types";
+import type { AoMode, AoResponse, AoDocumentOut } from "../types";
+import { GuidedPipeline } from "./GuidedPipeline";
+import { ModeChoice } from "./ModeChoice";
 import { StatusBadge } from "./StatusBadge";
 import { ProgressBar } from "./ProgressBar";
 import { DossierSection } from "./DossierSection";
@@ -85,8 +87,13 @@ export function AoDetailView({ aoId, onBack }: { aoId: string; onBack: () => voi
     scheduleNextPoll();
   }, [scheduleNextPoll]);
 
+  const isGuided = (ao?.mode ?? "express") === "accompagne";
+
+  // En mode accompagne, c'est useStepPolling qui interroge le serveur : lui
+  // s'arrete des qu'une etape attend une validation humaine, alors que ce
+  // polling-ci ne s'arrete que sur termine/erreur et tournerait des heures.
   const isRunning = ao
-    ? ["en_analyse", "en_traitement"].includes(ao.statut)
+    ? !isGuided && ["en_analyse", "en_traitement"].includes(ao.statut)
     : false;
 
   useEffect(() => {
@@ -116,11 +123,17 @@ export function AoDetailView({ aoId, onBack }: { aoId: string; onBack: () => voi
     }
   };
 
-  const handleStart = async () => {
+  const handleStart = async (mode: AoMode = "express") => {
     setStarting(true);
     setError(null);
     try {
-      await startAoPipeline(aoId);
+      await startAoPipeline(aoId, mode);
+      if (mode === "accompagne") {
+        // Le parcours se recharge depuis la base : on relit l'AO plutot que de
+        // deviner son etat, GuidedPipeline prend ensuite le relais.
+        await load();
+        return;
+      }
       setAo((prev) =>
         prev ? { ...prev, statut: "en_analyse", pipeline_pct: 0 } : prev,
       );
@@ -196,9 +209,13 @@ export function AoDetailView({ aoId, onBack }: { aoId: string; onBack: () => voi
       </div>
     );
 
-  const isPipelineRunning = ["en_analyse", "en_traitement"].includes(ao.statut);
+  const isPipelineRunning =
+    !isGuided && ["en_analyse", "en_traitement"].includes(ao.statut);
   const isPipelineDone = ao.statut === "termine";
-  const canStart = ao.statut === "brouillon" || ao.statut === "erreur";
+  // Un AO abandonne a l'etape Decision n'est pas relancable d'un clic : il faut
+  // passer par la reprise de l'etape, sinon on repartirait de zero en silence.
+  const canStart =
+    !isGuided && (ao.statut === "brouillon" || ao.statut === "erreur");
   const hasSourceDocs =
     ao.documents.filter((d) => d.dossier === "source").length > 0;
   const docsByDossier = (ao.documents ?? []).reduce<
@@ -370,6 +387,10 @@ export function AoDetailView({ aoId, onBack }: { aoId: string; onBack: () => voi
             gap: 20,
           }}
         >
+          {/* Parcours accompagne : remplace la barre de progression, c'est le
+              stepper qui porte l'etat quand ce regime est actif. */}
+          {isGuided && <GuidedPipeline ao={ao} onAoChanged={load} />}
+
           {/* Progress */}
           {(isPipelineRunning || isPipelineDone) && (
             <div
@@ -563,63 +584,9 @@ export function AoDetailView({ aoId, onBack }: { aoId: string; onBack: () => voi
             />
           )}
 
-          {/* Start button */}
+          {/* Choix du regime de traitement (client.md) */}
           {canStart && hasSourceDocs && (
-            <button
-              onClick={handleStart}
-              disabled={starting}
-              style={{
-                ...btnBase,
-                width: "100%",
-                padding: "13px",
-                background: starting ? "var(--l-dim)" : "var(--l-blue)",
-                color: "#fff",
-                fontSize: 14,
-                cursor: starting ? "not-allowed" : "pointer",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                gap: 8,
-              }}
-              onMouseEnter={(e) => {
-                if (!starting) e.currentTarget.style.opacity = ".85";
-              }}
-              onMouseLeave={(e) => (e.currentTarget.style.opacity = "1")}
-            >
-              {starting ? (
-                <>
-                  <div
-                    style={{
-                      width: 16,
-                      height: 16,
-                      borderRadius: "50%",
-                      border: "2px solid rgba(255,255,255,0.3)",
-                      borderTopColor: "#fff",
-                      animation: "spin 1s linear infinite",
-                    }}
-                  />
-                  {t("pipeline.detail.starting")}
-                </>
-              ) : (
-                <>
-                  <svg
-                    width="16"
-                    height="16"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                    strokeWidth={2}
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.348a1.125 1.125 0 010 1.971l-11.54 6.347a1.125 1.125 0 01-1.667-.985V5.653z"
-                    />
-                  </svg>
-                  {t("pipeline.detail.startBtn")}
-                </>
-              )}
-            </button>
+            <ModeChoice onStart={handleStart} starting={starting} />
           )}
 
           {canStart && !hasSourceDocs && (

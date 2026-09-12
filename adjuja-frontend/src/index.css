@@ -57,6 +57,22 @@
     --l-cta-bg: #ffffff;
     --l-input-bg: #f0f4fa;
     --l-nav-bg: rgba(255, 255, 255, 0.92);
+
+    /* Etats -- ajoutes le 2026-09-12 pour le mode accompagne. Les composants
+       anterieurs portent ces memes valeurs en hex inline ; tout nouveau code
+       passe par ces tokens (ui-context.md : un besoin de couleur = une var). */
+    --l-success:        #16a34a;
+    --l-success-bg:     rgba(34, 197, 94, 0.08);
+    --l-success-border: rgba(34, 197, 94, 0.25);
+    --l-warn:           #d97706;
+    --l-warn-bg:        rgba(245, 158, 11, 0.10);
+    --l-warn-border:    rgba(245, 158, 11, 0.35);
+    --l-error:          #dc2626;
+    --l-error-bg:       rgba(220, 38, 38, 0.07);
+    --l-error-border:   rgba(220, 38, 38, 0.20);
+    --l-info:           #1E88E5;
+    --l-info-bg:        rgba(30, 136, 229, 0.08);
+    --l-info-border:    rgba(30, 136, 229, 0.25);
   }
 
   .dark {
@@ -108,6 +124,21 @@
     --l-cta-bg: #0a1120;
     --l-input-bg: rgba(255, 255, 255, 0.05);
     --l-nav-bg: rgba(5, 9, 15, 0.88);
+
+    /* Etats -- variantes sombres : teintes plus claires pour rester lisibles
+       sur fond fonce, fonds plus opaques pour rester visibles. */
+    --l-success:        #4ade80;
+    --l-success-bg:     rgba(34, 197, 94, 0.12);
+    --l-success-border: rgba(74, 222, 128, 0.30);
+    --l-warn:           #fbbf24;
+    --l-warn-bg:        rgba(245, 158, 11, 0.14);
+    --l-warn-border:    rgba(251, 191, 36, 0.35);
+    --l-error:          #f87171;
+    --l-error-bg:       rgba(220, 38, 38, 0.12);
+    --l-error-border:   rgba(248, 113, 113, 0.28);
+    --l-info:           #60a5fa;
+    --l-info-bg:        rgba(30, 136, 229, 0.14);
+    --l-info-border:    rgba(96, 165, 250, 0.30);
   }
 }
 
