@@ -720,6 +720,25 @@ prod pour valider l'envoi bout en bout avec Resend actif.
 
 ## En cours
 
+- **Schema `watcher` absent de la base de dev, corrige** (2026-09-12).
+  `GET /watcher/aos` renvoyait 500 : `relation "watcher.scraped_aos" does not
+  exist`. Verifie en base, **le schema `watcher` n'existait pas du tout**, seul
+  `public` etait present. **Sans rapport avec le mode accompagne ni le
+  refactoring** : `adjuja-watcher/init_db.py` est un script a lancer une fois par
+  environnement, et il ne l'avait jamais ete sur cette base (ou la base a ete
+  recreee depuis).
+  - Corrige par `docker compose exec ao-watcher-api python init_db.py`.
+    **Verifie en base et pas sur le message de succes** (c'est exactement le
+    piege note dans les Questions ouvertes depuis le 2026-08-20) : les deux
+    tables `watcher.scraped_aos` et `watcher.scraped_bdc` existent, avec les
+    colonnes ajoutees apres coup (`mode_passation`, `secteur_codes`,
+    `analyse_json`). Appel reel avec un vrai JWT : `GET /aos?page=1&limit=50`
+    repond `200 {"items":[],"total":0,...}`.
+  - **Ce sont deux occurrences du meme probleme de fond en une journee** (avec
+    `appels_offres.mode`) : aucune des deux bases n'est geree par un outil de
+    migration, et les scripts d'initialisation doivent etre lances a la main en
+    sachant qu'ils existent. Voir Questions ouvertes.
+
 - **Bug 500 sur toutes les routes AO, corrige, et sa cause etait de mon fait**
   (2026-09-12). L'utilisateur voyait « Failed to load tenders. » et
   « Unexpected token 'I', "Internal S"... is not valid JSON ».
@@ -1209,15 +1228,22 @@ prod pour valider l'envoi bout en bout avec Resend actif.
 
 ## Questions ouvertes
 
-- **La base de dev n'est pas geree par Alembic** (confirme le 2026-09-12 : aucune
-  table `alembic_version`, les tables viennent de
-  `Base.metadata.create_all`). Consequence concrete et deja vecue : un ajout de
+- **Aucune des deux bases (app et watcher) n'est geree par un outil de migration**
+  (confirme le 2026-09-12 : aucune table `alembic_version`, les tables viennent
+  de `Base.metadata.create_all`, et le schema `watcher` se cree par un
+  `init_db.py` lance a la main). Consequence concrete et deja vecue : un ajout de
   **colonne** a une table existante n'est jamais applique automatiquement, et
   l'application tombe en 500 jusqu'a ce que l'`ALTER TABLE` soit lance a la main
   (cas de `appels_offres.mode`, migration `013`). A trancher : stamper la base de
   dev a la revision courante pour qu'`alembic upgrade` fonctionne ensuite, ou
   assumer le `ALTER` manuel a chaque fois. **La meme question se pose pour la
   prod et doit etre verifiee avant le prochain deploiement.**
+  Deux pannes en une journee viennent de ce trou : `appels_offres.mode`
+  (colonne jamais ajoutee) et le schema `watcher` entier (jamais cree). Dans les
+  deux cas l'application tombait en 500 sans que rien n'indique qu'une etape
+  d'initialisation manquait. Piste a arbitrer : faire tourner les migrations et
+  `init_db.py` au demarrage des conteneurs, plutot que de dependre du fait que
+  quelqu'un se souvienne de les lancer.
 
 - **`JWT_SECRET_KEY` exposée publiquement sur GitHub, non encore tournée**
   (trouvé le 2026-09-12). La clé est en clair dans `.env.example`, présent dans
