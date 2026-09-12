@@ -760,6 +760,12 @@ prod pour valider l'envoi bout en bout avec Resend actif.
     le risque principal du chantier : a verifier en reel en priorite.
   - Verifie : `tsc --noEmit` propre, `npm run build` vert, modules servis en 200
     par le serveur de dev, 27 tests backend au vert.
+  - **Route AO ouverte** (2026-09-12, demande de l'utilisateur qui ne voyait que
+    l'ecran « Bientot disponible ») : `shared/layout/RightPanel.tsx` affichait
+    `ComingSoonAo` sur l'onglet `marches` au lieu de `AoPipelinePage`, qui etait
+    importe mais jamais rendu. Le pipeline AO est donc atteignable dans l'app
+    pour la premiere fois. `ComingSoonAo` reste dans `src/pages/`, simplement
+    plus branche.
   - **Pas encore verifie, et c'est l'essentiel qui reste** : aucun AO reel n'a
     ete traite en mode accompagne. Les criteres de recette de `00-overview.md`
     (arret effectif apres chaque etape verifie en base, mode express sans
@@ -1086,13 +1092,16 @@ prod pour valider l'envoi bout en bout avec Resend actif.
     `analyse-ao-enrichie` alimente l'étape 2 de `mode-accompagne` (compréhension de
     l'AO) et `fit-score` son étape 3 (décision), donc les trois se tiennent.
   - **État réel au 2026-09-12** : `mode-accompagne/` a ses trois fichiers
-    (`00-overview.md`, `api.md`, `client.md`) et **son backend est implémenté**
-    (voir l'entrée dédiée ci-dessous). Les 8 autres chantiers n'ont toujours
-    qu'un `00-overview.md`, aucun `api.md`/`client.md`, aucun code.
+    (`00-overview.md`, `api.md`, `client.md`) et est **implémenté backend ET
+    frontend** (voir les entrées dédiées dans « En cours »). Les 8 autres
+    chantiers n'ont toujours qu'un `00-overview.md`, aucun `api.md`/`client.md`,
+    aucun code. S'y ajoute un 10e chantier non prévu à l'origine,
+    `refactoring-frontend/`, demandé par l'utilisateur le 2026-09-12 et fait.
 
 - **Mode accompagné -- backend implémenté** (2026-09-12, spec
-  `context/feature-spec/mode-accompagne/api.md`). Le frontend (`client.md`) n'est
-  **pas** commencé. Les trois préalables de la spec ont été levés en lisant le code
+  `context/feature-spec/mode-accompagne/api.md`). *Le frontend a été fait ensuite
+  le même jour, voir l'entrée « frontend implémenté » plus haut dans cette
+  section.* Les trois préalables de la spec ont été levés en lisant le code
   réel avant d'écrire quoi que ce soit, et deux d'entre eux ont changé la donne :
   - **`analyse_json` est bien une copie locale par org, pas une référence
     partagée** (Question ouverte n1 de la spec, tranchée) : `import_from_watcher`
@@ -1156,6 +1165,16 @@ prod pour valider l'envoi bout en bout avec Resend actif.
 
 ## Questions ouvertes
 
+- **`JWT_SECRET_KEY` exposée publiquement sur GitHub, non encore tournée**
+  (trouvé le 2026-09-12). La clé est en clair dans `.env.example`, présent dans
+  l'historique du dépôt depuis le commit `2635b21`, et elle est **identique à
+  celle réellement utilisée** (`adjuja-infra/.env`). Quiconque accède au dépôt
+  peut forger des tokens d'authentification valides. Le fichier a été corrigé
+  (placeholder) mais **cela ne suffit pas** : la valeur reste dans l'historique.
+  Reste à faire, décision d'exploitation de l'utilisateur : régénérer la clé
+  (`openssl rand -base64 32`), la poser dans le `.env` de prod et redéployer.
+  Effet de bord à assumer : toutes les sessions actives seront invalidées.
+
 - **Trois tests orphelins cassent la CI backend depuis le 2026-07-02, trouvé le
   2026-09-10.** `tests/unit/test_worker_config.py`, `test_worker_db.py` et
   `test_worker_scraper.py` font `import worker`, mais le commit `59e563b`
@@ -1179,7 +1198,7 @@ prod pour valider l'envoi bout en bout avec Resend actif.
   probablement son propre `.env` complet, auquel cas il ne reste qu'à compléter
   `.env.example` pour que ce soit documenté.
 
-- **Build Docker non vérifié après la découpe** (2026-09-10). `docker compose config`
+- **Build Docker non vérifié depuis le 2026-09-10**, et encore moins depuis le retour au dépôt unique et le refactoring frontend du 2026-09-12. `docker compose config`
   passe sur les deux fichiers, mais ce n'est que du parsing côté client : ça ne prouve
   pas qu'une image se construit. Docker Desktop n'était pas démarré pendant la session
   (`failed to connect to the docker API at npipe:////./pipe/dockerDesktopLinuxEngine`).
@@ -1200,12 +1219,18 @@ prod pour valider l'envoi bout en bout avec Resend actif.
   confirmée. À corriger contre le vrai guide d'intégration marchand une fois le compte CMI
   obtenu -- tout est piloté par `.env` (`CMI_*`), aucun code à toucher pour les credentials.
 - **Seat limit (utilisateurs/org)** : `SubscriptionService.check_seat_limit` existe mais
-  n'est câblé nulle part -- aucun endpoint d'invitation d'équipe n'existe encore dans le
-  code, donc rien à câbler pour l'instant.
-- **`ParapheTab.tsx`** utilise encore l'ancien `signPdf` (retiré de `api.ts`) -- doit être
-  réécrit pour utiliser `startSign`/`getSignStatus`/`cancelSign` comme `DocumentsTab.tsx`.
-- **`RemplissageTab.tsx`** utilise encore l'ancien `runFiller` (wrapper de compatibilité) --
-  même traitement asynchrone que `FillerTab.tsx` à appliquer.
+  n'est toujours câblé nulle part. **La raison notée avant n'est plus valable** :
+  `POST /org/invite` existe bel et bien (`org_routes.py:32`, feature invitation
+  d'équipe du 2026-08-22). Il y a donc désormais un endroit concret où le brancher,
+  et un plan payant peut aujourd'hui être dépassé en sièges sans que rien ne le
+  bloque (vérifié le 2026-09-12).
+- **`features/tools/components/ParapheTab.tsx`** utilise encore l'ancien `signPdf`
+  (retiré de l'API) -- doit être réécrit pour utiliser
+  `startSign`/`getSignStatus`/`cancelSign` comme `tools/components/DocumentsTab.tsx`.
+  (Chemin mis à jour après le refactoring par domaine du 2026-09-12.)
+- **`features/tools/components/RemplissageTab.tsx`** utilise encore l'ancien `runFiller`
+  (wrapper de compatibilité) -- même traitement asynchrone que
+  `tools/components/FillerTab.tsx` à appliquer.
 - **`notify_bdc`** : flag existant en DB (`notification_preferences.notify_bdc`) mais jamais
   implémenté côté logique d'envoi. Toujours pas exposé dans l'UI préférences (2026-08-20,
   décision verrouillée dans `context/feature-spec/notification-preferences/api.md` :
@@ -1215,7 +1240,7 @@ prod pour valider l'envoi bout en bout avec Resend actif.
   une table existante avec des lignes) -- à exécuter manuellement en prod avant déploiement
   du nouveau code (SQL documenté dans l'en-tête d'`init_db.py`), sinon `PUT /preferences`
   échouera sur les colonnes manquantes dès le premier appel.
-- **Rendu visuel réel de la section notifications (`ProfileTab`)** : jamais ouvert dans un
+- **Rendu visuel réel de la section notifications** (`features/company/components/NotificationPreferencesSection.tsx`, extrait de `ProfileTab` le 2026-09-12) : jamais ouvert dans un
   navigateur (2026-08-20, pas d'outil de capture d'écran disponible cette session) --
   vérifié seulement par `tsc`/`vite build`, à confirmer visuellement avant mise en prod.
 - **Cause exacte du bug `init_db.py`** (schema créé, tables non créées) non investiguée en

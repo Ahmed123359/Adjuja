@@ -13,8 +13,7 @@ import type {
   User,
 } from "../../types";
 import { exportDocx } from "../../api";
-import AoPipelinePage from "../../features/ao/AoPipelinePage"; // kept intact -- feature in progress
-import ComingSoonAo from "../../pages/ComingSoonAo";
+import AoPipelinePage from "../../features/ao/AoPipelinePage";
 import DashboardPage from "../../features/company/DashboardPage";
 import VeilleHubPage from "../../features/veille/VeilleHubPage";
 import DocumentsTab from "../../features/tools/components/DocumentsTab";
@@ -992,10 +991,11 @@ export default function RightPanel({
       {/* Top bar  always visible */}
       <ContentTopBar mainTab={mainTab} onOpenSidebar={onOpenSidebar} />
 
-      {/* Pipeline AO tab -- coming soon screen (AoPipelinePage conservé, non supprimé) */}
+      {/* Pipeline AO tab -- ouvert le 2026-09-12 pour le mode accompagné.
+          ComingSoonAo reste dans le projet, il n'est simplement plus branché ici. */}
       {mainTab === "marches" && (
         <div className="flex-1 flex flex-col overflow-hidden">
-          <ComingSoonAo />
+          <AoPipelinePage />
         </div>
       )}
 
