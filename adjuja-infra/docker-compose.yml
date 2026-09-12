@@ -93,6 +93,8 @@ services:
       MISTRAL_API_KEY: ${MISTRAL_API_KEY:-}
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      # Sans valeur, POST /billing/admin/activate repond 403.
+      BILLING_ADMIN_SECRET: ${BILLING_ADMIN_SECRET:-}
     depends_on:
       postgres:
         condition: service_healthy

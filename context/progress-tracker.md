@@ -720,6 +720,34 @@ prod pour valider l'envoi bout en bout avec Resend actif.
 
 ## En cours
 
+- **Plan debloque sur le compte de dev, et un trou de cablage corrige au passage**
+  (2026-09-12). Le compte `hafidolaadimi@gmail.com` heurtait
+  « Limite de votre plan atteinte (0) » : sans abonnement, il retombait sur le
+  plan `free`, dont `max_ao_per_month` vaut **0** (`app/billing/plans.py`).
+  - Passe par la **route d'administration officielle**
+    `POST /api/v1/billing/admin/activate` plutot que par un `INSERT` a la main :
+    c'est elle qui porte la regle metier (upsert sur `org_id`, remise a zero du
+    plafond de generation).
+  - **Trois obstacles reels rencontres, tous corriges** :
+    1. `BILLING_ADMIN_SECRET` n'etait pas defini -> la route repondait 403.
+       Genere et pose dans `adjuja-infra/.env` (non versionne).
+    2. **La variable n'etait listee dans aucun des deux `docker-compose`** : le
+       service `api` enumere ses variables une par une, donc la poser dans le
+       `.env` ne suffisait pas, le conteneur ne la voyait pas. Ajoutee dans
+       `docker-compose.dev.yml` **et** `docker-compose.yml`. **La route
+       d'activation manuelle etait donc inutilisable en prod aussi**, et
+       personne ne s'en etait apercu puisqu'elle n'avait jamais servi.
+    3. `subscriptions.org_id` est une FK vers `organizations.id`, or **aucune
+       organisation n'existait** : le compte tournait sur le repli
+       `current_user.org_id or current_user.id`. Organisation creee et
+       utilisateur rattache (`users.org_id`), ce qui rend l'etat coherent.
+  - Plan pose : `enterprise` (AO, documents et utilisateurs illimites), jusqu'au
+    2027-09-12.
+  - **Verifie par un appel reel, pas sur la reponse de la route** :
+    `GET /billing/subscription` renvoie `enterprise / active` avec
+    `limit: null`, et surtout la creation d'un AO repond **201** la ou elle
+    donnait 402. L'AO de test a ete supprime derriere (204).
+
 - **Schema `watcher` absent de la base de dev, corrige** (2026-09-12).
   `GET /watcher/aos` renvoyait 500 : `relation "watcher.scraped_aos" does not
   exist`. Verifie en base, **le schema `watcher` n'existait pas du tout**, seul

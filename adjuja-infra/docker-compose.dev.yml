@@ -69,6 +69,8 @@ services:
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
       GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
       RESEND_API_KEY: ${RESEND_API_KEY:-}
+      # Sans valeur, POST /billing/admin/activate repond 403.
+      BILLING_ADMIN_SECRET: ${BILLING_ADMIN_SECRET:-}
     depends_on:
       postgres:
         condition: service_healthy
