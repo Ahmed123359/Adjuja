@@ -1,7 +1,7 @@
 // Marches (parcours anterieur au pipeline AO).
 // Decoupe depuis l'ancien src/api.ts monolithique (2026-09-12).
 
-import { authHeaders } from '../../shared/lib/http';
+import { authHeaders, readJson } from '../../shared/lib/http';
 import type { MarcheDetail, MarcheSummary } from '../../types';
 
 // ── Marchés (protégé) ─────────────────────────────────────────────────────
@@ -12,8 +12,7 @@ export async function createMarche(data: { reference: string; acheteur: string; 
     headers: { 'Content-Type': 'application/json', ...authHeaders() },
     body:    JSON.stringify(data),
   });
-  const json = await res.json();
-  if (!res.ok) throw new Error(typeof json.detail === 'string' ? json.detail : 'Erreur création marché.');
+  const json = await readJson<MarcheSummary>(res, 'Erreur création marché.');
   return json;
 }
 
@@ -37,8 +36,7 @@ export async function uploadCps(marcheId: string, file: File): Promise<MarcheSum
     headers: authHeaders(),
     body:    form,
   });
-  const json = await res.json();
-  if (!res.ok) throw new Error(typeof json.detail === 'string' ? json.detail : 'Erreur upload CPS.');
+  const json = await readJson<MarcheSummary>(res, 'Erreur upload CPS.');
   return json;
 }
 
@@ -50,8 +48,7 @@ export async function uploadRc(marcheId: string, file: File): Promise<MarcheSumm
     headers: authHeaders(),
     body:    form,
   });
-  const json = await res.json();
-  if (!res.ok) throw new Error(typeof json.detail === 'string' ? json.detail : 'Erreur upload RC.');
+  const json = await readJson<MarcheSummary>(res, 'Erreur upload RC.');
   return json;
 }
 

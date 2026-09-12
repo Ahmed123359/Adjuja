@@ -1,7 +1,7 @@
 // Profil entreprise, documents permanents, signature et equipe (CVs).
 // Decoupe depuis l'ancien src/api.ts monolithique (2026-09-12).
 
-import { authHeaders, safeJson, wrapNetworkError } from '../../shared/lib/http';
+import { authHeaders, readJson, safeJson, wrapNetworkError } from '../../shared/lib/http';
 import type { AoTeamMember, CompanyDocument, CompanyProfile, CompanyProfileForm, ProfileCheck, StaffCv, StaffCvForm } from '../../types';
 
 // ── Profil entreprise ────────────────────────────────────────────────────────
@@ -9,8 +9,7 @@ import type { AoTeamMember, CompanyDocument, CompanyProfile, CompanyProfileForm,
 export async function fetchCompanyProfile(): Promise<CompanyProfile | null> {
   const res = await fetch('/api/v1/company-profile', { headers: authHeaders() });
   if (res.status === 404) return null;
-  const json = await res.json();
-  if (!res.ok) throw new Error('Erreur chargement profil.');
+  const json = await readJson<CompanyProfile | null>(res, 'Erreur chargement profil.');
   return json;
 }
 
@@ -20,15 +19,13 @@ export async function upsertCompanyProfile(data: CompanyProfileForm): Promise<Co
     headers: { ...authHeaders(), 'Content-Type': 'application/json' },
     body:    JSON.stringify(data),
   });
-  const json = await res.json();
-  if (!res.ok) throw new Error(typeof json.detail === 'string' ? json.detail : 'Erreur sauvegarde profil.');
+  const json = await readJson<CompanyProfile>(res, 'Erreur sauvegarde profil.');
   return json;
 }
 
 export async function checkCompanyProfile(): Promise<ProfileCheck> {
   const res = await fetch('/api/v1/company-profile/check', { headers: authHeaders() });
-  const json = await res.json();
-  if (!res.ok) throw new Error('Erreur vérification profil.');
+  const json = await readJson<ProfileCheck>(res, 'Erreur vérification profil.');
   return json;
 }
 
@@ -98,8 +95,7 @@ export async function deleteLuEtAccepte(): Promise<import('./types').CompanyProf
 
 export async function fetchCompanyDocuments(): Promise<import('./types').CompanyDocument[]> {
   const res = await fetch('/api/v1/company-documents', { headers: authHeaders() });
-  const json = await res.json();
-  if (!res.ok) throw new Error('Erreur chargement documents entreprise.');
+  const json = await readJson<import('./types').CompanyDocument[]>(res, 'Erreur chargement documents entreprise.');
   return json;
 }
 

@@ -1,7 +1,7 @@
 // Veille : appels d'offres et bons de commande (service ao-watcher).
 // Decoupe depuis l'ancien src/api.ts monolithique (2026-09-12).
 
-import { authHeaders, safeJson } from '../../shared/lib/http';
+import { authHeaders, readJson, safeJson } from '../../shared/lib/http';
 import type { EligibilityVerdict, ModePassation, NaturePrestation, ScrapedAo, ScrapedAoList, ScrapedBdc, ScrapedBdcList, Secteur, WatcherBdcFilters, WatcherFilters } from '../../types';
 
 // ── AO Watcher (port 8001, proxied via /watcher) ────────────────────────────
@@ -59,8 +59,7 @@ export async function fetchSecteurs(): Promise<Secteur[]> {
 
 export async function fetchScrapedAo(id: number): Promise<ScrapedAo> {
   const res = await fetch(`${WATCHER_BASE}/aos/${id}`, { headers: authHeaders() });
-  const json = await res.json();
-  if (!res.ok) throw new Error('AO introuvable.');
+  const json = await readJson<ScrapedAo>(res, 'AO introuvable.');
   return json;
 }
 
@@ -70,15 +69,13 @@ export async function updateScrapedAoStatus(id: number, status: string): Promise
     headers: { 'Content-Type': 'application/json', ...authHeaders() },
     body: JSON.stringify({ status }),
   });
-  const json = await res.json();
-  if (!res.ok) throw new Error(typeof json.detail === 'string' ? json.detail : 'Erreur statut.');
+  const json = await readJson<ScrapedAo>(res, 'Erreur statut.');
   return json;
 }
 
 export async function importScrapedAo(id: number): Promise<{ ao_id: string; message: string }> {
   const res = await fetch(`${WATCHER_BASE}/aos/${id}/import`, { method: 'POST', headers: authHeaders() });
-  const json = await res.json();
-  if (!res.ok) throw new Error(typeof json.detail === 'string' ? json.detail : 'Erreur import AO.');
+  const json = await readJson<{ ao_id: string; message: string }>(res, 'Erreur import AO.');
   return json;
 }
 
@@ -96,8 +93,7 @@ export async function downloadScrapedAoZip(id: number): Promise<void> {
 
 export async function analyzeScrapedAo(id: number): Promise<EligibilityVerdict> {
   const res = await fetch(`${WATCHER_BASE}/aos/${id}/verdict`, { method: 'POST', headers: authHeaders() });
-  const json = await res.json();
-  if (!res.ok) throw new Error(typeof json.detail === 'string' ? json.detail : 'Erreur analyse AO.');
+  const json = await readJson<EligibilityVerdict>(res, 'Erreur analyse AO.');
   return json;
 }
 
@@ -139,8 +135,7 @@ export async function fetchNaturesPrestation(): Promise<NaturePrestation[]> {
 
 export async function fetchScrapedBdcOne(id: number): Promise<ScrapedBdc> {
   const res = await fetch(`${WATCHER_BASE}/bdc/${id}`, { headers: authHeaders() });
-  const json = await res.json();
-  if (!res.ok) throw new Error('Bon de commande introuvable.');
+  const json = await readJson<ScrapedBdc>(res, 'Bon de commande introuvable.');
   return json;
 }
 
@@ -150,7 +145,6 @@ export async function updateBdcStatus(id: number, status: string): Promise<Scrap
     headers: { 'Content-Type': 'application/json', ...authHeaders() },
     body: JSON.stringify({ status }),
   });
-  const json = await res.json();
-  if (!res.ok) throw new Error(typeof json.detail === 'string' ? json.detail : 'Erreur statut.');
+  const json = await readJson<ScrapedBdc>(res, 'Erreur statut.');
   return json;
 }

@@ -720,6 +720,50 @@ prod pour valider l'envoi bout en bout avec Resend actif.
 
 ## En cours
 
+- **Bug 500 sur toutes les routes AO, corrige, et sa cause etait de mon fait**
+  (2026-09-12). L'utilisateur voyait « Failed to load tenders. » et
+  « Unexpected token 'I', "Internal S"... is not valid JSON ».
+  - **Cause reelle** : la migration `013` n'avait **jamais ete appliquee sur la
+    base de dev**. `ao_pipeline_steps` existait pourtant -- parce que
+    `Base.metadata.create_all` cree les tables manquantes au demarrage -- mais
+    **il n'ajoute jamais une colonne a une table existante**, donc
+    `appels_offres.mode` manquait et tout `SELECT` sur les AO echouait en 500.
+    Ce n'etait **pas** la base vide, comme l'utilisateur le supposait : une base
+    vide aurait renvoye une liste vide.
+  - **Piege PostgreSQL decouvert au passage** : l'erreur remontee etait
+    `WITHIN GROUP is required for ordered-set aggregate mode`, pas « colonne
+    inconnue ». `mode` est un **agregat statistique** de PostgreSQL, et la
+    syntaxe `table.fonction` y est equivalente a `fonction(table)` : quand la
+    colonne n'existe pas, `appels_offres.mode` est lu comme un appel de
+    fonction. Une fois la colonne creee, elle prend le pas (verifie par un vrai
+    `SELECT`). **Consequence pour la mise en prod** : si la migration `013` n'est
+    pas appliquee **avant** le deploiement du nouveau code, la prod tombera avec
+    cette meme erreur incomprehensible.
+  - Corrige en dev par `ALTER TABLE appels_offres ADD COLUMN IF NOT EXISTS mode`.
+    Verifie ensuite par un appel API reel avec un vrai JWT : `GET /api/v1/ao`
+    repond `200 []`.
+  - **La base de dev n'est toujours pas geree par Alembic** (aucune table
+    `alembic_version`) : les tables viennent de `create_all`. Tout ajout de
+    colonne futur retombera dans le meme piege. Voir Questions ouvertes.
+
+- **Messages d'erreur API rendus lisibles** (2026-09-12, demande de
+  l'utilisateur apres le bug ci-dessus). Les 46 appels faisaient
+  `await res.json()` sans garde : toute reponse non-JSON (un 500 renvoie
+  « Internal Server Error » en texte brut, un proxy peut renvoyer du HTML)
+  produisait un message de parser incomprehensible **a la place** de la vraie
+  erreur.
+  - `readJson()` ajoute a `shared/lib/http.ts` : lit le corps, privilegie le
+    `detail` de FastAPI (y compris la liste d'erreurs de validation d'un 422),
+    et sinon donne un message par statut (401 session expiree, 413 fichier trop
+    volumineux, 429 trop de requetes, 502/503/504 service indisponible, 5xx
+    erreur serveur).
+  - 26 sites migres par script, les autres formes laissees telles quelles plutot
+    que transformees en aveugle. Le typage y gagne : `readJson<T>` rend un type
+    reel la ou `res.json()` rendait `any`, et chaque appel a ete annote avec le
+    type de retour de sa fonction.
+  - Verifie sur les 6 cas reels (dont celui du jour) : chacun produit une phrase
+    comprehensible, et un 200 normal passe toujours.
+
 - **Mode accompagne -- frontend implemente + course `task_match_team` corrigee**
   (2026-09-12). Le chantier est donc complet backend ET frontend ; reste la
   verification en conditions reelles.
@@ -1164,6 +1208,16 @@ prod pour valider l'envoi bout en bout avec Resend actif.
     sans rapport avec ce chantier.
 
 ## Questions ouvertes
+
+- **La base de dev n'est pas geree par Alembic** (confirme le 2026-09-12 : aucune
+  table `alembic_version`, les tables viennent de
+  `Base.metadata.create_all`). Consequence concrete et deja vecue : un ajout de
+  **colonne** a une table existante n'est jamais applique automatiquement, et
+  l'application tombe en 500 jusqu'a ce que l'`ALTER TABLE` soit lance a la main
+  (cas de `appels_offres.mode`, migration `013`). A trancher : stamper la base de
+  dev a la revision courante pour qu'`alembic upgrade` fonctionne ensuite, ou
+  assumer le `ALTER` manuel a chaque fois. **La meme question se pose pour la
+  prod et doit etre verifiee avant le prochain deploiement.**
 
 - **`JWT_SECRET_KEY` exposée publiquement sur GitHub, non encore tournée**
   (trouvé le 2026-09-12). La clé est en clair dans `.env.example`, présent dans

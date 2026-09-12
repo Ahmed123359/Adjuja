@@ -6,6 +6,14 @@ Create Date: 2026-09-12
 
 Additive uniquement. Les AO existants gardent mode="express" (le defaut), donc
 leur comportement est strictement inchange : aucune migration de donnees.
+
+ATTENTION AU DEPLOIEMENT : cette migration doit tourner AVANT le nouveau code.
+`mode` est un agregat statistique de PostgreSQL, et `table.fonction` y est
+equivalent a `fonction(table)` : tant que la colonne n'existe pas,
+`appels_offres.mode` est lu comme un appel de fonction et toute requete sur les
+AO echoue avec `WITHIN GROUP is required for ordered-set aggregate mode`, qui ne
+ressemble en rien a « colonne inconnue ». Constate en dev le 2026-09-12.
+Une fois la colonne creee, elle prend le pas sur la fonction (verifie).
 """
 from alembic import op
 import sqlalchemy as sa
