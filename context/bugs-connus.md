@@ -34,23 +34,6 @@ et absence de signal). Le **fond** reste ouvert : un AO dont le DCE est scanné 
 peut pas être analysé automatiquement. Correction envisagée : repli OCR quand
 l'extraction renvoie un texte vide, en réutilisant la chaîne OCR du backend.
 
-### Le délai `networkidle` fait échouer le téléchargement des DCE, pas seulement ralentir
-
-`adjuja-watcher/app/modules/ao_scraper/mpe.py`, `download_document`
-
-Confirmé en réel le 2026-09-13 sur l'AO 599 (safakat, MADAEF) : après la
-soumission du formulaire de demande de DCE,
-`wait_for_load_state("networkidle", timeout=15000)` expire
-(`Timeout 15000ms exceeded`) et `download_document` renvoie une réponse vide,
-d'où `ZIP download failed: Empty response from download URL`. **3 échecs sur 4
-tentatives** observés dans la même demi-heure ; le même AO s'était téléchargé en
-27 s la veille.
-
-Le chantier `download-dce-lenteur` soupçonnait ce délai « sans mesure » ; il est
-désormais observé, et son effet est pire que supposé (échec, pas lenteur).
-Correction envisagée : attendre l'apparition du lien de téléchargement plutôt
-qu'un réseau au repos, ou poursuivre malgré l'expiration du délai.
-
 ### Règle de classement `plan` trop large
 
 `adjuja-watcher/app/workers/tasks/download_tasks.py`, `CLASSIFICATION_RULES`
@@ -92,6 +75,13 @@ programme), mais **jamais vérifié sur un AO réel**. C'est une modification du
 chord de production, que la spec `mode-accompagne/api.md` identifie comme le
 risque principal du chantier.
 
+Test de bout en bout reporté le 2026-09-13 avec celui du mode accompagné, sur
+décision de l'utilisateur : les clés d'API des modèles ne sont pas encore
+disponibles, or le pipeline en dépend dès l'analyse. Vérifié jusqu'ici au niveau
+code seulement (tests unitaires, chargement des tâches dans les workers). À
+rejouer dès que les clés sont en place, **sur un AO dont les PDF contiennent du
+texte** : l'AO 599 est scanné et s'arrêterait à l'étape d'analyse.
+
 ---
 
 ## À CONFIRMER
@@ -130,6 +120,28 @@ Supprimer des tests est un choix qui appartient à l'utilisateur.
 ---
 
 ## CORRIGÉ
+
+### Le délai `networkidle` faisait échouer le téléchargement des DCE
+
+`adjuja-watcher/app/modules/ao_scraper/mpe.py`, `download_document`
+
+Confirmé en réel le 2026-09-13 sur l'AO 599 (safakat, MADAEF) : après la
+soumission du formulaire de demande de DCE,
+`wait_for_load_state("networkidle", timeout=15000)` expirait
+(`Timeout 15000ms exceeded`) et l'exception faisait échouer tout le
+téléchargement (`Empty response from download URL`). **3 échecs sur 4
+tentatives**, chacune de 27 à 83 s. Un portail qui garde une requête en
+arrière-plan ne devient jamais « au repos », même quand le bouton de
+téléchargement est déjà là.
+
+**Corrigé et vérifié le 2026-09-13** : on attend le bouton de téléchargement
+lui-même (`wait_for(state="attached", timeout=45000)`, même sémantique de
+présence que l'ancien `count()`), avec un message explicite s'il n'apparaît
+pas. Mesure réelle en appelant `download_document` directement (sans les
+relances Celery, qui masqueraient les échecs) : **4 réussites sur 4** --
+3 fois l'AO 599 (17,3 s, 9,7 s, 8,3 s ; ZIP de 23 Mo, 7 fichiers) et un AO
+marchespublics en non-régression (12,4 s ; 3,5 Mo, 5 fichiers). Aucun autre
+`networkidle` dans le watcher.
 
 ### Le RC (et d'autres pièces) n'étaient pas détectés au classement des documents
 

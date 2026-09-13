@@ -49,6 +49,26 @@ site gouvernemental, hypothèse non confirmée). Le lancement du navigateur
 comportement incorrect -- juste jamais optimisé pour la fréquence réelle
 d'usage (un favori = un cycle complet de navigateur).
 
+## État au 2026-09-13
+
+**Fait : l'attente `networkidle` est remplacée**, et elle était pire que
+supposé. Observée en réel sur l'AO 599 (safakat) : elle ne ralentissait pas
+seulement, elle **faisait échouer** le téléchargement dès qu'elle expirait
+(3 échecs sur 4 tentatives, chacune de 27 à 83 s). `download_document` attend
+désormais le bouton de téléchargement lui-même (45 s). Mesure réelle, en appelant
+la méthode directement : **4 réussites sur 4**, 8 à 17 s par tentative (3 fois
+l'AO 599, 1 AO marchespublics en non-régression). Le flux formulaire +
+bouton décrit dans « Check » a donc été rejoué avec succès après le changement.
+
+**Pas fait, le chantier reste ouvert :**
+- la mesure **par étape** prévue à l'étape 1 (lancement du navigateur, goto,
+  formulaire, téléchargement) : seule la durée totale a été mesurée. On ne sait
+  donc toujours pas quelle part des 8 à 17 s restants revient au démarrage de
+  Chromium ;
+- la seconde piste backend, un **navigateur partagé** au niveau du worker plutôt
+  qu'un cycle complet par tâche ;
+- le **volet frontend** entier (étape courante affichée pendant l'attente).
+
 ## Depends on
 
 Rien de nouveau architecturalement -- modification localisée à

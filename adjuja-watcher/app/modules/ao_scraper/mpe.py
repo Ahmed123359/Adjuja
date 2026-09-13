@@ -417,11 +417,21 @@ class MPEPlatformScraper(IAOScraper):
                     await page.locator("input[id$='EntrepriseFormulaireDemande_email']").fill("contact@adjuja.com")
                     await page.locator("input[id$='EntrepriseFormulaireDemande_accepterConditions']").check()
                     await page.locator("input[id$='_validateButton']").click()
-                    await page.wait_for_load_state("networkidle", timeout=15000)
 
+                # On attend le bouton de telechargement lui-meme, pas le repos du reseau.
+                # L'ancien wait_for_load_state("networkidle", timeout=15000) expirait
+                # des que le portail gardait une requete en arriere-plan, et l'exception
+                # faisait echouer tout le telechargement alors que le bouton etait la ou
+                # allait l'etre (3 echecs sur 4 tentatives sur l'AO 599, 2026-09-13).
+                # "attached" reprend la semantique de l'ancien count() : present dans le DOM.
                 dl_btn = page.locator("a[id$='EntrepriseDownloadDce_completeDownload']")
-                if not await dl_btn.count():
-                    log.warning("No download button after DCE form flow", url=zip_url)
+                try:
+                    await dl_btn.first.wait_for(state="attached", timeout=45000)
+                except Exception:
+                    log.warning(
+                        "Download button did not appear after DCE form flow",
+                        url=zip_url, waited_ms=45000,
+                    )
                     return None
 
                 async with page.expect_download(timeout=30000) as dl_info:

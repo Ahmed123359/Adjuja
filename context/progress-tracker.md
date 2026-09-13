@@ -720,6 +720,24 @@ prod pour valider l'envoi bout en bout avec Resend actif.
 
 ## En cours
 
+- **Echecs de telechargement des DCE corriges** (2026-09-13). Le
+  `wait_for_load_state("networkidle", timeout=15000)` de `mpe.py::download_document`
+  expirait des que le portail gardait une requete en arriere-plan, et faisait
+  echouer tout le telechargement : 3 echecs sur 4 tentatives sur l'AO 599. On
+  attend desormais le bouton de telechargement lui-meme (45 s). **Mesure reelle :
+  4/4 reussites**, 8 a 17 s par tentative au lieu de 27 a 83 s, dont un AO
+  marchespublics en non-regression. Aucun autre `networkidle` dans le watcher.
+  C'etait l'une des deux pistes backend du chantier `download-dce-lenteur`, qui
+  **reste ouvert** : le cycle complet de Chromium lance puis detruit a chaque
+  telechargement n'est pas traite, le volet frontend (etape courante affichee)
+  n'est pas commence, et la mesure faite est de bout en bout, pas par etape
+  comme la spec le prevoyait.
+  - **Test reel du mode accompagne et de la course `task_match_team` reporte**,
+    sur decision de l'utilisateur : les cles d'API des modeles ne sont pas encore
+    disponibles. Verifie jusqu'ici au niveau code seulement (tests unitaires,
+    chargement dans les workers, build frontend) -- pas de bout en bout. A rejouer
+    sur un AO a PDF texte (l'AO 599 est scanne).
+
 - **Registre des bugs + regle « declarer puis corriger », et premiere passe de
   corrections** (2026-09-13, demande de l'utilisateur : « a n'importe quel moment
   on code, s'il y a des bugs ou des problemes de logique, on doit les resoudre
