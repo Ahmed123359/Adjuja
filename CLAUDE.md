@@ -10,7 +10,7 @@ OBLIGATOIRE, première action de toute session, avant toute autre chose :
    `context/project-overview.md` (portée produit), `context/architecture-context.md`
    (stack, limites de service, invariants), `context/code-standards.md` (conventions),
    `context/ui-context.md` (design), `context/ai-workflow-rules.md` (discipline de
-   travail).
+   travail), `context/bugs-connus.md` (défauts réels de l'application, à l'état réel).
 
 Ne pas dupliquer leur contenu ici -- les relire à chaque session, ils évoluent avec le
 projet et une copie figée dans ce fichier finirait par dériver.
@@ -133,6 +133,14 @@ jamais dans `pages/` ni dans un `components/` à la racine.
 
 ## Règles générales
 
+- **Un bug trouvé est déclaré puis corrigé.** À tout moment, si un défaut ou une
+  incohérence de logique est découvert -- y compris en travaillant sur un sujet sans
+  rapport -- le déclarer dans `context/bugs-connus.md`, puis le corriger dans la
+  foulée ou juste après la tâche en cours. La correction n'est repoussée que si elle
+  demande un arbitrage produit, ou si elle touche du code de production plus risqué
+  que le bug lui-même : la raison est alors écrite dans le registre. Ne jamais
+  terminer un échange en laissant un bug seulement mentionné à l'oral.
+  Détail de la règle : `context/ai-workflow-rules.md`.
 - Ne jamais commiter les clés API (`.env` est gitignore)
 - Toujours proposer un plan avant de modifier un service existant
 - Mettre à jour `adjuja-docs/conception/1.Roadmap/roadmap_technique.md` quand un item est terminé (`[ ]` → `[x]`)

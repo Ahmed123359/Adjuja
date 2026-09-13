@@ -79,8 +79,10 @@ function VueComprehension({ analyse }: { analyse: Record<string, unknown> | null
   if (!analyse || !Object.keys(analyse).length) {
     return <p style={{ margin: 0, fontSize: 13, color: "var(--l-dim)" }}>{t("pipeline.steps.comprehension.empty")}</p>;
   }
+  // Les cles prefixees `_` sont des metadonnees d'analyse (ex. `_analyse_meta` :
+  // lots lus, caracteres tronques), pas des champs du marche a relire.
   const champs = Object.entries(analyse).filter(
-    ([, v]) => v !== null && v !== "" && !(Array.isArray(v) && v.length === 0),
+    ([k, v]) => !k.startsWith("_") && v !== null && v !== "" && !(Array.isArray(v) && v.length === 0),
   );
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>

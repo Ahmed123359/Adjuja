@@ -404,7 +404,14 @@
       "recentTitle": "Derniers appels d'offres",
       "noAos": "Aucun appel d'offres créé.",
       "profileWarning": "Profil entreprise incomplet",
-      "profileWarningDesc": "Complétez votre profil pour activer le pipeline automatisé."
+      "profileWarningDesc": "Complétez votre profil pour activer le pipeline automatisé.",
+      "veilleTitle": "Veille",
+      "veilleNew": "nouveaux appels d'offres",
+      "veilleTotal": "Total surveillé",
+      "planTitle": "Abonnement",
+      "planLabel": "Formule",
+      "planAo": "Appels d'offres ce mois",
+      "planDocs": "Documents"
     },
     "billing": {
       "title": "Abonnement",
@@ -596,7 +603,9 @@
       "attestation_cnss": "Attestation CNSS",
       "zip_final": "Dossier complet (ZIP)",
       "autre": "Autre document",
-      "non_classe": "Non classifié"
+      "non_classe": "Non classifié",
+      "avis": "Avis d'appel d'offres",
+      "bordereau_des_prix": "Bordereau des prix"
     },
     "dossiers": {
       "source": "Documents sources",

@@ -14,12 +14,37 @@ from app.workers.utils import run_async, task_db
 
 log = structlog.get_logger(__name__)
 
+# Regles de classification, appliquees dans l'ordre : la premiere qui matche gagne.
+#
+# `rc` cherche le sigle comme MOT ISOLE, pas en debut de nom. L'ancienne regle
+# etait ancree (`^rc[_\s\-]`) et ne reconnaissait donc que les fichiers dont le
+# nom commence par "rc" -- sur un AO reel telecharge le 2026-09-12, elle ratait
+# "AO 05-26 RC Formation 2026.pdf" et 5 fichiers sur 6 finissaient en autre_doc.
+# Consequence en chaine : analysis.py lit docs.get("rc"), qui valait None, et
+# l'analyse partait avec le seul CPS sans que rien ne le signale.
+# Frontiere de mot, tolerante aux separateurs de fichiers ET de chemin : _classify
+# recoit le chemin complet du membre dans le ZIP. Les DCE rangent leurs pieces dans
+# un sous-dossier ("DCE_AOO-PM -2026-4865-VF/RC_AOO-PM ....pdf", vu en reel le
+# 2026-09-13) : sans "/" comme frontiere, "RC" n'etait jamais reconnu.
+_MOT = r"(?:^|[\s_\-.()\[\]/\\])"
+_FIN = r"(?:$|[\s_\-.()\[\]/\\])"
+
 CLASSIFICATION_RULES = [
+    # Le CPS d'abord : "CPS" est plus specifique et certains noms portent les deux.
+    # Volontairement NON ancre sur un mot : la version "mot isole" du 2026-09-13
+    # a fait perdre le CPS d'un AO safakat reel dont le nom colle le sigle a
+    # d'autres caracteres. Cette regle n'etait pas en faute, elle reste large.
     (re.compile(r"cps|cahier.*(prescription|sp[eé]cial)", re.I), "cps"),
-    (re.compile(r"^rc[_\s\-]|r[eè]glement.*consult", re.I), "rc"),
-    (re.compile(r"acte.*engagement|engagement", re.I), "acte_engagement"),
-    (re.compile(r"bordereau|bpu|dpq|prix\s*unit", re.I), "bordereau_des_prix"),
+    (re.compile(rf"{_MOT}rc{_FIN}|r[eè]glement.*consult", re.I), "rc"),
+    (re.compile(r"acte.*engagement|{}ae{}".format(_MOT, _FIN), re.I), "acte_engagement"),
+    # BOQ (bill of quantities) : nom reel du bordereau sur safakat, non reconnu avant.
+    (re.compile(rf"bordereau|bpu|dpq|prix\s*unit|bpde|{_MOT}boq{_FIN}", re.I), "bordereau_des_prix"),
+    # `plan` est conserve tel quel : trop large (il attrape "planning", "plan de
+    # formation") mais le retirer changerait le classement d'AO deja traites.
+    # Declare dans bugs-connus.md plutot que corrige au passage.
     (re.compile(r"plan|ccag|cahier.*charge", re.I), "ccag"),
+    (re.compile(r"d[eé]claration.*honneur", re.I), "declaration_honneur"),
+    (re.compile(rf"{_MOT}avis{_FIN}", re.I), "avis"),
 ]
 
 
@@ -110,7 +135,10 @@ async def _download_and_classify(ao_id: int) -> dict:
                     content_type="application/pdf",
                 )
                 classified_docs[label] = minio_key
-                log.info("File uploaded", ao_id=ao_id, label=label, key=minio_key)
+                # Le nom d'origine est perdu une fois le fichier stocke sous son label :
+                # sans cette trace, impossible de verifier ou corriger une regle de
+                # classement a partir des vrais noms (cas vecu le 2026-09-13).
+                log.info("File uploaded", ao_id=ao_id, label=label, key=minio_key, original=name)
     else:
         # Single file (PDF or other)
         ext = filename.split(".")[-1].lower() if "." in filename else "pdf"

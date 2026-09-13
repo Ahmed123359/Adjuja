@@ -720,6 +720,83 @@ prod pour valider l'envoi bout en bout avec Resend actif.
 
 ## En cours
 
+- **Registre des bugs + regle « declarer puis corriger », et premiere passe de
+  corrections** (2026-09-13, demande de l'utilisateur : « a n'importe quel moment
+  on code, s'il y a des bugs ou des problemes de logique, on doit les resoudre
+  apres les avoir declares »).
+  - **Regle posee** dans `context/ai-workflow-rules.md` (section « Bugs trouves en
+    chemin ») et rappelee dans `CLAUDE.md`. **Registre cree** :
+    `context/bugs-connus.md`, lu en debut de session, statuts OUVERT / CORRIGE /
+    REPORTE / A CONFIRMER, un bug n'y passe en CORRIGE qu'apres verification reelle.
+  - **Corriges et verifies en conditions reelles** :
+    1. **Classement des documents** (`download_tasks.py`) : la cause racine,
+       confirmee sur les vrais noms du ZIP de l'AO 599, est que `_classify` recoit
+       le **chemin complet** (`DCE_AOO-PM.../RC_....pdf`) ; `^rc` ne pouvait jamais
+       matcher. Frontieres de mot etendues a `/` et `\`, regle BOQ ajoutee.
+       Re-telechargement reel : `cps` + 5 `autre_doc` -> `cps`, `rc`,
+       `bordereau_des_prix`, `avis` + 2 `autre_doc`. Le defaut n'etait pas propre a
+       safakat (AO 14 marchespublics : 0 CPS, 0 RC). Nom d'origine desormais
+       journalise (`original=`).
+    2. **Lots 2+ jamais analyses + troncature muette**, cote veille
+       (`analysis.py`) **et** cote backend (`task_analyze_ao_context`, dont la
+       boucle ecrasait en plus chaque CPS par le suivant). Tous les lots sont lus
+       dans le budget d'origine reparti, la troncature est journalisee et remonte
+       dans `_analyse_meta`. Backend : 13 tests unitaires ajoutes
+       (`test_analyze_lots.py`), 39/39 verts.
+    3. **Chaque re-scrape planifie effacait `zip_url`** (`repository.py`) --
+       trouve en verifiant le point 1 : 509 AO marchespublics et 13/13 safakat
+       vides apres le scrape de la nuit. `coalesce` ajoute ; prouve par un upsert
+       reel d'un listing sans lien, annule en fin de transaction.
+    4. **Diagnostic faux sur les documents scannes** : CPS et RC de l'AO 599 sont
+       des scans (30 et 17 pages d'images, 0 caractere). La veille repondait
+       « Aucun CPS ni RC disponible » ; message distinct desormais, verifie en
+       appelant reellement `analyze_ao`. Signal `sans_texte` ajoute cote backend.
+  - **Deux erreurs de ma part, detectees et corrigees dans la meme passe** :
+    resserrer la regle CPS (non demande) a fait perdre le CPS d'un AO reel, faute
+    d'avoir teste sur les noms reels ; et la premiere version de `_analyse_meta`
+    levait `KeyError` sur tout AO sans RC. Aucune des deux n'a ete commitee.
+  - **Reste ouvert, consigne au registre** : pas d'OCR sur les scans (la veille
+    n'en a pas, le backend en a un non branche sur ce chemin) ; le delai
+    `networkidle` de 15 s fait **echouer** des telechargements (3 echecs sur 4
+    tentatives observes sur l'AO 599) ; regle `plan` trop large ; fichiers non-PDF
+    (ex. `BOQ...xlsx`) stockes sous `.pdf`.
+  - Les AO deja telecharges gardent leur ancien classement tant qu'ils ne sont
+    pas re-telecharges.
+
+- **Profil entreprise renseigne a partir du dossier AO reel** (2026-09-13,
+  demande de l'utilisateur pour lever le warning « Profil entreprise
+  incomplet »). Donnees extraites localement des pieces du dossier ANDZOA
+  05/2026 (`Dossier AO HAFID/`, non versionne), via PyMuPDF, puis ecrites par la
+  **vraie route API** `POST /company-profile` et non par un INSERT en base.
+  - Entreprise : ABI CONSULTING SARL (cabinet d'etudes, formations et conseils),
+    gerant AHMED BEN HAMMOU, Temara. ICE, RC, CNSS, IF, capital, RIB, adresse,
+    telephone et courriel renseignes.
+  - Sources croisees par ordre de fiabilite : declaration sur l'honneur et acte
+    d'engagement (tous deux **signes et engageants**, et concordants), plus
+    l'attestation d'enregistrement de la DRI de Rabat pour l'identifiant fiscal.
+  - **Deux incoherences trouvees entre les documents de l'utilisateur lui-meme**,
+    signalees et non arbitrees en silence :
+    1. **Capital social** : 300 000,00 MAD dans la declaration sur l'honneur ET
+       dans l'acte d'engagement, mais **30 000,00 MAD** dans la « Note sur les
+       moyens ». Un facteur dix.
+    2. **RIB** : `...2121119388470...` dans la declaration, `...2121117388470...`
+       dans la note sur les moyens. Un chiffre differe.
+    Les valeurs des deux pieces signees ont ete retenues. **A trancher par
+    l'utilisateur** : ces documents partent dans de vrais dossiers, et le profil
+    alimente desormais tous les documents generes.
+  - Ecart mineur laisse tel quel : la raison sociale est « ABI CONSULTING SARL »
+    dans les pieces signees et « ABI CONSULTING SARL AU » sur l'attestation
+    fiscale. La forme des pieces signees a ete retenue, `forme_juridique` porte
+    « SARL AU ».
+  - `gerant_cin` reste vide : absent de toutes les pieces fournies.
+  - Verifie : `GET /company-profile/check` renvoie `complet: true`, et les cinq
+    champs exiges par `start-pipeline` (`ao_routes.py:448`) sont tous renseignes,
+    donc le garde 422 ne se declenchera plus.
+  - **Piste produit relevee au passage** : tout cela a ete extrait d'une seule
+    declaration sur l'honneur. Un onboarding « deposez votre declaration sur
+    l'honneur, on prerempli votre profil » est techniquement a portee (le filler
+    fait deja l'inverse) et supprimerait la saisie manuelle de 15 champs.
+
 - **Plan debloque sur le compte de dev, et un trou de cablage corrige au passage**
   (2026-09-12). Le compte `hafidolaadimi@gmail.com` heurtait
   « Limite de votre plan atteinte (0) » : sans abonnement, il retombait sur le

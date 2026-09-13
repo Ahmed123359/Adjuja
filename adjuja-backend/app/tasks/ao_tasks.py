@@ -9,8 +9,10 @@ Phase 4e : task_sign_and_compile (signing + ZIP final)
 """
 import asyncio
 import logging
+import re
 import uuid
 from datetime import datetime, timezone
+from typing import Any, Callable
 
 from celery import shared_task
 
@@ -255,6 +257,69 @@ RÈGLES :
 """
 
 
+def _lot_rank(doc_type: str | None, prefixe: str) -> int | None:
+    """Rang de lot d'un document : 1 pour `cps`, n pour `cps_n`, None sinon.
+
+    Un AO importé depuis la veille porte des doc_type `cps`, `cps_2`, `cps_3`...
+    (labels du watcher, suffixés pour les consultations multi-lots).
+    """
+    if doc_type == prefixe:
+        return 1
+    m = re.fullmatch(rf"{re.escape(prefixe)}_(\d+)", doc_type or "")
+    return int(m.group(1)) if m else None
+
+
+def _assemble_lots(
+    docs: list[Any],
+    prefixe: str,
+    budget: int,
+    lire_texte: Callable[[Any], str],
+) -> tuple[str, dict]:
+    """Concatène TOUS les documents d'un type (tous lots) dans un budget donné.
+
+    Corrige deux défauts de task_analyze_ao_context, constatés le 2026-09-13 :
+      - la sélection ne retenait que `cps`/`rc` : les `cps_2`, `cps_3` d'un AO
+        multi-lots étaient ignorés ;
+      - la boucle écrasait chaque CPS par le suivant : sur plusieurs CPS
+        téléversés, seul le dernier était analysé ;
+    et rend la troncature visible au lieu de la taire.
+
+    Même sémantique que adjuja-watcher/app/modules/ao_scraper/analysis.py
+    (_lire_type) : le budget total est inchangé, réparti entre les lots. Les deux
+    services ne partagent pas de code, d'où cette implémentation miroir testée.
+    """
+    lots = sorted(
+        ((rang, doc) for doc in docs if (rang := _lot_rank(doc.doc_type, prefixe)) is not None),
+        key=lambda item: item[0],
+    )
+    if not lots:
+        return "", {"lots": 0}
+
+    part = max(4000, budget // len(lots))
+    morceaux: list[str] = []
+    perdu_total = 0
+    lu_total = 0
+    for i, (_, doc) in enumerate(lots, start=1):
+        texte = lire_texte(doc)
+        lu_total += min(len(texte), part)
+        perdu = max(0, len(texte) - part)
+        if perdu:
+            logger.warning(
+                "[analyze] texte tronqué avant analyse doc=%s type=%s garde=%d perdu=%d",
+                getattr(doc, "id", "?"), doc.doc_type, part, perdu,
+            )
+        perdu_total += perdu
+        entete = f"\n\n--- {doc.doc_type.upper()} ({i}/{len(lots)}) ---\n" if len(lots) > 1 else ""
+        morceaux.append(entete + texte[:part])
+
+    return "".join(morceaux), {
+        "lots": len(lots),
+        "types": [doc.doc_type for _, doc in lots],
+        "caracteres_lus": lu_total,
+        "caracteres_perdus": perdu_total,
+    }
+
+
 @shared_task(bind=True, name="app.tasks.ao_tasks.task_analyze_ao_context", max_retries=2)
 def task_analyze_ao_context(self, ao_id: str) -> dict:
     """Lit CPS + RC → produit analyse_json via Mistral.
@@ -289,26 +354,24 @@ def task_analyze_ao_context(self, ao_id: str) -> dict:
                 logger.info("[analyze] analyse_json deja present (reuse ao-watcher) ao_id=%s", ao_id)
                 return {"ao_id": ao_id, "analyse_json": existing_ao.analyse_json}
 
+        # Tous les documents de l'AO : le filtrage par type (lots compris) se fait
+        # dans _assemble_lots, une sélection SQL `in ("cps", "rc")` ignorait `cps_2`.
         async with AsyncSessionLocal() as session:
             docs_result = await session.execute(
                 select(AoDocument).where(
                     AoDocument.ao_id == ao_id,
-                    AoDocument.doc_type.in_(["cps", "rc"]),
                     AoDocument.minio_key.isnot(None),
                 )
             )
             docs = docs_result.scalars().all()
 
-        cps_text = ""
-        rc_text  = ""
-        for doc in docs:
+        def _texte(doc: AoDocument) -> str:
             pdf_bytes = mc.get_file_bytes(doc.minio_key)
             with fitz.open(stream=pdf_bytes, filetype="pdf") as pdf:
-                text = "".join(page.get_text() for page in pdf)
-            if doc.doc_type == "cps":
-                cps_text = text[:60000]
-            elif doc.doc_type == "rc":
-                rc_text  = text[:40000]
+                return "".join(page.get_text() for page in pdf)
+
+        cps_text, meta_cps = _assemble_lots(list(docs), "cps", 60000, _texte)
+        rc_text, meta_rc   = _assemble_lots(list(docs), "rc", 40000, _texte)
 
         settings = get_settings()
         client   = Mistral(api_key=settings.mistral_api_key)
@@ -323,6 +386,17 @@ def task_analyze_ao_context(self, ao_id: str) -> dict:
         except json.JSONDecodeError:
             match = re.search(r"\{.*\}", raw, re.DOTALL)
             analyse_json = json.loads(match.group()) if match else {}
+
+        # Sur quoi le modèle a réellement travaillé : sans cela une analyse
+        # partielle (lot manquant, texte tronqué) est indiscernable d'une complète.
+        # Préfixe `_` : métadonnée, filtrée par l'affichage frontend.
+        analyse_json["_analyse_meta"] = {
+            "cps": meta_cps,
+            "rc": meta_rc,
+            "partielle": bool(meta_cps.get("caracteres_perdus") or meta_rc.get("caracteres_perdus")),
+            "sans_texte": [t for t, m in (("cps", meta_cps), ("rc", meta_rc))
+                           if m.get("lots") and not m.get("caracteres_lus")],
+        }
 
         async with AsyncSessionLocal() as session:
             result = await session.execute(select(AppelOffre).where(AppelOffre.id == ao_id))

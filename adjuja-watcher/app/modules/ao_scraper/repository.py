@@ -172,8 +172,14 @@ class AoRepository:
                 "region": stmt.excluded.region,
                 "budget_estime": stmt.excluded.budget_estime,
                 "caution": stmt.excluded.caution,
-                "zip_url": stmt.excluded.zip_url,
                 "secteur_codes": stmt.excluded.secteur_codes,
+                # zip_url vient de l'enrichissement de la page detail, pas du listing :
+                # un re-scrape planifie qui ne le porte pas l'ecrasait avec NULL, et
+                # le telechargement echouait ensuite avec "has no zip_url" sur des AO
+                # qui en avaient un (constate le 2026-09-13 : 509 AO marchespublics
+                # et 13/13 safakat vides apres le scrape de la nuit). Meme protection
+                # que date_publication / ville / mode_passation ci-dessous.
+                "zip_url": func.coalesce(stmt.excluded.zip_url, ScrapedAo.zip_url),
                 "updated_at": datetime.now(timezone.utc),
                 # Preserve non-null values : listing peut ne pas avoir ville/date_publication/
                 # mode_passation (detail-only, absent de listing.cols dans le config scraper),

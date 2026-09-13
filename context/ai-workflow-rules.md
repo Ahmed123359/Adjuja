@@ -87,6 +87,33 @@ discipline qui en découle :
   explicitement. Si un point est ambigu, le documenter dans `progress-tracker.md` sous
   Questions ouvertes plutôt que de deviner silencieusement.
 
+## Bugs trouvés en chemin : déclarer, puis corriger
+
+Règle posée par l'utilisateur le 2026-09-13, après avoir constaté que plusieurs
+défauts réels avaient été **trouvés et documentés sans jamais être corrigés**.
+
+À tout moment, si un bug, une erreur ou une incohérence de logique est découvert
+dans l'application -- y compris en travaillant sur un sujet sans rapport :
+
+1. **Le déclarer immédiatement** dans `context/bugs-connus.md` : ce qu'il casse,
+   où, comment il a été trouvé, et s'il est reproduit ou seulement soupçonné.
+   Une ligne ajoutée au registre coûte trente secondes ; un défaut trouvé puis
+   oublié coûte la confiance dans le produit.
+2. **Le corriger**, dans la foulée si c'est du même ordre de grandeur que la
+   tâche en cours, ou juste après elle. Ne pas se contenter de le signaler.
+3. **Le vérifier réellement** avant de le marquer corrigé, selon la discipline
+   de « Vérifier en réel, pas supposer » plus haut.
+
+La correction n'est repoussée que dans deux cas, et elle est alors **notée comme
+telle dans le registre avec sa raison** :
+
+- elle demande un arbitrage produit que seul l'utilisateur peut rendre ;
+- elle touche du code en production dont la modification est plus risquée que le
+  bug lui-même, et mérite d'être menée comme un chantier à part.
+
+Ne jamais terminer un échange en laissant un bug découvert seulement mentionné à
+l'oral : ce qui n'est pas écrit dans le registre est perdu.
+
 ## Pas de subagents
 
 Ne jamais utiliser l'outil Agent sur ce projet (règle déjà en mémoire, rappelée ici car

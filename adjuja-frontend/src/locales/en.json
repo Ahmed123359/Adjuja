@@ -404,7 +404,14 @@
       "recentTitle": "Recent tenders",
       "noAos": "No tenders created.",
       "profileWarning": "Incomplete company profile",
-      "profileWarningDesc": "Complete your profile to activate the automated pipeline."
+      "profileWarningDesc": "Complete your profile to activate the automated pipeline.",
+      "veilleTitle": "Watch",
+      "veilleNew": "new tenders",
+      "veilleTotal": "Total tracked",
+      "planTitle": "Subscription",
+      "planLabel": "Plan",
+      "planAo": "Tenders this month",
+      "planDocs": "Documents"
     },
     "billing": {
       "title": "Subscription",
@@ -594,7 +601,9 @@
       "attestation_fiscale": "Tax certificate",
       "zip_final": "Complete file (ZIP)",
       "autre": "Other document",
-      "non_classe": "Unclassified"
+      "non_classe": "Unclassified",
+      "avis": "Tender notice",
+      "bordereau_des_prix": "Price schedule"
     },
     "dossiers": {
       "source": "Source documents",
