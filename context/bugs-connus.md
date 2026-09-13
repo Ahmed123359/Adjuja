@@ -100,6 +100,20 @@ Le renommage est certain ; reste à établir l'impact en aval (tout
 `fitz.open(..., filetype="pdf")` sur ce fichier échouera) avant de passer en
 OUVERT.
 
+### En dev, le worker de veille ne peut pas joindre le service de notifications
+
+`adjuja-infra/docker-compose.dev.yml`, service `ao-watcher-worker`
+
+Relevé le 2026-09-13 en lisant le bloc du service :
+`NOTIFICATION_SERVICE_URL: http://localhost:8002`. Dans un conteneur,
+`localhost` désigne le conteneur lui-même, pas le service de notifications ; et
+ce service ne figure de toute façon pas dans le compose de dev. Tout appel du
+worker vers les notifications échoue donc en dev.
+
+À confirmer : quel code du worker appelle réellement ce service et avec quel
+effet visible, et si la prod utilise bien l'adresse du réseau Docker. Sans
+incidence sur la prod tant que ce second point est vérifié.
+
 ### Bucket MinIO non garanti côté watcher
 
 `download_tasks.py` / `download_bdc_tasks.py` n'appellent pas `_ensure_bucket()`

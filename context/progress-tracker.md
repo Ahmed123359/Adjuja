@@ -1351,6 +1351,17 @@ prod pour valider l'envoi bout en bout avec Resend actif.
 
 ## Questions ouvertes
 
+- **Les cles d'API des modeles sont des valeurs de remplissage en dev** (verifie le
+  2026-09-13 sans afficher les valeurs) : `MISTRAL_API_KEY` fait 3 caracteres,
+  `OPENAI_API_KEY` 6, `ANTHROPIC_API_KEY` 10, dans `api` comme dans `celery-io`.
+  La mention plus bas selon laquelle `MISTRAL_API_KEY` etait « presente » dans le
+  conteneur `api` pour l'ingestion RAG etait donc trompeuse : la variable existe,
+  la cle n'est pas valide. Tout ce qui appelle un modele (analyse des AO, mode
+  accompagne, note methodologique, chatbot, ingestion RAG) est inverifiable en
+  conditions reelles tant que de vraies cles ne sont pas posees. Precision
+  verifiee au passage : l'analyse de la veille tourne dans `ao-watcher-api`
+  (appelee depuis `router.py`), pas dans le worker.
+
 - **Aucune des deux bases (app et watcher) n'est geree par un outil de migration**
   (confirme le 2026-09-12 : aucune table `alembic_version`, les tables viennent
   de `Base.metadata.create_all`, et le schema `watcher` se cree par un
