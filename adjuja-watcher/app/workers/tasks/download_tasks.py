@@ -1,11 +1,14 @@
 import io
 import re
+import time
 import zipfile
+from collections.abc import Callable
 from urllib.parse import parse_qs, urlparse
 
 import structlog
 from minio import Minio
 
+from app.core import download_progress
 from app.core.config import settings
 from app.modules.ao_scraper.mpe import MPEPlatformScraper
 from app.modules.ao_scraper.repository import AoRepository
@@ -69,38 +72,77 @@ def _minio_client() -> Minio:
     return client
 
 
+_MAX_RETRIES = 3
+_RETRY_DELAY_S = 60
+
+
+class PermanentDownloadError(Exception):
+    """Erreur qu'aucune relance ne peut corriger (AO inexistant, aucun lien).
+    Avant, toute erreur etait relancee 3 fois a 60 s d'intervalle : l'utilisateur
+    attendait ~3 min une erreur connue des la premiere seconde (logs reels du
+    2026-09-13, AO 599)."""
+
+
 @celery_app.task(
     name="app.workers.tasks.download_tasks.download_ao_zip",
     bind=True,
-    max_retries=3,
-    default_retry_delay=60,
+    max_retries=_MAX_RETRIES,
+    default_retry_delay=_RETRY_DELAY_S,
 )
 def download_ao_zip(self, ao_id: int) -> dict:
-    log.info("Starting ZIP download", ao_id=ao_id)
+    tentative = self.request.retries + 1
+    max_tentatives = self.max_retries + 1
+    log.info("Starting ZIP download", ao_id=ao_id, tentative=tentative)
+
+    def on_step(etape: str) -> None:
+        download_progress.set_step("ao", ao_id, etape, tentative=tentative, max_tentatives=max_tentatives)
+
     try:
-        result = run_async(_download_and_classify(ao_id))
+        result = run_async(_download_and_classify(ao_id, on_step))
+        download_progress.clear("ao", ao_id)
         log.info("ZIP download complete", ao_id=ao_id, result=result)
         return result
-    except Exception as exc:
-        log.error("ZIP download failed", ao_id=ao_id, error=str(exc))
-        # Persist error to DB before retry
+    except PermanentDownloadError as exc:
+        log.error("ZIP download impossible, no retry", ao_id=ao_id, error=str(exc))
         run_async(_save_error(ao_id, str(exc)))
-        raise self.retry(exc=exc)
+        download_progress.clear("ao", ao_id)
+        return {"ao_id": ao_id, "error": str(exc)}
+    except Exception as exc:
+        if self.request.retries < self.max_retries:
+            # L'erreur n'est PAS ecrite en base avant une relance : l'ecran la
+            # prenait pour un echec definitif et cessait de suivre le telechargement,
+            # meme quand la tentative suivante reussissait.
+            log.warning("ZIP download failed, retrying", ao_id=ao_id, tentative=tentative, error=str(exc))
+            download_progress.set_step(
+                "ao", ao_id, "nouvelle_tentative",
+                tentative=tentative, max_tentatives=max_tentatives,
+                prochaine_tentative=time.time() + _RETRY_DELAY_S,
+            )
+            raise self.retry(exc=exc)
+        log.error("ZIP download failed, no retry left", ao_id=ao_id, tentative=tentative, error=str(exc))
+        run_async(_save_error(ao_id, str(exc)))
+        download_progress.clear("ao", ao_id)
+        raise
 
 
-async def _download_and_classify(ao_id: int) -> dict:
+async def _download_and_classify(ao_id: int, on_step: Callable[[str], None] | None = None) -> dict:
     async with task_db() as db:
         repo = AoRepository(db)
         ao = await repo.get_by_id(ao_id)
 
-    if not ao or not ao.zip_url:
-        raise ValueError(f"AO {ao_id} has no zip_url")
+    if not ao:
+        raise PermanentDownloadError(f"AO {ao_id} introuvable.")
+    if not ao.zip_url:
+        raise PermanentDownloadError("Aucun lien de téléchargement connu pour cet AO.")
 
     scraper = MPEPlatformScraper(ao.source)
-    result = await scraper.download_document(ao.zip_url)
+    result = await scraper.download_document(ao.zip_url, on_step=on_step)
     if not result:
-        raise ValueError("Empty response from download URL")
+        raise ValueError("Le portail n'a renvoyé aucun fichier.")
     content, filename = result
+
+    if on_step:
+        on_step("classement")
 
     # Classify and upload
     classified_docs = {}
@@ -180,16 +222,21 @@ def refresh_and_download_ao_zip(self, ao_id: int) -> dict:
     une AO sans zip_url connu : re-visite la page de detail en direct avant
     de conclure qu'il n'y a vraiment rien a telecharger."""
     log.info("Refreshing AO detail before giving up on download", ao_id=ao_id)
+    download_progress.set_step("ao", ao_id, "verification_lien")
     try:
         found = run_async(_refresh_zip_url(ao_id))
         if found:
             log.info("zip_url found on refresh, downloading", ao_id=ao_id)
+            download_progress.set_step("ao", ao_id, "en_file")
             download_ao_zip.delay(ao_id)
         else:
             log.info("No zip_url on refresh either", ao_id=ao_id)
+            download_progress.clear("ao", ao_id)
         return {"ao_id": ao_id, "zip_url_found": found}
     except Exception as exc:
         log.error("Refresh failed", ao_id=ao_id, error=str(exc))
+        if self.request.retries >= self.max_retries:
+            download_progress.clear("ao", ao_id)
         raise self.retry(exc=exc)
 
 

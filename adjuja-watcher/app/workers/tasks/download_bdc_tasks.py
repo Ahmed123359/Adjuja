@@ -1,10 +1,12 @@
 import io
 import random
+import time
 
 import httpx
 import structlog
 from minio import Minio
 
+from app.core import download_progress
 from app.core.config import settings
 from app.modules.bdc_scraper.repository import BdcRepository
 from app.workers.celery_app import celery_app
@@ -15,6 +17,14 @@ log = structlog.get_logger(__name__)
 USER_AGENTS = [
     "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/129.0.0.0 Safari/537.36",
 ]
+
+_MAX_RETRIES = 3
+_RETRY_DELAY_S = 60
+
+
+class PermanentDownloadError(Exception):
+    """Erreur qu'aucune relance ne peut corriger (BDC inexistant, aucun document).
+    Meme regle que download_tasks.py."""
 
 
 def _minio_client() -> Minio:
@@ -33,23 +43,45 @@ def _minio_client() -> Minio:
 @celery_app.task(
     name="app.workers.tasks.download_bdc_tasks.download_bdc_document",
     bind=True,
-    max_retries=3,
-    default_retry_delay=60,
+    max_retries=_MAX_RETRIES,
+    default_retry_delay=_RETRY_DELAY_S,
 )
 def download_bdc_document(self, bdc_id: int) -> dict:
     """Telecharge le document unique d'un BDC vers MinIO, declenche au
     moment ou l'utilisateur le favorise. Confirme anonyme (curl sans
     cookies -> 200 + vrai zip) -- pas de classification multi-fichiers
     necessaire ici, contrairement aux AOs : un seul fichier stocke tel quel."""
-    log.info("Starting BDC document download", bdc_id=bdc_id)
+    tentative = self.request.retries + 1
+    max_tentatives = self.max_retries + 1
+    log.info("Starting BDC document download", bdc_id=bdc_id, tentative=tentative)
+    download_progress.set_step(
+        "bdc", bdc_id, "reception_fichier", tentative=tentative, max_tentatives=max_tentatives,
+    )
     try:
         result = run_async(_download(bdc_id))
+        download_progress.clear("bdc", bdc_id)
         log.info("BDC document download complete", bdc_id=bdc_id, result=result)
         return result
-    except Exception as exc:
-        log.error("BDC document download failed", bdc_id=bdc_id, error=str(exc))
+    except PermanentDownloadError as exc:
+        log.error("BDC document download impossible, no retry", bdc_id=bdc_id, error=str(exc))
         run_async(_save_error(bdc_id, str(exc)))
-        raise self.retry(exc=exc)
+        download_progress.clear("bdc", bdc_id)
+        return {"bdc_id": bdc_id, "error": str(exc)}
+    except Exception as exc:
+        if self.request.retries < self.max_retries:
+            # Pas d'ecriture de l'erreur en base avant une relance : l'ecran la
+            # prendrait pour definitive (voir download_tasks.py).
+            log.warning("BDC document download failed, retrying", bdc_id=bdc_id, tentative=tentative, error=str(exc))
+            download_progress.set_step(
+                "bdc", bdc_id, "nouvelle_tentative",
+                tentative=tentative, max_tentatives=max_tentatives,
+                prochaine_tentative=time.time() + _RETRY_DELAY_S,
+            )
+            raise self.retry(exc=exc)
+        log.error("BDC document download failed, no retry left", bdc_id=bdc_id, error=str(exc))
+        run_async(_save_error(bdc_id, str(exc)))
+        download_progress.clear("bdc", bdc_id)
+        raise
 
 
 async def _download(bdc_id: int) -> dict:
@@ -57,8 +89,10 @@ async def _download(bdc_id: int) -> dict:
         repo = BdcRepository(db)
         bdc = await repo.get_by_id(bdc_id)
 
-    if not bdc or not bdc.document_url:
-        raise ValueError(f"BDC {bdc_id} has no document_url")
+    if not bdc:
+        raise PermanentDownloadError(f"Bon de commande {bdc_id} introuvable.")
+    if not bdc.document_url:
+        raise PermanentDownloadError("Aucun document publié pour ce bon de commande.")
 
     headers = {
         "User-Agent": random.choice(USER_AGENTS),
@@ -70,7 +104,7 @@ async def _download(bdc_id: int) -> dict:
         content = resp.content
 
     if not content:
-        raise ValueError("Empty response from document_url")
+        raise ValueError("Le portail n'a renvoyé aucun fichier.")
 
     filename = (bdc.document_nom or "document").strip()
     minio_key = f"bdc-watcher/{bdc_id}/{filename}"

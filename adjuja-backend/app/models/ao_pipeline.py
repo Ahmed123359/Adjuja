@@ -7,6 +7,18 @@ class AoCreate(BaseModel):
     acheteur: str = ""
     objet: str = ""
     custom_instructions: str | None = None
+    date_limite: str | None = None
+
+
+class AoUpdate(BaseModel):
+    """Modification partielle d'un AO. Volontairement limitee a ce que
+    l'utilisateur saisit : statut, pipeline_pct et mode appartiennent au
+    pipeline et ne doivent pas etre modifiables de l'exterieur."""
+    reference: str | None = None
+    acheteur: str | None = None
+    objet: str | None = None
+    date_limite: str | None = None
+    custom_instructions: str | None = None
 
 
 class AoDocumentOut(BaseModel):
@@ -29,6 +41,7 @@ class AoSummary(BaseModel):
     pipeline_pct: int
     created_at: str
     updated_at: str
+    date_limite: str | None = None
     # "express" (un clic, tout s'enchaîne) ou "accompagne" (7 étapes validées)
     mode: str = "express"
 

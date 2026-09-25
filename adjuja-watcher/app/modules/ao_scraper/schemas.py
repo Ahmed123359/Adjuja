@@ -3,6 +3,8 @@ from decimal import Decimal
 
 from pydantic import BaseModel, ConfigDict
 
+from app.core.download_progress import DownloadProgressOut
+
 
 class AoOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
@@ -31,6 +33,8 @@ class AoOut(BaseModel):
     classified_docs: dict | None
     secteur_codes: list[str] | None
     analyse_json: dict | None
+    # Renseigne seulement par GET /aos/{id}, pendant un telechargement en cours.
+    download_progress: DownloadProgressOut | None = None
 
 
 class AoListOut(BaseModel):

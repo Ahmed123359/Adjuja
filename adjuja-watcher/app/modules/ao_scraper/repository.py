@@ -193,11 +193,14 @@ class AoRepository:
         result = await self.db.execute(stmt)
         return result.rowcount
 
-    async def update_status(self, ao_id: int, status: str) -> ScrapedAo | None:
+    async def update_status(self, ao_id: int, status: str, clear_zip_error: bool = False) -> ScrapedAo | None:
+        values: dict = {"status": status, "updated_at": datetime.now(timezone.utc)}
+        if clear_zip_error:
+            values["zip_error"] = None
         await self.db.execute(
             update(ScrapedAo)
             .where(ScrapedAo.id == ao_id)
-            .values(status=status, updated_at=datetime.now(timezone.utc))
+            .values(**values)
         )
         await self.db.commit()
         return await self.get_by_id(ao_id)

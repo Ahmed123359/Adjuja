@@ -9,7 +9,7 @@ import { useIsMobile } from "../../../hooks/useIsMobile";
 import { abandonAo, rerunAoStep, validateAoStep } from "../api";
 import type { AoResponse, AoStepKey } from "../types";
 import { useStepPolling } from "../hooks/useStepPolling";
-import { StepList } from "./StepList";
+import { StepBar } from "./StepBar";
 import { StepPanel } from "./StepPanel";
 import { StepAssistant } from "./StepAssistant";
 
@@ -84,7 +84,7 @@ export function GuidedPipeline({
 
   if (loading && !steps.length) {
     return (
-      <p style={{ margin: 0, fontSize: 13, color: "var(--l-dim)" }}>{t("pipeline.steps.loading")}</p>
+      <p style={{ margin: 0, fontSize: 13, color: "var(--adj-ink-4)" }}>{t("pipeline.steps.loading")}</p>
     );
   }
   if (!steps.length) return null;
@@ -96,9 +96,9 @@ export function GuidedPipeline({
           style={{
             padding: "11px 14px",
             borderRadius: 9,
-            background: "var(--l-error-bg)",
-            border: "1px solid var(--l-error-border)",
-            color: "var(--l-error)",
+            background: "var(--adj-neg-tint)",
+            border: "1px solid var(--adj-neg)",
+            color: "var(--adj-neg)",
             fontSize: 12.5,
           }}
         >
@@ -106,30 +106,28 @@ export function GuidedPipeline({
         </div>
       )}
 
-      <div
-        style={{
-          display: "flex",
-          flexDirection: isMobile ? "column" : "row",
-          gap: 14,
-          alignItems: "flex-start",
-        }}
-      >
-        <div style={{ width: isMobile ? "100%" : 210, flexShrink: 0 }}>
-          <StepList steps={steps} activeKey={activeKey} onSelect={setSelected} />
-        </div>
+      <div style={{ display: "flex", flexDirection: "column", gap: "var(--adj-4)", minWidth: 0 }}>
+        <StepBar steps={steps} activeKey={activeKey} onSelect={setSelected} />
 
-        <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: 14 }}>
+        <div className="adj-step-split" style={{ minWidth: 0 }}>
+          <div style={{ minWidth: 0, display: "flex", flexDirection: "column", gap: "var(--adj-4)" }}>
+            {activeStep && (
+              <StepPanel
+                ao={ao}
+                step={activeStep}
+                busy={busy}
+                onValidate={handleValidate}
+                onAbandon={handleAbandon}
+                onRerun={handleRerun}
+              />
+            )}
+          </div>
+
           {activeStep && (
-            <StepPanel
-              ao={ao}
-              step={activeStep}
-              busy={busy}
-              onValidate={handleValidate}
-              onAbandon={handleAbandon}
-              onRerun={handleRerun}
-            />
+            <div style={{ minWidth: 0, minHeight: 420 }}>
+              <StepAssistant aoId={ao.id} stepKey={activeStep.step_key} />
+            </div>
           )}
-          {activeStep && <StepAssistant aoId={ao.id} stepKey={activeStep.step_key} />}
         </div>
       </div>
     </div>

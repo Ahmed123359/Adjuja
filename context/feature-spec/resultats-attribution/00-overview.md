@@ -18,6 +18,32 @@ TTC. Le portail principal (pas seulement BDC) expose la même donnée via
 recherche, pas encore fetché en direct avec le vrai formulaire ASP.NET
 postback -- voir Open Questions).
 
+## 🔴 Statut : en pause (point rouge, décision utilisateur du 2026-09-14)
+
+Rien n'est implémenté. `api.md` est écrit mais trop technique pour l'utilisateur :
+à reformuler en langage simple (schéma : AO publié -> ouverture des plis ->
+extrait de PV -> résultat définitif) avant de reprendre. Décision attendue :
+extraire ou non les fichiers joints (OCR + Word + IA), et pour quels secteurs.
+
+## Corrigé le 2026-09-13 par un test réel (voir `api.md`)
+
+Trois hypothèses de ce fichier se sont révélées fausses en interrogeant les
+portails, avant toute écriture de code :
+
+- `&AvisAttribution` ne filtre rien : le portail redirige vers `&AllAnn`. Le
+  vrai filtre est le select `annonceType` du formulaire (`4` = résultat
+  définitif, `5` = extrait de PV).
+- Le HTML des portails AO ne contient **ni attributaire, ni montant, ni
+  soumissionnaires**. Tout est dans une pièce jointe par annonce, et sur
+  l'échantillon : résultats définitifs scannés 6/6, extraits de PV 3 `.doc`,
+  2 scans, 1 PDF texte. Seul le module BDC donne attributaire + montant en HTML.
+- Une annonce de résultat a son **propre** `refConsultation`, qui ne correspond
+  à aucune ligne de `scraped_aos` (0/10 vérifié en SQL).
+
+Décision utilisateur du 2026-09-13 : **scraping des nouveaux résultats
+seulement**, pas l'historique complet. La question « backfill » plus bas est
+donc tranchée.
+
 ## Depends on
 
 - `app/modules/ao_scraper/mpe.py::MPEPlatformScraper` -- même scraper

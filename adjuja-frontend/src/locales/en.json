@@ -374,22 +374,200 @@
   "app": {
     "nav": {
       "dashboard": "Dashboard",
+      "company": "My company",
       "tenders": "My tenders",
       "veille": "Watch",
       "tools": "Tools",
       "settings": "Settings",
       "logout": "Sign out",
       "lightMode": "Light mode",
-      "darkMode": "Dark mode"
+      "darkMode": "Dark mode",
+      "sectionWork": "Workspace",
+      "sectionSettings": "Company",
+      "collapse": "Collapse menu",
+      "expand": "Expand menu",
+      "openMenu": "Open menu",
+      "tagline": "Public tenders",
+      "tasks": "Tasks"
     },
     "topbar": {
-      "offres": "Dashboard",
+      "accueil": "Dashboard",
+      "entreprise": "My company",
+      "offres": "Generation",
       "marches": "My tenders",
       "veille": "Public tenders watch",
-      "outils": "Tools"
+      "outils": "Tools",
+      "searchPlaceholder": "Search a tender…",
+      "searchClear": "Clear search",
+      "searchEmpty": "No tender matches.",
+      "sub": {
+        "accueil": "Your deadlines, your tasks and the team's activity.",
+        "entreprise": "Profile, members and company references.",
+        "offres": "Assisted drafting of your technical offer.",
+        "marches": "Your tenders and how far along they are.",
+        "veille": "Public tenders monitored for you.",
+        "outils": "Signatures, initials and document filling.",
+        "taches": "What the team is carrying, and by when."
+      },
+      "taches": "Team tasks",
+      "searchShort": "Search",
+      "searchRecent": "Recent searches",
+      "searchHint": "Type a reference, a subject or a buyer.",
+      "newTender": "New tender"
+    },
+    "status": {
+      "online": "Service online",
+      "offline": "Service unreachable",
+      "connecting": "Connecting",
+      "checkedAt": "checked at {{time}}",
+      "short": {
+        "online": "online",
+        "offline": "unreachable",
+        "connecting": "connecting"
+      }
     }
   },
   "dashboard": {
+    "home": {
+      "title": "Dashboard",
+      "subtitle": "Your deadlines, your tasks and your team's activity.",
+      "calendar": "Calendar",
+      "upcoming": "Upcoming deadlines",
+      "noUpcoming": "No upcoming deadline.",
+      "noEventThatDay": "Nothing on that day.",
+      "tasks": "Tasks",
+      "loading": "Loading...",
+      "today": "Today",
+      "prevMonth": "Previous month",
+      "nextMonth": "Next month",
+      "weekdays": [
+        "Mon",
+        "Tue",
+        "Wed",
+        "Thu",
+        "Fri",
+        "Sat",
+        "Sun"
+      ],
+      "eventType": {
+        "ao_deadline": "Submission deadlines",
+        "task": "Tasks"
+      },
+      "stats": {
+        "inProgress": "Tenders in preparation",
+        "done": "Tenders finalised",
+        "myTasks": "My open tasks",
+        "overdue": "Overdue tasks",
+        "nextDeadline": "Next deadline",
+        "ofTotal": "of {{total}} tenders",
+        "nextOn": "next one on {{date}}",
+        "ofTotalShort": "of {{total}}",
+        "toHandle": "to handle",
+        "shareOfTotal": "{{pct}}% of total",
+        "nothingLate": "no overdue task",
+        "ofTeamTasks": "of {{total}} across the whole team",
+        "ofMyTasks": "of my {{total}} open tasks"
+      },
+      "task": {
+        "new": "New task",
+        "mine": "My tasks",
+        "all": "All",
+        "titleLabel": "Title",
+        "titlePlaceholder": "What needs to be done",
+        "dueLabel": "Due date",
+        "assigneeLabel": "Assigned to",
+        "aoLabel": "Tender",
+        "noAo": "None",
+        "unassigned": "Unassigned",
+        "create": "Create",
+        "cancel": "Cancel",
+        "delete": "Delete task",
+        "markDone": "Mark as done",
+        "emptyMine": "No task assigned to you.",
+        "emptyAll": "No task yet.",
+        "save": "Save",
+        "edit": "Edit task",
+        "late": "overdue",
+        "statusLabel": "Status",
+        "status": {
+          "a_faire": "To do",
+          "en_cours": "In progress",
+          "faite": "Done"
+        },
+        "add": "Add",
+        "mineShort": "Mine",
+        "teamShort": "Whole team"
+      },
+      "noDeadline": "No deadline",
+      "unlimited": "unlimited",
+      "table": {
+        "reference": "Reference",
+        "object": "Subject",
+        "status": "Status",
+        "due": "Due"
+      },
+      "greeting": "Hello {{name}}",
+      "greetingNeutral": "Hello",
+      "chart": {
+        "loadTitle": "Upcoming deadlines",
+        "loadSubtitle": "Submission deadlines and tasks over the next {{days}} days",
+        "loadEmpty": "Nothing due in this period.",
+        "loadTotal": "{{count}} deadlines over the next {{days}} days",
+        "funnelTitle": "Tender progress",
+        "funnelSubtitle": "How many tenders reached each stage"
+      },
+      "actions": {
+        "browseVeille": "Browse watch list",
+        "openTasks": "Open tasks"
+      },
+      "dueToday": "today",
+      "dueTomorrow": "tomorrow",
+      "dueInDays": "in {{count}} days",
+      "dueLate": "{{count}} days overdue",
+      "ledger": {
+        "inProgress": "tenders in progress",
+        "done": "tenders completed",
+        "myTasks": "tasks for me",
+        "overdue": "overdue",
+        "nextDeadline": "Next deadline",
+        "nothingPlanned": "Nothing planned yet"
+      },
+      "agenda": {
+        "title": "Next {{count}} days",
+        "today": "today",
+        "nothingToday": "Nothing planned",
+        "empty": "Nothing planned in this period.",
+        "earlier": "Previous period",
+        "later": "Next period",
+        "back": "Back to today"
+      },
+      "activity": {
+        "recent": "Latest tenders",
+        "seeAll": "See all",
+        "follow": "Follow-up",
+        "open": "Open",
+        "veilleNew": "new tenders to review",
+        "veilleOf": "out of {{total}} monitored",
+        "plan": "Subscription",
+        "aoThisMonth": "Tenders this month",
+        "documents": "Documents",
+        "noLimit": "No cap on this plan.",
+        "noDate": "no date",
+        "completeProfile": "Complete profile"
+      },
+      "risk": {
+        "title": "Tenders at risk",
+        "subtitle": "Deadline close and file running late",
+        "empty": "No tender in difficulty.",
+        "done": "{{pct}}% of the file done",
+        "noDeadlineCount": "{{count}} active tenders have no deadline: their risk cannot be computed.",
+        "level": {
+          "en_retard": "Overdue",
+          "critique": "Critical",
+          "tendu": "Tight"
+        }
+      }
+    },
     "title": "Dashboard",
     "tabs": {
       "overview": "Overview",
@@ -405,7 +583,7 @@
       "noAos": "No tenders created.",
       "profileWarning": "Incomplete company profile",
       "profileWarningDesc": "Complete your profile to activate the automated pipeline.",
-      "veilleTitle": "Watch",
+      "veilleTitle": "Public tender watch",
       "veilleNew": "new tenders",
       "veilleTotal": "Total tracked",
       "planTitle": "Subscription",
@@ -581,15 +759,19 @@
       "cancelConfirm": "Cancel the running pipeline? You can retry afterwards.",
       "cancelling": "Cancelling...",
       "deleteBtn": "Delete",
-      "deleteConfirmDetail": "Delete this tender and all its documents?"
+      "deleteConfirmDetail": "Delete this tender and all its documents?",
+      "stepOf": "Step {{step}} of {{total}}",
+      "back": "Back to the list",
+      "confirm": "Confirm"
     },
     "status": {
       "brouillon": "Draft",
       "en_analyse": "Analysing",
       "en_traitement": "Processing",
-      "termine": "Done",
-      "erreur": "Error",
-      "abandonne": "Dropped"
+      "termine": "Finalised",
+      "erreur": "Failed",
+      "abandonne": "Dropped",
+      "en_attente": "Waiting"
     },
     "docTypes": {
       "cps": "CPS",
@@ -690,13 +872,13 @@
       }
     },
     "assist": {
-      "title": "Assistant for this step",
+      "title": "Assistant",
       "show": "Open",
       "hide": "Close",
-      "placeholder": "Ask a question about this tender...",
+      "placeholder": "Ask a question about this step…",
       "send": "Send",
-      "thinking": "Thinking...",
-      "sources": "Sources:",
+      "thinking": "The assistant is thinking…",
+      "sources": "Sources",
       "failed": "The assistant could not answer.",
       "role": {
         "documents": "I can explain what each document type is for in a public tender and help you check how they were classified.",
@@ -706,7 +888,58 @@
         "redaction": "I can suggest concrete rewordings for your methodology note.",
         "remplissage": "I can spot a value that looks inconsistent with your profile or with the tender.",
         "signature": "I can check with you that the package is complete before submission."
-      }
+      },
+      "you": "You",
+      "clear": "Clear conversation",
+      "close": "Close assistant",
+      "toTask": "Turn into a task",
+      "taskCreated": "Task created",
+      "copy": "Copy",
+      "copied": "Copied"
+    },
+    "list": {
+      "search": "Search a reference, subject or buyer…",
+      "allStatuses": "All statuses",
+      "buyer": "Buyer",
+      "progress": "Progress",
+      "actions": "Actions",
+      "delete": "Delete tender",
+      "noMatch": "No tender matches this search."
+    },
+    "errors": {
+      "apiKey": {
+        "title": "The analysis service refused the connection",
+        "body": "The provider API key is missing or invalid. This is a server setting, not a problem with your tender: your documents are intact. Contact your administrator, then rerun the step."
+      },
+      "quota": {
+        "title": "Analysis service quota reached",
+        "body": "The provider is temporarily refusing requests. Try again in a few minutes; the tender resumes where it stopped."
+      },
+      "timeout": {
+        "title": "The analysis service did not answer in time",
+        "body": "The document may be large. Rerun the step; if it keeps happening, split the document."
+      },
+      "reseau": {
+        "title": "Analysis service unreachable",
+        "body": "The connection to the provider failed. Your documents are kept; rerun the step once the service is back."
+      },
+      "generic": {
+        "title": "This step failed"
+      },
+      "showDetail": "Show technical detail",
+      "hideDetail": "Hide technical detail"
+    },
+    "preview": {
+      "open": "Preview",
+      "loading": "Loading document…",
+      "pageOf": "Page {{page}} / {{total}}",
+      "prevPage": "Previous page",
+      "nextPage": "Next page",
+      "zoomIn": "Zoom in",
+      "zoomOut": "Zoom out",
+      "download": "Download",
+      "failed": "This document cannot be displayed.",
+      "failedHint": "The access link may have expired, or storage does not allow reading from the browser. Downloading still works."
     }
   },
   "settings": {
@@ -813,6 +1046,17 @@
       "zipReady": "Documents available",
       "zipError": "Download error",
       "noZipLink": "No direct download link was found for this file. Check it directly on the source portal.",
+      "downloadStep": {
+        "en_file": "Waiting for the download to start…",
+        "verification_lien": "Looking for the download link on the portal…",
+        "ouverture_portail": "Opening the portal…",
+        "formulaire": "Sending the file request…",
+        "preparation_dossier": "The portal is preparing the file…",
+        "reception_fichier": "Receiving the file…",
+        "classement": "Sorting the documents…"
+      },
+      "downloadRetrying": "Attempt {{tentative}} of {{max}} failed. Retrying in {{s}} s.",
+      "downloadElapsed": "{{s}} s",
       "openSource": "View on portal",
       "showMore": "Show more",
       "showLess": "Show less",
@@ -880,7 +1124,8 @@
       "downloadDoc": "Download the file",
       "downloadingDoc": "Downloading file...",
       "docReady": "File ready",
-      "docError": "Error downloading file"
+      "docError": "Error downloading file",
+      "noDoc": "No document is published for this purchase order."
     }
   },
   "legal": {
@@ -1077,6 +1322,37 @@
           ]
         }
       ]
+    }
+  },
+  "tasks": {
+    "filter": {
+      "open": "Open tasks",
+      "all": "All statuses"
+    },
+    "bucket": {
+      "retard": "Overdue",
+      "aujourdhui": "Today",
+      "semaine": "This week",
+      "plus_tard": "Later",
+      "sans_date": "No deadline"
+    },
+    "chat": {
+      "teamTitle": "Team discussion",
+      "teamSubtitle": "General channel: everyone sees it",
+      "threadTitle": "Task thread",
+      "placeholder": "Write a message…",
+      "hint": "@ for a member, # for a tender",
+      "empty": "No messages yet. Write the first one: mention a colleague with @ or cite a tender with #.",
+      "send": "Send",
+      "delete": "Delete message"
+    },
+    "date": {
+      "clear": "Clear date",
+      "inAWeek": "In a week"
+    },
+    "view": {
+      "list": "Tasks",
+      "chat": "Discussion"
     }
   }
 }

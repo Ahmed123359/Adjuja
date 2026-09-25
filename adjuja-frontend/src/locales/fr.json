@@ -374,22 +374,200 @@
   "app": {
     "nav": {
       "dashboard": "Tableau de bord",
+      "company": "Mon entreprise",
       "tenders": "Mes offres",
       "veille": "Veille",
       "tools": "Outils",
       "settings": "Paramètres",
       "logout": "Déconnexion",
       "lightMode": "Mode clair",
-      "darkMode": "Mode sombre"
+      "darkMode": "Mode sombre",
+      "sectionWork": "Pilotage",
+      "sectionSettings": "Entreprise",
+      "collapse": "Replier le menu",
+      "expand": "Deplier le menu",
+      "openMenu": "Ouvrir le menu",
+      "tagline": "Appels d'offres",
+      "tasks": "Taches"
     },
     "topbar": {
-      "offres": "Tableau de bord",
+      "accueil": "Tableau de bord",
+      "entreprise": "Mon entreprise",
+      "offres": "Génération",
       "marches": "Mes offres",
       "veille": "Veille marchés publics",
-      "outils": "Outils"
+      "outils": "Outils",
+      "searchPlaceholder": "Rechercher un appel d'offres…",
+      "searchClear": "Effacer la recherche",
+      "searchEmpty": "Aucun appel d'offres ne correspond.",
+      "sub": {
+        "accueil": "Vos echeances, vos taches et l'activite de l'equipe.",
+        "entreprise": "Profil, membres et references de votre entreprise.",
+        "offres": "Generation assistee de votre offre technique.",
+        "marches": "Vos appels d'offres et leur avancement.",
+        "veille": "Les marches publics surveilles pour vous.",
+        "outils": "Signatures, paraphes et remplissage de documents.",
+        "taches": "Ce que porte l'equipe, et pour quand."
+      },
+      "taches": "Taches d'equipe",
+      "searchShort": "Rechercher",
+      "searchRecent": "Recherches recentes",
+      "searchHint": "Tapez une reference, un objet ou un acheteur.",
+      "newTender": "Nouvel AO"
+    },
+    "status": {
+      "online": "Service en ligne",
+      "offline": "Service injoignable",
+      "connecting": "Connexion en cours",
+      "checkedAt": "verifie a {{time}}",
+      "short": {
+        "online": "en ligne",
+        "offline": "injoignable",
+        "connecting": "connexion"
+      }
     }
   },
   "dashboard": {
+    "home": {
+      "title": "Tableau de bord",
+      "subtitle": "Vos échéances, vos tâches et l'activité de votre équipe.",
+      "calendar": "Calendrier",
+      "upcoming": "Prochaines échéances",
+      "noUpcoming": "Aucune échéance à venir.",
+      "noEventThatDay": "Rien ce jour-là.",
+      "tasks": "Tâches",
+      "loading": "Chargement...",
+      "today": "Aujourd'hui",
+      "prevMonth": "Mois précédent",
+      "nextMonth": "Mois suivant",
+      "weekdays": [
+        "Lun",
+        "Mar",
+        "Mer",
+        "Jeu",
+        "Ven",
+        "Sam",
+        "Dim"
+      ],
+      "eventType": {
+        "ao_deadline": "Dates limites",
+        "task": "Tâches"
+      },
+      "stats": {
+        "inProgress": "Dossiers en préparation",
+        "done": "Dossiers finalisés",
+        "myTasks": "Mes tâches ouvertes",
+        "overdue": "Tâches en retard",
+        "nextDeadline": "Prochaine échéance",
+        "ofTotal": "sur {{total}} dossiers",
+        "nextOn": "prochaine le {{date}}",
+        "ofTotalShort": "sur {{total}}",
+        "toHandle": "à traiter",
+        "shareOfTotal": "{{pct}} % du total",
+        "nothingLate": "aucune tâche en retard",
+        "ofTeamTasks": "sur {{total}} pour toute l'équipe",
+        "ofMyTasks": "sur mes {{total}} tâches ouvertes"
+      },
+      "task": {
+        "new": "Nouvelle tâche",
+        "mine": "Mes tâches",
+        "all": "Toutes",
+        "titleLabel": "Intitulé",
+        "titlePlaceholder": "Ce qu'il y a à faire",
+        "dueLabel": "Échéance",
+        "assigneeLabel": "Assignée à",
+        "aoLabel": "Appel d'offres",
+        "noAo": "Aucun",
+        "unassigned": "Non assignée",
+        "create": "Créer",
+        "cancel": "Annuler",
+        "delete": "Supprimer la tâche",
+        "markDone": "Marquer comme faite",
+        "emptyMine": "Aucune tâche ne vous est assignée.",
+        "emptyAll": "Aucune tâche pour le moment.",
+        "save": "Enregistrer",
+        "edit": "Modifier la tâche",
+        "late": "en retard",
+        "statusLabel": "Statut",
+        "status": {
+          "a_faire": "À faire",
+          "en_cours": "En cours",
+          "faite": "Faite"
+        },
+        "add": "Ajouter",
+        "mineShort": "Les miennes",
+        "teamShort": "Toute l'équipe"
+      },
+      "noDeadline": "Aucune échéance",
+      "unlimited": "illimité",
+      "table": {
+        "reference": "Référence",
+        "object": "Objet",
+        "status": "Statut",
+        "due": "Échéance"
+      },
+      "greeting": "Bonjour {{name}}",
+      "greetingNeutral": "Bonjour",
+      "chart": {
+        "loadTitle": "Échéances à venir",
+        "loadSubtitle": "Dates limites de remise et tâches des {{days}} prochains jours",
+        "loadEmpty": "Aucune échéance sur cette période.",
+        "loadTotal": "{{count}} échéances sur les {{days}} prochains jours",
+        "funnelTitle": "Avancement des dossiers",
+        "funnelSubtitle": "Nombre de dossiers ayant atteint chaque étape"
+      },
+      "actions": {
+        "browseVeille": "Parcourir la veille",
+        "openTasks": "Voir les taches"
+      },
+      "dueToday": "aujourd'hui",
+      "dueTomorrow": "demain",
+      "dueInDays": "dans {{count}} jours",
+      "dueLate": "en retard de {{count}} jours",
+      "ledger": {
+        "inProgress": "AO en cours",
+        "done": "AO terminés",
+        "myTasks": "tâches pour moi",
+        "overdue": "en retard",
+        "nextDeadline": "Prochaine échéance",
+        "nothingPlanned": "Rien de prévu pour l'instant"
+      },
+      "agenda": {
+        "title": "{{count}} prochains jours",
+        "today": "aujourd'hui",
+        "nothingToday": "Rien de prévu",
+        "empty": "Rien de prévu sur cette période.",
+        "earlier": "Période précédente",
+        "later": "Période suivante",
+        "back": "Revenir à aujourd'hui"
+      },
+      "activity": {
+        "recent": "Derniers dossiers",
+        "seeAll": "Tout voir",
+        "follow": "Suivi",
+        "open": "Ouvrir",
+        "veilleNew": "nouveaux appels d'offres à examiner",
+        "veilleOf": "sur {{total}} surveillés",
+        "plan": "Abonnement",
+        "aoThisMonth": "AO ce mois-ci",
+        "documents": "Documents",
+        "noLimit": "Aucun plafond sur cette formule.",
+        "noDate": "sans date",
+        "completeProfile": "Compléter le profil"
+      },
+      "risk": {
+        "title": "Dossiers à risque",
+        "subtitle": "Date limite proche et dossier en retard",
+        "empty": "Aucun dossier en difficulté.",
+        "done": "{{pct}} % du dossier fait",
+        "noDeadlineCount": "{{count}} AO actifs n'ont pas de date limite : leur risque n'est pas calculable.",
+        "level": {
+          "en_retard": "En retard",
+          "critique": "Critique",
+          "tendu": "Tendu"
+        }
+      }
+    },
     "title": "Tableau de bord",
     "tabs": {
       "overview": "Vue d'ensemble",
@@ -405,7 +583,7 @@
       "noAos": "Aucun appel d'offres créé.",
       "profileWarning": "Profil entreprise incomplet",
       "profileWarningDesc": "Complétez votre profil pour activer le pipeline automatisé.",
-      "veilleTitle": "Veille",
+      "veilleTitle": "Veille marchés publics",
       "veilleNew": "nouveaux appels d'offres",
       "veilleTotal": "Total surveillé",
       "planTitle": "Abonnement",
@@ -581,15 +759,19 @@
       "cancelConfirm": "Annuler le pipeline en cours ? Vous pourrez relancer ensuite.",
       "cancelling": "Annulation...",
       "deleteBtn": "Supprimer",
-      "deleteConfirmDetail": "Supprimer ce dossier AO et tous ses documents ?"
+      "deleteConfirmDetail": "Supprimer ce dossier AO et tous ses documents ?",
+      "stepOf": "Étape {{step}} sur {{total}}",
+      "back": "Revenir à la liste",
+      "confirm": "Confirmer"
     },
     "status": {
       "brouillon": "Brouillon",
       "en_analyse": "En analyse",
       "en_traitement": "En traitement",
-      "termine": "Terminé",
-      "erreur": "Erreur",
-      "abandonne": "Abandonné"
+      "termine": "Finalisé",
+      "erreur": "En erreur",
+      "abandonne": "Abandonné",
+      "en_attente": "En attente"
     },
     "docTypes": {
       "cps": "CPS",
@@ -692,13 +874,13 @@
       }
     },
     "assist": {
-      "title": "Assistant de cette étape",
+      "title": "Assistant",
       "show": "Ouvrir",
       "hide": "Fermer",
-      "placeholder": "Posez votre question sur cet appel d'offres...",
+      "placeholder": "Posez une question sur cette étape…",
       "send": "Envoyer",
-      "thinking": "Réflexion...",
-      "sources": "Sources :",
+      "thinking": "L'assistant réfléchit…",
+      "sources": "Sources",
       "failed": "L'assistant n'a pas pu répondre.",
       "role": {
         "documents": "Je peux expliquer à quoi sert chaque type de document dans un marché public et vous aider à vérifier leur classement.",
@@ -708,7 +890,58 @@
         "redaction": "Je peux proposer des reformulations concrètes de votre note méthodologique.",
         "remplissage": "Je peux repérer une valeur qui semble incohérente avec votre profil ou avec l'appel d'offres.",
         "signature": "Je peux vérifier avec vous que le dossier est complet avant dépôt."
-      }
+      },
+      "you": "Vous",
+      "clear": "Effacer la conversation",
+      "close": "Fermer l'assistant",
+      "toTask": "En faire une tâche",
+      "taskCreated": "Tâche créée",
+      "copy": "Copier",
+      "copied": "Copié"
+    },
+    "list": {
+      "search": "Rechercher une référence, un objet, un acheteur…",
+      "allStatuses": "Tous les statuts",
+      "buyer": "Acheteur",
+      "progress": "Avancement",
+      "actions": "Actions",
+      "delete": "Supprimer le dossier",
+      "noMatch": "Aucun dossier ne correspond à cette recherche."
+    },
+    "errors": {
+      "apiKey": {
+        "title": "Le service d'analyse a refusé la connexion",
+        "body": "La clé d'API du fournisseur est absente ou invalide. C'est un réglage du serveur, pas une erreur de votre dossier : vos documents sont intacts. Contactez l'administrateur, puis relancez l'étape."
+      },
+      "quota": {
+        "title": "Quota du service d'analyse atteint",
+        "body": "Le fournisseur refuse temporairement les demandes. Réessayez dans quelques minutes ; le dossier reprend où il s'est arrêté."
+      },
+      "timeout": {
+        "title": "Le service d'analyse n'a pas répondu à temps",
+        "body": "Le document est peut-être volumineux. Relancez l'étape ; si cela se répète, découpez le document."
+      },
+      "reseau": {
+        "title": "Service d'analyse injoignable",
+        "body": "La connexion au fournisseur a échoué. Vos documents sont conservés ; relancez l'étape une fois le service rétabli."
+      },
+      "generic": {
+        "title": "Cette étape a échoué"
+      },
+      "showDetail": "Voir le détail technique",
+      "hideDetail": "Masquer le détail technique"
+    },
+    "preview": {
+      "open": "Aperçu",
+      "loading": "Chargement du document…",
+      "pageOf": "Page {{page}} / {{total}}",
+      "prevPage": "Page précédente",
+      "nextPage": "Page suivante",
+      "zoomIn": "Agrandir",
+      "zoomOut": "Réduire",
+      "download": "Télécharger",
+      "failed": "Impossible d'afficher ce document.",
+      "failedHint": "Le lien d'accès a peut-être expiré, ou le stockage n'autorise pas la lecture depuis le navigateur. Le téléchargement reste possible."
     }
   },
   "settings": {
@@ -815,6 +1048,17 @@
       "zipReady": "DAO disponible",
       "zipError": "Erreur téléchargement DAO",
       "noZipLink": "Aucun lien de téléchargement direct n'a été trouvé pour ce dossier. Consultez-le directement sur le portail source.",
+      "downloadStep": {
+        "en_file": "En attente de démarrage du téléchargement…",
+        "verification_lien": "Recherche du lien de téléchargement sur le portail…",
+        "ouverture_portail": "Ouverture du portail…",
+        "formulaire": "Envoi de la demande de dossier…",
+        "preparation_dossier": "Le portail prépare le dossier…",
+        "reception_fichier": "Réception du fichier…",
+        "classement": "Classement des pièces…"
+      },
+      "downloadRetrying": "La tentative {{tentative}} sur {{max}} a échoué. Nouvelle tentative dans {{s}} s.",
+      "downloadElapsed": "{{s}} s",
       "openSource": "Voir sur le portail",
       "showMore": "Voir plus",
       "showLess": "Voir moins",
@@ -882,7 +1126,8 @@
       "downloadDoc": "Télécharger le dossier",
       "downloadingDoc": "Téléchargement du dossier en cours...",
       "docReady": "Dossier disponible",
-      "docError": "Erreur téléchargement du dossier"
+      "docError": "Erreur téléchargement du dossier",
+      "noDoc": "Aucun document n'est publié pour ce bon de commande."
     }
   },
   "legal": {
@@ -1079,6 +1324,37 @@
           ]
         }
       ]
+    }
+  },
+  "tasks": {
+    "filter": {
+      "open": "Taches ouvertes",
+      "all": "Tous les statuts"
+    },
+    "bucket": {
+      "retard": "En retard",
+      "aujourdhui": "Aujourd'hui",
+      "semaine": "Cette semaine",
+      "plus_tard": "Plus tard",
+      "sans_date": "Sans echeance"
+    },
+    "chat": {
+      "teamTitle": "Discussion d'équipe",
+      "teamSubtitle": "Canal général : tout le monde le voit",
+      "threadTitle": "Fil de la tâche",
+      "placeholder": "Écrire un message…",
+      "hint": "@ pour un membre, # pour un dossier",
+      "empty": "Aucun message pour l'instant. Écrivez le premier : mentionnez un collègue avec @ ou citez un dossier avec #.",
+      "send": "Envoyer",
+      "delete": "Supprimer le message"
+    },
+    "date": {
+      "clear": "Effacer la date",
+      "inAWeek": "Dans une semaine"
+    },
+    "view": {
+      "list": "Tâches",
+      "chat": "Discussion"
     }
   }
 }

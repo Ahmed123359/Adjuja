@@ -13,7 +13,7 @@ from app.db.base import AsyncSessionLocal
 from app.db.models import AoDocument, AoPipelineStep, AppelOffre, CompanyProfile
 from app.api.routes.chat_routes import get_chat_service
 from app.models.ao_pipeline import (
-    AoCreate, AoDocumentOut, AoResponse, AoStatus, AoStepOut, AoSummary,
+    AoCreate, AoDocumentOut, AoResponse, AoStatus, AoStepOut, AoSummary, AoUpdate,
     StartPipelinePayload, StepAssistPayload, StepAssistResponse, ValidateStepPayload,
 )
 from app.models.chat import ChatMessage
@@ -59,6 +59,7 @@ def _ao_to_response(ao: AppelOffre) -> AoResponse:
         created_at=ao.created_at,
         updated_at=ao.updated_at,
         mode=ao.mode or "express",
+        date_limite=ao.date_limite,
         erreur_message=ao.erreur_message,
         analyse_json=ao.analyse_json,
         custom_instructions=ao.custom_instructions,
@@ -91,6 +92,7 @@ async def create_ao(
             statut="brouillon",
             pipeline_pct=0,
             custom_instructions=body.custom_instructions,
+            date_limite=body.date_limite,
         )
         session.add(ao)
         await session.commit()
@@ -105,6 +107,7 @@ async def create_ao(
         pipeline_pct=0,
         created_at=now,
         updated_at=now,
+        date_limite=body.date_limite,
     )
 
 
@@ -155,6 +158,9 @@ async def import_from_watcher(
             statut="brouillon",
             pipeline_pct=0,
             analyse_json=body.analyse_json,
+            # Recue par FromWatcherPayload depuis toujours, jamais stockee avant
+            # la migration 014 : l'echeance d'un AO importe etait perdue.
+            date_limite=body.date_limite,
         )
         session.add(ao)
 
@@ -184,6 +190,7 @@ async def import_from_watcher(
         pipeline_pct=0,
         created_at=now,
         updated_at=now,
+        date_limite=body.date_limite,
     )
 
 
@@ -237,6 +244,7 @@ async def list_ao(
             created_at=ao.created_at,
             updated_at=ao.updated_at,
             mode=ao.mode or "express",
+            date_limite=ao.date_limite,
         )
         for ao in aos
     ]
@@ -260,6 +268,51 @@ async def get_ao(
         raise HTTPException(status_code=404, detail="Appel d'offres introuvable.")
 
     return _ao_to_response(ao)
+
+
+@router.patch("/{ao_id}", response_model=AoSummary)
+async def update_ao(
+    ao_id: str,
+    body: AoUpdate,
+    current_user: UserPublic = Depends(get_current_user),
+) -> AoSummary:
+    """Correction manuelle des informations d'un AO.
+
+    Volontairement limitee aux champs saisis par l'utilisateur : `statut`,
+    `pipeline_pct` et `mode` appartiennent au pipeline et changeraient son
+    comportement s'ils etaient modifiables depuis l'exterieur.
+    """
+    org_id = current_user.org_id or current_user.id
+    champs = body.model_dump(exclude_unset=True)
+    if not champs:
+        raise HTTPException(status_code=400, detail="Aucun champ a modifier.")
+
+    async with AsyncSessionLocal() as session:
+        result = await session.execute(
+            select(AppelOffre).where(AppelOffre.id == ao_id, AppelOffre.org_id == org_id)
+        )
+        ao = result.scalar_one_or_none()
+        if not ao:
+            raise HTTPException(status_code=404, detail="Appel d'offres introuvable.")
+
+        for champ, valeur in champs.items():
+            setattr(ao, champ, valeur)
+        ao.updated_at = _now_iso()
+        await session.commit()
+
+        logger.info("AO modifie: %s org=%s champs=%s", ao_id, org_id, list(champs))
+        return AoSummary(
+            id=ao.id,
+            reference=ao.reference,
+            acheteur=ao.acheteur,
+            objet=ao.objet,
+            statut=ao.statut,
+            pipeline_pct=ao.pipeline_pct,
+            created_at=ao.created_at,
+            updated_at=ao.updated_at,
+            mode=ao.mode or "express",
+            date_limite=ao.date_limite,
+        )
 
 
 @router.get("/{ao_id}/status", response_model=AoStatus)
@@ -655,6 +708,8 @@ async def get_step_assist_context(
         "role": assist_svc.STEP_ROLES.get(step_key, ""),
         "objet": ao.objet,
         "acheteur": ao.acheteur,
+        "suggestions": assist_svc.STEP_SUGGESTIONS.get(step_key, []),
+        "history": await assist_svc.history(ao_id, org_id, step_key),
     }
 
 
@@ -712,7 +767,35 @@ async def post_step_assist(
         logger.error("Assistance étape  ao=%s étape=%s erreur=%s", ao_id, step_key, exc, exc_info=True)
         raise HTTPException(status_code=502, detail=f"Erreur de l'assistant : {exc}")
 
+    # La conversation survit au rechargement : sans cela, un dossier prepare sur
+    # plusieurs jours obligeait a refaire chaque matin l'analyse de la veille.
+    derniere_question = next(
+        (m.get("content", "") for m in reversed(body.messages) if m.get("role") == "user"),
+        "",
+    )
+    if derniere_question:
+        await assist_svc.record(
+            ao_id=ao_id, org_id=org_id, step_key=step_key,
+            question=derniere_question, answer=response.answer,
+            sources=response.sources, author_id=current_user.id,
+        )
+
     return StepAssistResponse(answer=response.answer, sources=response.sources)
+
+
+@router.delete("/{ao_id}/steps/{step_key}/assist", status_code=status.HTTP_204_NO_CONTENT)
+async def clear_step_assist(
+    ao_id: str,
+    step_key: str,
+    current_user: UserPublic = Depends(get_current_user),
+) -> None:
+    """Vide le fil de cette etape. Reprendre une analyse a zero est un geste
+    legitime, et l'ancien contexte ne doit alors plus repartir au modele."""
+    org_id = current_user.org_id or current_user.id
+    if step_key not in steps_svc.STEP_KEYS:
+        raise HTTPException(status_code=404, detail="Étape inconnue.")
+    await _assert_ao_belongs_to_org(ao_id, org_id)
+    await assist_svc.clear(ao_id, org_id, step_key)
 
 
 @router.post("/{ao_id}/abandon", response_model=AoStatus)

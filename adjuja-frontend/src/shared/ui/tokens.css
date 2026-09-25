@@ -1,0 +1,701 @@
+/* =============================================================================
+   ADJUJA  --  systeme visuel, 2026-09-24
+   =============================================================================
+
+   Systeme ENTIEREMENT NEUF. Les anciens tokens (--sf-*, --tx-*, --ac-*, --t-*,
+   --e-*, --r-*) ne sont plus la source de rien : ils survivent uniquement dans
+   le bloc « pont » en bas de fichier, qui les recalcule a partir des nouveaux.
+   Ce pont existe pour une seule raison : une quinzaine d'ecrans (veille,
+   pipeline AO, reglages, facturation) les portent encore en style inline. Les
+   supprimer d'un coup casserait ces ecrans ; les alimenter depuis le nouveau
+   systeme les fait au contraire basculer sur la nouvelle identite sans les
+   toucher. Tout CODE NEUF ecrit --adj-*, jamais un token du pont.
+
+   Les decisions de ce systeme :
+
+   - **Une seule famille, Manrope.** Elle a du caractere sans etre une police
+     d'affichage : ses chiffres sont larges et tiennent a 40px, son texte reste
+     lisible a 14. Inter, Outfit, DM Sans, Plus Jakarta et Sora sont ecartees.
+   - **Texte confortable.** Corps a 15px, libelles a 14, titres de panneau a 18.
+     Aucune capitale espacee de 10px : ce tic de « console » rend un produit
+     illisible et n'a jamais ete demande.
+   - **Peu de surfaces, beaucoup d'air.** Un panneau blanc, un filet tres clair,
+     pas d'ombre portee visible. Le relief vient de l'espace, pas du flou.
+   - **Rail sombre** : bleu nuit de la marque, il tient la navigation a l'ecart
+     de la donnee sans tracer de separation.
+   - **Une couleur d'interface**, le bleu ADJUJA. Vert et rouge ne disent qu'une
+     chose : ce qui avance, ce qui est en retard.
+   ========================================================================== */
+
+:root {
+  /* --- Famille --------------------------------------------------------------- */
+  --adj-font:     "Manrope", system-ui, -apple-system, "Segoe UI", sans-serif;
+  /* Les chiffres d'un tableau doivent s'aligner d'une ligne a l'autre : sans
+     cette variante tabulaire, une valeur qui change fait sauter la colonne. */
+  --adj-num:      "tnum" 1, "lnum" 1;
+
+  /* --- Echelle de texte -------------------------------------------------------
+     Sept marches, aucune sous 14px : l'echelle precedente restait trop basse
+     d'un cran sur tout le produit. */
+  --adj-t-xs:   14px;   /* meta, ligne de contexte */
+  --adj-t-sm:   15px;   /* libelles, cellules de tableau */
+  --adj-t-base: 16px;   /* corps */
+  --adj-t-md:   20px;   /* titres de panneau */
+  --adj-t-lg:   24px;   /* titres de section */
+  --adj-t-xl:   30px;   /* titre d'ecran */
+  --adj-t-num:  44px;   /* chiffre de mesure */
+
+  --adj-w-normal: 400;
+  --adj-w-medium: 500;
+  --adj-w-semi:   600;
+  --adj-w-bold:   700;
+  --adj-w-black:  800;
+
+  --adj-lead-tight: 1.15;
+  --adj-lead-body:  1.55;
+
+  /* --- Espace : echelle de 4 -------------------------------------------------- */
+  --adj-1:  4px;
+  --adj-2:  8px;
+  --adj-3:  12px;
+  --adj-4:  16px;
+  --adj-5:  20px;
+  --adj-6:  24px;
+  --adj-8:  32px;
+  --adj-10: 40px;
+  --adj-12: 48px;
+
+  /* Respiration interieure d'un panneau : une seule valeur, tenue partout. */
+  --adj-pad: 22px;
+
+  /* --- Formes -----------------------------------------------------------------
+     Moyennes : ni les angles durs d'un terminal, ni les galets de la passe
+     precedente. */
+  --adj-round-s: 8px;    /* badges, barres, champs */
+  --adj-round-m: 12px;   /* boutons, elements internes */
+  --adj-round-l: 14px;   /* panneaux */
+
+  /* --- Relief -----------------------------------------------------------------
+     Un panneau ne flotte pas : il est pose. Les deux niveaux hauts sont
+     reserves a ce qui se superpose reellement (menus, infobulles). */
+  --adj-lift-0: none;
+  --adj-lift-1: 0 1px 2px rgba(17, 24, 39, 0.05);
+  --adj-lift-2: 0 4px 14px rgba(17, 24, 39, 0.09);
+  --adj-lift-3: 0 16px 40px rgba(17, 24, 39, 0.17);
+
+  /* --- Surfaces ---------------------------------------------------------------
+     Les neutres clairs sont tires du bleu nuit de la marque (#080B1C), pas d'un
+     gris quelconque et surtout pas d'un blanc chaud. Le blanc casse chaud essaye
+     precedemment jurait avec le rail bleu nuit et le bleu #2B79E8 : deux
+     temperatures opposees sur le meme ecran, ce qui donnait un fond sale plutot
+     qu'un contraste.
+
+     Ici tout l'ecran est dans la meme famille froide, et le fond est nettement
+     plus clair que le gris-bleu terne du premier essai (#EEF0F4) : les panneaux
+     blancs s'en detachent franchement. */
+  --adj-bg:       #F1F4FA;
+  --adj-panel:    #FFFFFF;
+  --adj-panel-2:  #EEF2F8;   /* zones creuses, pistes de barre, champs */
+  --adj-panel-3:  #F7F9FC;   /* survol de ligne */
+  --adj-hairline: #E1E7F0;
+  --adj-edge:     #CBD3E1;
+
+  /* --- Encre ------------------------------------------------------------------
+     Meme famille : un gris neutre sur un fond bleute parait jaune par contraste
+     simultane. Les quatre niveaux tiennent le contraste AA sur --adj-panel. */
+  --adj-ink:   #111827;   /* titres, chiffres */
+  --adj-ink-2: #39435A;   /* corps */
+  --adj-ink-3: #63708A;   /* secondaire */
+  --adj-ink-4: #8B97AD;   /* tres secondaire, jamais porteur de sens seul */
+  --adj-on-brand: #FFFFFF;
+
+  /* --- Marque -----------------------------------------------------------------
+     Bleu ADJUJA #2B79E8, seule couleur d'interface. L'indigo #3248CE et le teal
+     #1BC9A8 ne servent qu'a distinguer des series dans un graphe. */
+  --adj-brand:      #2B79E8;
+  --adj-brand-deep: #1B5DBE;
+  --adj-brand-tint: #EAF2FE;
+  --adj-brand-edge: #C3DBFA;
+  --adj-indigo:     #3248CE;
+  --adj-teal:       #1BC9A8;
+
+  /* --- Etats ------------------------------------------------------------------ */
+  --adj-pos:       #0E9C6C;
+  --adj-pos-tint:  #E4F5EE;
+  --adj-hold:      #B26206;
+  --adj-hold-tint: #FCF1E2;
+  --adj-neg:       #D33A33;
+  --adj-neg-tint:  #FCECEB;
+  --adj-mute:      #63708A;
+  --adj-mute-tint: #EDF0F6;
+
+  /* --- Series de graphe -------------------------------------------------------
+     Une seule teinte qui s'eclaircit : c'est ce qui rend un anneau ou un
+     entonnoir lisible sans legende de couleurs arbitraires. */
+  --adj-s1: #1B4FA6;
+  --adj-s2: #2B79E8;
+  --adj-s3: #5E9DF0;
+  --adj-s4: #93BEF7;
+  --adj-s5: #C2D9FA;
+  --adj-s6: #DFE9F6;
+
+  /* --- Rail (navigation) ------------------------------------------------------
+     Bleu nuit de la marque (#080B1C), remonte pour que le bloc d'etat pose
+     dessus reste lisible. */
+  --adj-rail:       #101529;
+  --adj-rail-deep:  #0A0E1E;
+  --adj-rail-edge:  rgba(255, 255, 255, 0.08);
+  --adj-rail-ink:   #F2F5FB;
+  --adj-rail-ink-2: #98A1B8;
+  --adj-rail-ink-3: #656E87;
+  --adj-rail-on:    #6FA8F8;
+  --adj-rail-on-bg: rgba(43, 121, 232, 0.16);
+  --adj-rail-w:     300px;
+
+  /* --- Divers ------------------------------------------------------------------ */
+  --adj-ring:   0 0 0 3px rgba(43, 121, 232, 0.28);
+  /* Hauteur de l'en-tete, partagee par la barre du haut ET le bloc de marque de
+     la barre laterale. Les deux portent un filet inferieur : s'ils ne font pas
+     exactement la meme hauteur, les deux filets ne se rejoignent pas et la
+     cassure se voit sur toute la largeur de l'ecran. Une seule valeur, donc,
+     et aucune des deux ne se dimensionne a son contenu. */
+  --adj-topbar: 82px;
+  --adj-max:    1640px;
+}
+
+.dark {
+  --adj-bg:       #0A0D16;
+  --adj-panel:    #141929;
+  --adj-panel-2:  #1B2133;
+  --adj-panel-3:  #1F2639;
+  --adj-hairline: #242B3E;
+  --adj-edge:     #333B52;
+
+  --adj-ink:   #F0F3FA;
+  --adj-ink-2: #C6CCDC;
+  --adj-ink-3: #8A92A8;
+  --adj-ink-4: #646C83;
+
+  /* Les teintes du theme clair tombent sous le seuil AA sur fond sombre. */
+  --adj-brand:      #5FA0F5;
+  --adj-brand-deep: #86B8F9;
+  --adj-brand-tint: #16243C;
+  --adj-brand-edge: #274262;
+
+  --adj-pos:       #2FC492;
+  --adj-pos-tint:  rgba(47, 196, 146, 0.14);
+  --adj-hold:      #E0A346;
+  --adj-hold-tint: rgba(224, 163, 70, 0.14);
+  --adj-neg:       #EF6E67;
+  --adj-neg-tint:  rgba(239, 110, 103, 0.14);
+  --adj-mute:      #8A92A8;
+  --adj-mute-tint: rgba(138, 146, 168, 0.14);
+
+  --adj-s1: #1C4FA8;
+  --adj-s2: #2B79E8;
+  --adj-s3: #4E90EC;
+  --adj-s4: #6EA7F1;
+  --adj-s5: #3A5478;
+  --adj-s6: #26314A;
+
+  --adj-rail:      #0A0E1E;
+  --adj-rail-deep: #070A16;
+
+  --adj-lift-1: 0 1px 2px rgba(0, 0, 0, 0.36);
+  --adj-lift-2: 0 4px 16px rgba(0, 0, 0, 0.44);
+  --adj-lift-3: 0 16px 44px rgba(0, 0, 0, 0.58);
+
+  --adj-ring: 0 0 0 3px rgba(95, 160, 245, 0.34);
+}
+
+/* ==========================================================================
+   Comportements transverses
+   ========================================================================== */
+
+.adj-focusable:focus-visible {
+  outline: none;
+  box-shadow: var(--adj-ring);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .adj-anim { transition: none !important; animation: none !important; }
+}
+
+.adj-app-bg { background-color: var(--adj-bg); }
+
+/* --- Repli des controles -----------------------------------------------------
+   Des regles, pas des tests de largeur en JavaScript : un `useIsMobile()` ne
+   sait rien tant que React n'a pas monte, ce qui fait clignoter la barre au
+   chargement, et il ignore le redimensionnement de la fenetre entre deux
+   rendus.
+
+   La barre du haut aligne titre, recherche, theme, langue et action : a 400px
+   cela fait six controles de largeur fixe sur une ligne, donc un debordement
+   horizontal de toute la page. Ce qui disparait disparait par ordre
+   d'importance croissante -- la langue avant le theme, le theme avant la
+   recherche, jamais l'action principale. */
+@media (max-width: 1000px) { .adj-hide-md { display: none !important; } }
+@media (max-width: 760px)  { .adj-hide-sm { display: none !important; } }
+@media (max-width: 560px)  { .adj-hide-xs { display: none !important; } }
+
+/* Le libelle d'un bouton cede la place a sa seule icone : l'action reste
+   atteignable, elle occupe trois fois moins de largeur. */
+@media (max-width: 760px) {
+  .adj-label-sm { display: none; }
+  /* L'espace entre controles passe de 12 a 6px : rendu aux boutons eux-memes,
+     qui doivent tous rester presents. */
+  .adj-pad-x { gap: 6px !important; }
+  .adj-btn-tight { padding-left: 11px !important; padding-right: 11px !important; }
+}
+
+/* Gouttieres : 24px de chaque cote sur un ecran de 360px, c'est 13 % de la
+   largeur perdue. */
+@media (max-width: 760px) {
+  .adj-pad-x { padding-left: var(--adj-4) !important; padding-right: var(--adj-4) !important; }
+}
+
+/* Rien ne doit pouvoir pousser la page au-dela de la fenetre : un seul enfant
+   trop large et tout l'ecran defile lateralement. */
+html, body { max-width: 100%; overflow-x: hidden; }
+
+/* --- Petits ecrans : hauteurs et titres --------------------------------------
+   La barre du haut a 82px et un titre a 30px conviennent a un ecran large ; sur
+   360px ils mangent un quart de la hauteur utile et le titre se fait tronquer a
+   douze caracteres. */
+@media (max-width: 760px) {
+  :root { --adj-topbar: 62px; }
+  .adj-page-title { font-size: var(--adj-t-md) !important; }
+
+  /* Un seul panneau est affiche a la fois (selecteur de vue) : il prend toute
+     la hauteur restante au lieu d'etre une boite courte suivie de vide. */
+  .adj-tasks-split { grid-template-rows: minmax(0, 1fr); }
+}
+
+/* --- Apparition des surfaces flottantes --------------------------------------
+   Modales, palettes et listes deroulantes apparaissaient d'un coup : sans
+   transition, l'oeil ne sait pas d'ou la surface sort ni ce qu'elle recouvre.
+
+   Deux mouvements seulement, et courts : le voile se fond, le panneau monte de
+   quelques pixels en grandissant tres legerement. La courbe sort vite et
+   ralentit a l'arrivee, ce qui donne l'impression que la surface se pose.
+   Au-dela de 200ms une ouverture devient une attente. */
+@keyframes adj-fade {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes adj-pop {
+  from { opacity: 0; transform: translateY(8px) scale(.985); }
+  to   { opacity: 1; transform: none; }
+}
+
+.adj-overlay { animation: adj-fade .16s ease-out; }
+.adj-pop     { animation: adj-pop .18s cubic-bezier(.16, 1, .3, 1); }
+
+/* Le mouvement reduit supprime le deplacement, jamais le fondu : sans aucun
+   signal d'apparition, une modale semble avoir toujours ete la. */
+@media (prefers-reduced-motion: reduce) {
+  .adj-pop { animation: adj-fade .12s ease-out; }
+}
+
+/* Chiffres alignes. Applique partout ou des nombres se comparent. */
+.adj-fig {
+  font-variant-numeric: tabular-nums lining-nums;
+  font-feature-settings: var(--adj-num);
+}
+
+/* ==========================================================================
+   Grilles
+   -------------------------------------------------------------------------- */
+
+/* Rangee analytique : une courbe large, deux panneaux etroits. */
+
+@media (max-width: 1400px) {
+  
+  
+}
+@media (max-width: 900px) {  }
+
+/* Rangee de travail : deux panneaux, la liste des taches et le tableau des AO.
+   Le tableau a besoin de plus de largeur, il porte quatre colonnes. */
+
+@media (max-width: 1100px) {  }
+
+/* Ancienne rangee a trois colonnes, conservee pour les ecrans non repris. */
+
+@media (max-width: 1400px) {
+  
+  
+}
+@media (max-width: 900px) {
+  
+  
+}
+
+/* --- Grille de fractions -----------------------------------------------------
+   Huit colonnes. Un panneau declare la fraction qu'il occupe -- 1/8, 1/4, 1/2,
+   3/4, tout -- au lieu d'inventer sa propre grille a chaque rangee. C'est ce qui
+   manquait : chaque section avait son `grid-template-columns`, donc rien ne
+   s'alignait d'une rangee a l'autre.
+
+   `align-items: stretch` (la valeur par defaut, rappelee ici parce que c'est
+   elle qui compte) egalise la hauteur des panneaux d'une meme rangee. Les
+   rangees precedentes portaient `align-items: start`, d'ou les hauteurs
+   inegales et les vides sous les cartes courtes. */
+.adj-grid {
+  display: grid;
+  grid-template-columns: repeat(8, minmax(0, 1fr));
+  gap: var(--adj-4);
+  align-items: stretch;
+}
+
+.adj-1-8 { grid-column: span 1; }
+.adj-1-4 { grid-column: span 2; }
+.adj-3-8 { grid-column: span 3; }
+.adj-1-2 { grid-column: span 4; }
+.adj-5-8 { grid-column: span 5; }
+.adj-3-4 { grid-column: span 6; }
+.adj-7-8 { grid-column: span 7; }
+.adj-1-1 { grid-column: span 8; }
+
+/* Tablette : la grille passe a quatre colonnes. Un quart devient une moitie,
+   une moitie prend toute la largeur -- les proportions restent, la densite non. */
+@media (max-width: 1240px) {
+  .adj-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .adj-1-8, .adj-1-4 { grid-column: span 2; }
+  .adj-3-8, .adj-1-2, .adj-5-8, .adj-3-4, .adj-7-8, .adj-1-1 { grid-column: span 4; }
+}
+
+/* Telephone : DEUX colonnes, pas une. Les mesures sont des cartes courtes -- un
+   libelle, un nombre, une ligne -- et les empiler une par rangee donnait quatre
+   ecrans de defilement pour quatre chiffres. Deux de front tiennent des 340px.
+   Tout ce qui est plus large qu'un quart prend la largeur entiere. */
+@media (max-width: 720px) {
+  .adj-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .adj-1-8, .adj-1-4, .adj-3-8, .adj-1-2,
+  .adj-5-8, .adj-3-4, .adj-7-8, .adj-1-1 { grid-column: span 2; }
+
+  /* Seules les mesures tiennent a deux de front : un libelle et un nombre. Tout
+     panneau de contenu prend la largeur entiere, sinon son texte se brise a un
+     mot par ligne.
+
+     Selecteur d'enfant, et place APRES la regle ci-dessus : une tuile porte les
+     deux classes (`adj-1-4 adj-kpi`), qui ont la meme specificite. A egalite
+     c'est la derniere ecrite qui gagne -- `.adj-kpi` seul, place avant, etait
+     donc ignore et les tuiles passaient en pleine largeur. */
+  .adj-grid > .adj-kpi { grid-column: span 1; }
+}
+
+/* Sous 380px, deux colonnes de mesures deviennent illisibles : le nombre et son
+   libelle ne tiennent plus cote a cote. */
+@media (max-width: 340px) {
+  .adj-grid { grid-template-columns: minmax(0, 1fr); }
+  .adj-kpi, .adj-1-8, .adj-1-4, .adj-3-8, .adj-1-2,
+  .adj-5-8, .adj-3-4, .adj-7-8, .adj-1-1 { grid-column: span 1; }
+}
+
+/* Barre d'outils d'ecran, petits ecrans -----------------------------------
+   Les controles se repartissent sur une rangee qui se replie d'elle-meme : ils
+   se serrent jusqu'a leur largeur minimale, puis passent a la ligne. La grille
+   precedente forcait un ordre (l'action seule sur sa propre ligne, pleine
+   largeur), ce qui donnait trois rangees pour trois controles.
+
+   `adj-toolbar-wide` designe ce qui merite sa ligne entiere -- la recherche,
+   qui devient inutilisable en dessous de 200px. */
+@media (max-width: 760px) {
+  .adj-toolbar { gap: var(--adj-2) !important; }
+  .adj-toolbar > * { flex: 1 1 145px; width: auto !important; min-width: 0; }
+
+  /* Ordre a l'ecran, independant de l'ordre du DOM : l'action d'abord -- on
+     ouvre cet ecran pour creer, pas pour filtrer -- puis les filtres, puis la
+     recherche en dernier sur sa propre ligne. `order` evite de dupliquer les
+     controles dans le JSX selon la largeur. */
+  .adj-toolbar > .adj-toolbar-action { order: -1; }
+  .adj-toolbar > .adj-toolbar-wide { flex: 1 1 100%; order: 1; }
+  .adj-toolbar-spacer { display: none; }
+}
+
+/* --- Apparition des surfaces flottantes --------------------------------------
+   Modales, palettes et listes deroulantes apparaissaient d'un coup : sans
+   transition, l'oeil ne sait pas d'ou la surface sort ni ce qu'elle recouvre.
+
+   Deux mouvements seulement, et courts : le voile se fond, le panneau monte de
+   quelques pixels en grandissant tres legerement. La courbe sort vite et
+   ralentit a l'arrivee, ce qui donne l'impression que la surface se pose.
+   Au-dela de 200ms une ouverture devient une attente. */
+@keyframes adj-fade {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes adj-pop {
+  from { opacity: 0; transform: translateY(8px) scale(.985); }
+  to   { opacity: 1; transform: none; }
+}
+
+.adj-overlay { animation: adj-fade .16s ease-out; }
+.adj-pop     { animation: adj-pop .18s cubic-bezier(.16, 1, .3, 1); }
+
+/* Le mouvement reduit supprime le deplacement, jamais le fondu : sans aucun
+   signal d'apparition, une modale semble avoir toujours ete la. */
+@media (prefers-reduced-motion: reduce) {
+  .adj-pop { animation: adj-fade .12s ease-out; }
+}
+
+/* Chiffres alignes. Applique partout ou des nombres se comparent. */
+.adj-fig {
+  font-variant-numeric: tabular-nums lining-nums;
+  font-feature-settings: var(--adj-num);
+}
+
+/* ==========================================================================
+   Grilles
+   -------------------------------------------------------------------------- */
+
+/* Rangee analytique : une courbe large, deux panneaux etroits. */
+
+@media (max-width: 1400px) {
+  
+  
+}
+@media (max-width: 900px) {  }
+
+/* Rangee de travail : deux panneaux, la liste des taches et le tableau des AO.
+   Le tableau a besoin de plus de largeur, il porte quatre colonnes. */
+
+@media (max-width: 1100px) {  }
+
+/* Ancienne rangee a trois colonnes, conservee pour les ecrans non repris. */
+
+@media (max-width: 1400px) {
+  
+  
+}
+@media (max-width: 900px) {
+  
+  
+}
+
+/* --- Grille de fractions -----------------------------------------------------
+   Huit colonnes. Un panneau declare la fraction qu'il occupe -- 1/8, 1/4, 1/2,
+   3/4, tout -- au lieu d'inventer sa propre grille a chaque rangee. C'est ce qui
+   manquait : chaque section avait son `grid-template-columns`, donc rien ne
+   s'alignait d'une rangee a l'autre.
+
+   `align-items: stretch` (la valeur par defaut, rappelee ici parce que c'est
+   elle qui compte) egalise la hauteur des panneaux d'une meme rangee. Les
+   rangees precedentes portaient `align-items: start`, d'ou les hauteurs
+   inegales et les vides sous les cartes courtes. */
+.adj-grid {
+  display: grid;
+  grid-template-columns: repeat(8, minmax(0, 1fr));
+  gap: var(--adj-4);
+  align-items: stretch;
+}
+
+.adj-1-8 { grid-column: span 1; }
+.adj-1-4 { grid-column: span 2; }
+.adj-3-8 { grid-column: span 3; }
+.adj-1-2 { grid-column: span 4; }
+.adj-5-8 { grid-column: span 5; }
+.adj-3-4 { grid-column: span 6; }
+.adj-7-8 { grid-column: span 7; }
+.adj-1-1 { grid-column: span 8; }
+
+/* Tablette : la grille passe a quatre colonnes. Un quart devient une moitie,
+   une moitie prend toute la largeur -- les proportions restent, la densite non. */
+@media (max-width: 1240px) {
+  .adj-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .adj-1-8, .adj-1-4 { grid-column: span 2; }
+  .adj-3-8, .adj-1-2, .adj-5-8, .adj-3-4, .adj-7-8, .adj-1-1 { grid-column: span 4; }
+}
+
+/* Telephone : DEUX colonnes, pas une. Les mesures sont des cartes courtes -- un
+   libelle, un nombre, une ligne -- et les empiler une par rangee donnait quatre
+   ecrans de defilement pour quatre chiffres. Deux de front tiennent des 340px.
+   Tout ce qui est plus large qu'un quart prend la largeur entiere. */
+@media (max-width: 720px) {
+  .adj-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .adj-1-8, .adj-1-4, .adj-3-8, .adj-1-2,
+  .adj-5-8, .adj-3-4, .adj-7-8, .adj-1-1 { grid-column: span 2; }
+
+  /* Seules les mesures tiennent a deux de front : un libelle et un nombre. Tout
+     panneau de contenu prend la largeur entiere, sinon son texte se brise a un
+     mot par ligne.
+
+     Selecteur d'enfant, et place APRES la regle ci-dessus : une tuile porte les
+     deux classes (`adj-1-4 adj-kpi`), qui ont la meme specificite. A egalite
+     c'est la derniere ecrite qui gagne -- `.adj-kpi` seul, place avant, etait
+     donc ignore et les tuiles passaient en pleine largeur. */
+  .adj-grid > .adj-kpi { grid-column: span 1; }
+}
+
+/* Sous 380px, deux colonnes de mesures deviennent illisibles : le nombre et son
+   libelle ne tiennent plus cote a cote. */
+@media (max-width: 340px) {
+  .adj-grid { grid-template-columns: minmax(0, 1fr); }
+  .adj-kpi, .adj-1-8, .adj-1-4, .adj-3-8, .adj-1-2,
+  .adj-5-8, .adj-3-4, .adj-7-8, .adj-1-1 { grid-column: span 1; }
+}
+
+/* Ecran des taches : la liste a gauche, la discussion a droite, toutes deux sur
+   la hauteur disponible. Les deux colonnes sont en `minmax(0, …)` : sans le 0,
+   une ligne de tache longue impose sa largeur a la colonne et pousse la
+   discussion hors de l'ecran.
+
+   Sous 1100px la discussion passe dessous et reprend une hauteur propre --
+   empilee sans hauteur, une colonne de grille en `1fr` est ecrasee a quelques
+   pixels. */
+/* Etape et assistant cote a cote : on lit la reponse sans quitter des yeux ce
+   qu'elle commente. Sous 1200px l'assistant passe dessous -- deux colonnes de
+   moins de 400px ne laissent de place ni a l'une ni a l'autre. */
+/* Couche de texte de pdf.js. Elle se superpose au canevas pour rendre le
+   document selectionnable et trouvable par Ctrl+F -- et c'est elle qui portera
+   le surlignage d'un passage (brique 2 de la spec preview-documents-ocr).
+
+   Le texte est transparent : il doit etre selectionnable, pas visible, puisque
+   le canevas en dessous le dessine deja. `::selection` reste opaque, sinon on
+   ne verrait pas ce qu'on selectionne. */
+.adj-pdf-text {
+  overflow: hidden;
+  opacity: 1;
+  line-height: 1;
+  user-select: text;
+}
+.adj-pdf-text > span {
+  color: transparent;
+  position: absolute;
+  white-space: pre;
+  cursor: text;
+  transform-origin: 0 0;
+}
+.adj-pdf-text ::selection { background: rgba(43, 121, 232, 0.28); }
+
+.adj-step-split {
+  display: grid;
+  grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr);
+  gap: var(--adj-4);
+  align-items: stretch;
+}
+@media (max-width: 1200px) {
+  .adj-step-split { grid-template-columns: minmax(0, 1fr); }
+}
+
+.adj-tasks-split {
+  display: grid;
+  grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr);
+  gap: var(--adj-4);
+  align-items: stretch;
+}
+@media (max-width: 1100px) {
+  .adj-tasks-split { grid-template-columns: minmax(0, 1fr); }
+}
+
+/* ==========================================================================
+   Actions de ligne
+   -------------------------------------------------------------------------- */
+/* Discretes au repos pour ne pas herisser une liste d'icones, visibles au
+   survol et au focus clavier, toujours visibles sur tactile. */
+.adj-row .adj-row-actions { opacity: 0; transition: opacity .12s; }
+.adj-row:hover .adj-row-actions,
+.adj-row:focus-within .adj-row-actions { opacity: 1; }
+@media (hover: none) { .adj-row .adj-row-actions { opacity: 1; } }
+
+/* ==========================================================================
+   Barre de defilement
+   -------------------------------------------------------------------------- */
+/* Fine et sans piste : une piste visible dessine une deuxieme bordure le long
+   de chaque panneau. */
+.adj-scroll::-webkit-scrollbar { width: 10px; height: 10px; }
+.adj-scroll::-webkit-scrollbar-track { background: transparent; }
+.adj-scroll::-webkit-scrollbar-thumb {
+  background: var(--adj-edge);
+  border-radius: 999px;
+  border: 3px solid transparent;
+  background-clip: content-box;
+}
+.adj-scroll::-webkit-scrollbar-thumb:hover { background-clip: padding-box; }
+
+/* ==========================================================================
+   PONT VERS L'ANCIEN SYSTEME  --  ne rien ajouter ici
+   --------------------------------------------------------------------------
+   Les ecrans non encore repris (veille, pipeline AO, reglages, facturation,
+   outils) portent ces noms en style inline. Les alimenter depuis les nouveaux
+   tokens les fait basculer sur la nouvelle identite sans etre modifies. Chaque
+   fois qu'un ecran est repris, ses --sf-/--tx-/--ac- deviennent des --adj-, et
+   la ligne correspondante finira par n'avoir plus de lecteur.
+   ========================================================================== */
+:root, .dark {
+  --sf-app:    var(--adj-bg);
+  --sf-card:   var(--adj-panel);
+  --sf-sunken: var(--adj-panel-2);
+  --sf-hover:  var(--adj-panel-3);
+  --sf-rail:   var(--adj-rail);
+  --sf-line:        var(--adj-hairline);
+  --sf-line-strong: var(--adj-edge);
+  --sf-card-border: var(--adj-hairline);
+  --app-backdrop: none;
+
+  --tx-strong: var(--adj-ink);
+  --tx-base:   var(--adj-ink-2);
+  --tx-muted:  var(--adj-ink-3);
+  --tx-faint:  var(--adj-ink-4);
+  --tx-invert: var(--adj-on-brand);
+
+  --ac-primary:      var(--adj-brand);
+  --ac-primary-dark: var(--adj-brand-deep);
+  --ac-primary-soft: var(--adj-brand-tint);
+  --ac-primary-wash: var(--adj-brand-tint);
+  --ac-primary-line: var(--adj-brand-edge);
+  --ac-success:      var(--adj-pos);
+  --ac-success-wash: var(--adj-pos-tint);
+  --ac-warn:         var(--adj-hold);
+  --ac-warn-wash:    var(--adj-hold-tint);
+  --ac-danger:       var(--adj-neg);
+  --ac-danger-wash:  var(--adj-neg-tint);
+  --ac-neutral:      var(--adj-mute);
+  --ac-neutral-wash: var(--adj-mute-tint);
+
+  --font-ui:      var(--adj-font);
+  --font-display: var(--adj-font);
+  --font-mono:    var(--adj-font);
+
+  --t-2xs:  var(--adj-t-xs);
+  --t-xs:   var(--adj-t-xs);
+  --t-sm:   var(--adj-t-sm);
+  --t-base: var(--adj-t-base);
+  --t-md:   var(--adj-t-md);
+  --t-lg:   var(--adj-t-lg);
+  --t-xl:   var(--adj-t-num);
+  --t-2xl:  var(--adj-t-num);
+  --t-w-normal: var(--adj-w-normal);
+  --t-w-medium: var(--adj-w-medium);
+  --t-w-semi:   var(--adj-w-semi);
+  --t-w-bold:   var(--adj-w-bold);
+  --t-lead-tight:  var(--adj-lead-tight);
+  --t-lead-normal: var(--adj-lead-body);
+  --t-numeric: var(--adj-num);
+  --t-caps: 0.06em;
+
+  --s-1: var(--adj-1);   --s-2: var(--adj-2);   --s-3: var(--adj-3);
+  --s-4: var(--adj-4);   --s-5: var(--adj-5);   --s-6: var(--adj-6);
+  --s-8: var(--adj-8);   --s-10: var(--adj-10); --s-12: var(--adj-12);
+  --card-pad: var(--adj-pad);
+
+  --r-sm: var(--adj-round-s);
+  --r-md: var(--adj-round-m);
+  --r-lg: var(--adj-round-l);
+  --r-xl: var(--adj-round-l);
+
+  --e-0: var(--adj-lift-0);
+  --e-1: var(--adj-lift-1);
+  --e-2: var(--adj-lift-2);
+  --e-3: var(--adj-lift-3);
+
+  --ring: var(--adj-ring);
+  --layout-max:    var(--adj-max);
+  --layout-gutter: var(--adj-6);
+  --rail-w:      var(--adj-rail-w);
+  --rail-w-mini: 68px;
+  --topbar-h:    var(--adj-topbar);
+}

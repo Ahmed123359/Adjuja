@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core import download_progress
 from app.core.database import get_db
 from app.core.nature_prestation import NATURES_PRESTATION
 from app.modules.bdc_scraper.repository import BdcRepository
@@ -31,6 +32,7 @@ async def list_bdc(
     page: int = Query(1, ge=1),
     limit: int = Query(50, ge=1, le=200),
     db: AsyncSession = Depends(get_db),
+    _auth: str = Depends(_require_auth_header),
 ):
     repo = BdcRepository(db)
     items, total = await repo.list_bdc(
@@ -47,7 +49,7 @@ async def list_bdc(
 
 
 @router.get("/stats")
-async def get_stats(db: AsyncSession = Depends(get_db)):
+async def get_stats(db: AsyncSession = Depends(get_db), _auth: str = Depends(_require_auth_header)):
     repo = BdcRepository(db)
     return await repo.get_stats()
 
@@ -63,12 +65,14 @@ async def list_nature_prestation():
 
 
 @router.get("/{bdc_id}", response_model=BdcOut)
-async def get_bdc(bdc_id: int, db: AsyncSession = Depends(get_db)):
+async def get_bdc(bdc_id: int, db: AsyncSession = Depends(get_db), _auth: str = Depends(_require_auth_header)):
     repo = BdcRepository(db)
     bdc = await repo.get_by_id(bdc_id)
     if not bdc:
         raise HTTPException(status_code=404, detail="BDC not found")
-    return bdc
+    out = BdcOut.model_validate(bdc)
+    out.download_progress = await download_progress.read("bdc", bdc_id)
+    return out
 
 
 @router.patch("/{bdc_id}/status", response_model=BdcOut)
@@ -86,11 +90,15 @@ async def update_status(
     if not bdc:
         raise HTTPException(status_code=404, detail="BDC not found")
 
-    updated = await repo.update_status(bdc_id, body.status)
+    will_download = body.status == "favorited" and bool(bdc.document_url) and not bdc.zip_downloaded_at
+    # Meme raison que ao_scraper/router.py : une erreur d'un essai precedent
+    # masquerait le nouveau telechargement.
+    updated = await repo.update_status(bdc_id, body.status, clear_zip_error=will_download)
 
     # Telechargement anonyme confirme (curl sans cookies -> 200) -- meme
     # declenchement lazy-on-favorite que les AOs.
-    if body.status == "favorited" and bdc.document_url and not bdc.zip_downloaded_at:
+    if will_download:
+        await download_progress.mark_queued("bdc", bdc_id)
         from app.workers.tasks.download_bdc_tasks import download_bdc_document
         download_bdc_document.delay(bdc_id)
 

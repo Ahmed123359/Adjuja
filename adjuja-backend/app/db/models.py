@@ -183,6 +183,10 @@ class AppelOffre(Base):
     analyse_json: Mapped[dict[str, Any] | None] = mapped_column(JSONB, nullable=True)
     # Instructions spécifiques à cet AO, injectées dans tous les prompts LLM du pipeline
     custom_instructions: Mapped[str | None] = mapped_column(Text, nullable=True)
+    # Date limite de remise des plis (ISO 8601). La veille l'envoie depuis toujours
+    # a l'import, mais aucune colonne ne l'accueillait : la valeur etait perdue en
+    # silence (voir context/bugs-connus.md). Ajoutee par la migration 014.
+    date_limite: Mapped[str | None] = mapped_column(String(50), nullable=True)
 
     documents: Mapped[list["AoDocument"]] = relationship(back_populates="ao", cascade="all, delete-orphan")
 
@@ -386,3 +390,92 @@ class BillingEvent(Base):
     event_type: Mapped[str]        = mapped_column(String(50))
     raw_payload: Mapped[str]       = mapped_column(Text)
     processed_at: Mapped[str]      = mapped_column(String(50))
+
+
+class AoTask(Base):
+    """Tache d'equipe du tableau de bord. `ao_id` est nullable : une tache peut ne
+    concerner aucun appel d'offres. Supprimer un AO emporte ses taches."""
+
+    __tablename__ = "ao_tasks"
+    __table_args__ = (
+        Index("idx_aotask_org_statut", "org_id", "statut"),
+        Index("idx_aotask_assignee_statut", "assignee_id", "statut"),
+        Index("idx_aotask_ao", "ao_id"),
+    )
+
+    id:          Mapped[str]        = mapped_column(String(36), primary_key=True)
+    org_id:      Mapped[str]        = mapped_column(String(36), nullable=False)
+    ao_id:       Mapped[str | None] = mapped_column(
+        String(36), ForeignKey("appels_offres.id", ondelete="CASCADE"), nullable=True
+    )
+    titre:       Mapped[str]        = mapped_column(String(255), nullable=False)
+    description: Mapped[str | None] = mapped_column(Text, nullable=True)
+    assignee_id: Mapped[str | None] = mapped_column(String(36), ForeignKey("users.id"), nullable=True)
+    created_by:  Mapped[str]        = mapped_column(String(36), ForeignKey("users.id"), nullable=False)
+    # a_faire | en_cours | faite
+    statut:      Mapped[str]        = mapped_column(String(20), default="a_faire", nullable=False)
+    echeance:    Mapped[str | None] = mapped_column(String(50), nullable=True)
+    created_at:  Mapped[str]        = mapped_column(String(50), nullable=False)
+    updated_at:  Mapped[str]        = mapped_column(String(50), nullable=False)
+    completed_at: Mapped[str | None] = mapped_column(String(50), nullable=True)
+
+
+class TeamMessage(Base):
+    """Message de la discussion d'equipe.
+
+    `task_id` et `ao_id` donnent le fil : les deux nuls, c'est le canal general ;
+    l'un des deux renseigne, c'est le fil de cette tache ou de ce dossier.
+
+    `deleted_at` plutot qu'un DELETE : effacer une ligne d'une conversation troue
+    le fil et rend incomprehensibles les reponses qui suivaient.
+    """
+
+    __tablename__ = "team_messages"
+    __table_args__ = (
+        Index("idx_msg_org_created", "org_id", "created_at"),
+        Index("idx_msg_task", "task_id"),
+        Index("idx_msg_ao", "ao_id"),
+    )
+
+    id:         Mapped[str]        = mapped_column(String(36), primary_key=True)
+    org_id:     Mapped[str]        = mapped_column(String(36), nullable=False)
+    author_id:  Mapped[str]        = mapped_column(String(36), ForeignKey("users.id"), nullable=False)
+    body:       Mapped[str]        = mapped_column(Text, nullable=False)
+    task_id:    Mapped[str | None] = mapped_column(
+        String(36), ForeignKey("ao_tasks.id", ondelete="CASCADE"), nullable=True)
+    ao_id:      Mapped[str | None] = mapped_column(
+        String(36), ForeignKey("appels_offres.id", ondelete="CASCADE"), nullable=True)
+    # Identifiants des personnes mentionnees : ["user-id", ...]
+    mentions:   Mapped[list[Any] | None] = mapped_column(JSONB, nullable=True)
+    # Pieces citees : [{"type", "id", "label"}]
+    refs:       Mapped[list[Any] | None] = mapped_column(JSONB, nullable=True)
+    created_at: Mapped[str]        = mapped_column(String(50), nullable=False)
+    deleted_at: Mapped[str | None] = mapped_column(String(50), nullable=True)
+
+
+class AoAssistMessage(Base):
+    """Un tour de conversation avec l'assistant, pour un couple (dossier, etape).
+
+    Table distincte de `team_messages` : un message d'equipe a un auteur humain
+    obligatoire et se lit par toute l'organisation, un tour d'assistant porte un
+    `role` et des sources. Les reunir imposerait un discriminant et un auteur
+    nullable, c'est-a-dire deux tables dans une.
+    """
+
+    __tablename__ = "ao_assist_messages"
+    __table_args__ = (
+        Index("idx_assist_ao_step", "ao_id", "step_key", "created_at"),
+    )
+
+    id:         Mapped[str]        = mapped_column(String(36), primary_key=True)
+    org_id:     Mapped[str]        = mapped_column(String(36), nullable=False)
+    ao_id:      Mapped[str]        = mapped_column(
+        String(36), ForeignKey("appels_offres.id", ondelete="CASCADE"), nullable=False)
+    step_key:   Mapped[str]        = mapped_column(String(50), nullable=False)
+    # user | assistant
+    role:       Mapped[str]        = mapped_column(String(20), nullable=False)
+    content:    Mapped[str]        = mapped_column(Text, nullable=False)
+    sources:    Mapped[list[Any] | None] = mapped_column(JSONB, nullable=True)
+    # Qui a pose la question. Nul pour les tours de l'assistant.
+    author_id:  Mapped[str | None] = mapped_column(String(36), ForeignKey("users.id"), nullable=True)
+    created_at: Mapped[str]        = mapped_column(String(50), nullable=False)

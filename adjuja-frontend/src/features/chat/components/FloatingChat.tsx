@@ -42,6 +42,15 @@ export default function FloatingChat({ provider, model }: Props) {
 
   const toggleOpen = useCallback(() => setIsOpen(prev => !prev), []);
 
+  // La barre du haut ouvre l'assistant par evenement plutot que par une prop
+  // remontee jusqu'a App : la bulle et la barre sont dans deux branches
+  // distinctes de l'arbre, et rien d'autre n'a besoin de cet etat.
+  useEffect(() => {
+    const ouvrir = () => setIsOpen(true);
+    window.addEventListener('adjuja:open-assistant', ouvrir);
+    return () => window.removeEventListener('adjuja:open-assistant', ouvrir);
+  }, []);
+
   const handleSend = async () => {
     const text = input.trim();
     if (!text || loading) return;

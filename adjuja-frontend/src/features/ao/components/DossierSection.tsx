@@ -10,7 +10,9 @@ export function DossierSection({
   docs,
   aoId,
 }: {
-  title: string;
+  /** Omis quand le panneau qui contient la liste porte deja son titre :
+   *  l'ecrire deux fois de suite n'apprend rien. */
+  title?: string;
   docs: AoDocumentOut[];
   aoId: string;
 }) {
@@ -30,20 +32,16 @@ export function DossierSection({
   );
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-      <p
-        style={{
-          margin: 0,
-          fontSize: 11,
-          fontWeight: 700,
-          textTransform: "uppercase",
-          letterSpacing: ".07em",
-          color: "var(--l-dim)",
-        }}
-      >
-        {title}
-      </p>
-      <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+    <div style={{ display: "flex", flexDirection: "column", gap: "var(--adj-3)" }}>
+      {title && (
+        <p style={{
+          margin: 0, fontSize: "var(--adj-t-xs)", fontWeight: 600,
+          color: "var(--adj-ink-3)",
+        }}>
+          {title}
+        </p>
+      )}
+      <div style={{ display: "flex", flexDirection: "column", gap: "var(--adj-2)" }}>
         {representatives.map((rep) => (
           <DocCard
             key={rep.id}

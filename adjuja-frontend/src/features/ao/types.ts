@@ -25,6 +25,9 @@ export interface AoSummary {
   created_at:   string;
   updated_at:   string;
   mode?:        AoMode;
+  /** Date limite de remise (ISO). Ajoutee par la migration 014 : elle arrivait
+   *  de la veille a chaque import mais n'etait stockee nulle part. */
+  date_limite?: string | null;
 }
 
 export interface AoResponse extends AoSummary {

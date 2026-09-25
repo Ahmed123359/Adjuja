@@ -22,6 +22,7 @@ from app.api.routes.company_documents_routes import router as company_documents_
 from app.api.routes.newsletter_routes import router as newsletter_router
 from app.api.routes.billing_routes import router as billing_router
 from app.api.routes.org_routes import router as org_router
+from app.api.routes.dashboard_routes import dashboard_router, messages_router, tasks_router
 
 __all__ = [
     "generation_router",
@@ -48,4 +49,7 @@ __all__ = [
     "newsletter_router",
     "billing_router",
     "org_router",
+    "dashboard_router",
+    "tasks_router",
+    "messages_router",
 ]

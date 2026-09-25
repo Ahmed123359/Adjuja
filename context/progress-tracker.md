@@ -12,6 +12,20 @@ des corrections ciblées d'UX/scraping.
 
 ## Objectif courant
 
+**Refonte du frontend applicatif** (depuis le 2026-09-24, demande explicite de
+l'utilisateur). Faits : socle de tokens, barre latérale, barre du haut, tableau
+de bord, écran des tâches et discussion, liste et détail des appels d'offres,
+assistant par étape. Restent à reprendre sur le nouveau socle : **veille,
+outils, réglages d'entreprise, facturation** -- ils fonctionnent, alimentés par
+le pont de tokens, mais leur mise en page a été pensée pour l'échelle
+précédente, plus serrée.
+
+Deux défauts d'infrastructure relevés pendant ce chantier attendent un
+arbitrage, voir `bugs-connus.md` : les **migrations Alembic ne sont jamais
+appliquées** (le schéma vient de `create_all`), et **`pytest` échoue à la
+collecte** depuis `adjuja-backend/` à cause de trois tests orphelins du
+`worker/`.
+
 Billing/subscriptions : backend + UI in-app + pricing page -> checkout direct faits (voir
 Complété), Pro maintenant self-serve comme Starter (Enterprise seul reste sur devis).
 Reste : configurer un vrai compte marchand CMI (rien à coder, juste des variables `.env`)
@@ -25,6 +39,144 @@ pas en DB. UI frontend pour gérer `PUT /preferences/{org_id}` construite le 202
 prod pour valider l'envoi bout en bout avec Resend actif.
 
 ## Complété (résumé, voir mémoire auto pour le détail complet par sujet)
+
+### Refonte complète du frontend applicatif (2026-09-24 → 2026-09-26)
+
+Demandée explicitement : « oublie ce qui existe comme UI, on repart de zéro ».
+Trois directions successives ont été essayées et rejetées avant celle qui tient
+-- l'historique est dans `context/ui-context.md`, qui fait foi pour le visuel.
+
+**Socle visuel neuf.** `shared/ui/tokens.css` est réécrit autour de tokens
+`--adj-*`. Les anciens noms (`--sf-*`, `--tx-*`, `--ac-*`, `--t-*`, `--r-*`,
+`--e-*`) survivent uniquement dans un bloc **pont** en bas du fichier, qui les
+recalcule depuis les nouveaux : une quinzaine d'écrans non repris les portent
+encore en style inline, et les alimenter ainsi les fait basculer sur la nouvelle
+identité sans être modifiés. Tout code neuf écrit `--adj-*`.
+
+- Police unique **Manrope**. Inter, Outfit, DM Sans, Plus Jakarta Sans et Sora
+  sont abandonnées.
+- Aucune taille de texte sous 14px (corps 16, titres de panneau 20).
+- Neutres tirés du bleu nuit de marque `#080B1C` : fond `#F1F4FA`. Le blanc cassé
+  chaud essayé le 2026-09-25 jurait avec le rail et le bleu `#2B79E8` -- deux
+  températures opposées sur un même écran.
+- **Grille de fractions** à 8 colonnes (`.adj-grid` + `.adj-1-2`, `.adj-1-4`...)
+  remplaçant les `grid-template-columns` inventés section par section, qui
+  empêchaient tout alignement d'une rangée à l'autre.
+
+**Écrans refaits** : barre latérale (rail sombre, calendrier des échéances
+permanent, bloc profil), barre du haut (palette de recherche ⌘K avec historique
+local), tableau de bord, écran des tâches, liste et détail des appels d'offres.
+
+**Composants transverses neufs** : `Modal` (verrou de défilement, piège à focus,
+retour du focus), `Select` et `DateField` -- les contrôles natifs `<select>` et
+`<input type="date">` se rendaient avec le style du système, indifférents au
+thème sombre. Animation d'apparition commune (`.adj-pop` / `.adj-overlay`).
+
+**Cache de données** (`shared/lib/http` → `shared/lib/cache.ts`). `RightPanel`
+monte et démonte l'écran courant : chaque changement d'onglet rechargeait résumé,
+calendrier, liste des AO, veille et abonnement, et repassait par « Chargement… ».
+Le cache sert l'entrée fraîche au premier rendu, revalide en fond quand elle est
+périmée, et **déduplique** les requêtes concurrentes sur une même clé (la barre
+latérale et le tableau de bord demandent le même calendrier). Invalidation
+explicite après écriture ; vidage complet à la déconnexion.
+
+### Tableau de bord : risque d'échéance et validations (2026-09-25)
+
+Spec : `context/feature-spec/dashboard-risque-validations/00-overview.md`.
+
+Constat partagé avec l'utilisateur : le tableau de bord comptait des objets
+(« 1 AO, 0 terminé ») au lieu de répondre à « qu'est-ce qui va me coûter un
+marché ». Deux routes ajoutées, **sans migration** -- toute la donnée était déjà
+en base et n'était pas lue :
+
+- `GET /dashboard/at-risk` -- les AO dont l'échéance approche plus vite que le
+  dossier n'avance. Le risque croise date limite **et** progression, sur décision
+  de l'utilisateur. La progression se calcule **par mode** : `pipeline_pct` en
+  express, `validee / applicable` des `ao_pipeline_steps` en accompagné. Prendre
+  `pipeline_pct` pour les deux ferait passer pour sain exactement le cas cherché
+  -- tâches de fond terminées, dossier bloqué depuis six jours sur une validation.
+- `GET /dashboard/pending-validations` -- les étapes arrêtées sur
+  `attente_validation`. La table `ao_pipeline_steps` avait été créée pour
+  répondre à cette question (voir sa docstring) et n'avait jamais été branchée.
+
+19 tests unitaires (`tests/unit/test_dashboard_risque.py`) sur les fonctions
+pures : marge, seuils, progression par mode, fenêtre nulle ou inversée.
+
+### Tâches d'équipe et discussion (2026-09-25)
+
+Écran dédié (`features/tasks/`), onglet propre : les tâches occupaient une carte
+du tableau de bord où l'on ne pouvait ni filtrer, ni voir la charge, ni en
+traiter plusieurs. Groupées par échéance -- en retard, aujourd'hui, cette
+semaine, plus tard, sans date -- et non par date de création.
+
+**Migration 015, table `team_messages`** : aucune table ne portait de
+conversation, la collaboration se limitait à une liste de cases à cocher. Fil par
+couple (tâche, dossier) ou canal général ; `@` cite un membre, `#` un dossier ;
+suppression douce (`deleted_at`) parce qu'effacer une ligne troue le fil.
+
+### Appels d'offres : liste et détail (2026-09-25/26)
+
+- **Liste** : tableau à colonnes alignées (référence, objet, acheteur,
+  avancement, échéance, statut) au lieu de cartes empilées sans échéance ni
+  avancement. Recherche, filtre de statut, création en modale.
+- **Détail** : en-tête portant **l'échéance et le temps restant** (absents alors
+  que le tableau de bord classait déjà par risque) et le rang d'étape ;
+  **`StepBar`** horizontal remplaçant la colonne de 210px qui tronquait ses
+  propres libellés ; zone de dépôt et documents réunis en un panneau titré.
+- **`ErrorNotice`** : l'écran affichait la sortie brute du service
+  (`SDKError: ... Status 401 {"detail":"Invalid API Key"}`). Les causes
+  fréquentes (clé, quota, délai, réseau) sont traduites en une phrase actionnable,
+  le texte technique reste sous un repli. Reconnaissance volontairement
+  conservatrice : une cause non reconnue affiche le message d'origine.
+
+### Assistant par étape (2026-09-26)
+
+Refait après discussion : il y avait **deux** assistants concurrents -- la bulle
+flottante, qui ignore le dossier et l'étape, et un tiroir replié sous le panneau
+d'étape, qui s'ouvrait sur un champ vide.
+
+- **Colonne à droite de l'étape**, plus un tiroir : on lit la réponse sans
+  quitter des yeux ce qu'elle commente.
+- **Suggestions d'ouverture par étape**, servies par le serveur avec le cadrage
+  (`STEP_SUGGESTIONS`) : un champ vide demande à l'utilisateur de savoir quoi
+  demander.
+- **Les réponses produisent quelque chose** : « en faire une tâche » crée une
+  vraie tâche du dossier (première ligne en titre, réponse en description), et
+  « copier ». Auparavant une réponse était un cul-de-sac qu'on recopiait à la
+  main.
+- **Migration 016, table `ao_assist_messages`** : la conversation n'existait
+  qu'en mémoire du navigateur et disparaissait au rechargement. Table distincte
+  de `team_messages` -- un message d'équipe a un auteur humain obligatoire, un
+  tour d'assistant a un `role` et des sources ; les réunir imposerait un
+  discriminant et un auteur nullable.
+
+### Dette et défauts relevés pendant ce chantier
+
+Déclarés dans `context/bugs-connus.md`, **non corrigés**, chacun demandant un
+arbitrage :
+
+1. **Les migrations Alembic ne sont jamais appliquées.** `alembic_version`
+   n'existe pas en base, `alembic upgrade head` échoue sur
+   `relation "users" already exists`, et le schéma vient de
+   `Base.metadata.create_all` (`main.py:34`). Les seize migrations sont
+   décoratives. Dangereux : `create_all` crée les tables manquantes mais
+   n'ajoute **jamais** une colonne à une table existante -- sur une base avec de
+   l'historique, une migration du type de la 014 ne s'appliquerait pas et
+   l'application écrirait dans une colonne absente.
+2. **`pytest` échoue à la collecte depuis `adjuja-backend/`** : trois tests
+   importent `worker.*`, resté à la racine du dépôt lors de la découpe. Il faut
+   trois `--ignore` pour lancer la suite -- **58 tests passent** alors.
+
+### Ce qui reste sur le frontend
+
+- Écrans non repris, encore alimentés par le pont de tokens : veille, outils,
+  réglages d'entreprise, facturation.
+- `<input type="date">` natif encore présent dans quatre écrans (outils, filtres
+  de veille) ; `DateField` existe désormais pour les remplacer.
+- Les mentions de la discussion d'équipe sont enregistrées mais **ne notifient
+  personne** : il n'existe ni journal d'activité, ni état de lecture, ni rôles
+  d'organisation (voir « Ce qui manque en base » de la spec risque/validations).
+
 
 - **Découpe du dépôt unique en dépôts par service** (2026-09-10, demandé par
   l'utilisateur, référence explicite : le workspace `e-himaya` sur le Bureau). Spec
@@ -720,6 +872,88 @@ prod pour valider l'envoi bout en bout avec Resend actif.
 
 ## En cours
 
+- **Tableau de bord collaboratif -- `api.md` ecrit et backend implemente**
+  (2026-09-15, spec `context/feature-spec/dashboard-collaboratif/api.md`).
+  Perimetre arrete avec l'utilisateur : **calendrier et taches d'abord**, les
+  mentions `@nom` et le flux d'alertes viennent apres. Ordre de marche choisi :
+  **navigation et tableau de bord traites ensemble, directement dans le nouveau
+  design**, puis propagation du design aux autres ecrans -- pour ne pas redessiner
+  des ecrans que ce chantier deplace.
+  - **Roles d'organisation reportes**, contrairement a ce que prevoyait
+    `00-overview.md` : les taches n'ont besoin d'aucune permission nouvelle,
+    alors qu'un role obligerait a modifier `POST /org/invite` et
+    `DELETE /org/members/{user_id}`, deux routes en production. Regle appliquee
+    en attendant : tout membre voit et modifie les taches de son organisation,
+    comme il peut deja inviter et retirer des membres.
+  - **Bug reel trouve et corrige** : `appels_offres` n'avait aucune colonne de
+    date limite, alors que la veille l'envoie a chaque import -- l'echeance etait
+    perdue en silence. Migration `014`, branchee sur l'import, la creation et une
+    nouvelle route `PATCH /ao/{ao_id}`. Verifie sur un import reel (AO 4078,
+    echeance 2026-11-04 retrouvee en base).
+  - Livre : migration `014` (+ table `ao_tasks`), `task_service`,
+    `dashboard_service`, routes `GET /dashboard/summary`,
+    `GET /dashboard/calendar`, CRUD `/tasks`.
+  - **Verifie en reel** : chaine de migrations `001` -> `014` sur une base
+    jetable avec inspection du schema au `\d` et aller-retour de migration ;
+    appels HTTP avec un vrai jeton (creation, lecture, modification, suppression,
+    `completed_at` remis a NULL a la reouverture, 400 et 401 attendus) ;
+    **cloisonnement verifie avec un second compte reel** cree puis supprime.
+  - **Piege d'exploitation** : le conteneur `api` ne monte que `app/`, pas
+    `alembic/` -- une migration neuve est invisible du conteneur tant que l'image
+    n'est pas reconstruite, et `alembic upgrade head` s'arrete alors a la
+    revision precedente sans rien signaler.
+  - **`client.md` ecrit et ecran implemente le 2026-09-15.** Navigation
+    restructuree : `mainTab` passe a
+    `accueil | veille | marches | outils | offres | entreprise`, defaut
+    `accueil` ; « Mon entreprise » descend en pied de barre laterale ;
+    `DashboardPage.tsx` devient `CompanySettingsPage.tsx` (5 onglets, contenu
+    inchange). Nouveau domaine `features/dashboard/` : tuiles, calendrier
+    mensuel maison (aucune dependance ajoutee), panneau de taches avec
+    assignation aux membres reels. L'ancienne « Vue d'ensemble », refaite le
+    2026-09-12 et non commitee, n'a pas ete jetee : elle est devenue
+    `features/dashboard/components/ActivitySection.tsx`.
+  - **Second defaut declare** : l'entree de navigation « offres » affichait les
+    reglages au repos, et son formulaire de generation n'est atteignable par
+    aucun chemin (`LeftPanel` n'est rendu que si `appState !== "idle"`, et seuls
+    ce formulaire ou l'historique font sortir de `idle`). Entree retiree de la
+    barre laterale, code de generation non touche.
+  - Verifie : `tsc --noEmit` propre, `npm run build` vert, **51 cles i18n du
+    nouveau code resolues en fr et en** (controle par script).
+  - **Ecran refait le 2026-09-15 apres retour de l'utilisateur** (captures a
+    l'appui : « l'UI est pire, c'est de l'AI »). Corriges : tuiles vides
+    remplacees par un bandeau de tete sur degrade de marque avec la prochaine
+    echeance en clair ; calendrier a six semaines pleines dont chaque evenement
+    affiche son intitule au lieu d'une pastille muette ; bouton « Aujourd'hui »
+    qui debordait de son carre de 30 px ; AO recents passes en vrai tableau
+    precede d'une barre de repartition par statut. **Aucune sparkline** : pas de
+    serie temporelle derriere ces chiffres, en dessiner serait mentir en image
+    (regle de forme du guide de visualisation).
+  - **Manque fonctionnel signale et comble** : la modification d'une tache
+    n'existait pas a l'ecran alors que la spec la prevoyait. `TaskForm` sert
+    desormais a la creation et a la modification (titre, echeance, personne
+    assignee, AO, statut). **Verifie sur la vraie API** avec la charge utile
+    exacte du formulaire, relecture apres enregistrement et vidage des champs
+    facultatifs.
+  - **Quatrieme version de l'ecran le 2026-09-15**, apres trois essais rejetes
+    comme « style d'IA » (tuiles a pastille d'icone, cartes flottantes, salutation,
+    gros bouton, halos, verre, bandeau bleu). Direction arretee et consignee dans
+    `ui-context.md` : polices Inter + Plus Jakarta Sans (Sora abandonnee),
+    panneaux plats a filet sans ombre, pleine largeur, chiffres en ligne
+    typographique (`SummaryLedger`), action « Ajouter » dans l'en-tete de la
+    section Taches, agenda des 14 prochains jours (`AgendaList`) a la place de la
+    grille du mois, AO recents en tableau dense, veille et abonnement fusionnes en
+    un panneau « Suivi » ecrit en phrases, date du jour dans la barre du haut.
+    Barre laterale : sections conservees, liseré actif coupe retire.
+  - **Defaut de typage corrige au passage** : `RightPanel.onMainTabChange` etait
+    encore type avec les quatre onglets d'avant la restructuration.
+  - Verifie : `tsc` propre, build vert, 59 cles i18n resolues en fr et en.
+    **Rendu non vu** : a juger sur capture par l'utilisateur.
+  - **Reste** : validation visuelle, puis propagation de cette direction aux
+    autres ecrans (veille, AO, outils).
+    Effet de bord en base de dev : l'AO 4078 de la veille est passe en `imported`
+    pendant le test d'import.
+
+
 - **Echecs de telechargement des DCE corriges** (2026-09-13). Le
   `wait_for_load_state("networkidle", timeout=15000)` de `mpe.py::download_document`
   expirait des que le portail gardait une requete en arriere-plan, et faisait
@@ -732,6 +966,25 @@ prod pour valider l'envoi bout en bout avec Resend actif.
   telechargement n'est pas traite, le volet frontend (etape courante affichee)
   n'est pas commence, et la mesure faite est de bout en bout, pas par etape
   comme la spec le prevoyait.
+  - **Mesure par etape faite le 2026-09-14** (detail dans la spec) : Chromium ne
+    pese que 4 a 5 % (0,5 a 1 s), le transfert du fichier depuis le portail ~50 a
+    65 % (6 a 8 s, hors de notre controle). Total 13 a 19 s. Navigateur partage
+    deconseille (gain ~3 s, refonte lourde du worker prefork). La vraie attente
+    vient des relances a 60 s (un cas reel a ~8 min), d'une erreur permanente
+    retentee 3 fois, et de deux defauts du polling frontend : arret apres 45 s,
+    erreur temporaire affichee comme definitive. Les trois sont declares dans
+    `bugs-connus.md`.
+  - **Chantier livre le 2026-09-14** (plan valide par l'utilisateur, detail dans
+    la spec) : etape reelle du telechargement exposee par `GET /aos/{id}` et
+    `GET /bdc/{id}` (Redis, `app/core/download_progress.py`), affichee par un
+    bandeau partage dans les deux panneaux avec le temps ecoule ; erreurs
+    permanentes sans relance ; erreur ecrite en base seulement apres la derniere
+    tentative ; polling sans limite pendant un telechargement ; BDC sans document
+    gere ; routes de lecture BDC protegees par l'en-tete d'auth. **Verifie en
+    reel** sur les AO 3389 et 5 (dont un vrai echec du portail suivi d'une relance
+    reussie, affichee a l'ecran via l'API), l'AO 3412 (relances epuisees) et le
+    BDC 785, plus `tsc` et `build`. **Reste** : controle visuel dans un navigateur,
+    et le cas BDC sans document (absent de la base de dev). Rien n'est commite.
   - **Test reel du mode accompagne et de la course `task_match_team` reporte**,
     sur decision de l'utilisateur : les cles d'API des modeles ne sont pas encore
     disponibles. Verifie jusqu'ici au niveau code seulement (tests unitaires,
@@ -1217,6 +1470,19 @@ prod pour valider l'envoi bout en bout avec Resend actif.
     portail principal (pas juste BDC) expose l'équivalent via `AvisAttribution`,
     trouvé par recherche mais **pas encore confirmé avec un vrai fetch Playwright**.
     Préalable bloquant pour `concurrents/`.
+    **Mis à jour le 2026-09-13, `api.md` écrit après test réel des 3 portails** :
+    `AvisAttribution` redirige vers `AllAnn`, le filtre réel est `annonceType`
+    (4 résultat définitif, 5 extrait de PV) ; marchespublics 37 691 résultats
+    définitifs sur 6 mois, safakat 21, CIMR 0. Le HTML AO ne porte ni attributaire
+    ni montant ni soumissionnaires : tout est en pièce jointe, et sur l'échantillon
+    les résultats définitifs sont scannés (6/6), les extraits de PV sont en `.doc`
+    (3), scannés (2) ou PDF texte (1, liste complète des soumissionnaires et
+    montants). BDC résultats : 318 292, structuré en HTML (attributaire, montant,
+    nombre de devis), sans liste de soumissionnaires ni identifiant stable.
+    Décision utilisateur : **nouveaux résultats seulement**. `api.md` découpe en
+    lot A (collecte des annonces + résultats BDC, sans arbitrage) et lot B
+    (extraction des soumissionnaires depuis les pièces jointes : OCR, `.doc`, LLM),
+    **lot B en attente d'arbitrage**. Aucun code écrit.
   - `concurrents/` -- bloqué sur `resultats-attribution/`, critère de définition d'un
     "concurrent" non tranché avec l'utilisateur.
   - `preview-documents-ocr/` -- confirmé par recherche dans le frontend : **aucune
@@ -1350,6 +1616,18 @@ prod pour valider l'envoi bout en bout avec Resend actif.
     sans rapport avec ce chantier.
 
 ## Questions ouvertes
+
+- 🔴 **POINT ROUGE -- chantier `resultats-attribution` en pause (décision
+  utilisateur du 2026-09-14).** Test réel du 2026-09-13 : les gagnants, montants et
+  soumissionnaires des AO ne sont pas dans les pages des portails mais dans des
+  fichiers joints (extraits de PV et résultats définitifs), en majorité scannés ou
+  en Word. Les lire exige OCR + conversion Word + IA, donc un coût et un arbitrage.
+  Seuls les bons de commande donnent gagnant + montant directement. Rien n'est
+  codé ; `api.md` est écrit mais jugé pas clair par l'utilisateur, à reformuler en
+  langage simple à la reprise. À trancher : faire ou non l'extraction des fichiers,
+  et pour quels secteurs. Bloque toujours `concurrents/` (dont le critère de
+  « concurrent » n'est pas défini non plus). Détail :
+  `context/feature-spec/resultats-attribution/`.
 
 - **Les cles d'API des modeles sont des valeurs de remplissage en dev** (verifie le
   2026-09-13 sans afficher les valeurs) : `MISTRAL_API_KEY` fait 3 caracteres,

@@ -36,26 +36,26 @@ function Carte({
         gap: 10,
         padding: 16,
         borderRadius: 12,
-        border: `1px solid ${primaire ? "var(--l-blue)" : "var(--l-card-border)"}`,
-        background: "var(--l-card)",
+        border: `1px solid ${primaire ? "var(--adj-brand)" : "var(--adj-hairline)"}`,
+        background: "var(--adj-panel)",
       }}
     >
       <div style={{ flex: 1 }}>
-        <p style={{ margin: "0 0 4px", fontSize: 14, fontWeight: 700, color: "var(--l-text)" }}>{titre}</p>
-        <p style={{ margin: 0, fontSize: 12.5, lineHeight: 1.5, color: "var(--l-sub)" }}>{description}</p>
+        <p style={{ margin: "0 0 4px", fontSize: 14, fontWeight: 700, color: "var(--adj-ink)" }}>{titre}</p>
+        <p style={{ margin: 0, fontSize: 12.5, lineHeight: 1.5, color: "var(--adj-ink-2)" }}>{description}</p>
       </div>
       <button
         onClick={onClick}
         disabled={disabled}
         style={{
-          border: primaire ? "none" : "1px solid var(--l-card-border)",
+          border: primaire ? "none" : "1px solid var(--adj-hairline)",
           borderRadius: 9,
           padding: "11px 14px",
           fontSize: 13,
           fontWeight: 600,
           cursor: disabled ? "not-allowed" : "pointer",
-          background: primaire ? "var(--l-blue)" : "var(--l-input-bg)",
-          color: primaire ? "#fff" : "var(--l-text)",
+          background: primaire ? "var(--adj-brand)" : "var(--adj-panel-2)",
+          color: primaire ? "#fff" : "var(--adj-ink)",
           opacity: disabled ? 0.6 : 1,
           transition: "opacity .15s",
         }}
@@ -78,7 +78,7 @@ export function ModeChoice({
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-      <p style={{ margin: 0, fontSize: 12.5, color: "var(--l-sub)" }}>{t("pipeline.mode.intro")}</p>
+      <p style={{ margin: 0, fontSize: 12.5, color: "var(--adj-ink-2)" }}>{t("pipeline.mode.intro")}</p>
       <div style={{ display: "flex", flexDirection: isMobile ? "column" : "row", gap: 10 }}>
         <Carte
           primaire

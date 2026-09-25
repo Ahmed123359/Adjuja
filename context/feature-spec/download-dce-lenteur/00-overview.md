@@ -69,6 +69,90 @@ bouton décrit dans « Check » a donc été rejoué avec succès après le chan
   qu'un cycle complet par tâche ;
 - le **volet frontend** entier (étape courante affichée pendant l'attente).
 
+## Mesure par étape faite le 2026-09-14
+
+Script hors code de production, qui rejoue exactement le flux de
+`download_document` dans le conteneur `ao-watcher-worker`. Deux passes par AO :
+navigateur neuf, puis navigateur déjà lancé.
+
+| Étape | marchespublics, AO 3389, 17,6 Mo | safakat, AO 599, 23,1 Mo |
+|---|---|---|
+| Lancement de Chromium | 1,0 s (5 %) | 0,5 s (4 %) |
+| Page du formulaire | 5,0 s puis 3,7 s | 2,6 s puis 1,3 s |
+| Remplissage + envoi | 2,1 s puis 1,7 s | 0,8 s puis 0,9 s |
+| Attente du bouton | 2,1 s puis 1,8 s | 0,9 s puis 1,0 s |
+| **Téléchargement du fichier** | **8,1 s (44 à 53 %)** | **7,9 s puis 6,3 s (61 à 66 %)** |
+| **Total** | **18,6 s neuf, 15,3 s réutilisé** | **12,9 s neuf, 9,6 s réutilisé** |
+
+**Conclusions :**
+- Le démarrage de Chromium, l'hypothèse de départ de ce fichier, ne pèse que
+  **4 à 5 %**. Réutiliser le navigateur fait gagner ~3 s, en partie seulement
+  grâce au cache HTTP du portail. En face, le coût est lourd : le worker est en
+  `prefork` et chaque tâche crée sa propre boucle asyncio (`asyncio.run`), alors
+  qu'un navigateur Playwright est lié à sa boucle. **Piste déconseillée.**
+- Environ la moitié du temps est le transfert du fichier depuis le portail :
+  **hors de notre contrôle**.
+- **Ce que l'utilisateur subit vraiment** vient d'ailleurs, d'après les logs du
+  worker : un téléchargement réel a mis **~8 minutes** (10:40 à 10:48 le
+  2026-09-13) à cause de 3 échecs relancés à 60 s d'intervalle ; une erreur
+  permanente a été retentée 3 fois (~3 min) ; et côté écran, le polling s'arrête
+  au bout de 45 s et une erreur temporaire s'affiche comme définitive (trois
+  défauts déclarés dans `bugs-connus.md`). Le scrape AO planifié occupe aussi
+  l'une des 2 places du worker pendant jusqu'à 5,5 min (328 s mesurées).
+
+## Livré le 2026-09-14 (plan validé par l'utilisateur)
+
+**Serveur (`adjuja-watcher`)**
+- `app/core/download_progress.py` : étape courante en Redis (TTL 30 min),
+  `set_step`/`clear` depuis les tâches, `mark_queued`/`read` depuis les routes.
+  Temps écoulé et délai avant relance calculés côté serveur.
+- `mpe.py::download_document` reçoit un `on_step` optionnel : `ouverture_portail`,
+  `formulaire`, `preparation_dossier`, `reception_fichier`. La tâche ajoute
+  `classement`, `refresh_and_download_ao_zip` ajoute `verification_lien`, les
+  routes posent `en_file`.
+- `download_ao_zip` et `download_bdc_document` : `PermanentDownloadError` (AO/BDC
+  inexistant, aucun lien) échoue tout de suite sans relance ; une erreur
+  temporaire n'est **plus écrite en base avant une relance**, seulement après la
+  dernière, et l'étape `nouvelle_tentative` (n/4, délai) est exposée.
+- `GET /aos/{id}` et `GET /bdc/{id}` renvoient `download_progress`. Remettre en
+  favori efface l'ancienne `zip_error`.
+- Au passage : `GET /bdc`, `/bdc/stats`, `/bdc/{id}` exigent désormais l'en-tête
+  d'authentification, comme les routes AO.
+
+**Écran (`features/veille`)**
+- Nouveau `DownloadProgressBanner` (jetons `--l-warn*`, plus de hex), partagé par
+  `AoDetailPanel` et `BdcDetailPanel`.
+- Polling sans limite pendant un téléchargement (espacé à 10 s après 2 min) ;
+  pour « aucun lien connu », suivi seulement le temps de la revérification.
+- BDC sans document : message dédié au lieu d'un chargement infini.
+- i18n fr + en (`veille.detail.downloadStep.*`, `downloadRetrying`,
+  `downloadElapsed`, `bdc.detail.noDoc`).
+
+**Vérifié en conditions réelles**
+- AO 3389 mis en favori via l'API, interrogé chaque seconde comme l'écran :
+  `en_file` → `ouverture_portail` → `formulaire` → `preparation_dossier` →
+  `reception_fichier` → `classement` → fin à 23 s, 4 pièces classées.
+- AO 5, avec une ancienne erreur posée exprès : erreur effacée à la mise en
+  favori, `verification_lien` a trouvé un lien, **vrai échec du portail**
+  (`Page.goto: Timeout 30000ms`), écran informé « tentative 1/4, relance dans
+  59 s », 2e tentative réussie. Aucune erreur écrite en base pendant ce temps.
+- Relances épuisées (portail simulé en échec sur l'AO 3412) : 4 tentatives,
+  erreur écrite une seule fois, après la 4e. AO sans lien : échec immédiat, pas
+  de relance.
+- BDC 785 téléchargé et suivi ; `GET /bdc` et `/bdc/stats` sans en-tête → 401,
+  avec → 200.
+- `tsc --noEmit` et `npm run build` propres.
+- Dernier ajustement (étape `ouverture_portail` signalée avant le démarrage de
+  Playwright, qui laissait « en attente » affiché plusieurs secondes), vérifié le
+  2026-09-15 après redémarrage du worker sur l'AO 4078 : `en_file` puis
+  `ouverture_portail` dès t+1 s, fin à 16 s, 2 pièces classées.
+
+**Non vérifié** : le rendu à l'écran dans un navigateur (aucun outil de capture
+dans cette session), et le cas « BDC sans document » (aucun en base de dev).
+
+**Piste abandonnée** : navigateur Chromium partagé entre tâches (voir la mesure
+ci-dessus, gain ~3 s pour une refonte du worker).
+
 ## Depends on
 
 Rien de nouveau architecturalement -- modification localisée à

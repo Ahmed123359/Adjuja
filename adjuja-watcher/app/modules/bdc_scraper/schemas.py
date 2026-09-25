@@ -2,6 +2,8 @@ from datetime import date, datetime
 
 from pydantic import BaseModel, ConfigDict
 
+from app.core.download_progress import DownloadProgressOut
+
 
 class BdcOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
@@ -28,6 +30,8 @@ class BdcOut(BaseModel):
     zip_error: str | None
     status: str
     scraped_at: datetime
+    # Renseigne seulement par GET /bdc/{id}, pendant un telechargement en cours.
+    download_progress: DownloadProgressOut | None = None
 
 
 class BdcListOut(BaseModel):

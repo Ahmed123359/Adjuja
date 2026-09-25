@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core import download_progress
 from app.core.database import get_db
 from app.core.mode_passation import MODES_PASSATION
 from app.core.taxonomie import SECTEURS
@@ -81,7 +82,9 @@ async def get_ao(ao_id: int, db: AsyncSession = Depends(get_db), _auth: str = De
     ao = await repo.get_by_id(ao_id)
     if not ao:
         raise HTTPException(status_code=404, detail="AO not found")
-    return ao
+    out = AoOut.model_validate(ao)
+    out.download_progress = await download_progress.read("ao", ao_id)
+    return out
 
 
 @router.patch("/{ao_id}/status", response_model=AoOut)
@@ -99,10 +102,14 @@ async def update_status(
     if not ao:
         raise HTTPException(status_code=404, detail="AO not found")
 
-    updated = await repo.update_status(ao_id, body.status)
+    will_download = body.status == "favorited" and not ao.zip_downloaded_at
+    # Une erreur laissee par un telechargement precedent ferait afficher « erreur »
+    # pendant le nouveau, et l'ecran cesserait de le suivre : on l'efface au depart.
+    updated = await repo.update_status(ao_id, body.status, clear_zip_error=will_download)
 
     # Trigger lazy ZIP download when user favorites
-    if body.status == "favorited" and not ao.zip_downloaded_at:
+    if will_download:
+        await download_progress.mark_queued("ao", ao_id)
         if ao.zip_url:
             from app.workers.tasks.download_tasks import download_ao_zip
             download_ao_zip.delay(ao_id)

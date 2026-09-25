@@ -2,6 +2,9 @@
 // Deplacement pur : aucun changement de comportement.
 
 import { useState } from "react";
+import { Eye } from "lucide-react";
+import { Modal } from "../../../shared/ui/Modal";
+import { DocumentPreview } from "./DocumentPreview";
 import { useTranslation } from "react-i18next";
 import { getAoDocumentDownloadUrl } from "../api";
 import type { AoDocumentOut } from "../types";
@@ -39,9 +42,9 @@ export function DocCard({
           }
         : {
             label: t("pipeline.docStatus.pending"),
-            bg: "var(--l-input-bg)",
-            color: "var(--l-sub)",
-            border: "var(--l-card-border)",
+            bg: "var(--adj-panel-2)",
+            color: "var(--adj-ink-2)",
+            border: "var(--adj-hairline)",
           };
 
   const handleDownload = async (d: AoDocumentOut) => {
@@ -57,6 +60,29 @@ export function DocCard({
   };
 
   const allVariants = variants ?? [doc];
+  /** L'URL presignee n'est demandee qu'a l'ouverture : elle n'est valable que
+   *  quinze minutes, la reclamer au rendu de la liste la ferait expirer avant
+   *  le premier clic. */
+  const [apercu, setApercu] = useState<"ferme" | "chargement" | "ouvert">("ferme");
+  const [urlApercu, setUrlApercu] = useState<string | null>(null);
+
+  const pdf = allVariants.find(
+    (v) => v.nom_fichier.toLowerCase().endsWith(".pdf") && v.minio_key,
+  );
+
+  async function ouvrirApercu() {
+    if (!pdf) return;
+    setApercu("chargement");
+    try {
+      setUrlApercu(await getAoDocumentDownloadUrl(aoId, pdf.id));
+      setApercu("ouvert");
+    } catch {
+      // L'echec est porte par le composant d'apercu, qui explique la cause.
+      setUrlApercu(null);
+      setApercu("ouvert");
+    }
+  }
+
   const ext = (d: AoDocumentOut) =>
     d.nom_fichier.split(".").pop()?.toUpperCase() ?? "";
 
@@ -68,8 +94,8 @@ export function DocCard({
         justifyContent: "space-between",
         padding: "11px 14px",
         borderRadius: 10,
-        border: "1px solid var(--l-card-border)",
-        background: "var(--l-card)",
+        border: "1px solid var(--adj-hairline)",
+        background: "var(--adj-panel)",
         gap: 12,
       }}
     >
@@ -81,7 +107,7 @@ export function DocCard({
           height="14"
           fill="none"
           viewBox="0 0 24 24"
-          stroke="var(--l-dim)"
+          stroke="var(--adj-ink-4)"
           strokeWidth={1.5}
           style={{ flexShrink: 0 }}
         >
@@ -97,7 +123,7 @@ export function DocCard({
               margin: "0 0 1px",
               fontSize: 13,
               fontWeight: 600,
-              color: "var(--l-text)",
+              color: "var(--adj-ink)",
               whiteSpace: "nowrap",
               overflow: "hidden",
               textOverflow: "ellipsis",
@@ -109,7 +135,7 @@ export function DocCard({
             style={{
               margin: 0,
               fontSize: 11,
-              color: "var(--l-dim)",
+              color: "var(--adj-ink-4)",
               whiteSpace: "nowrap",
               overflow: "hidden",
               textOverflow: "ellipsis",
@@ -135,6 +161,28 @@ export function DocCard({
         >
           {statusInfo.label}
         </span>
+        {allVariants.some(v => v.nom_fichier.toLowerCase().endsWith(".pdf") && v.minio_key) && (
+          <button
+            onClick={ouvrirApercu}
+            disabled={apercu === "chargement"}
+            className="adj-focusable adj-anim"
+            style={{
+              display: "inline-flex", alignItems: "center", gap: 5,
+              fontSize: 11, fontWeight: 600,
+              padding: "4px 10px", borderRadius: "var(--adj-round-s)",
+              background: "var(--adj-panel)", color: "var(--adj-ink-2)",
+              border: "1px solid var(--adj-hairline)",
+              cursor: apercu === "chargement" ? "wait" : "pointer",
+              fontFamily: "inherit",
+            }}
+            onMouseEnter={e => { e.currentTarget.style.borderColor = "var(--adj-brand)"; e.currentTarget.style.color = "var(--adj-brand)"; }}
+            onMouseLeave={e => { e.currentTarget.style.borderColor = "var(--adj-hairline)"; e.currentTarget.style.color = "var(--adj-ink-2)"; }}
+          >
+            <Eye size={13} strokeWidth={1.9} />
+            {t("pipeline.preview.open")}
+          </button>
+        )}
+
         {allVariants.map(
           (v) =>
             v.statut === "traite" && (
@@ -148,7 +196,7 @@ export function DocCard({
                   padding: "4px 10px",
                   borderRadius: 7,
                   background:
-                    downloading === v.id ? "var(--l-dim)" : "var(--l-blue)",
+                    downloading === v.id ? "var(--adj-ink-4)" : "var(--adj-brand)",
                   color: "#fff",
                   border: "none",
                   cursor: downloading === v.id ? "not-allowed" : "pointer",
@@ -166,6 +214,16 @@ export function DocCard({
             ),
         )}
       </div>
+
+      <Modal
+        open={apercu === "ouvert"}
+        onClose={() => { setApercu("ferme"); setUrlApercu(null); }}
+        title={label}
+        subtitle={pdf?.nom_fichier}
+        width={1120}
+      >
+        <DocumentPreview url={urlApercu} nomFichier={pdf?.nom_fichier ?? "document.pdf"} />
+      </Modal>
     </div>
   );
 }

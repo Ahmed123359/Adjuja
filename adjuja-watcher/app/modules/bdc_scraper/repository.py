@@ -141,11 +141,14 @@ class BdcRepository:
         result = await self.db.execute(stmt)
         return result.rowcount
 
-    async def update_status(self, bdc_id: int, status: str) -> ScrapedBdc | None:
+    async def update_status(self, bdc_id: int, status: str, clear_zip_error: bool = False) -> ScrapedBdc | None:
+        values: dict = {"status": status, "updated_at": datetime.now(timezone.utc)}
+        if clear_zip_error:
+            values["zip_error"] = None
         await self.db.execute(
             update(ScrapedBdc)
             .where(ScrapedBdc.id == bdc_id)
-            .values(status=status, updated_at=datetime.now(timezone.utc))
+            .values(**values)
         )
         await self.db.commit()
         return await self.get_by_id(bdc_id)

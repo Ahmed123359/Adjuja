@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { EligibilityVerdict, EligibilityVerdictType, ScrapedAo } from '../../../types';
 import WatcherStatusBadge from './WatcherStatusBadge';
+import DownloadProgressBanner from './DownloadProgressBanner';
 import { updateScrapedAoStatus, importScrapedAo, analyzeScrapedAo, fetchScrapedAo, downloadScrapedAoZip } from '../../../api';
 import { useIsMobile } from '../../../hooks/useIsMobile';
 import { formatTitre, splitReservationClause } from '../../../utils/formatTitre';
@@ -196,6 +197,9 @@ export default function AoDetailPanel({ ao: initialAo, onClose, onUpdated }: Pro
   const noZipLink      = ao.status === 'favorited' && !ao.zip_url && !ao.zip_downloaded_at && !ao.zip_error;
   const isDownloading  = ao.status === 'favorited' && !!ao.zip_url && !ao.zip_downloaded_at && !ao.zip_error;
   const hasZipError    = ao.status === 'favorited' && !!ao.zip_error;
+  // Étape réelle côté serveur. Présente aussi quand aucun lien n'est encore connu :
+  // le serveur revérifie alors la page du portail avant de conclure.
+  const progress       = ao.download_progress ?? null;
 
   /** Le passage en "favorited" déclenche un téléchargement asynchrone côté ao-watcher
    * (Celery) -- mais seulement si zip_url a été capté au scraping (~31% des AOs
@@ -208,27 +212,34 @@ export default function AoDetailPanel({ ao: initialAo, onClose, onUpdated }: Pro
    * noZipLink est aussi surveillé : le scraper n'enrichit une AO qu'une seule fois à
    * sa découverte, donc zip_url peut être NULL simplement parce que l'acheteur a mis
    * en ligne le DCE après notre passage -- le backend revérifie en direct
-   * (refresh_and_download_ao_zip) quand on favorise sans zip_url connu. Borné à 15
-   * tentatives (~45s) pour ne pas boucler indéfiniment sur une AO qui n'a vraiment
-   * aucun document. */
+   * (refresh_and_download_ao_zip) quand on favorise sans zip_url connu. Dans ce cas,
+   * on suit seulement le temps de cette revérification (tant que le serveur renvoie
+   * une étape), puis on s'arrête.
+   *
+   * Pendant un vrai téléchargement, AUCUNE limite : l'ancienne borne de 15 tentatives
+   * (~45 s) s'appliquait aussi ici, alors qu'un cycle de relances dure plusieurs
+   * minutes, et le panneau restait figé sur « en cours » avec des documents prêts
+   * (bugs-connus.md, 2026-09-14). On espace seulement les appels après 2 minutes. */
   useEffect(() => {
     if (!isDownloading && !noZipLink) return;
+    let cancelled = false;
     let attempts = 0;
-    const interval = setInterval(async () => {
+    let timer: ReturnType<typeof setTimeout>;
+    const tick = async () => {
       attempts += 1;
-      if (attempts > 15) {
-        clearInterval(interval);
-        return;
-      }
       try {
         const refreshed = await fetchScrapedAo(ao.id);
+        if (cancelled) return;
         setAo(refreshed);
         onUpdated(refreshed);
+        if (!isDownloading && !refreshed.download_progress && attempts >= 2) return;
       } catch {
         // Erreur réseau ponctuelle : on retente au prochain tick, pas la peine d'afficher une erreur.
       }
-    }, 3000);
-    return () => clearInterval(interval);
+      if (!cancelled) timer = setTimeout(tick, attempts > 40 ? 10000 : 3000);
+    };
+    timer = setTimeout(tick, 3000);
+    return () => { cancelled = true; clearTimeout(timer); };
   }, [isDownloading, noZipLink, ao.id]);
   const zipReady      = ao.status === 'favorited' && !!ao.zip_downloaded_at && !!ao.classified_docs;
   const canImport     = zipReady && ao.status === 'favorited';
@@ -458,24 +469,8 @@ export default function AoDetailPanel({ ao: initialAo, onClose, onUpdated }: Pro
           {/* Favorited state */}
           {ao.status === 'favorited' && (
             <>
-              {isDownloading && (
-                <div style={{
-                  display: 'flex', alignItems: 'center', gap: 10,
-                  padding: '10px 14px', borderRadius: 8,
-                  background: 'rgba(245,158,11,0.08)',
-                  border: '1px solid rgba(245,158,11,0.2)',
-                }}>
-                  <div style={{
-                    width: 14, height: 14, borderRadius: '50%',
-                    border: '2px solid rgba(217,119,6,0.3)',
-                    borderTopColor: '#d97706',
-                    animation: 'spin 1s linear infinite',
-                    flexShrink: 0,
-                  }} />
-                  <span style={{ fontSize: 13, color: '#d97706', fontWeight: 500 }}>
-                    {t('veille.detail.downloadingZip')}
-                  </span>
-                </div>
+              {(isDownloading || (noZipLink && progress)) && (
+                <DownloadProgressBanner progress={progress} fallback={t('veille.detail.downloadingZip')} />
               )}
 
               {hasZipError && (
@@ -491,7 +486,7 @@ export default function AoDetailPanel({ ao: initialAo, onClose, onUpdated }: Pro
                 </div>
               )}
 
-              {noZipLink && (
+              {noZipLink && !progress && (
                 <div style={{
                   padding: '10px 14px', borderRadius: 8,
                   background: 'rgba(107,139,179,0.08)',
@@ -662,7 +657,7 @@ export default function AoDetailPanel({ ao: initialAo, onClose, onUpdated }: Pro
                 ))
               : (
                 <p style={{ margin: 0, fontSize: 13, color: 'var(--l-dim)' }}>
-                  {isDownloading
+                  {isDownloading || progress
                     ? t('veille.detail.downloadingZip')
                     : noZipLink
                     ? t('veille.detail.noZipLink')

@@ -5,8 +5,8 @@ export default {
   theme: {
     extend: {
       fontFamily: {
-        sans: ["Sora", "system-ui", "sans-serif"],
-        display: ["Sora", "system-ui", "sans-serif"],
+        sans: ["Manrope", "system-ui", "sans-serif"],
+        display: ["Manrope", "system-ui", "sans-serif"],
       },
       colors: {
         border: "hsl(var(--border))",

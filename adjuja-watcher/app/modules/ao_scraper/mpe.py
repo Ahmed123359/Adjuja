@@ -3,6 +3,7 @@ import os
 import random
 import re
 import asyncio
+from collections.abc import Callable
 from datetime import date, datetime
 from decimal import Decimal, InvalidOperation
 from pathlib import Path
@@ -395,7 +396,11 @@ class MPEPlatformScraper(IAOScraper):
     #  Document download (Playwright  formulaire de demande DCE)          #
     # ------------------------------------------------------------------ #
 
-    async def download_document(self, zip_url: str) -> tuple[bytes, str] | None:
+    async def download_document(
+        self,
+        zip_url: str,
+        on_step: Callable[[str], None] | None = None,
+    ) -> tuple[bytes, str] | None:
         """
         Sur les portails MPE, le lien "Telecharger" du DCE ne pointe jamais
         vers un fichier direct : il mene a un formulaire de demande
@@ -403,7 +408,18 @@ class MPEPlatformScraper(IAOScraper):
         de faire apparaitre le vrai bouton de telechargement. Confirme en
         conditions reelles (raisonSocial/ICE non obligatoires, formulaire
         rempli avec Nom="Adjuja", Prenom="Adjuja", Email="contact@adjuja.com"
-        -> soumission acceptee -> zip complet recupere)."""
+        -> soumission acceptee -> zip complet recupere).
+
+        `on_step` recoit le nom de chaque etape au moment ou elle commence, pour
+        l'affichage de la progression (voir app/core/download_progress.py)."""
+
+        def step(name: str) -> None:
+            if on_step:
+                on_step(name)
+
+        # Avant le demarrage de Playwright, qui prend lui-meme plusieurs secondes :
+        # sinon l'ecran affiche encore « en attente » pendant ce temps.
+        step("ouverture_portail")
         async with async_playwright() as pw:
             context = await self._get_context(pw)
             page = await context.new_page()
@@ -412,6 +428,7 @@ class MPEPlatformScraper(IAOScraper):
 
                 nom_input = page.locator("input[id$='EntrepriseFormulaireDemande_nom']")
                 if await nom_input.count():
+                    step("formulaire")
                     await nom_input.fill("Adjuja")
                     await page.locator("input[id$='EntrepriseFormulaireDemande_prenom']").fill("Adjuja")
                     await page.locator("input[id$='EntrepriseFormulaireDemande_email']").fill("contact@adjuja.com")
@@ -424,6 +441,7 @@ class MPEPlatformScraper(IAOScraper):
                 # faisait echouer tout le telechargement alors que le bouton etait la ou
                 # allait l'etre (3 echecs sur 4 tentatives sur l'AO 599, 2026-09-13).
                 # "attached" reprend la semantique de l'ancien count() : present dans le DOM.
+                step("preparation_dossier")
                 dl_btn = page.locator("a[id$='EntrepriseDownloadDce_completeDownload']")
                 try:
                     await dl_btn.first.wait_for(state="attached", timeout=45000)
@@ -434,6 +452,7 @@ class MPEPlatformScraper(IAOScraper):
                     )
                     return None
 
+                step("reception_fichier")
                 async with page.expect_download(timeout=30000) as dl_info:
                     await dl_btn.click()
                 download = await dl_info.value

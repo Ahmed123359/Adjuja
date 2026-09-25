@@ -18,6 +18,62 @@ règle) · `À CONFIRMER` (soupçonné, pas encore reproduit).
 
 ## OUVERT
 
+### Le formulaire de génération n'est atteignable par aucun chemin
+
+`adjuja-frontend/src/App.tsx` (lignes 147, 171 et 261)
+
+Trouvé le 2026-09-15 en restructurant la navigation pour le tableau de bord.
+`LeftPanel`, qui porte le formulaire de génération et son bouton, n'est rendu que
+si `appState !== "idle"`. Or seuls deux endroits font sortir de `idle` :
+`handleGenerate`, déclenché par ce même bouton, et `handleLoadHistory`, qui
+recharge une génération passée. Depuis un démarrage normal, **le formulaire ne
+peut donc jamais apparaître** : il faut déjà avoir une génération dans
+l'historique pour y accéder.
+
+Non reproduit à l'écran (aucun navigateur dans la session), mais la condition se
+lit directement. L'entrée de navigation « offres » a été retirée de la barre
+latérale dans ce chantier, faute de contenu atteignable ; le code de l'espace de
+génération n'a pas été touché. À trancher : rétablir un point d'entrée réel, ou
+retirer cet espace s'il est abandonné.
+
+
+### Le panneau d'un bon de commande sans document tourne indéfiniment
+
+`adjuja-frontend/src/features/veille/components/BdcDetailPanel.tsx`, ligne 90
+
+Trouvé le 2026-09-14, même lecture. `isDownloading` ne vérifie pas
+`document_url` : un BDC favori **sans document publié** affiche « Téléchargement
+en cours… » pour toujours, et interroge le serveur toutes les 3 s tant que le
+panneau reste ouvert. Le router, lui, ne lance aucun téléchargement dans ce cas
+(`bdc.document_url` testé). Défaut certain à la lecture.
+
+**Correction écrite le 2026-09-14** (`hasDocument`, message `bdc.detail.noDoc`),
+vérifiée par `tsc` et `npm run build` seulement : aucun BDC sans document dans la
+base de dev, et pas de navigateur dans la session. À confirmer à l'écran avant de
+passer en CORRIGÉ.
+
+### Le panneau de veille arrête de surveiller un téléchargement DCE au bout de 45 s
+
+`adjuja-frontend/src/features/veille/components/AoDetailPanel.tsx`, `useEffect`
+du polling (lignes 214-232)
+
+Trouvé le 2026-09-14 en lisant le code pour le chantier `download-dce-lenteur`.
+La limite `attempts > 15` (15 × 3 s) est commentée comme servant au cas « aucun
+lien » (`noZipLink`), mais elle s'applique **aussi** à `isDownloading`. Un
+téléchargement plus long que 45 s -- gros DCE, ou relance Celery après un échec
+(`default_retry_delay=60`) -- laisse le panneau figé sur « Téléchargement en
+cours… » alors que les documents sont prêts, jusqu'à ce que l'utilisateur le
+ferme et le rouvre. C'est précisément le symptôme que ce polling devait corriger.
+Défaut certain à la lecture (l'effet ne redémarre pas : ses dépendances ne
+changent pas), pas encore reproduit à l'écran.
+
+**Correction écrite le 2026-09-14** : plus aucune limite pendant un
+téléchargement (appels espacés à 10 s après 2 min) ; pour « aucun lien », suivi
+limité à la durée de la revérification. Le serveur renvoie bien l'étape en cours
+pendant plus de 2 minutes (AO 5, vrai échec puis relance, suivi via l'API), mais
+le comportement du composant lui-même n'a été vérifié que par `tsc` et
+`npm run build`. À confirmer à l'écran avant de passer en CORRIGÉ.
+
 ### Les documents scannés ne sont jamais lus : pas d'OCR sur le chemin d'analyse
 
 `adjuja-watcher/app/modules/ao_scraper/analysis.py` et
@@ -134,6 +190,72 @@ Supprimer des tests est un choix qui appartient à l'utilisateur.
 ---
 
 ## CORRIGÉ
+
+### La date limite d'un AO importé de la veille était perdue
+
+`adjuja-backend/app/api/routes/ao_routes.py`, `import_from_watcher` et
+`app/db/models.py`, `AppelOffre`
+
+Trouvé le 2026-09-15 en préparant `dashboard-collaboratif`. Le watcher envoyait
+`date_limite`, `categorie` et `region` à chaque import, `FromWatcherPayload` les
+déclarait, et le handler ne les écrivait nulle part : la table `appels_offres`
+n'avait **aucune colonne de date limite**. L'échéance d'un AO en cours n'existait
+donc pas dans l'application principale.
+
+**Corrigé et vérifié le 2026-09-15** : migration `014` (colonne `date_limite`),
+renseignée à l'import, à la création manuelle et par la nouvelle route
+`PATCH /ao/{ao_id}`. Vérifié de bout en bout sur un import réel depuis la veille
+(AO 4078, échéance `2026-11-04`) : valeur identique dans la veille, dans la
+réponse de l'API principale et en base, contrôlée par requête SQL directe. L'AO
+de test a été supprimé ensuite.
+
+**Reste vrai** : `categorie` et `region` ne sont toujours pas stockés, faute de
+colonnes. Non traité ici, personne ne les demande aujourd'hui. Les AO importés
+avant cette correction restent sans date : la valeur n'a jamais été stockée.
+
+
+### Les routes de lecture des bons de commande n'exigeaient pas l'authentification
+
+`adjuja-watcher/app/modules/bdc_scraper/router.py` : `GET /bdc`, `GET /bdc/stats`,
+`GET /bdc/{bdc_id}`
+
+Trouvé le 2026-09-14 en lisant le router pour `download-dce-lenteur`. Leurs
+équivalents AO exigent l'en-tête `Authorization` (`_require_auth_header`), ces
+trois-là non : la liste des bons de commande suivis était lisible sans être
+connecté, via le proxy `/watcher/`. Aucun autre service n'appelle ces routes
+(recherche dans backend, notification et infra), et le frontend envoie déjà
+l'en-tête.
+
+**Corrigé et vérifié le 2026-09-14** par de vrais appels : sans en-tête, `GET /bdc`,
+`/bdc/stats` et `/bdc/785` → 401 ; avec en-tête → 200.
+
+### Une erreur de téléchargement temporaire s'affichait comme définitive
+
+`adjuja-watcher/app/workers/tasks/download_tasks.py` et `download_bdc_tasks.py`
+
+Trouvé le 2026-09-14. Avant chaque relance Celery, `_save_error` écrivait
+`zip_error` en base : les panneaux AO et BDC passaient en « erreur » et cessaient
+de surveiller, même quand la relance suivante réussissait.
+
+**Corrigé et vérifié le 2026-09-14** : l'erreur n'est écrite qu'après la dernière
+tentative, et l'étape `nouvelle_tentative` (n/4, délai) est exposée par l'API.
+Relances épuisées sur l'AO 3412 (portail simulé en échec) : erreur écrite une
+seule fois, après la 4e tentative. **Vrai échec du portail sur l'AO 5**
+(`Page.goto: Timeout 30000ms`) : aucune erreur en base, l'API renvoyait
+« tentative 1/4, relance dans 59 s », puis la 2e tentative a réussi. Une ancienne
+erreur est aussi effacée à la remise en favori (vérifié sur l'AO 5).
+
+### Une erreur permanente de téléchargement était retentée 3 fois pour rien
+
+`adjuja-watcher/app/workers/tasks/download_tasks.py` et `download_bdc_tasks.py`
+
+**Reproduit dans les logs réels** le 2026-09-13 : `AO 599 has no zip_url` relancée
+3 fois à 60 s d'intervalle, soit ~3 min d'attente pour une erreur connue dès la
+première seconde.
+
+**Corrigé et vérifié le 2026-09-14** : `PermanentDownloadError` (inexistant, aucun
+lien ou document) échoue tout de suite. Appel réel de la tâche sur un AO sans
+lien : état `SUCCESS` avec l'erreur, aucune relance, erreur écrite une fois.
 
 ### Le délai `networkidle` faisait échouer le téléchargement des DCE
 
@@ -279,3 +401,89 @@ La première version du correctif multi-lots indexait
 `{"lots": 0}` : toute analyse d'un AO sans RC levait `KeyError`, le cas le plus
 fréquent avant la correction du classement. Présent quelques minutes dans le
 conteneur de dev, jamais commité ni déployé. **Corrigé** par `.get()`.
+
+
+### `pytest` échoue à la collecte depuis `adjuja-backend/` : 3 tests orphelins du `worker/`
+
+`adjuja-backend/tests/unit/test_worker_config.py`, `test_worker_db.py`,
+`test_worker_scraper.py`
+
+Relevé le 2026-09-25 en lançant la suite pour valider `/dashboard/at-risk`.
+
+Ces trois modules importent `worker.config`, `worker.db`, `worker.models` et
+`worker.scraper`. Or `worker/` est resté **à la racine du dépôt**, hors de
+`adjuja-backend/`, lors de la découpe en dossiers par service (commit
+`4861d00`) -- et `CLAUDE.md` le décrit comme du code mort, hors dépôts. Les
+tests sont donc orphelins : leur cible n'est plus importable depuis le paquet
+où ils vivent.
+
+Conséquence : `pytest` lancé depuis `adjuja-backend/`, qui est **la commande
+documentée dans `CLAUDE.md`**, s'arrête sur `Interrupted: 3 errors during
+collection` et ne lance aucun test. Il faut trois `--ignore` pour obtenir un
+résultat -- avec eux, **58 tests passent**.
+
+Défaut de longue date, sans rapport avec le travail en cours : il date de la
+découpe, pas d'une régression récente.
+
+**Correction non appliquée dans la foulée, arbitrage nécessaire.** Les deux
+issues suppriment ou déplacent de la couverture :
+
+- `worker/` est déclaré mort et son remplaçant est `adjuja-watcher/`, qui n'a
+  **aucun test** (`find adjuja-watcher -name "test_*.py"` ne renvoie rien).
+  Supprimer les trois fichiers rendrait la suite verte mais ramènerait la
+  couverture du service de veille à zéro ;
+- les repointer sur `adjuja-watcher` n'est pas une réécriture d'import : la
+  structure a changé (`worker/config.py` -> `adjuja-watcher/app/core/config.py`,
+  `worker/scraper.py` -> `app/modules/{ao,bdc}_scraper/`), et les fonctions
+  testées (`_extract_ref`, `_normalize_url`, `upsert_ao`) doivent être
+  retrouvées une par une.
+
+La seconde voie est la bonne -- c'est la seule qui donne enfin des tests au
+watcher -- mais c'est un chantier à part, pas un correctif de passage.
+
+
+### Les migrations Alembic ne sont jamais appliquées : le schéma vient de `create_all`
+
+`adjuja-backend/app/main.py:34`, `adjuja-backend/alembic/versions/`
+
+Relevé le 2026-09-25 en posant la migration 015 (`team_messages`).
+
+Constat, vérifié en base et non supposé :
+
+- la table `alembic_version` **n'existe pas** dans la base de développement :
+  aucune migration n'a jamais été enregistrée comme appliquée ;
+- `alembic upgrade head` **échoue immédiatement** :
+  `asyncpg.exceptions.DuplicateTableError: relation "users" already exists`.
+  Alembic repart de la révision 001 et tente de recréer des tables présentes ;
+- le schéma réel est produit par `Base.metadata.create_all`, appelé au démarrage
+  de l'application (`main.py:34`).
+
+Les quinze migrations du dossier sont donc **décoratives** : elles décrivent
+l'intention, rien ne les exécute.
+
+**Pourquoi c'est dangereux et pas seulement inélégant.** `create_all` ne crée
+que les tables MANQUANTES ; il n'ajoute jamais une colonne à une table qui
+existe déjà. Tant qu'on repart d'une base vide, tout semble fonctionner -- c'est
+le cas ici, `date_limite`, `mode` et `team_messages.refs` sont bien présents,
+parce que cette base a été recréée après la mise à jour des modèles. Sur une
+base qui a de l'historique, en revanche, une migration du type de la 014
+(`ALTER TABLE appels_offres ADD COLUMN date_limite`) ne s'appliquerait
+**jamais**, et l'application écrirait dans une colonne inexistante. C'est
+exactement la famille de défaut qui a déjà coûté la perte silencieuse de
+`date_limite` à l'import (voir plus haut dans ce registre).
+
+**Correction non appliquée dans la foulée, arbitrage nécessaire.** Remettre la
+chaîne d'aplomb demande de décider de l'état de départ, ce qui touche la base de
+production :
+
+- estampiller la base existante à la dernière révision
+  (`alembic stamp head`) admet que les migrations 001 à 015 sont déjà reflétées
+  par `create_all` -- vrai pour cette base de dev, à vérifier une par une pour la
+  production avant d'en faire autant ;
+- puis retirer `create_all` du démarrage, sans quoi les deux mécanismes
+  continueront de se marcher dessus et le problème reviendra à la première
+  colonne ajoutée ;
+- et lancer `alembic upgrade head` au déploiement.
+
+Tant que ce n'est pas fait, **toute migration qui ajoute une colonne doit être
+considérée comme non appliquée** et vérifiée à la main en base.

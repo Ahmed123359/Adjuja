@@ -68,9 +68,9 @@ export default function App({
   const [langue, setLangue] = useState<"fr" | "en">("fr");
 
   // Navigation principale
-  const [mainTab, setMainTab] = useState<"offres" | "marches" | "outils" | "veille">(
-    "offres",
-  );
+  const [mainTab, setMainTab] = useState<
+    "accueil" | "offres" | "marches" | "taches" | "outils" | "veille" | "entreprise"
+  >("accueil");
   const [outilSection, setOutilSection] = useState<Outil>("signatures");
 
   // App state
@@ -217,7 +217,7 @@ export default function App({
   const { theme, toggle } = useTheme();
 
   return (
-    <div style={{ display: 'flex', height: '100vh', width: '100%', overflow: 'hidden' }}>
+    <div className="adj-app-bg" style={{ display: 'flex', height: '100vh', width: '100%', overflow: 'hidden' }}>
 
       {/* Sidebar desktop */}
       {!isMobile && (
@@ -244,6 +244,7 @@ export default function App({
             onLogout={onLogout}
             apiStatus={apiStatus}
             onGoLanding={onGoLanding}
+            collapsible={false}
           />
         </div>
       )}

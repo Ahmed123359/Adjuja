@@ -16,7 +16,10 @@ import {
 import type { AoMode, AoResponse, AoDocumentOut } from "../types";
 import { GuidedPipeline } from "./GuidedPipeline";
 import { ModeChoice } from "./ModeChoice";
-import { StatusBadge } from "./StatusBadge";
+import { Button } from "../../../shared/ui/Button";
+import { Modal } from "../../../shared/ui/Modal";
+import { AoDetailHeader } from "./AoDetailHeader";
+import { ErrorNotice } from "./ErrorNotice";
 import { ProgressBar } from "./ProgressBar";
 import { DossierSection } from "./DossierSection";
 
@@ -201,8 +204,8 @@ export function AoDetailView({ aoId, onBack }: { aoId: string; onBack: () => voi
             width: 24,
             height: 24,
             borderRadius: "50%",
-            border: "2px solid var(--l-card-border)",
-            borderTopColor: "var(--l-blue)",
+            border: "2px solid var(--adj-hairline)",
+            borderTopColor: "var(--adj-brand)",
             animation: "spin 1s linear infinite",
           }}
         />
@@ -239,149 +242,37 @@ export function AoDetailView({ aoId, onBack }: { aoId: string; onBack: () => voi
         display: "flex",
         flexDirection: "column",
         height: "100%",
+        minWidth: 0,
+        overflowX: "hidden",
       }}
     >
-      {/* Header */}
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          gap: 12,
-          padding: "14px 24px",
-          borderBottom: "1px solid var(--l-card-border)",
-          flexShrink: 0,
-          background: "var(--l-card)",
-        }}
-      >
-        <button
-          onClick={onBack}
-          style={{
-            ...btnBase,
-            padding: "7px",
-            background: "var(--l-input-bg)",
-            color: "var(--l-sub)",
-            display: "flex",
-            fontWeight: 500,
-          }}
-          onMouseEnter={(e) => (e.currentTarget.style.color = "var(--l-text)")}
-          onMouseLeave={(e) => (e.currentTarget.style.color = "var(--l-sub)")}
-        >
-          <svg
-            width="16"
-            height="16"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-            strokeWidth={2}
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18"
-            />
-          </svg>
-        </button>
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <p
-            style={{
-              margin: "0 0 1px",
-              fontSize: 15,
-              fontWeight: 700,
-              color: "var(--l-text)",
-              whiteSpace: "nowrap",
-              overflow: "hidden",
-              textOverflow: "ellipsis",
-            }}
-          >
-            {ao.reference || t("pipeline.detail.noRef")}
-          </p>
-          {ao.acheteur && (
-            <p style={{ margin: 0, fontSize: 12, color: "var(--l-sub)" }}>
-              {ao.acheteur}
-            </p>
-          )}
-        </div>
-        <StatusBadge statut={ao.statut} />
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: 6,
-            flexShrink: 0,
-          }}
-        >
-          {isPipelineRunning && (
-            <button
-              onClick={handleCancel}
-              disabled={cancelling}
-              style={{
-                ...btnBase,
-                padding: "7px 12px",
-                fontSize: 12,
-                background: "rgba(245,158,11,0.10)",
-                color: "#d97706",
-                border: "1px solid rgba(245,158,11,0.25)",
-                cursor: cancelling ? "not-allowed" : "pointer",
-              }}
-              onMouseEnter={(e) => {
-                if (!cancelling) e.currentTarget.style.opacity = ".8";
-              }}
-              onMouseLeave={(e) => (e.currentTarget.style.opacity = "1")}
-            >
-              {cancelling
-                ? t("pipeline.detail.cancelling")
-                : t("pipeline.detail.cancelBtn")}
-            </button>
-          )}
-          <button
-            onClick={handleDelete}
-            disabled={deleting}
-            style={{
-              ...btnBase,
-              padding: "7px",
-              background: "var(--l-input-bg)",
-              color: "var(--l-dim)",
-              border: "1px solid var(--l-card-border)",
-              display: "flex",
-              alignItems: "center",
-              cursor: deleting ? "not-allowed" : "pointer",
-            }}
-            onMouseEnter={(e) => {
-              if (!deleting) {
-                e.currentTarget.style.color = "#dc2626";
-                e.currentTarget.style.background = "rgba(220,38,38,0.06)";
-              }
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.color = "var(--l-dim)";
-              e.currentTarget.style.background = "var(--l-input-bg)";
-            }}
-            title={t("pipeline.detail.deleteBtn")}
-          >
-            <svg
-              width="14"
-              height="14"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-              strokeWidth={2}
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-              />
-            </svg>
-          </button>
-        </div>
-      </div>
+      <AoDetailHeader
+        ao={ao}
+        onBack={onBack}
+        onDelete={() => setConfirmModal({
+          message: t("pipeline.detail.deleteConfirmDetail"),
+          onConfirm: async () => {
+            setConfirmModal(null);
+            setDeleting(true);
+            try {
+              await deleteAo(aoId);
+              onBack();
+            } catch (e: unknown) {
+              setError(e instanceof Error ? e.message : "Erreur suppression.");
+            } finally {
+              setDeleting(false);
+            }
+          },
+        })}
+      />
 
-      <div style={{ flex: 1, overflowY: "auto", padding: "20px 24px" }}>
+      <div className="adj-app-bg adj-scroll adj-pad-x" style={{ flex: 1, minWidth: 0, overflowY: "auto", overflowX: "hidden", padding: "var(--adj-5) var(--adj-6) var(--adj-10)" }}>
         <div
           style={{
-            maxWidth: 896,
+            maxWidth: "var(--adj-max)",
             margin: "0 auto",
             width: "100%",
+            minWidth: 0,
             display: "flex",
             flexDirection: "column",
             gap: 20,
@@ -398,8 +289,8 @@ export function AoDetailView({ aoId, onBack }: { aoId: string; onBack: () => voi
                 display: "flex",
                 flexDirection: "column",
                 gap: 8,
-                background: "var(--l-card)",
-                border: "1px solid var(--l-card-border)",
+                background: "var(--adj-panel)",
+                border: "1px solid var(--adj-hairline)",
                 borderRadius: 12,
                 padding: "16px 18px",
               }}
@@ -411,14 +302,14 @@ export function AoDetailView({ aoId, onBack }: { aoId: string; onBack: () => voi
                   alignItems: "center",
                 }}
               >
-                <span style={{ fontSize: 13, color: "var(--l-sub)" }}>
+                <span style={{ fontSize: 13, color: "var(--adj-ink-2)" }}>
                   {t("pipeline.detail.progress")}
                 </span>
                 <span
                   style={{
                     fontSize: 13,
                     fontWeight: 700,
-                    color: "var(--l-text)",
+                    color: "var(--adj-ink)",
                     fontVariantNumeric: "tabular-nums",
                   }}
                 >
@@ -453,33 +344,45 @@ export function AoDetailView({ aoId, onBack }: { aoId: string; onBack: () => voi
             </div>
           )}
 
-          {/* Error */}
-          {ao.erreur_message && (
-            <div
-              style={{
-                padding: "12px 16px",
-                borderRadius: 10,
-                background: "rgba(220,38,38,0.07)",
-                border: "1px solid rgba(220,38,38,0.2)",
-                color: "#dc2626",
-                fontSize: 13,
-              }}
-            >
-              {ao.erreur_message}
-            </div>
-          )}
+          {/* En mode accompagne, l'etape en erreur porte deja le message dans
+              son panneau : le repeter ici affichait deux fois le meme texte, ce
+              qui laissait croire a deux problemes. */}
+          {ao.erreur_message && !isGuided && <ErrorNotice message={ao.erreur_message} />}
 
-          {/* Upload zone */}
+          {/* Zone de depot et documents sources : un seul panneau titre.
+              Separes, ils se lisaient comme deux sujets sans rapport. */}
+          {(!isPipelineRunning && !isPipelineDone) || docsByDossier["source"]?.length > 0 ? (
+          <section style={{
+            display: "flex", flexDirection: "column", gap: "var(--adj-4)",
+            padding: "var(--adj-pad)",
+            background: "var(--adj-panel)",
+            border: "1px solid var(--adj-hairline)",
+            borderRadius: "var(--adj-round-l)",
+            minWidth: 0,
+          }}>
+            <div>
+              <h2 style={{
+                margin: 0, fontSize: "var(--adj-t-md)", fontWeight: 600,
+                color: "var(--adj-ink)", letterSpacing: "-0.015em",
+              }}>
+                {t("pipeline.dossiers.source")}
+              </h2>
+              <p style={{ margin: "3px 0 0", fontSize: "var(--adj-t-xs)", color: "var(--adj-ink-3)" }}>
+                {t("pipeline.detail.uploadHint")}
+              </p>
+            </div>
+
           {!isPipelineRunning && !isPipelineDone && (
             <div
               style={{
-                border: `2px dashed ${dragOver ? "var(--l-blue)" : "var(--l-card-border)"}`,
-                borderRadius: 14,
-                padding: "36px 24px",
+                border: `1.5px dashed ${dragOver ? "var(--adj-brand)" : "var(--adj-edge)"}`,
+                borderRadius: "var(--adj-round-m)",
+                padding: "var(--adj-6) var(--adj-4)",
                 textAlign: "center",
                 cursor: "pointer",
-                background: dragOver ? "var(--l-blue-a)" : "var(--l-input-bg)",
+                background: dragOver ? "var(--adj-brand-tint)" : "var(--adj-panel-2)",
                 transition: "border-color .15s, background .15s",
+                minWidth: 0,
               }}
               onDragOver={(e) => {
                 e.preventDefault();
@@ -515,12 +418,12 @@ export function AoDetailView({ aoId, onBack }: { aoId: string; onBack: () => voi
                       width: 24,
                       height: 24,
                       borderRadius: "50%",
-                      border: "2px solid var(--l-card-border)",
-                      borderTopColor: "var(--l-blue)",
+                      border: "2px solid var(--adj-hairline)",
+                      borderTopColor: "var(--adj-brand)",
                       animation: "spin 1s linear infinite",
                     }}
                   />
-                  <p style={{ margin: 0, fontSize: 13, color: "var(--l-sub)" }}>
+                  <p style={{ margin: 0, fontSize: 13, color: "var(--adj-ink-2)" }}>
                     {t("pipeline.detail.uploading")}
                   </p>
                 </div>
@@ -532,7 +435,7 @@ export function AoDetailView({ aoId, onBack }: { aoId: string; onBack: () => voi
                     height="28"
                     fill="none"
                     viewBox="0 0 24 24"
-                    stroke="var(--l-dim)"
+                    stroke="var(--adj-ink-4)"
                     strokeWidth={1.5}
                   >
                     <path
@@ -546,7 +449,7 @@ export function AoDetailView({ aoId, onBack }: { aoId: string; onBack: () => voi
                       margin: "0 0 4px",
                       fontSize: 14,
                       fontWeight: 600,
-                      color: "var(--l-text)",
+                      color: "var(--adj-ink)",
                     }}
                   >
                     {t("pipeline.detail.uploadZone")}
@@ -555,7 +458,7 @@ export function AoDetailView({ aoId, onBack }: { aoId: string; onBack: () => voi
                     style={{
                       margin: "0 0 12px",
                       fontSize: 12,
-                      color: "var(--l-sub)",
+                      color: "var(--adj-ink-2)",
                     }}
                   >
                     {t("pipeline.detail.uploadHint")}
@@ -565,7 +468,7 @@ export function AoDetailView({ aoId, onBack }: { aoId: string; onBack: () => voi
                       margin: 0,
                       fontSize: 12,
                       fontWeight: 600,
-                      color: "var(--l-blue)",
+                      color: "var(--adj-brand)",
                     }}
                   >
                     {t("pipeline.detail.uploadClick")}
@@ -575,14 +478,14 @@ export function AoDetailView({ aoId, onBack }: { aoId: string; onBack: () => voi
             </div>
           )}
 
-          {/* Source docs */}
           {docsByDossier["source"]?.length > 0 && (
             <DossierSection
-              title={t("pipeline.dossiers.source")}
               docs={docsByDossier["source"]}
               aoId={aoId}
             />
           )}
+          </section>
+          ) : null}
 
           {/* Choix du regime de traitement (client.md) */}
           {canStart && hasSourceDocs && (
@@ -594,7 +497,7 @@ export function AoDetailView({ aoId, onBack }: { aoId: string; onBack: () => voi
               style={{
                 textAlign: "center",
                 fontSize: 13,
-                color: "var(--l-dim)",
+                color: "var(--adj-ink-4)",
                 padding: "8px 0",
               }}
             >
@@ -646,14 +549,41 @@ export function AoDetailView({ aoId, onBack }: { aoId: string; onBack: () => voi
       {error && (
         <div
           style={{
-            padding: "12px 24px",
-            borderTop: "1px solid var(--l-card-border)",
+            padding: "var(--adj-3) var(--adj-6)",
+            borderTop: "1px solid var(--adj-hairline)",
             flexShrink: 0,
           }}
         >
-          <p style={{ margin: 0, fontSize: 13, color: "#dc2626" }}>{error}</p>
+          <p style={{ margin: 0, fontSize: "var(--adj-t-sm)", color: "var(--adj-neg)" }}>{error}</p>
         </div>
       )}
+
+      <Modal
+        open={confirmModal !== null}
+        onClose={() => setConfirmModal(null)}
+        title={t("pipeline.list.delete")}
+        subtitle={ao.reference || undefined}
+        width={460}
+      >
+        <p style={{
+          margin: "0 0 var(--adj-5)", fontSize: "var(--adj-t-sm)",
+          color: "var(--adj-ink-2)", lineHeight: 1.6,
+        }}>
+          {confirmModal?.message}
+        </p>
+        <div style={{ display: "flex", gap: "var(--adj-2)" }}>
+          <Button
+            variant="danger" size="md"
+            loading={deleting || cancelling}
+            onClick={() => confirmModal?.onConfirm()}
+          >
+            {t("pipeline.detail.confirm")}
+          </Button>
+          <Button variant="ghost" size="md" onClick={() => setConfirmModal(null)}>
+            {t("dashboard.home.task.cancel")}
+          </Button>
+        </div>
+      </Modal>
     </div>
   );
 }

@@ -7,7 +7,7 @@ export function ProgressBar({ pct }: { pct: number }) {
       style={{
         width: "100%",
         height: 6,
-        background: "var(--l-input-bg)",
+        background: "var(--adj-panel-2)",
         borderRadius: 3,
         overflow: "hidden",
       }}
@@ -16,7 +16,7 @@ export function ProgressBar({ pct }: { pct: number }) {
         style={{
           height: "100%",
           borderRadius: 3,
-          background: "linear-gradient(90deg, var(--l-blue), #22c55e)",
+          background: "linear-gradient(90deg, var(--adj-brand), #22c55e)",
           width: `${pct}%`,
           transition: "width .7s ease",
         }}

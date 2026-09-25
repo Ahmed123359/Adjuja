@@ -1,13 +1,19 @@
-// Espace entreprise : reglages en 6 onglets.
-// Les onglets vivent dans ./tabs/ et les composants dans ./components/
-// depuis le 2026-09-12. Le chantier dashboard-collaboratif prevoit de
-// renommer cette page en espace Parametres ; non fait ici (deplacement pur).
+// Espace « Mon entreprise » : les reglages, en 5 onglets.
+//
+// Etait l'ecran d'accueil de l'application sous le nom DashboardPage, avec un
+// 6e onglet « Vue d'ensemble ». Depuis le chantier dashboard-collaboratif
+// (2026-09-15), l'accueil est un vrai tableau de bord
+// (features/dashboard/DashboardHomePage) et cet ecran ne porte plus que du
+// reglage ; on y accede par le pied de la barre laterale.
+//
+// La « Vue d'ensemble » n'a pas ete supprimee : elle est devenue
+// features/dashboard/components/ActivitySection, rendue par le tableau de bord.
+// Les 5 onglets restants n'ont pas ete touches, ils sont en production.
 
 import { useState, useEffect, useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import { checkCompanyProfile } from "./api";
 import type { ProfileCheck } from "../../types";
-import { OverviewTab } from "./tabs/OverviewTab";
 import { ProfileTab } from "./tabs/ProfileTab";
 import { SignatureTab } from "./tabs/SignatureTab";
 import { DocumentsTab } from "./tabs/DocumentsTab";
@@ -15,16 +21,15 @@ import { EquipeTab } from "./tabs/EquipeTab";
 import { GenerationTab } from "./tabs/GenerationTab";
 
 type DashTab =
-  | "overview"
   | "profile"
   | "signature"
   | "documents"
   | "equipe"
   | "generation";
 
-export default function DashboardPage() {
+export default function CompanySettingsPage() {
   const { t } = useTranslation();
-  const [tab, setTab] = useState<DashTab>("overview");
+  const [tab, setTab] = useState<DashTab>("profile");
   const [profileCheck, setProfileCheck] = useState<ProfileCheck | null>(null);
 
   const loadCheck = useCallback(() => {
@@ -37,7 +42,6 @@ export default function DashboardPage() {
   }, [loadCheck]);
 
   const TABS: { id: DashTab; label: string }[] = [
-    { id: "overview", label: t("dashboard.tabs.overview") },
     { id: "profile", label: t("dashboard.tabs.profile") },
     { id: "signature", label: "Paraphe & Cachet" },
     { id: "documents", label: "Documents" },
@@ -116,17 +120,27 @@ export default function DashboardPage() {
         ))}
       </div>
 
-      {/* Content */}
-      <div style={{ flex: 1, overflowY: "auto", padding: "24px" }}>
-        <div style={{ maxWidth: 896, margin: "0 auto", width: "100%" }}>
-          {tab === "overview" && <OverviewTab profileCheck={profileCheck} />}
-          {tab === "profile" && <ProfileTab onProfileSaved={loadCheck} />}
-          {tab === "signature" && <SignatureTab />}
-          {tab === "documents" && <DocumentsTab />}
-          {tab === "equipe" && <EquipeTab />}
-          {tab === "generation" && <GenerationTab />}
+      {/* Contenu.
+
+          Les onglets refondus sur le socle visuel portent eux-memes leur mise en
+          page via <Page> : largeur, gouttieres et defilement. Les envelopper
+          dans le conteneur ci-dessous produirait un double defilement et une
+          largeur bridee a 896px.
+
+          Les autres onglets gardent le conteneur historique le temps d'etre
+          repris a leur tour. Deplacer cette frontiere onglet par onglet est
+          justement ce qui rend la refonte progressive et verifiable. */}
+      {(
+        <div style={{ flex: 1, overflowY: "auto", padding: "24px" }}>
+          <div style={{ maxWidth: 896, margin: "0 auto", width: "100%" }}>
+            {tab === "profile" && <ProfileTab onProfileSaved={loadCheck} />}
+            {tab === "signature" && <SignatureTab />}
+            {tab === "documents" && <DocumentsTab />}
+            {tab === "equipe" && <EquipeTab />}
+            {tab === "generation" && <GenerationTab />}
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }

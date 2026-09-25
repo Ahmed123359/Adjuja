@@ -7,6 +7,7 @@
 // ou abandonner. L'abandon n'est pas une erreur et n'est pas presente comme tel.
 
 import { useState } from "react";
+import { ErrorNotice } from "./ErrorNotice";
 import { useTranslation } from "react-i18next";
 import type { AoDocumentOut, AoResponse, AoStep, AoStepKey } from "../types";
 
@@ -23,7 +24,7 @@ const btn: React.CSSProperties = {
 function Bloc({ titre, children }: { titre: string; children: React.ReactNode }) {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-      <p style={{ margin: 0, fontSize: 11.5, fontWeight: 700, color: "var(--l-sub)", letterSpacing: ".02em" }}>
+      <p style={{ margin: 0, fontSize: 11.5, fontWeight: 700, color: "var(--adj-ink-2)", letterSpacing: ".02em" }}>
         {titre}
       </p>
       {children}
@@ -36,7 +37,7 @@ function VueDocuments({ documents }: { documents: AoDocumentOut[] }) {
   const { t } = useTranslation();
   const sources = documents.filter((d) => d.dossier === "source");
   if (!sources.length) {
-    return <p style={{ margin: 0, fontSize: 13, color: "var(--l-dim)" }}>{t("pipeline.steps.documents.empty")}</p>;
+    return <p style={{ margin: 0, fontSize: 13, color: "var(--adj-ink-4)" }}>{t("pipeline.steps.documents.empty")}</p>;
   }
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
@@ -49,17 +50,17 @@ function VueDocuments({ documents }: { documents: AoDocumentOut[] }) {
             gap: 10,
             padding: "8px 11px",
             borderRadius: 8,
-            border: "1px solid var(--l-card-border)",
-            background: "var(--l-input-bg)",
+            border: "1px solid var(--adj-hairline)",
+            background: "var(--adj-panel-2)",
           }}
         >
-          <span style={{ fontSize: 11, fontWeight: 700, color: "var(--l-blue)", textTransform: "uppercase" }}>
+          <span style={{ fontSize: 11, fontWeight: 700, color: "var(--adj-brand)", textTransform: "uppercase" }}>
             {d.doc_type}
           </span>
           <span
             style={{
               fontSize: 12.5,
-              color: "var(--l-text)",
+              color: "var(--adj-ink)",
               overflow: "hidden",
               textOverflow: "ellipsis",
               whiteSpace: "nowrap",
@@ -77,7 +78,7 @@ function VueDocuments({ documents }: { documents: AoDocumentOut[] }) {
 function VueComprehension({ analyse }: { analyse: Record<string, unknown> | null }) {
   const { t } = useTranslation();
   if (!analyse || !Object.keys(analyse).length) {
-    return <p style={{ margin: 0, fontSize: 13, color: "var(--l-dim)" }}>{t("pipeline.steps.comprehension.empty")}</p>;
+    return <p style={{ margin: 0, fontSize: 13, color: "var(--adj-ink-4)" }}>{t("pipeline.steps.comprehension.empty")}</p>;
   }
   // Les cles prefixees `_` sont des metadonnees d'analyse (ex. `_analyse_meta` :
   // lots lus, caracteres tronques), pas des champs du marche a relire.
@@ -88,12 +89,12 @@ function VueComprehension({ analyse }: { analyse: Record<string, unknown> | null
     <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
       {champs.map(([cle, valeur]) => (
         <div key={cle}>
-          <p style={{ margin: "0 0 2px", fontSize: 11, fontWeight: 600, color: "var(--l-sub)" }}>{cle}</p>
+          <p style={{ margin: "0 0 2px", fontSize: 11, fontWeight: 600, color: "var(--adj-ink-2)" }}>{cle}</p>
           <p
             style={{
               margin: 0,
               fontSize: 12.5,
-              color: "var(--l-text)",
+              color: "var(--adj-ink)",
               whiteSpace: "pre-wrap",
               wordBreak: "break-word",
             }}
@@ -134,50 +135,36 @@ export function StepPanel({
       style={{
         display: "flex",
         flexDirection: "column",
-        gap: 18,
-        padding: 18,
-        borderRadius: 12,
-        border: "1px solid var(--l-card-border)",
-        background: "var(--l-card)",
+        gap: "var(--adj-4)",
+        padding: "var(--adj-pad)",
+        borderRadius: "var(--adj-round-l)",
+        border: "1px solid var(--adj-hairline)",
+        background: "var(--adj-panel)",
       }}
     >
       <div>
-        <p style={{ margin: "0 0 3px", fontSize: 15, fontWeight: 700, color: "var(--l-text)" }}>
+        <p style={{ margin: "0 0 3px", fontSize: "var(--adj-t-md)", fontWeight: 700, color: "var(--adj-ink)" }}>
           {t(`pipeline.steps.${step.step_key}.title`)}
         </p>
-        <p style={{ margin: 0, fontSize: 12.5, color: "var(--l-sub)" }}>
+        <p style={{ margin: 0, fontSize: "var(--adj-t-xs)", color: "var(--adj-ink-3)" }}>
           {t(`pipeline.steps.${step.step_key}.help`)}
         </p>
       </div>
 
       {nonApplicable && (
-        <p style={{ margin: 0, fontSize: 13, color: "var(--l-dim)" }}>
+        <p style={{ margin: 0, fontSize: 13, color: "var(--adj-ink-4)" }}>
           {t("pipeline.steps.notApplicableReason")}
         </p>
       )}
 
-      {enErreur && step.erreur_message && (
-        <div
-          style={{
-            padding: "11px 14px",
-            borderRadius: 9,
-            background: "var(--l-error-bg)",
-            border: "1px solid var(--l-error-border)",
-            color: "var(--l-error)",
-            fontSize: 12.5,
-            wordBreak: "break-word",
-          }}
-        >
-          {step.erreur_message}
-        </div>
-      )}
+      {enErreur && step.erreur_message && <ErrorNotice message={step.erreur_message} />}
 
       {!nonApplicable && (
         <Bloc titre={t("pipeline.steps.resultLabel")}>
           {step.step_key === "documents" && <VueDocuments documents={ao.documents} />}
           {step.step_key === "comprehension" && <VueComprehension analyse={ao.analyse_json} />}
           {step.step_key !== "documents" && step.step_key !== "comprehension" && (
-            <p style={{ margin: 0, fontSize: 13, color: "var(--l-dim)" }}>
+            <p style={{ margin: 0, fontSize: 13, color: "var(--adj-ink-4)" }}>
               {t(`pipeline.steps.${step.step_key}.placeholder`)}
             </p>
           )}
@@ -192,7 +179,7 @@ export function StepPanel({
             disabled={busy}
             style={{
               ...btn,
-              background: "var(--l-blue)",
+              background: "var(--adj-brand)",
               color: "#fff",
               cursor: busy ? "not-allowed" : "pointer",
               opacity: busy ? 0.6 : 1,
@@ -209,9 +196,9 @@ export function StepPanel({
               disabled={busy}
               style={{
                 ...btn,
-                background: "var(--l-input-bg)",
-                color: "var(--l-sub)",
-                border: "1px solid var(--l-card-border)",
+                background: "var(--adj-panel-2)",
+                color: "var(--adj-ink-2)",
+                border: "1px solid var(--adj-hairline)",
                 cursor: busy ? "not-allowed" : "pointer",
               }}
             >
@@ -227,7 +214,7 @@ export function StepPanel({
         <div style={{ paddingTop: 2 }}>
           {confirmRerun ? (
             <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-              <p style={{ margin: 0, fontSize: 12.5, color: "var(--l-warn)" }}>
+              <p style={{ margin: 0, fontSize: 12.5, color: "var(--adj-hold)" }}>
                 {t("pipeline.steps.rerunWarning")}
               </p>
               <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
@@ -239,9 +226,9 @@ export function StepPanel({
                   disabled={busy}
                   style={{
                     ...btn,
-                    background: "var(--l-warn-bg)",
-                    color: "var(--l-warn)",
-                    border: "1px solid var(--l-warn-border)",
+                    background: "var(--adj-hold-tint)",
+                    color: "var(--adj-hold)",
+                    border: "1px solid var(--adj-hold)",
                     cursor: busy ? "not-allowed" : "pointer",
                   }}
                 >
@@ -249,7 +236,7 @@ export function StepPanel({
                 </button>
                 <button
                   onClick={() => setConfirmRerun(false)}
-                  style={{ ...btn, background: "var(--l-input-bg)", color: "var(--l-sub)" }}
+                  style={{ ...btn, background: "var(--adj-panel-2)", color: "var(--adj-ink-2)" }}
                 >
                   {t("pipeline.steps.cancel")}
                 </button>
@@ -262,8 +249,8 @@ export function StepPanel({
               style={{
                 ...btn,
                 background: "transparent",
-                color: "var(--l-sub)",
-                border: "1px solid var(--l-card-border)",
+                color: "var(--adj-ink-2)",
+                border: "1px solid var(--adj-hairline)",
                 cursor: busy ? "not-allowed" : "pointer",
               }}
             >

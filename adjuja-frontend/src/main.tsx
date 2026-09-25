@@ -13,8 +13,10 @@ import MentionsLegalesPage from './features/legal/MentionsLegalesPage';
 import CguPage from './features/legal/CguPage';
 import ConfidentialitePage from './features/legal/ConfidentialitePage';
 import { getMe, clearToken, startCheckout, CHECKOUT_INTENT_KEY } from './api';
+import { viderCache } from './shared/lib/cache';
 import type { User } from './types';
 import './index.css';
+import "./shared/ui/tokens.css";
 import './i18n';
 
 /** Le canonical est figé en dur dans index.html au chargement (limite d'une SPA sans
@@ -79,6 +81,8 @@ function AppRouter() {
   }
 
   function handleLogout() {
+    // Sans cela, le compte suivant verrait les donnees en cache du precedent.
+    viderCache();
     clearToken();
     setUser(null);
     navigate('/', { replace: true });

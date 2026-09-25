@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { ScrapedBdc } from '../../../types';
 import WatcherStatusBadge from './WatcherStatusBadge';
+import DownloadProgressBanner from './DownloadProgressBanner';
 import { updateBdcStatus, fetchScrapedBdcOne } from '../../../api';
 import { useIsMobile } from '../../../hooks/useIsMobile';
 
@@ -87,25 +88,39 @@ export default function BdcDetailPanel({ bdc: initialBdc, onClose, onUpdated }: 
   const [loadingStatus, setLoadingStatus] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const isDownloading = bdc.status === 'favorited' && !bdc.zip_downloaded_at && !bdc.zip_error;
+  // Sans document publié, aucun téléchargement n'est lancé côté serveur : ce n'est
+  // pas un état « en cours ». L'ancien test l'oubliait et le panneau tournait
+  // indéfiniment (bugs-connus.md, 2026-09-14).
+  const hasDocument   = !!bdc.document_url;
+  const isDownloading = bdc.status === 'favorited' && hasDocument && !bdc.zip_downloaded_at && !bdc.zip_error;
+  const noDocument    = bdc.status === 'favorited' && !hasDocument && !bdc.zip_downloaded_at;
   const hasZipError   = bdc.status === 'favorited' && !!bdc.zip_error;
   const zipReady      = bdc.status === 'favorited' && !!bdc.zip_downloaded_at;
 
   /** Meme correctif que AoDetailPanel : sans ce polling, le panneau reste bloqué sur
    * "Téléchargement en cours..." indéfiniment meme apres que le fichier soit prêt côté
-   * ao-watcher, tant que l'utilisateur ne ferme/rouvre pas le panneau manuellement. */
+   * ao-watcher, tant que l'utilisateur ne ferme/rouvre pas le panneau manuellement.
+   * Pas de limite pendant le téléchargement (relances à 60 s d'intervalle), appels
+   * seulement espacés après 2 minutes. */
   useEffect(() => {
     if (!isDownloading) return;
-    const interval = setInterval(async () => {
+    let cancelled = false;
+    let attempts = 0;
+    let timer: ReturnType<typeof setTimeout>;
+    const tick = async () => {
+      attempts += 1;
       try {
         const refreshed = await fetchScrapedBdcOne(bdc.id);
+        if (cancelled) return;
         setBdc(refreshed);
         onUpdated(refreshed);
       } catch {
         // Erreur réseau ponctuelle : on retente au prochain tick.
       }
-    }, 3000);
-    return () => clearInterval(interval);
+      if (!cancelled) timer = setTimeout(tick, attempts > 40 ? 10000 : 3000);
+    };
+    timer = setTimeout(tick, 3000);
+    return () => { cancelled = true; clearTimeout(timer); };
   }, [isDownloading, bdc.id]);
 
   const update = async (status: string) => {
@@ -271,22 +286,18 @@ export default function BdcDetailPanel({ bdc: initialBdc, onClose, onUpdated }: 
               </div>
 
               {isDownloading && (
+                <DownloadProgressBanner progress={bdc.download_progress ?? null} fallback={t('bdc.detail.downloadingDoc')} />
+              )}
+
+              {noDocument && (
                 <div style={{
-                  display: 'flex', alignItems: 'center', gap: 10,
                   padding: '10px 14px', borderRadius: 8,
-                  background: 'rgba(245,158,11,0.08)',
-                  border: '1px solid rgba(245,158,11,0.2)',
+                  background: 'var(--l-input-bg)',
+                  border: '1px solid var(--l-card-border)',
                 }}>
-                  <div style={{
-                    width: 14, height: 14, borderRadius: '50%',
-                    border: '2px solid rgba(217,119,6,0.3)',
-                    borderTopColor: '#d97706',
-                    animation: 'spin 1s linear infinite',
-                    flexShrink: 0,
-                  }} />
-                  <span style={{ fontSize: 13, color: '#d97706', fontWeight: 500 }}>
-                    {t('bdc.detail.downloadingDoc')}
-                  </span>
+                  <p style={{ margin: 0, fontSize: 12, color: 'var(--l-sub)' }}>
+                    {t('bdc.detail.noDoc')}
+                  </p>
                 </div>
               )}
 

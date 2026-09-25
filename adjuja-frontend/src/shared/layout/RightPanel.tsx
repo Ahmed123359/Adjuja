@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState } from "react";
-import { useTranslation } from "react-i18next";
 import { DotLottieReact } from "@lottiefiles/dotlottie-react";
 import catGenerationUrl from "../../assets/Cat Loading Generation.lottie?url";
 import { marked } from "marked";
@@ -14,13 +13,19 @@ import type {
 } from "../../types";
 import { exportDocx } from "../../api";
 import AoPipelinePage from "../../features/ao/AoPipelinePage";
-import DashboardPage from "../../features/company/DashboardPage";
+
+/** Onglets de premier niveau. « accueil » est le tableau de bord depuis le
+ *  2026-09-15 ; « entreprise » porte les reglages, atteints par le pied de la
+ *  barre laterale. */
+export type AppTab = "accueil" | "offres" | "marches" | "taches" | "outils" | "veille" | "entreprise";
+import CompanySettingsPage from "../../features/company/CompanySettingsPage";
+import DashboardHomePage from "../../features/dashboard/DashboardHomePage";
+import TasksPage from "../../features/tasks/TasksPage";
 import VeilleHubPage from "../../features/veille/VeilleHubPage";
 import DocumentsTab from "../../features/tools/components/DocumentsTab";
 import ParapheTab from "../../features/tools/components/ParapheTab";
 import RemplissageTab from "../../features/tools/components/RemplissageTab";
-import { useTheme } from "../../hooks/useTheme";
-import LanguageSelector from "../ui/LanguageSelector";
+import Topbar from "./Topbar";
 
 // ── Helpers ─────────────────────────────────────────────────
 function toRoman(n: number): string {
@@ -206,47 +211,6 @@ ${sep}
 </div>`;
 
   return embeddedStyles + coverPage + tocPage + sectionPages;
-}
-
-// ── Content top bar ──────────────────────────────────────────
-function ContentTopBar({ mainTab, onOpenSidebar }: { mainTab: "offres" | "marches" | "outils" | "veille"; onOpenSidebar?: () => void }) {
-  const { t } = useTranslation();
-  const { theme, toggle } = useTheme();
-  return (
-    <header style={{
-      display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-      height: 58, padding: '0 24px', background: 'var(--l-card)',
-      borderBottom: '1px solid var(--l-card-border)', flexShrink: 0,
-    }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-        {onOpenSidebar && (
-          <button onClick={onOpenSidebar} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--l-sub)', padding: 6, display: 'flex', borderRadius: 7, transition: 'color .15s' }}
-            onMouseEnter={e => e.currentTarget.style.color = 'var(--l-text)'}
-            onMouseLeave={e => e.currentTarget.style.color = 'var(--l-sub)'}
-          >
-            <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" /></svg>
-          </button>
-        )}
-        <h1 style={{ margin: 0, fontSize: 17, fontWeight: 700, color: 'var(--l-text)', letterSpacing: '-0.02em' }}>
-          {t(`app.topbar.${mainTab}`)}
-        </h1>
-      </div>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-        <button onClick={toggle} title={theme === 'dark' ? t('app.nav.lightMode') : t('app.nav.darkMode')}
-          style={{ background: 'none', border: '1px solid var(--l-card-border)', cursor: 'pointer', color: 'var(--l-sub)', padding: '7px 10px', borderRadius: 7, display: 'flex', alignItems: 'center', transition: 'border-color .15s, color .15s' }}
-          onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--l-blue)'; e.currentTarget.style.color = 'var(--l-blue)'; }}
-          onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--l-card-border)'; e.currentTarget.style.color = 'var(--l-sub)'; }}
-        >
-          {theme === 'dark' ? (
-            <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><circle cx="12" cy="12" r="5"/><path strokeLinecap="round" strokeLinejoin="round" d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
-          ) : (
-            <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg>
-          )}
-        </button>
-        <LanguageSelector />
-      </div>
-    </header>
-  );
 }
 
 // ── Dashboard (idle state) ──────────────────────────────────
@@ -878,8 +842,8 @@ type Props = {
   onResetUsage: () => void;
   user: User;
   onLogout: () => void;
-  mainTab: "offres" | "marches" | "outils" | "veille";
-  onMainTabChange: (tab: "offres" | "marches" | "outils" | "veille") => void;
+  mainTab: AppTab;
+  onMainTabChange: (tab: AppTab) => void;
   outilSection: Outil;
   onOutilSectionChange?: (s: Outil) => void;
   onOpenSidebar?: () => void;
@@ -987,15 +951,43 @@ export default function RightPanel({
   }
 
   return (
-    <div className="flex-1 flex flex-col h-screen overflow-hidden">
-      {/* Top bar  always visible */}
-      <ContentTopBar mainTab={mainTab} onOpenSidebar={onOpenSidebar} />
+    <div className="flex-1 flex flex-col h-screen overflow-hidden adj-app-bg">
+      {/* Barre du haut, toujours visible. Elle partage le fond de la page :
+          voir shared/layout/Topbar.tsx. */}
+      <Topbar
+        mainTab={mainTab}
+        onOpenSidebar={onOpenSidebar}
+        onOpenAo={() => onMainTabChange?.("marches")}
+      />
+
+      {/* Tableau de bord : ecran d'accueil depuis le 2026-09-15. */}
+      {mainTab === "accueil" && (
+        <div className="flex-1 flex flex-col overflow-hidden">
+          <DashboardHomePage onGoTo={onMainTabChange} />
+        </div>
+      )}
+
+      {/* Reglages d'entreprise : ex-DashboardPage, sans son onglet Vue d'ensemble. */}
+      {mainTab === "entreprise" && (
+        <div className="flex-1 flex flex-col overflow-hidden">
+          <CompanySettingsPage />
+        </div>
+      )}
 
       {/* Pipeline AO tab -- ouvert le 2026-09-12 pour le mode accompagné.
           ComingSoonAo reste dans le projet, il n'est simplement plus branché ici. */}
       {mainTab === "marches" && (
         <div className="flex-1 flex flex-col overflow-hidden">
           <AoPipelinePage />
+        </div>
+      )}
+
+      {/* Taches d'equipe : ecran a part depuis le 2026-09-25. Elles occupaient
+          une carte du tableau de bord, ou l'on ne pouvait ni filtrer, ni voir la
+          charge de chacun, ni en traiter plusieurs a la suite. */}
+      {mainTab === "taches" && (
+        <div className="flex-1 flex flex-col overflow-hidden">
+          <TasksPage moi={user} />
         </div>
       )}
 
@@ -1015,7 +1007,7 @@ export default function RightPanel({
       {mainTab === "offres" && (
         <div className="flex-1 flex flex-col overflow-hidden">
           {state === "idle" && (
-            <DashboardPage />
+            <DashboardHomePage onGoTo={onMainTabChange} />
           )}
 
           {state === "loading" && (

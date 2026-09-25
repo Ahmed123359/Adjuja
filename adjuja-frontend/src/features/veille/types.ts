@@ -6,6 +6,16 @@
 
 export type ScrapedAoStatus = 'new' | 'seen' | 'favorited' | 'imported';
 
+/** Étape réelle d'un téléchargement de documents en cours (AO ou BDC), renvoyée
+ * par GET /aos/{id} et GET /bdc/{id}. Temps calculés côté serveur. */
+export interface DownloadProgress {
+  etape:          string;
+  tentative:      number | null;
+  max_tentatives: number | null;
+  elapsed_s:      number;
+  retry_in_s:     number | null;
+}
+
 export interface ScrapedAo {
   id:               number;
   source:           string;
@@ -32,6 +42,7 @@ export interface ScrapedAo {
   description:      string | null;
   secteur_codes:    string[] | null;
   analyse_json:     Record<string, unknown> | null;
+  download_progress?: DownloadProgress | null;
 }
 
 export type EligibilityVerdictType = 'go' | 'no_go' | 'risque';
@@ -104,6 +115,7 @@ export interface ScrapedBdc {
   zip_error:         string | null;
   status:            BdcStatus;
   scraped_at:        string;
+  download_progress?: DownloadProgress | null;
 }
 
 export interface ScrapedBdcList {
