@@ -1,64 +1,65 @@
-import { useState, useEffect } from 'react';
-import { useSearchParams, Link } from 'react-router-dom';
-import { useTranslation } from 'react-i18next';
-import { previewInvite, acceptInvite, getPasswordRules, type PasswordRules, type InvitePreview } from '../../api';
-import AuthLayout from './components/AuthLayout';
+// Acceptation d'une invitation d'equipe -- refaite le 2026-09-27 sur les
+// pieces communes des ecrans d'authentification.
+
+import { useEffect, useState } from "react";
+import { Link, useSearchParams } from "react-router-dom";
+import { useTranslation } from "react-i18next";
+import { getPasswordRules, type PasswordRules } from "./api";
+import { acceptInvite, previewInvite, type InvitePreview } from "../org/api";
+import AuthLayout from "./components/AuthLayout";
+import { Alert, AuthHeader, Field, PasswordInput, PasswordRulesHint, SubmitButton, TextInput } from "./components/fields";
 
 type Props = { onSuccess: () => void };
 
 export default function AcceptInvitePage({ onSuccess }: Props) {
   const { t } = useTranslation();
   const [searchParams] = useSearchParams();
-  const token = searchParams.get('token') ?? '';
+  const token = searchParams.get("token") ?? "";
 
-  const [loading,  setLoading]  = useState(true);
-  const [preview,  setPreview]  = useState<InvitePreview | null>(null);
-  const [loadError, setLoadError] = useState('');
+  const [chargement, setChargement] = useState(true);
+  const [preview, setPreview] = useState<InvitePreview | null>(null);
+  const [loadError, setLoadError] = useState("");
 
-  const [nom,      setNom]      = useState('');
-  const [prenom,   setPrenom]   = useState('');
-  const [password, setPassword] = useState('');
+  const [prenom, setPrenom] = useState("");
+  const [nom, setNom] = useState("");
+  const [password, setPassword] = useState("");
   const [submitting, setSubmitting] = useState(false);
-  const [error,     setError]     = useState('');
-  const [rules,     setRules]     = useState<PasswordRules>({ min_length: 8, require_digit: true });
+  const [error, setError] = useState("");
+  const [rules, setRules] = useState<PasswordRules>({ min_length: 8, require_digit: true });
 
   useEffect(() => { getPasswordRules().then(setRules); }, []);
 
   useEffect(() => {
-    if (!token) { setLoadError(t('auth.invite.invalid')); setLoading(false); return; }
+    if (!token) { setLoadError(t("auth.invite.invalid")); setChargement(false); return; }
     previewInvite(token)
       .then(setPreview)
-      .catch(err => setLoadError(err instanceof Error ? err.message : t('auth.invite.invalid')))
-      .finally(() => setLoading(false));
+      .catch((err) => setLoadError(err instanceof Error ? err.message : t("auth.invite.invalid")))
+      .finally(() => setChargement(false));
   }, [token, t]);
 
-  const inputStyle: React.CSSProperties = {
-    width: '100%', padding: '9px 13px', borderRadius: 10,
-    border: '1px solid var(--l-card-border)', background: 'var(--l-surface-2, rgba(255,255,255,0.04))',
-    color: 'var(--l-text)', fontSize: 13.5, outline: 'none',
-    boxSizing: 'border-box', fontFamily: 'inherit', transition: 'border-color .15s, background .15s',
-  };
-  const labelStyle: React.CSSProperties = {
-    display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--l-sub)', marginBottom: 4,
-  };
-  function focusRing(e: React.FocusEvent<HTMLInputElement>) { e.currentTarget.style.borderColor = 'var(--l-blue)'; }
-  function blurRing(e: React.FocusEvent<HTMLInputElement>) { e.currentTarget.style.borderColor = 'var(--l-card-border)'; }
+  const motDePasseOk = password.length >= rules.min_length && (!rules.require_digit || /\d/.test(password));
 
   async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault(); setError(''); setSubmitting(true);
+    e.preventDefault();
+    setError("");
+    if (!motDePasseOk) { setError(t("auth.register.passwordRulesError")); return; }
+    setSubmitting(true);
     try {
-      await acceptInvite(token, nom, prenom, password);
+      await acceptInvite(token, nom.trim(), prenom.trim(), password);
       onSuccess();
     } catch (err) {
-      setError(err instanceof Error ? err.message : t('auth.invite.acceptError'));
-    } finally { setSubmitting(false); }
+      setError(err instanceof Error ? err.message : t("auth.invite.acceptError"));
+    } finally {
+      setSubmitting(false);
+    }
   }
 
-  if (loading) {
+  if (chargement) {
     return (
       <AuthLayout>
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16, padding: '40px 0' }}>
-          <div style={{ width: 28, height: 28, borderRadius: '50%', border: '2px solid var(--l-card-border)', borderTopColor: 'var(--l-blue)', animation: 'spin 1s linear infinite' }} />
+        <div className="flex flex-col items-center gap-4 py-10" role="status">
+          <span aria-hidden className="h-8 w-8 animate-spin rounded-full border-2 border-white/15 border-t-[color:var(--l-blue)]" />
+          <p className="m-0 text-[15px] text-[#C6D0E3]">{t("auth.invite.loading")}</p>
         </div>
       </AuthLayout>
     );
@@ -67,81 +68,44 @@ export default function AcceptInvitePage({ onSuccess }: Props) {
   if (loadError || !preview) {
     return (
       <AuthLayout>
-        <Link to="/" style={{ display: 'block', margin: '0 auto 32px', width: 'fit-content' }}>
-          <img src="/logo-adjuja.png" alt="ADJUJA" style={{ height: 84, display: 'block' }} />
+        <AuthHeader title={t("auth.invite.invalidTitle")} />
+        <Alert tone="error">{loadError || t("auth.invite.invalid")}</Alert>
+        <Link to="/login" className="flex h-[52px] items-center justify-center rounded-[8px] bg-l-blue text-[16px] font-semibold text-white no-underline hover:brightness-110">
+          {t("auth.verify.goLogin")}
         </Link>
-        <div style={{ textAlign: 'center' }}>
-          <div style={{ marginBottom: 20, padding: '11px 14px', borderRadius: 10, background: 'rgba(220,38,38,0.07)', border: '1px solid rgba(220,38,38,0.2)', color: '#dc2626', fontSize: 13 }}>
-            {loadError || t('auth.invite.invalid')}
-          </div>
-          <Link to="/login" style={{ color: 'var(--l-blue)', fontWeight: 600, fontSize: 14, textDecoration: 'none' }}>
-            {t('auth.verify.goLogin')}
-          </Link>
-        </div>
       </AuthLayout>
     );
   }
 
   return (
     <AuthLayout>
-      <Link to="/" style={{ display: 'block', margin: '0 auto 24px', width: 'fit-content' }}>
-        <img src="/logo-adjuja.png" alt="ADJUJA" style={{ height: 72, display: 'block' }} />
-      </Link>
-
-      <h1 style={{ fontSize: 21, fontWeight: 700, color: 'var(--l-text)', margin: '0 0 6px', letterSpacing: '-0.02em', textAlign: 'center' }}>
-        {t('auth.invite.title', { name: preview.inviter_name })}
-      </h1>
-      <p style={{ fontSize: 13.5, color: 'var(--l-sub)', margin: '0 0 20px', textAlign: 'center' }}>
-        {preview.email}
-      </p>
-
-      {error && (
-        <div style={{ marginBottom: 14, padding: '9px 12px', borderRadius: 10, background: 'rgba(220,38,38,0.07)', border: '1px solid rgba(220,38,38,0.2)', color: '#dc2626', fontSize: 12.5 }}>
-          {error}
+      <AuthHeader
+        title={t("auth.invite.title", { name: preview.inviter_name })}
+        subtitle={<>{t("auth.invite.forEmail")} <strong className="font-semibold text-white">{preview.email}</strong></>}
+      />
+      {error && <Alert tone="error">{error}</Alert>}
+      <form onSubmit={handleSubmit} className="flex flex-col gap-5">
+        <div className="grid gap-5 sm:grid-cols-2">
+          <Field label={t("auth.register.firstName")} htmlFor="inv-prenom">
+            <TextInput id="inv-prenom" autoComplete="given-name" required autoFocus value={prenom} onChange={(e) => setPrenom(e.target.value)} placeholder={t("auth.register.firstNamePlaceholder")} />
+          </Field>
+          <Field label={t("auth.register.lastName")} htmlFor="inv-nom">
+            <TextInput id="inv-nom" autoComplete="family-name" required value={nom} onChange={(e) => setNom(e.target.value)} placeholder={t("auth.register.lastNamePlaceholder")} />
+          </Field>
         </div>
-      )}
-
-      <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-        <div className="grid grid-cols-1 sm:grid-cols-2" style={{ gap: 12 }}>
-          <div>
-            <label style={labelStyle}>{t('auth.register.firstName')}</label>
-            <input type="text" value={prenom} onChange={e => setPrenom(e.target.value)}
-              placeholder={t('auth.register.firstNamePlaceholder')} required style={inputStyle}
-              onFocus={focusRing} onBlur={blurRing}
-            />
-          </div>
-          <div>
-            <label style={labelStyle}>{t('auth.register.lastName')}</label>
-            <input type="text" value={nom} onChange={e => setNom(e.target.value)}
-              placeholder={t('auth.register.lastNamePlaceholder')} required style={inputStyle}
-              onFocus={focusRing} onBlur={blurRing}
-            />
-          </div>
-        </div>
-
-        <div>
-          <label style={labelStyle}>
-            {t('auth.register.password')}{' '}
-            <span style={{ color: 'var(--l-dim)', fontWeight: 400 }}>
-              {t('auth.register.passwordHint', {
-                min: rules.min_length,
-                digit: rules.require_digit ? t('auth.register.passwordDigit') : '',
-              })}
-            </span>
-          </label>
-          <input type="password" value={password} onChange={e => setPassword(e.target.value)}
-            placeholder={t('auth.register.passwordPlaceholder')} minLength={rules.min_length} required style={inputStyle}
-            onFocus={focusRing} onBlur={blurRing}
-          />
-        </div>
-
-        <button type="submit" disabled={submitting}
-          style={{ width: '100%', padding: '12px', marginTop: 4, borderRadius: 10, border: 'none', background: submitting ? 'var(--l-dim)' : 'var(--l-blue)', color: '#fff', fontSize: 14, fontWeight: 700, cursor: submitting ? 'not-allowed' : 'pointer', fontFamily: 'inherit', transition: 'opacity .15s' }}
-          onMouseEnter={e => { if (!submitting) e.currentTarget.style.opacity = '.88'; }}
-          onMouseLeave={e => e.currentTarget.style.opacity = '1'}
+        {/* Adresse imposee par l'invitation : presente pour les gestionnaires
+            de mots de passe, non modifiable. */}
+        <input type="email" autoComplete="username" value={preview.email} readOnly hidden />
+        <Field
+          label={t("auth.register.password")}
+          htmlFor="inv-password"
+          hint={<PasswordRulesHint password={password} minLength={rules.min_length} requireDigit={rules.require_digit} />}
         >
-          {submitting ? t('auth.invite.accepting') : t('auth.invite.accept')}
-        </button>
+          <PasswordInput id="inv-password" autoComplete="new-password" required minLength={rules.min_length} value={password} onChange={(e) => setPassword(e.target.value)} placeholder={t("auth.register.passwordPlaceholder")} />
+        </Field>
+        <div className="mt-1">
+          <SubmitButton loading={submitting} loadingLabel={t("auth.invite.accepting")}>{t("auth.invite.accept")}</SubmitButton>
+        </div>
       </form>
     </AuthLayout>
   );

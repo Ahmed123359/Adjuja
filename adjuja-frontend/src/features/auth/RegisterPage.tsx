@@ -1,275 +1,237 @@
-import { useState, useEffect } from 'react';
-import { useTranslation } from 'react-i18next';
-import { Link } from 'react-router-dom';
-import { register, verifyOtp, getPasswordRules, startGoogleLogin, type PasswordRules } from '../../api';
-import AuthLayout from './components/AuthLayout';
-import CustomSelect from '../../shared/ui/CustomSelect';
+// Inscription -- refaite le 2026-09-27.
+//
+// Huit champs sur un seul ecran a 12-13px devenaient deux etapes : « vous »
+// (identite, email, mot de passe) puis « votre entreprise ». La verification
+// par code suit : six cases, collage et remplissage automatique acceptes,
+// renvoi du code (rappeler /register avec les memes donnees en genere un
+// nouveau), et retour a l'etape 1 pour corriger une adresse mal saisie.
+
+import { useEffect, useRef, useState } from "react";
+import { Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
+import { getPasswordRules, register, startGoogleLogin, verifyOtp, type PasswordRules } from "./api";
+import AuthLayout from "./components/AuthLayout";
+import {
+  Alert, AuthHeader, Divider, Field, GoogleButton, MailBadge, OtpInput, PasswordInput,
+  PasswordRulesHint, ResendCode, SubmitButton, TextInput, TextLink,
+} from "./components/fields";
 
 type Props = { onSuccess: () => void; onGoLogin: () => void };
+type Etape = "vous" | "entreprise" | "code";
+
+function Progression({ etape }: { etape: 1 | 2 }) {
+  const { t } = useTranslation();
+  return (
+    <div className="mb-7">
+      <p className="m-0 text-[14px] font-semibold text-[color:var(--l-blue-soft)]">{t("auth.register.step", { n: etape, total: 2 })}</p>
+      <div className="mt-2.5 flex gap-1.5" aria-hidden>
+        {[1, 2].map((n) => (
+          <span key={n} className={`h-[4px] flex-1 rounded-full transition-colors duration-300 ${n <= etape ? "bg-l-blue" : "bg-white/10"}`} />
+        ))}
+      </div>
+    </div>
+  );
+}
 
 export default function RegisterPage({ onSuccess, onGoLogin }: Props) {
   const { t } = useTranslation();
-  const [nom,       setNom]       = useState('');
-  const [prenom,    setPrenom]    = useState('');
-  const [email,     setEmail]     = useState('');
-  const [entreprise,       setEntreprise]       = useState('');
-  const [secteurActivite,  setSecteurActivite]  = useState('');
-  const [nbAoParAn,        setNbAoParAn]        = useState('');
-  const [password,  setPassword]  = useState('');
-  const [acceptTerms, setAcceptTerms] = useState(false);
-  const [error,     setError]     = useState('');
-  const [loading,   setLoading]   = useState(false);
-  const [emailSent, setEmailSent] = useState(false);
-  const [otp,       setOtp]       = useState('');
-  const [otpLoading, setOtpLoading] = useState(false);
-  const [otpError,   setOtpError]   = useState('');
-  const [rules,     setRules]     = useState<PasswordRules>({ min_length: 8, require_digit: true });
+  const [etape, setEtape] = useState<Etape>("vous");
+
+  const [prenom, setPrenom] = useState("");
+  const [nom, setNom] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [entreprise, setEntreprise] = useState("");
+  const [secteur, setSecteur] = useState("");
+  const [nbAo, setNbAo] = useState("");
+  const [cgu, setCgu] = useState(false);
+
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [otp, setOtp] = useState("");
+  const [rules, setRules] = useState<PasswordRules>({ min_length: 8, require_digit: true });
+  const envoiCode = useRef(false);
 
   useEffect(() => { getPasswordRules().then(setRules); }, []);
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault(); setError(''); setLoading(true);
+  const secteurs = Object.entries(t("auth.register.sectorOptions", { returnObjects: true }) as Record<string, string>);
+  const motDePasseOk = password.length >= rules.min_length && (!rules.require_digit || /\d/.test(password));
+
+  function envoyer() {
+    return register({
+      nom: nom.trim(), prenom: prenom.trim(), email: email.trim(), password,
+      entreprise: entreprise.trim(), secteur_activite: secteur,
+      nb_ao_par_an: nbAo === "" ? null : Number(nbAo),
+    });
+  }
+
+  function continuer(e: React.FormEvent) {
+    e.preventDefault();
+    setError("");
+    if (!motDePasseOk) { setError(t("auth.register.passwordRulesError")); return; }
+    setEtape("entreprise");
+  }
+
+  async function creer(e: React.FormEvent) {
+    e.preventDefault();
+    setError("");
+    setLoading(true);
     try {
-      const isAdmin = await register({
-        nom, prenom, email, password,
-        entreprise, secteur_activite: secteurActivite,
-        nb_ao_par_an: nbAoParAn === '' ? null : Number(nbAoParAn),
-      });
-      if (isAdmin) { onSuccess(); } else { setEmailSent(true); }
+      const admin = await envoyer();
+      if (admin) onSuccess();
+      else { setOtp(""); setEtape("code"); }
     } catch (err) {
-      setError(err instanceof Error ? err.message : t('auth.register.submitting'));
-    } finally { setLoading(false); }
+      setError(err instanceof Error ? err.message : t("auth.common.genericError"));
+    } finally {
+      setLoading(false);
+    }
   }
 
-  async function handleVerifyOtp(e: React.FormEvent) {
-    e.preventDefault(); setOtpError(''); setOtpLoading(true);
-    try { await verifyOtp(email, otp); onSuccess(); }
-    catch (err) { setOtpError(err instanceof Error ? err.message : t('auth.verify.otpError')); }
-    finally { setOtpLoading(false); }
+  async function verifier(code: string) {
+    if (envoiCode.current || code.length !== 6) return;
+    envoiCode.current = true;
+    setError("");
+    setLoading(true);
+    try {
+      await verifyOtp(email.trim(), code);
+      onSuccess();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : t("auth.verify.otpError"));
+    } finally {
+      envoiCode.current = false;
+      setLoading(false);
+    }
   }
 
-  const inputStyle: React.CSSProperties = {
-    width: '100%', padding: '9px 13px', borderRadius: 10,
-    border: '1px solid var(--l-card-border)', background: 'var(--l-surface-2, rgba(255,255,255,0.04))',
-    color: 'var(--l-text)', fontSize: 13.5, outline: 'none',
-    boxSizing: 'border-box', fontFamily: 'inherit', transition: 'border-color .15s, background .15s',
-  };
+  // Envoi automatique des que les six chiffres sont saisis ou colles.
+  useEffect(() => {
+    if (etape === "code" && otp.length === 6) void verifier(otp);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [otp, etape]);
 
-  const labelStyle: React.CSSProperties = {
-    display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--l-sub)', marginBottom: 4,
-  };
-
-  function focusRing(e: React.FocusEvent<HTMLInputElement | HTMLSelectElement>) {
-    e.currentTarget.style.borderColor = 'var(--l-blue)';
-  }
-  function blurRing(e: React.FocusEvent<HTMLInputElement | HTMLSelectElement>) {
-    e.currentTarget.style.borderColor = 'var(--l-card-border)';
-  }
-
-  // Email verification screen
-  if (emailSent) {
+  if (etape === "code") {
     return (
       <AuthLayout>
-        <Link to="/" style={{ display: 'block', margin: '0 auto 40px', width: 'fit-content' }}>
-          <img src="/logo-adjuja.png" alt="ADJUJA" style={{ height: 84, display: 'block' }} />
-        </Link>
-
-        <div style={{ textAlign: 'center' }}>
-          <div style={{ width: 56, height: 56, borderRadius: '50%', background: 'var(--l-blue-a)', border: '1px solid var(--l-card-border)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px' }}>
-            <svg width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="var(--l-blue)" strokeWidth={1.8}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-            </svg>
-          </div>
-
-          <h2 style={{ fontSize: 20, fontWeight: 700, color: 'var(--l-text)', margin: '0 0 10px', letterSpacing: '-0.01em' }}>{t('auth.verify.title')}</h2>
-          <p style={{ fontSize: 14, color: 'var(--l-sub)', margin: '0 0 6px' }}>{t('auth.verify.sent')}</p>
-          <p style={{ fontSize: 14, fontWeight: 600, color: 'var(--l-blue)', margin: '0 0 16px' }}>{email}</p>
-          <p style={{ fontSize: 13, color: 'var(--l-dim)', margin: '0 0 24px', lineHeight: 1.6 }}>
-            {t('auth.verify.instruction')}
-          </p>
-
-          {otpError && (
-            <div style={{ marginBottom: 14, padding: '9px 12px', borderRadius: 10, background: 'rgba(220,38,38,0.07)', border: '1px solid rgba(220,38,38,0.2)', color: '#dc2626', fontSize: 12.5, textAlign: 'left' }}>
-              {otpError}
-            </div>
-          )}
-
-          <form onSubmit={handleVerifyOtp} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-            <input
-              type="text" inputMode="numeric" maxLength={6} autoFocus
-              value={otp}
-              onChange={e => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
-              placeholder="000000"
-              required
-              style={{
-                width: '100%', padding: '13px', borderRadius: 12,
-                border: '1px solid var(--l-card-border)', background: 'var(--l-surface-2, rgba(255,255,255,0.04))',
-                color: 'var(--l-text)', fontSize: 24, fontWeight: 700, letterSpacing: '10px', textAlign: 'center',
-                outline: 'none', boxSizing: 'border-box', fontFamily: 'inherit', transition: 'border-color .15s',
-              }}
-              onFocus={e => e.currentTarget.style.borderColor = 'var(--l-blue)'}
-              onBlur={e => e.currentTarget.style.borderColor = 'var(--l-card-border)'}
-            />
-            <button type="submit" disabled={otpLoading || otp.length !== 6}
-              style={{ width: '100%', padding: '13px', borderRadius: 12, border: 'none', background: otpLoading || otp.length !== 6 ? 'var(--l-dim)' : 'var(--l-blue)', color: '#fff', fontSize: 15, fontWeight: 700, cursor: otpLoading || otp.length !== 6 ? 'not-allowed' : 'pointer', fontFamily: 'inherit', transition: 'opacity .15s' }}
-              onMouseEnter={e => { if (!otpLoading && otp.length === 6) e.currentTarget.style.opacity = '.88'; }}
-              onMouseLeave={e => e.currentTarget.style.opacity = '1'}
-            >
-              {otpLoading ? t('auth.verify.verifying') : t('auth.verify.confirm')}
-            </button>
-          </form>
-
-          <button onClick={onGoLogin}
-            style={{ width: '100%', padding: '10px', marginTop: 12, borderRadius: 12, border: 'none', background: 'none', color: 'var(--l-sub)', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}
-          >
-            {t('auth.verify.goLogin')}
-          </button>
+        <MailBadge />
+        <AuthHeader
+          title={t("auth.verify.title")}
+          subtitle={<>{t("auth.verify.sent")} <strong className="font-semibold text-white">{email.trim()}</strong>. {t("auth.verify.instructionShort")}</>}
+        />
+        {error && <Alert tone="error">{error}</Alert>}
+        <form onSubmit={(e) => { e.preventDefault(); void verifier(otp); }} className="flex flex-col gap-6">
+          <OtpInput value={otp} onChange={(v) => { setOtp(v); if (error) setError(""); }} autoFocus invalid={!!error} />
+          <SubmitButton loading={loading} disabled={otp.length !== 6} loadingLabel={t("auth.verify.verifying")}>
+            {t("auth.verify.confirm")}
+          </SubmitButton>
+        </form>
+        <div className="mt-6 flex flex-col items-center gap-4">
+          <ResendCode onResend={async () => { await envoyer(); }} />
+          <TextLink onClick={() => { setError(""); setEtape("vous"); }}>{t("auth.verify.changeEmail")}</TextLink>
         </div>
       </AuthLayout>
     );
   }
 
-  // Register form
   return (
     <AuthLayout>
-      <Link to="/" style={{ display: 'block', margin: '0 auto 14px', width: 'fit-content' }}>
-        <img src="/logo-adjuja.png" alt="ADJUJA" style={{ height: 64, display: 'block' }} />
-      </Link>
+      <AuthHeader title={t("auth.register.title")} subtitle={t("auth.register.subtitle")} />
+      <Progression etape={etape === "vous" ? 1 : 2} />
+      {error && <Alert tone="error">{error}</Alert>}
 
-      <h1 style={{ fontSize: 21, fontWeight: 700, color: 'var(--l-text)', margin: '0 0 4px', letterSpacing: '-0.02em', textAlign: 'center' }}>{t('auth.register.title')}</h1>
-      <p style={{ fontSize: 13, color: 'var(--l-sub)', margin: '0 0 16px', textAlign: 'center' }}>{t('auth.register.subtitle')}</p>
+      {etape === "vous" ? (
+        <>
+          <form onSubmit={continuer} className="flex flex-col gap-5">
+            <div className="grid gap-5 sm:grid-cols-2">
+              <Field label={t("auth.register.firstName")} htmlFor="reg-prenom">
+                <TextInput id="reg-prenom" autoComplete="given-name" required autoFocus value={prenom} onChange={(e) => setPrenom(e.target.value)} placeholder={t("auth.register.firstNamePlaceholder")} />
+              </Field>
+              <Field label={t("auth.register.lastName")} htmlFor="reg-nom">
+                <TextInput id="reg-nom" autoComplete="family-name" required value={nom} onChange={(e) => setNom(e.target.value)} placeholder={t("auth.register.lastNamePlaceholder")} />
+              </Field>
+            </div>
+            <Field label={t("auth.register.email")} htmlFor="reg-email">
+              <TextInput id="reg-email" type="email" autoComplete="email" required value={email} onChange={(e) => setEmail(e.target.value)} placeholder={t("auth.register.emailPlaceholder")} />
+            </Field>
+            <Field
+              label={t("auth.register.password")}
+              htmlFor="reg-password"
+              hint={<PasswordRulesHint password={password} minLength={rules.min_length} requireDigit={rules.require_digit} />}
+            >
+              <PasswordInput id="reg-password" autoComplete="new-password" required minLength={rules.min_length} value={password} onChange={(e) => setPassword(e.target.value)} placeholder={t("auth.register.passwordPlaceholder")} />
+            </Field>
+            <div className="mt-1">
+              <SubmitButton loading={false} loadingLabel="">{t("auth.register.continue")}</SubmitButton>
+            </div>
+          </form>
 
-      {error && (
-        <div style={{ marginBottom: 14, padding: '9px 12px', borderRadius: 10, background: 'rgba(220,38,38,0.07)', border: '1px solid rgba(220,38,38,0.2)', color: '#dc2626', fontSize: 12.5 }}>
-          {error}
-        </div>
-      )}
-
-      <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 11 }}>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2" style={{ gap: 12 }}>
-          <div>
-            <label style={labelStyle}>{t('auth.register.firstName')}</label>
-            <input type="text" value={prenom} onChange={e => setPrenom(e.target.value)}
-              placeholder={t('auth.register.firstNamePlaceholder')} required style={inputStyle}
-              onFocus={focusRing} onBlur={blurRing}
-            />
+          <Divider label={t("auth.register.or")} />
+          <GoogleButton label={t("auth.register.continueWithGoogle")} onClick={startGoogleLogin} />
+        </>
+      ) : (
+        <form onSubmit={creer} className="flex flex-col gap-5">
+          <Field label={t("auth.register.companyName")} htmlFor="reg-entreprise">
+            <TextInput id="reg-entreprise" autoComplete="organization" required autoFocus value={entreprise} onChange={(e) => setEntreprise(e.target.value)} placeholder={t("auth.register.companyNamePlaceholder")} />
+          </Field>
+          <div className="grid gap-5 sm:grid-cols-[1.5fr_1fr]">
+            <Field label={t("auth.register.sector")} htmlFor="reg-secteur">
+              {/* Select natif : clavier, lecteurs d'ecran et mobile sans code ;
+                  color-scheme sombre pour que la liste deroulante suive. */}
+              <div className="relative">
+                <select
+                  id="reg-secteur"
+                  required
+                  value={secteur}
+                  onChange={(e) => setSecteur(e.target.value)}
+                  className={`h-12 w-full cursor-pointer appearance-none rounded-[8px] border border-l-border-strong bg-white/[0.04] pl-4 pr-10 text-[16px] outline-none transition-colors [color-scheme:dark] hover:border-white/25 focus:border-[color:var(--l-blue)] ${secteur ? "text-white" : "text-white/35"}`}
+                >
+                  <option value="" disabled>{t("auth.register.sectorPlaceholder")}</option>
+                  {secteurs.map(([code, label]) => <option key={code} value={code}>{label}</option>)}
+                </select>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} aria-hidden className="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 text-white/55">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 9l6 6 6-6" />
+                </svg>
+              </div>
+            </Field>
+            <Field label={t("auth.register.aoPerYear")} htmlFor="reg-nbao">
+              <TextInput id="reg-nbao" type="number" inputMode="numeric" min={0} max={10000} required value={nbAo} onChange={(e) => setNbAo(e.target.value)} placeholder={t("auth.register.aoPerYearPlaceholder")} />
+            </Field>
           </div>
-          <div>
-            <label style={labelStyle}>{t('auth.register.lastName')}</label>
-            <input type="text" value={nom} onChange={e => setNom(e.target.value)}
-              placeholder={t('auth.register.lastNamePlaceholder')} required style={inputStyle}
-              onFocus={focusRing} onBlur={blurRing}
+
+          <label className="flex cursor-pointer items-start gap-3 text-[15px] leading-[1.5] text-[#C6D0E3]">
+            <input
+              type="checkbox"
+              required
+              checked={cgu}
+              onChange={(e) => setCgu(e.target.checked)}
+              className="mt-[3px] h-[18px] w-[18px] shrink-0 cursor-pointer accent-[var(--l-blue)]"
             />
-          </div>
-        </div>
-
-        <div>
-          <label style={labelStyle}>{t('auth.register.email')}</label>
-          <input type="email" value={email} onChange={e => setEmail(e.target.value)}
-            placeholder={t('auth.register.emailPlaceholder')} required style={inputStyle}
-            onFocus={focusRing} onBlur={blurRing}
-          />
-        </div>
-
-        <div>
-          <label style={labelStyle}>{t('auth.register.companyName')}</label>
-          <input type="text" value={entreprise} onChange={e => setEntreprise(e.target.value)}
-            placeholder={t('auth.register.companyNamePlaceholder')} required style={inputStyle}
-            onFocus={focusRing} onBlur={blurRing}
-          />
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-[1.4fr_1fr]" style={{ gap: 12 }}>
-          <div>
-            <label style={labelStyle}>{t('auth.register.sector')}</label>
-            <CustomSelect
-              value={secteurActivite}
-              onChange={setSecteurActivite}
-              placeholder={t('auth.register.sectorPlaceholder')}
-              style={inputStyle}
-              options={Object.entries(t('auth.register.sectorOptions', { returnObjects: true }) as Record<string, string>).map(
-                ([code, label]) => ({ value: code, label })
-              )}
-            />
-          </div>
-          <div>
-            <label style={labelStyle}>{t('auth.register.aoPerYear')}</label>
-            <input type="number" min={0} value={nbAoParAn} onChange={e => setNbAoParAn(e.target.value)}
-              placeholder={t('auth.register.aoPerYearPlaceholder')} required style={inputStyle}
-              onFocus={focusRing} onBlur={blurRing}
-            />
-          </div>
-        </div>
-
-        <div>
-          <label style={labelStyle}>
-            {t('auth.register.password')}{' '}
-            <span style={{ color: 'var(--l-dim)', fontWeight: 400 }}>
-              {t('auth.register.passwordHint', {
-                min: rules.min_length,
-                digit: rules.require_digit ? t('auth.register.passwordDigit') : '',
-              })}
+            <span>
+              {t("legal.acceptPrefix")}
+              <Link to="/cgu" target="_blank" className="font-semibold text-[color:var(--l-blue-soft)] no-underline hover:text-white">{t("legal.acceptCgu")}</Link>
+              {t("legal.acceptAnd")}
+              <Link to="/confidentialite" target="_blank" className="font-semibold text-[color:var(--l-blue-soft)] no-underline hover:text-white">{t("legal.acceptPrivacy")}</Link>
             </span>
           </label>
-          <input type="password" value={password} onChange={e => setPassword(e.target.value)}
-            placeholder={t('auth.register.passwordPlaceholder')} minLength={rules.min_length} required style={inputStyle}
-            onFocus={focusRing} onBlur={blurRing}
-          />
-        </div>
 
-        <label style={{ display: 'flex', alignItems: 'flex-start', gap: 8, cursor: 'pointer' }}>
-          <input
-            type="checkbox"
-            checked={acceptTerms}
-            onChange={e => setAcceptTerms(e.target.checked)}
-            required
-            style={{ marginTop: 2, width: 14, height: 14, accentColor: 'var(--l-blue)', cursor: 'pointer', flexShrink: 0 }}
-          />
-          <span style={{ fontSize: 12, color: 'var(--l-sub)', lineHeight: 1.4 }}>
-            {t('legal.acceptPrefix')}
-            <Link to="/cgu" target="_blank" style={{ color: 'var(--l-blue)' }}>{t('legal.acceptCgu')}</Link>
-            {t('legal.acceptAnd')}
-            <Link to="/confidentialite" target="_blank" style={{ color: 'var(--l-blue)' }}>{t('legal.acceptPrivacy')}</Link>
-          </span>
-        </label>
+          <div className="mt-1 flex flex-col-reverse gap-3 sm:flex-row">
+            <button
+              type="button"
+              onClick={() => { setError(""); setEtape("vous"); }}
+              className="h-[52px] cursor-pointer rounded-[8px] border border-l-border-strong bg-transparent px-6 text-[16px] font-semibold text-white transition-colors hover:border-white/40 sm:w-auto"
+            >
+              {t("auth.register.back")}
+            </button>
+            <div className="flex-1">
+              <SubmitButton loading={loading} disabled={!cgu || !secteur} loadingLabel={t("auth.register.submitting")}>
+                {t("auth.register.submit")}
+              </SubmitButton>
+            </div>
+          </div>
+        </form>
+      )}
 
-        <button type="submit" disabled={loading || !acceptTerms || !secteurActivite}
-          style={{ width: '100%', padding: '11px', borderRadius: 10, border: 'none', background: (loading || !acceptTerms || !secteurActivite) ? 'var(--l-dim)' : 'var(--l-blue)', color: '#fff', fontSize: 14, fontWeight: 700, cursor: (loading || !acceptTerms || !secteurActivite) ? 'not-allowed' : 'pointer', fontFamily: 'inherit', transition: 'opacity .15s' }}
-          onMouseEnter={e => { if (!loading && acceptTerms && secteurActivite) e.currentTarget.style.opacity = '.88'; }}
-          onMouseLeave={e => e.currentTarget.style.opacity = '1'}
-        >
-          {loading ? t('auth.register.submitting') : t('auth.register.submit')}
-        </button>
-      </form>
-
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10, margin: '14px 0' }}>
-        <div style={{ flex: 1, height: 1, background: 'var(--l-card-border)' }} />
-        <span style={{ fontSize: 11, color: 'var(--l-dim)' }}>{t('auth.register.or')}</span>
-        <div style={{ flex: 1, height: 1, background: 'var(--l-card-border)' }} />
-      </div>
-
-      <button
-        type="button"
-        onClick={startGoogleLogin}
-        style={{ width: '100%', padding: '10px 16px', borderRadius: 10, border: 'none', background: '#131314', color: '#fff', fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 9, transition: 'opacity .15s' }}
-        onMouseEnter={e => e.currentTarget.style.opacity = '.88'}
-        onMouseLeave={e => e.currentTarget.style.opacity = '1'}
-      >
-        <svg width="16" height="16" viewBox="0 0 18 18">
-          <path fill="#4285F4" d="M17.64 9.2c0-.64-.06-1.25-.16-1.84H9v3.48h4.84c-.21 1.13-.85 2.09-1.8 2.73v2.27h2.92c1.71-1.57 2.68-3.88 2.68-6.64z"/>
-          <path fill="#34A853" d="M9 18c2.43 0 4.47-.8 5.96-2.18l-2.92-2.27c-.81.54-1.84.86-3.04.86-2.34 0-4.32-1.58-5.03-3.71H.96v2.34C2.44 15.98 5.48 18 9 18z"/>
-          <path fill="#FBBC05" d="M3.97 10.7c-.18-.54-.28-1.11-.28-1.7s.1-1.16.28-1.7V4.96H.96A8.996 8.996 0 000 9c0 1.45.35 2.83.96 4.04l3.01-2.34z"/>
-          <path fill="#EA4335" d="M9 3.58c1.32 0 2.51.45 3.44 1.35l2.59-2.59C13.46.89 11.43 0 9 0 5.48 0 2.44 2.02.96 4.96l3.01 2.34C4.68 5.16 6.66 3.58 9 3.58z"/>
-        </svg>
-        {t('auth.register.continueWithGoogle')}
-      </button>
-
-      <p style={{ textAlign: 'center', fontSize: 13, color: 'var(--l-sub)', margin: '14px 0 0' }}>
-        {t('auth.register.hasAccount')}{' '}
-        <button onClick={onGoLogin} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--l-blue)', fontWeight: 600, fontSize: 13, fontFamily: 'inherit', padding: 0 }}>
-          {t('auth.register.loginLink')}
-        </button>
+      <p className="m-0 mt-8 text-center text-[15px] text-[#C6D0E3]">
+        {t("auth.register.hasAccount")} <TextLink onClick={onGoLogin}>{t("auth.register.loginLink")}</TextLink>
       </p>
     </AuthLayout>
   );

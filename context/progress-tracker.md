@@ -12,6 +12,64 @@ des corrections ciblées d'UX/scraping.
 
 ## Objectif courant
 
+### Reprise de la prochaine session (noté le 2026-09-27)
+
+**Chantier : site public et écrans de connexion (état au 2026-09-27, fin de
+session).** Tout est **non commité** dans l'arbre de travail. Rien n'a été vu
+dans un navigateur par l'assistant : l'utilisateur a validé sur captures.
+
+Validé par l'utilisateur :
+- **Héros** : scène 3D Terre + lune gardée, titre + phrase + deux boutons,
+  texte remonté au-dessus de l'horizon ; au pied, **bande des acheteurs** :
+  11 logos officiels (Wikimedia Commons, silhouettes blanches dans
+  `public/logos/acheteurs/`) en défilement continu (`.l-marquee`), légende
+  factuelle « leurs avis arrivent déjà dans la veille », jamais « partenaires ».
+  Acheteurs relevés dans `watcher.scraped_aos` (1 114 avis, 524 acheteurs).
+- **« Du portail au dossier signé »** : liste et écran à même hauteur (500px),
+  pied commun aux quatre écrans.
+- **Charte de confidentialité** élargie (1320px, 3 colonnes en xl).
+- **FAQ** en carrousel paginé (3 / 2 / 1 fiches visibles, scroll-snap).
+- **Barre de navigation** : 1320px, sigle `logo-adjuja-mark.png` + mot-symbole,
+  liens 16px en couleur pleine, section courante soulignée, FR/EN en bascule.
+- **Pied de page** : bandeau d'inscription sur orbites animées, colonnes,
+  mot-symbole géant balayé par un reflet (`.l-wordmark`).
+- **Pages légales** en document officiel (onglets de classeur, en-tête avec
+  référence, « Article n », « Fait à Témara » + cachet).
+- **Écrans d'authentification** (connexion, inscription en 2 étapes + code,
+  mot de passe oublié, invitation, retour Google) : panneau de marque, pièces
+  communes `features/auth/components/fields.tsx`, `api.ts` sur `readJson`.
+
+Composants partagés créés : `features/landing/components/` `Orbites.tsx`,
+`BuyersMarquee.tsx`, `Cachet.tsx` ; `features/landing/api.ts` (newsletter).
+
+Encore ouvert :
+- « Comment ça marche » et les cartes de tarifs : seulement l'en-tête centré,
+  jamais repris sur les références de l'utilisateur.
+- À vérifier en réel (voir `bugs-connus.md`) : liens de la barre depuis une
+  page légale, messages d'erreur de connexion, 429, mot de passe oublié avec
+  une adresse inconnue.
+- Réserve laissée à l'utilisateur : logos d'organismes publics sur une page
+  commerciale.
+- Le texte « accéder à votre génération gratuite » (connexion après
+  vérification) dépend de la décision « 1 AO gratuit », toujours en attente.
+
+Préférences de l'utilisateur pour ce chantier : mémoire auto
+(`feedback_landing_design`).
+
+**Décisions en attente de l'utilisateur** (détails dans `bugs-connus.md`) :
+tarif annuel affiché mais non souscriptible ; promesse « 1 AO gratuit » ;
+CNSS contre CNAS/CASNOS ; application automatique des migrations ; les cinq
+décisions de la spec `gestion-abonnement`.
+
+**À faire côté utilisateur, sans code :** rotation de `JWT_SECRET_KEY` ; clés et
+rôles IA dans `adjuja-infra/.env` (cible : tout sur GPT, lignes prêtes dans
+`.env.example`), puis `python -m app.scripts.reindex_rag` une fois les
+embeddings basculés.
+
+**Travail livré le 2026-09-27, à valider en réel dès que les clés existent :**
+fit score, fournisseurs IA interchangeables (lots 1 et 2), remplissage par
+paliers, OCR veille et pipeline, aperçu des documents, nettoyage des AO échus.
+
 **Refonte du frontend applicatif** (depuis le 2026-09-24, demande explicite de
 l'utilisateur). Faits : socle de tokens, barre latérale, barre du haut, tableau
 de bord, écran des tâches et discussion, liste et détail des appels d'offres,
@@ -206,6 +264,42 @@ arbitrage :
     le haut faute de place (elle était rognée par les `Card` en overflow hidden).
   - `SectionCard` n'est plus qu'un alias de `Card` ; `styles.ts` aligné.
   - Libellés des onglets et textes des nouveaux écrans passés en i18n (fr/en).
+- Outils et sections Notifications / Membres du profil : repris (confirmé par
+  l'utilisateur le 2026-09-27).
+- Veille, reprise (2026-09-27) : couleurs en dur et textes sous 14px passés aux
+  tokens (149 remplacements scriptés). AO et BDC partagent
+  `veille/components/ListChrome.tsx` (onglets, pagination, état vide, échéance
+  en relatif) et `FilterPanel.tsx` (300px, libellés en casse normale, champs
+  44px, `Select`). Panneaux de détail : tokens seulement, présentation
+  inchangée (demande utilisateur).
+- `shared/ui/useFloating.ts` : surfaces flottantes en portail (Select,
+  SecteurPicker, NaturePrestationPicker), plus rognées par les `Card`.
+- **Fond uni dans toute l'application** et filets renforcés (2026-09-27,
+  demande utilisateur). Voir `ui-context.md`.
+- **Facturation** (2026-09-27) : `PricingModal` refaite sur `GET /billing/plans`
+  (490 / 990 / 2900 MAD, confirmés), paiement CMI, lien « Changer d'offre » sur
+  la carte Plan du tableau de bord, `SubscriptionCard` morte supprimée. Voir
+  `bugs-connus.md`.
+- **Rotation de `JWT_SECRET_KEY` non faite** : écriture dans `.env` refusée par
+  le garde-fou de la session, à faire par l'utilisateur.
+- Veille, reprise (2026-09-27) : couleurs en dur et textes sous 14px passés
+  aux tokens (149 remplacements scriptés sur 11 fichiers). AO et BDC partagent
+  `veille/components/ListChrome.tsx` (onglets, pagination, état vide, échéance
+  en relatif « dans 3 jours ») et `FilterPanel.tsx` (panneau de 300px, libellés
+  en casse normale, champs 44px, `Select` du socle). BDC : fin des capitales
+  espacées et des largeurs figées. Panneaux de détail : seulement les tokens,
+  présentation inchangée (demande utilisateur).
+- `shared/ui/useFloating.ts` : position des surfaces flottantes (portail, fixe,
+  bascule vers le haut). Utilisé par `Select`, `SecteurPicker`,
+  `NaturePrestationPicker`.
+- **Fond uni dans toute l'application** (2026-09-27, demande utilisateur) :
+  `--adj-bg` = `--adj-panel`, `--adj-lift-1: none`, `--background` = `--card`
+  côté Tailwind. Séparation par filets. Voir `ui-context.md`.
+- Restent : Facturation, reprise complète des Outils sur la grille, sections
+  Notifications / Membres du profil (encore en `--l-*` et `CustomSelect`,
+  modification interrompue par l'utilisateur), fit score.
+- **Rotation de `JWT_SECRET_KEY` non faite** : l'écriture dans `.env` est
+  refusée par le garde-fou de la session ; à faire par l'utilisateur.
 - `<input type="date">` natif encore présent dans quatre écrans (outils, filtres
   de veille) ; `DateField` existe désormais pour les remplacer.
 - Les mentions de la discussion d'équipe sont enregistrées mais **ne notifient
@@ -1651,6 +1745,86 @@ arbitrage :
     sans rapport avec ce chantier.
 
 ## Questions ouvertes
+
+- **Fit score -- implémenté** (2026-09-27). Backend : `FitScoreService`
+  (`app/services/fit_score_service.py`), 13 tests unitaires verts
+  (`tests/unit/test_fit_score.py`), champ `fit_score` ajouté à
+  `POST /ao/eligibility-check`, `GET /ao/{id}/fit-score`, relais ao-watcher,
+  contexte de l'étape Décision. Vérifié par appel HTTP réel : score renormalisé
+  exact, barrière « non éligible » sans remise à zéro, 401 / 404 / 409 attendus,
+  repli mots-clés avec la clé factice. Front : `features/ao/components/FitScore.tsx`
+  (veille, onglet renommé « Compatibilité », et étape Décision), actions vers
+  les réglages via `shared/lib/navigation.ts`. **Non vérifié** : similarité par
+  embeddings (vraie clé Mistral requise) et parcours complet à l'écran.
+- Aperçu des documents dans l'onglet Documents du panneau de veille (route
+  `GET /aos/{id}/documents/{label}` côté ao-watcher), et correctif de l'aperçu
+  des scans (ressources WebAssembly de pdf.js). Voir `bugs-connus.md`.
+- **Fournisseurs IA interchangeables, lot 1 fait** (2026-09-27, spec
+  `context/feature-spec/fournisseurs-ia/`). Rôles `LLM_ANALYSIS`, `LLM_FAST`,
+  `EMBEDDINGS`, `VISION` en `fournisseur:modèle` ; `DeepSeekProvider`,
+  interfaces embeddings et vision (Mistral + OpenAI), `app/providers/router.py` ;
+  couche équivalente dans ao-watcher (`app/core/llm.py`). Migrés : analyse de
+  veille, analyse du pipeline, affectation d'équipe, extraction de CV, embeddings
+  du RAG et du fit score. **Cible utilisateur : tout sur GPT** (`gpt-4.1`,
+  `gpt-4.1-mini`, `text-embedding-3-small` à 1024 dimensions) ; défauts du code =
+  Mistral tant que `.env` n'est pas modifié. 14 tests unitaires (+ 13 du fit
+  score) verts, requêtes GPT et DeepSeek vérifiées sur client simulé. Restent :
+  lot 2 (cinq modules d'offre technique), remplissage par paliers, réindexation
+  Qdrant après bascule des embeddings, et un appel réel dès que la clé OpenAI
+  est dans `.env`.
+- OCR du pipeline corrigé (voir `bugs-connus.md`).
+- Fournisseurs IA, lot 2 fait (2026-09-27) : les cinq modules d'offre technique
+  passent par les rôles (`offre_technique/llm.py`, relances 429 conservées,
+  sections toujours rédigées en parallèle), 3 tests. Commande de réindexation
+  Qdrant : `python -m app.scripts.reindex_rag [--dry-run] [--org ID]`, avec
+  sonde des embeddings avant toute suppression.
+- Veille : AO/BDC échus plus réinsérés, nettoyage des fichiers ; panneau BDC en
+  tiroir. Voir `bugs-connus.md`.
+- **Page d'accueil refaite** (2026-09-27, demande utilisateur) : scène 3D du
+  héros conservée, textes repris (titre 5 rem, sous-titre concret, un bouton,
+  trois faits vérifiables sur l'horizon) ; « Du portail au dossier signé » :
+  quatre moments à gauche, écran produit correspondant à droite (veille, score
+  de compatibilité pondéré comme dans l'app, dossier, signature) ; « Comment ça
+  marche » en une rangée de trois étapes avec résultat et durée ; confidentialité
+  en articles de contrat ; tarifs en cartes calquées sur la grille de l'app, prix
+  lus sur `/billing/plans` ; FAQ à plat par thème, contact à gauche. Fond uni,
+  séparation par filets, textes ≥ 14 px, plus de CSS injecté. Nav et pied de page
+  inchangés. Non revu à l'écran (pas de navigateur dans la session).
+  Deuxième passe le même jour, sur retours utilisateur : titres de section
+  centrés ; retirés du héros le surtitre et le bandeau de trois faits à coches
+  (jugés « style IA ») ; écran « Décider » bâti autour du score ; confidentialité
+  refaite en charte-document signée avec cachet ; FAQ en fiches question/réponse
+  toutes visibles + bandeau de contact. Couleurs nouvelles écrites en
+  `var(--l-…)` directes pour ne plus dépendre d'un redémarrage de Vite.
+- **Remplissage par paliers fait** (2026-09-27) : scans lus par Tesseract avec
+  mise en page puis modèle de texte ; vision (`gpt-4.1-mini` en cible) seulement
+  si la lecture OCR n'est pas fiable ; tableaux directement en vision. Détail et
+  mesures dans `feature-spec/fournisseurs-ia/00-overview.md`. Reste : un
+  remplissage réel de bout en bout avec une vraie clé.
+- **OCR des documents scannés dans la veille** (2026-09-27, décision
+  utilisateur : Tesseract, local et gratuit). Voir `bugs-connus.md`. Pistes
+  d'optimisation proposées, non faites : lancer l'OCR juste après le
+  téléchargement du DCE, cache par empreinte du contenu, sélection des articles
+  utiles avant l'appel au modèle au lieu de la troncature à 60 000 caractères.
+  L'utilisateur prévoit de remplacer Mistral par DeepSeek pour l'analyse :
+  attention, embeddings du fit score et du RAG sont en `mistral-embed`.
+- (historique) **Fit score -- spec complète, rien de codé** (2026-09-27,
+  `context/feature-spec/fit-score/`, `00-overview.md` réécrit + `api.md` +
+  `client.md`). Décisions utilisateur : V1 avec similarité IA pour les
+  références (Mistral embed + Qdrant `offria_kb_{org_id}`, mode dégradé par
+  mots-clés sans clé), poids 30/20/20/15/10/5, facteur non exigé écarté et poids
+  renormalisés, remplace l'affichage du Go/No-Go en gardant sa barrière. Aucune
+  migration. **Bloquant pour la vérification réelle** : vraie `MISTRAL_API_KEY`
+  en dev, et les deux défauts d'indexation RAG déclarés dans `bugs-connus.md`
+  (étape 1 de `api.md`).
+
+- **Gestion de l'abonnement -- spec écrite, rien de codé** (2026-09-27, demande
+  utilisateur, `context/feature-spec/gestion-abonnement/`). Onglet
+  « Abonnement » dans les réglages d'entreprise ; la grille des offres y est
+  déplacée, le tableau de bord ne sert plus à changer d'offre. Cinq décisions
+  attendent l'utilisateur avant tout code (renouvellement manuel ou récurrent
+  CMI, factures légales ou simple historique, annulation en fin de période,
+  prorata, droits) ; plusieurs demandent une migration.
 
 - 🔴 **POINT ROUGE -- chantier `resultats-attribution` en pause (décision
   utilisateur du 2026-09-14).** Test réel du 2026-09-13 : les gagnants, montants et

@@ -320,6 +320,14 @@
   --l-gradient:      linear-gradient(135deg, #3248CE 0%, #2B79E8 100%);
   --l-glow-blue:     rgba(43, 121, 232, 0.22);
   --l-glow-teal:     rgba(18, 201, 170, 0.12);
+  /* Bleu clair lisible sur fond nuit : deuxieme ligne des titres (2026-09-27),
+     a la place du texte en degrade, motif d'interface generee. */
+  --l-blue-soft:     #8FBBFF;
+
+  /* Etats, pour les ecrans produit reproduits sur la page (2026-09-27). */
+  --l-pos:           #3CCB95;
+  --l-hold:          #F0B449;
+  --l-neg:           #F2706A;
 
   /* Layout */
   --l-radius:        6px;
@@ -373,6 +381,48 @@
 .animate-on-scroll.is-visible {
   opacity: 1;
   transform: translateY(0);
+}
+
+/* Bande des acheteurs du heros : defilement continu. La piste porte deux
+   copies de la rangee, -50% ramene exactement au debut de la seconde.
+   Avec « reduire les animations » (reglage frequent sous Windows), la bande
+   ralentit au lieu de se figer : l'utilisateur la veut en mouvement, et le
+   survol la met en pause. */
+@keyframes l-marquee {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
+.l-marquee {
+  animation: l-marquee 45s linear infinite;
+}
+.l-marquee:hover {
+  animation-play-state: paused;
+}
+@media (prefers-reduced-motion: reduce) {
+  .l-marquee { animation-duration: 120s; }
+}
+
+/* Mot-symbole geant du pied de page : lettres pleines a peine visibles, un
+   reflet bleu puis sarcelle les traverse. Les deux extremites du degrade ont
+   la meme teinte, la boucle ne saute donc pas. */
+@keyframes l-sheen {
+  from { background-position: 100% 0; }
+  to   { background-position: 0% 0; }
+}
+.l-wordmark {
+  background-image: linear-gradient(100deg,
+    rgba(255, 255, 255, 0.09) 25%,
+    rgba(143, 187, 255, 0.6) 42%,
+    rgba(27, 201, 168, 0.5) 50%,
+    rgba(255, 255, 255, 0.09) 67%);
+  background-size: 300% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: l-sheen 9s linear infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .l-wordmark { animation-duration: 27s; }
 }
 
 @keyframes fade-in-up {

@@ -18,6 +18,50 @@ règle) · `À CONFIRMER` (soupçonné, pas encore reproduit).
 
 ## OUVERT
 
+### Écrans de connexion : cinq défauts relevés pendant leur refonte
+
+`adjuja-frontend/src/features/auth/`
+
+Trouvés le 2026-09-27 en refaisant les écrans (connexion, inscription, mot de
+passe oublié, invitation, retour Google) :
+
+1. **Le libellé de chargement affiché comme erreur.** Quand une erreur n'avait
+   pas de message, le repli était `auth.login.submitting` (« Connexion… »),
+   `auth.register.submitting` ou `auth.forgot.submitting`.
+2. **Trop de tentatives affiché comme panne.** Le limiteur (5/min) répond
+   `{"error": ...}` sans `detail` : la connexion affichait « Erreur serveur.
+   Réessayez dans un instant. » au lieu de dire de patienter. Les appels passent
+   désormais par `readJson`, qui traduit le 429.
+3. **Mot de passe oublié : message contraire à la protection anti-énumération.**
+   Le serveur répond pareil que le compte existe ou non, mais l'écran affirmait
+   « Un code de réinitialisation a été envoyé à … ». Texte remplacé par « Si un
+   compte existe pour cette adresse, un code vient d'être envoyé à … ».
+4. **Champs blancs en thème clair.** Les écrans ne forçaient pas `.landing-dark` :
+   chez un visiteur en thème clair, les champs passaient en blanc sur un fond
+   sombre (constaté sur capture).
+5. **`getPasswordRules` pouvait rejeter** sur une coupure réseau, sans `catch`
+   côté appelant : rejet non géré. Il renvoie maintenant les règles par défaut.
+
+Corrections écrites le même jour, **non vérifiées à l'écran**. À contrôler :
+une connexion ratée (message), six connexions ratées en une minute (message du
+429), et un mot de passe oublié avec une adresse inconnue.
+
+
+### Pages légales : les liens de la barre de navigation ne menaient nulle part
+
+`adjuja-frontend/src/features/landing/components/LandingNav.tsx`
+
+Trouvé le 2026-09-27 en refaisant la barre. Elle est partagée avec les pages
+légales, mais ses liens (Fonctionnalités, Comment ça marche, Tarifs, FAQ)
+cherchaient la section par `getElementById` et appelaient `preventDefault()` :
+sur `/cgu` la section n'existe pas, le clic ne faisait donc **rien**.
+
+Correction écrite le même jour, **non vérifiée à l'écran** (pas de navigateur
+dans la session) : si la section est absente, la barre navigue vers `/#section`,
+et `LandingPage` descend vers l'ancre au montage. Passer en `CORRIGÉ` après un
+clic réel depuis une page légale.
+
+
 ### Le formulaire de génération n'est atteignable par aucun chemin
 
 `adjuja-frontend/src/App.tsx` (lignes 147, 171 et 261)
@@ -85,6 +129,28 @@ PyMuPDF n'en tire rien. Le conteneur de veille n'a ni `tesseract` ni
 `pytesseract` ; le backend dispose d'un OCR (utilisé pour l'ingestion RAG) qui
 n'est pas branché sur ce chemin.
 
+**Mesure du 2026-09-27** : sur les 5 AO de veille dont les documents sont
+téléchargés, 4 ont un CPS et un RC entièrement scannés (0 caractère de texte :
+AO 599, 600, 3389, 6387) ; seul l'AO 3412 a une couche texte. Ce n'est donc pas
+un cas marginal : la plupart des analyses de veille échouent pour cette raison.
+Et en dev, même l'AO 3412 échouerait ensuite à l'appel Mistral (clé factice).
+
+**Veille : corrigé le 2026-09-27 (Tesseract).** `app/modules/ao_scraper/ocr.py`
++ tâche `ocr_tasks.ocr_ao_documents` : pages rendues à 300 dpi, lues par
+Tesseract 5 (`fra`, ajouté à l'image du watcher), texte mis en cache sur MinIO
+(`<clé>.ocr.txt`), partagé par tous les utilisateurs. La route du verdict répond
+202 avec la progression pendant l'OCR ; le panneau affiche « page X / N » et
+rappelle jusqu'au verdict. Vérifié sur l'AO 6387 : 53 pages lues en ~80 s
+(~0,65 page/s), 119 707 caractères, texte fidèle (accents, références de
+décret) ; analyse suivante sans nouvel OCR en 0,5 s. L'appel au modèle échoue
+ensuite en dev (clé factice) avec un message clair.
+**Pipeline : corrigé le 2026-09-27** (`app/services/ocr_service.py`, appelé par
+`task_analyze_ao_context`) : même repli Tesseract, cache `<clé>.ocr.txt`.
+Vérifié dans le worker `celery-cpu` sur le RC scanné de l'AO 6387 : 23 pages en
+43 s à froid, 0,01 s depuis le cache. Deux défauts de la première version, trouvés
+au test réel et corrigés : l'analyse partait dès le CPS lu sans attendre le RC,
+et une erreur du modèle remontait en 500 brut.
+
 Les **symptômes** ont été traités le 2026-09-13 (voir CORRIGÉ : diagnostic faux
 et absence de signal). Le **fond** reste ouvert : un AO dont le DCE est scanné ne
 peut pas être analysé automatiquement. Correction envisagée : repli OCR quand
@@ -121,7 +187,41 @@ Non corrigé dans la foulée : les valeurs sont stockées en base
 ou garder les anciennes valeurs en lecture seule) : changement de valeurs
 persistées, à discuter avant, conformément à `CLAUDE.md`.
 
+### Tarif annuel affiché mais impossible à souscrire
+
+`adjuja-frontend/.../landing/components/PricingSection.tsx`, `adjuja-backend/app/api/routes/billing_routes.py`
+
+Trouvé le 2026-09-27 en refaisant la page d'accueil. Le bouton « Annuel » affiche
+392 / 792 / 2 320 MAD par mois, mais `POST /billing/checkout` ne prend qu'un code
+d'offre et facture toujours le mensuel. En attendant un arbitrage (paiement
+annuel via CMI, ou retrait du bouton), la page indique « engagement annuel, sur
+demande » sous le prix annuel.
+
+### « 1 AO gratuit à l'inscription » : promesse que le plan gratuit ne tient pas
+
+`frontend/src/locales/*.json` (`pricing.freeTrial`), `adjuja-backend/app/billing/plans.py`
+
+Trouvé le 2026-09-27. Le texte promet un AO gratuit ; le plan `free` a
+`max_ao_per_month=0`. Une génération gratuite existe peut-être par
+`User.max_generations` : à vérifier avant de réutiliser la phrase. Retirée de la
+nouvelle page d'accueil en attendant.
+
 ## REPORTÉ
+
+### Webhook CMI : `raw_payload` enregistré en `str(dict)` Python, pas en JSON
+
+`adjuja-backend/app/api/routes/billing_routes.py` (webhook `/billing/webhook/cmi`)
+
+Trouvé le 2026-09-27 en préparant la spec `gestion-abonnement`. Le callback est
+stocké avec `raw_payload=str(event.raw)` : une représentation Python (quotes
+simples, `True`/`None`), que `json.loads` ne relit pas. L'historique des
+paiements et le « dernier paiement par carte •••• 1234 » de la future page
+d'abonnement ne pourraient pas s'en servir.
+
+Reporté à l'étape 1 de `context/feature-spec/gestion-abonnement/api.md`
+(correction d'une ligne, `json.dumps(event.raw)`) : c'est la route de paiement,
+invérifiable de bout en bout sans compte marchand CMI, et aucun paiement réel
+n'a encore eu lieu, donc aucune donnée n'est perdue en attendant.
 
 ### `JWT_SECRET_KEY` exposée publiquement et identique à celle de production
 
@@ -209,6 +309,158 @@ Supprimer des tests est un choix qui appartient à l'utilisateur.
 ---
 
 ## CORRIGÉ
+
+### Veille : les AO échus réapparaissaient, et leurs fichiers restaient sur MinIO
+
+`adjuja-watcher/app/modules/ao_scraper/repository.py`, `bdc_scraper/repository.py`,
+`app/workers/tasks/cleanup_tasks.py`
+
+Signalé par l'utilisateur le 2026-09-27 (liste de veille pleine d'AO « en
+retard de 726 jours »). Mesure : 248 AO échus en `new`/`seen`, échéances depuis
+2017. Le nettoyage nocturne fonctionnait (lancé à la main : 248 supprimés),
+mais chaque scrape, toutes les 6 h, **réinsérait** ces avis encore listés par
+les portails, en statut « nouveau ». Second défaut : le nettoyage supposait
+qu'un élément hors favoris n'avait jamais de fichier ; faux pour un AO retiré
+des favoris après téléchargement, dont documents, zip et cache OCR restaient
+sur MinIO sans plus aucune ligne.
+**Corrigé le 2026-09-27** : le scraper n'insère plus d'élément déjà échu (AO
+et BDC) ; le nettoyage supprime aussi les fichiers (documents classés, cache
+`.ocr.txt`, zip) des éléments retirés ; favoris et importés intacts. Vérifié
+sur un scénario réel dans le worker : échu hors favori supprimé avec ses 2
+fichiers, échu en favori conservé, avis de 2017 venu du scraper non inséré.
+
+### Panneau BDC en colonne : il comprimait le tableau
+
+`adjuja-frontend/src/features/veille/components/BdcDetailPanel.tsx`
+
+Signalé le 2026-09-27. Le panneau AO était déjà un tiroir en superposition ;
+celui des BDC était resté une colonne de 460 px à côté du tableau.
+**Corrigé le 2026-09-27** : même tiroir, même voile, fermeture par Échap,
+boutons alignés. Vérifié au typage, pas encore revu à l'écran.
+
+### L'indexation RAG des documents d'entreprise et des CV n'a jamais fonctionné
+
+`adjuja-backend/app/api/routes/company_documents_routes.py:159`,
+`app/api/routes/staff_cvs_routes.py:301`, `app/services/rag_service.py`
+
+Trouvé le 2026-09-27 en construisant le fit score. Les deux routes importent
+`get_rag_service` depuis `app.services.rag_service`, qui ne l'a jamais défini
+(il n'existait que dans `app.api.dependencies`). L'`ImportError`, avalée par
+leur `try/except` (simple avertissement dans les logs), empêchait toute
+indexation : aucun document d'entreprise ni CV envoyé n'est jamais arrivé dans
+Qdrant. Reproduit dans le conteneur :
+`ImportError: cannot import name 'get_rag_service'`.
+**Corrigé le 2026-09-27** : `get_rag_service()` ajouté à `rag_service.py`,
+`dependencies.get_rag_service` renvoie la même instance (vérifié : `True`).
+Les documents déjà envoyés ne sont pas indexés rétroactivement : il faut les
+réindexer (même réindexation que ci-dessous).
+
+### Indexation RAG : le type de chaque document est écrasé en `note_metho`
+
+`adjuja-backend/app/services/rag_service.py`, `index_document`
+
+Trouvé le 2026-09-27 en écrivant la spec `fit-score`. Le payload de chaque point
+est construit par `{**metadata, "content": ..., "org_id": ..., "doc_type": "note_metho"}` :
+la clé posée en dernier gagne, donc le `doc_type` fourni par l'appelant
+(`reference_realisation`, `diplome`, `pouvoir_gerance`… pour les documents
+d'entreprise) est remplacé par `note_metho` pour **tous** les documents.
+Aucune recherche ne peut filtrer par type réel.
+
+### Indexation RAG : identifiants de points instables, doublons à la réindexation
+
+`adjuja-backend/app/services/rag_service.py`, `index_document`
+
+Trouvé le 2026-09-27. `id=abs(hash(f"{doc_id}_{i}"))` : `hash()` sur une chaîne
+est salé à chaque démarrage de processus (`PYTHONHASHSEED` n'est fixé nulle
+part dans l'infra). Réindexer le même document après un redémarrage produit
+d'autres identifiants, donc des doublons au lieu d'un remplacement.
+
+**Les deux corrigés le 2026-09-27** (étape 1 du fit score) : valeur par défaut
+posée avant l'étalement, identifiants `uuid5` déterministes. Reste à faire :
+réindexer les collections `offria_kb_{org_id}` existantes, dont les points
+gardent l'ancien type ; impossible à vérifier sans vraie clé Mistral en dev.
+Texte d'origine du report :, dont elles sont le préalable. Chacune
+tient en une ligne, mais elle demande une réindexation des collections
+`offria_kb_{org_id}` existantes, invérifiable sans vraie clé Mistral en dev
+(voir « Questions ouvertes » du tracker) : les corriger sans pouvoir réindexer
+laisserait les anciens points dans leur état faux.
+
+### Aperçu : les pages de documents scannés s'affichaient presque blanches
+
+`adjuja-frontend/src/shared/ui/DocumentPreview.tsx`, `vite.config.ts`
+
+Signalé par l'utilisateur le 2026-09-27 (RC de l'AO 6387, page 4 : seul un fond
+gris et quelques fragments visibles). Ces scans superposent une image de fond
+et des dizaines de masques noir et blanc compressés en fax CCITT. pdf.js 6
+décode le CCITT et le JBIG2 par un module WebAssembly
+(`JBig2CCITTFaxImage`, `pdf.worker.mjs`) qu'il charge depuis l'option
+`wasmUrl` ; l'aperçu ne passait que l'URL du fichier, donc ces couches
+n'étaient jamais décodées. Rendu de contrôle par PyMuPDF : page parfaitement
+lisible, le PDF n'était pas en cause.
+**Corrigé le 2026-09-27** : `wasmUrl`, `cMapUrl`, `standardFontDataUrl`,
+`iccUrl` passés à `getDocument`, ressources servies sous `/pdfjs/` par un
+plugin Vite (dev : depuis `node_modules`, build : copiées dans `dist/pdfjs/`).
+Vérifié : ressources servies en dev avec leur taille et leur type
+(`application/wasm`). Pas encore revu à l'écran, pas testé sur un build de prod.
+
+
+### Aucun chemin dans l'application pour changer de plan ou s'abonner
+
+`adjuja-frontend/src/App.tsx:302`, `shared/layout/LeftPanel.tsx:550`,
+`features/company/components/SubscriptionCard.tsx`
+
+Trouvé le 2026-09-27. La grille des offres in-app (`PricingModal`) ne s'ouvre
+que depuis le bouton du formulaire de génération de `LeftPanel` -- formulaire
+lui-même inatteignable (voir « Le formulaire de génération n'est atteignable
+par aucun chemin » plus haut). `SubscriptionCard`, qui portait l'abonnement et
+ses actions, n'est plus rendue nulle part depuis que la « Vue d'ensemble » est
+devenue le tableau de bord. Reste la carte « Plan » du tableau de bord
+(`PlanCard`), en lecture seule. Un utilisateur connecté ne peut donc ni
+s'abonner ni changer d'offre depuis l'application.
+
+### Prix contradictoires : 79 € / 249 € dans l'application, 490 / 990 MAD sur le site
+
+`features/billing/components/PricingModal.tsx:6,25`,
+`features/landing/components/PricingSection.tsx:234,251`
+
+Trouvé le 2026-09-27. La grille in-app affiche Starter 79 € et Pro 249 € ; la
+page publique affiche Starter 490 MAD et Pro 990 MAD par mois. Le paiement
+passe par CMI, en dirhams. À trancher par l'utilisateur : quels prix font foi
+(et vérifier ce que le backend facture réellement). Textes de `PricingModal`
+aussi en dur, hors i18n.
+
+**Les deux corrigés le 2026-09-27.** Prix confirmés par l'utilisateur :
+490 / 990 MAD, ceux du backend (`app/billing/plans.py`, Cabinet 2900 MAD).
+`PricingModal` refaite : prix et noms d'offre lus sur `GET /billing/plans`
+(plus de copie en dur), avantages repris des clés i18n de la page publique,
+paiement par `startCheckout` (CMI) au lieu des liens Stripe et Calendly,
+offre actuelle signalée, textes en i18n. Point d'entrée permanent : lien
+« Changer d'offre » au pied de la carte « Plan » du tableau de bord ; la
+modale s'ouvre toujours sur limite atteinte. `SubscriptionCard`, jamais
+rendue, supprimée. Vérifié au typage (`tsc` propre) ; pas encore rejoué à
+l'écran, et le paiement réel reste soumis à la configuration CMI.
+
+### Veille BDC : un filtre par nature de prestation vide affichait « aucun bon de commande »
+
+`adjuja-frontend/src/features/veille/BdcPage.tsx`
+
+Trouvé le 2026-09-27 en unifiant les deux listes de veille. Le test « un filtre
+est-il actif ? » de la page ignorait `nature_prestations` (le panneau de
+filtres, lui, le comptait) : un filtre par nature sans résultat affichait
+l'état vide générique au lieu de « aucun résultat pour ces filtres ».
+**Corrigé le 2026-09-27**, vérifié au typage, pas encore rejoué à l'écran.
+
+
+### Veille BDC : un filtre par nature de prestation vide affichait « aucun bon de commande »
+
+`adjuja-frontend/src/features/veille/BdcPage.tsx`
+
+Trouvé le 2026-09-27 en unifiant les deux listes de veille. Le calcul « un
+filtre est-il actif ? » de la page ignorait `nature_prestations` (le panneau de
+filtres, lui, le comptait). Un filtre par nature sans résultat affichait donc
+l'état vide générique au lieu de « aucun résultat pour ces filtres ».
+**Corrigé le 2026-09-27** : `nature_prestations.length > 0` ajouté au test.
+Vérifié à la lecture et au typage, pas encore rejoué à l'écran.
 
 ### Un faux cachet « CACHET » était apposé sur les documents signés
 

@@ -1,139 +1,149 @@
-import { useState } from "react";
+// Questions frequentes -- refait le 2026-09-27 (troisieme version).
+//
+// La grille de fiches a deux colonnes etait jugee generique, et ses fiches de
+// hauteurs inegales laissaient des trous. Ici un carrousel : fiches de meme
+// hauteur, trois visibles sur grand ecran, deux sur tablette, une sur mobile
+// (la suivante depasse pour inviter a glisser). Fleches et barre segmentee en
+// dessous : la section est paginee a toutes les tailles, sans accordeon (refuse
+// plus tot) et sans reprendre le « liste a gauche, ecran a droite » de la
+// section produit. Le defilement est natif (scroll-snap) : le glisser au doigt
+// et le clavier fonctionnent sans code.
+
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 type Item = { q: string; a: string };
 type Category = { key: string; label: string; items: Item[] };
 
-function ChevronRight() {
+function Fleche({ sens, disabled, onClick, label }: { sens: -1 | 1; disabled: boolean; onClick: () => void; label: string }) {
   return (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-      <path d="M9 6l6 6-6 6" />
-    </svg>
-  );
-}
-
-function PlusMinus({ open }: { open: boolean }) {
-  return (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
-      <path d="M5 12h14" />
-      {!open && <path d="M12 5v14" />}
-    </svg>
+    <button
+      onClick={onClick}
+      disabled={disabled}
+      aria-label={label}
+      className="flex h-12 w-12 shrink-0 cursor-pointer items-center justify-center rounded-[8px] border border-l-border-strong bg-l-surface text-l-text transition-colors hover:border-[color:var(--l-blue)] disabled:cursor-default disabled:opacity-35 disabled:hover:border-l-border-strong"
+    >
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} aria-hidden>
+        <path strokeLinecap="round" strokeLinejoin="round" d={sens < 0 ? "M15 19l-7-7 7-7" : "M9 5l7 7-7 7"} />
+      </svg>
+    </button>
   );
 }
 
 export default function FaqSection() {
   const { t } = useTranslation();
   const categories = t("landing.faq.categories", { returnObjects: true }) as Category[];
-  const [activeCat, setActiveCat] = useState(0);
-  const [openItem, setOpenItem] = useState(0);
+  const questions = categories.flatMap((c) => c.items.map((it) => ({ ...it, categorie: c.label })));
 
-  const active = categories[activeCat];
+  const piste = useRef<HTMLDivElement>(null);
+  const [premier, setPremier] = useState(0);   // premiere fiche visible
+  const [visibles, setVisibles] = useState(3); // fiches visibles d'un coup
+
+  /* Position lue sur le defilement reel : elle reste juste apres un glisser au
+     doigt, une molette ou un redimensionnement. */
+  const mesurer = useCallback(() => {
+    const el = piste.current;
+    const fiche = el?.firstElementChild as HTMLElement | null;
+    if (!el || !fiche) return;
+    const pas = fiche.offsetWidth + parseFloat(getComputedStyle(el).columnGap || "0");
+    setPremier(Math.round(el.scrollLeft / pas));
+    setVisibles(Math.max(1, Math.floor((el.clientWidth + 1) / pas)));
+  }, []);
+
+  useEffect(() => {
+    const el = piste.current;
+    if (!el) return;
+    mesurer();
+    const ro = new ResizeObserver(mesurer);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [mesurer]);
+
+  function allerA(i: number) {
+    const el = piste.current;
+    const cible = el?.children[Math.max(0, Math.min(i, questions.length - 1))] as HTMLElement | undefined;
+    if (el && cible) el.scrollTo({ left: cible.offsetLeft, behavior: "smooth" });
+  }
+
+  const dernierDebut = Math.max(0, questions.length - visibles);
+  const fin = Math.min(premier + visibles, questions.length);
 
   return (
-    <section id="faq" style={{ background: "var(--l-bg)", padding: "112px 32px" }}>
-      <div style={{ maxWidth: 1080, margin: "0 auto" }}>
-
-        <div className="animate-on-scroll" style={{ marginBottom: 48, textAlign: "center" }}>
-          <h2 style={{
-            fontSize: "clamp(2rem, 3.6vw, 3rem)",
-            fontWeight: 700, lineHeight: 1.15, letterSpacing: "-0.025em",
-            color: "var(--l-text)", margin: "0 auto", maxWidth: 640,
-          }}>
-            {t("landing.faq.title")}
+    <section id="faq" className="border-t border-l-border bg-l-bg px-5 py-20 md:px-10 md:py-28">
+      <div className="mx-auto max-w-[1320px]">
+        <div className="animate-on-scroll mx-auto max-w-[760px] text-center">
+          <h2 className="m-0 text-[clamp(2.2rem,4.2vw,3.5rem)] font-extrabold leading-[1.06] tracking-[-.03em] text-l-text">
+            {t("landing.faqV2.title")}
           </h2>
-          <p style={{
-            fontSize: 15, lineHeight: 1.7, color: "var(--l-text-muted)",
-            margin: "16px auto 0", maxWidth: 560,
-          }}>
-            {t("landing.faq.subtitle")}
+          <p className="m-0 mt-4 text-[17px] leading-[1.6] text-l-text-dim">{t("landing.faqV2.subtitle")}</p>
+        </div>
+
+        <div className="animate-on-scroll mt-12 md:mt-14">
+          <div
+            ref={piste}
+            onScroll={mesurer}
+            tabIndex={0}
+            role="region"
+            aria-label={t("landing.faqV2.title")}
+            className="relative flex snap-x snap-mandatory gap-5 overflow-x-auto scroll-smooth pb-1 outline-none [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+          >
+            {questions.map((item, i) => (
+              <article
+                key={item.q}
+                aria-roledescription="slide"
+                aria-label={`${i + 1} / ${questions.length}`}
+                className="flex shrink-0 basis-[86%] snap-start flex-col rounded-[12px] border border-l-border bg-l-surface p-7 transition-colors hover:border-l-border-strong sm:basis-[calc((100%-20px)/2)] md:p-8 xl:basis-[calc((100%-40px)/3)]"
+              >
+                <div className="flex items-baseline justify-between gap-4">
+                  <span className="text-[40px] font-extrabold leading-none tracking-[-.04em] tabular-nums text-[color:var(--l-blue-soft)]">
+                    {String(i + 1).padStart(2, "0")}
+                  </span>
+                  <span className="text-[14px] font-semibold text-l-text-dim">{item.categorie}</span>
+                </div>
+                <h3 className="m-0 mt-7 text-[21px] font-bold leading-[1.35] tracking-[-.015em] text-white">{item.q}</h3>
+                <p className="m-0 mt-4 text-[16px] leading-[1.7] text-[#C6D0E3]">{item.a}</p>
+              </article>
+            ))}
+          </div>
+
+          {/* Pagination : un segment par question, les visibles en bleu. */}
+          <div className="mt-8 flex items-center justify-center gap-5">
+            <Fleche sens={-1} disabled={premier <= 0} onClick={() => allerA(premier - visibles)} label={t("landing.faqV2.prev")} />
+            <div className="flex w-full max-w-[320px] gap-1.5">
+              {questions.map((item, i) => (
+                <button
+                  key={item.q}
+                  onClick={() => allerA(Math.min(i, dernierDebut))}
+                  aria-label={`${t("landing.faqV2.goTo")} ${i + 1}`}
+                  className="group h-6 flex-1 cursor-pointer border-0 bg-transparent p-0"
+                >
+                  <span
+                    className={`block h-[4px] rounded-full transition-colors duration-300 ${
+                      i >= premier && i < fin ? "bg-l-blue" : "bg-[var(--l-surface-3)] group-hover:bg-l-border-strong"
+                    }`}
+                  />
+                </button>
+              ))}
+            </div>
+            <Fleche sens={1} disabled={premier >= dernierDebut} onClick={() => allerA(premier + visibles)} label={t("landing.faqV2.next")} />
+          </div>
+          <p aria-live="polite" className="m-0 mt-3 text-center text-[14px] font-semibold tabular-nums text-l-text-dim">
+            {visibles > 1 ? `${premier + 1}–${fin}` : premier + 1} / {questions.length}
           </p>
         </div>
 
-        <div
-          className="animate-on-scroll"
-          style={{
-            position: "relative",
-            isolation: "isolate",
-            overflow: "hidden",
-            borderRadius: 28,
-            padding: "clamp(20px,3vw,40px)",
-            background:
-              "radial-gradient(70% 60% at 8% 0%, rgba(43,121,232,0.14), transparent 60%)," +
-              "radial-gradient(60% 55% at 100% 100%, rgba(27,201,168,0.12), transparent 60%)," +
-              "var(--l-surface)",
-            border: "1px solid var(--l-border)",
-            boxShadow: "inset 0 1px 0 rgba(255,255,255,0.05), 0 24px 60px -24px rgba(0,0,0,0.6)",
-          }}
-        >
-          <div className="grid grid-cols-1 md:grid-cols-[280px_1fr] gap-6">
-
-            {/* Categories */}
-            <div className="flex flex-col gap-2">
-              {categories.map((cat, i) => {
-                const isActive = i === activeCat;
-                return (
-                  <button
-                    key={cat.key}
-                    onClick={() => { setActiveCat(i); setOpenItem(0); }}
-                    className="flex items-center justify-between gap-3 rounded-[14px] px-5 py-4 text-left cursor-pointer border-0 transition-colors"
-                    style={{
-                      background: isActive ? "var(--l-surface-2)" : "transparent",
-                      border: isActive ? "1px solid var(--l-border-strong)" : "1px solid transparent",
-                      color: isActive ? "var(--l-text)" : "var(--l-text-muted)",
-                      fontFamily: "inherit", fontSize: 15, fontWeight: isActive ? 700 : 500,
-                    }}
-                  >
-                    {cat.label}
-                    <span style={{ color: isActive ? "var(--l-blue)" : "var(--l-text-dim)" }}>
-                      <ChevronRight />
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
-
-            {/* Questions */}
-            <div className="flex flex-col gap-3">
-              {active.items.map((item, i) => {
-                const isOpen = openItem === i;
-                return (
-                  <div
-                    key={item.q}
-                    style={{
-                      borderRadius: 14,
-                      background: isOpen ? "var(--l-surface-2)" : "transparent",
-                      border: `1px solid ${isOpen ? "var(--l-border-strong)" : "var(--l-border)"}`,
-                      overflow: "hidden",
-                    }}
-                  >
-                    <button
-                      onClick={() => setOpenItem(isOpen ? -1 : i)}
-                      className="flex w-full items-center justify-between gap-4 cursor-pointer border-0 bg-none text-left"
-                      style={{ padding: "18px 20px", fontFamily: "inherit" }}
-                    >
-                      <span style={{ fontSize: 14.5, fontWeight: 600, color: "var(--l-text)" }}>
-                        {item.q}
-                      </span>
-                      <span style={{ color: "var(--l-text-dim)" }}>
-                        <PlusMinus open={isOpen} />
-                      </span>
-                    </button>
-                    {isOpen && (
-                      <p style={{
-                        margin: 0, padding: "0 20px 20px",
-                        fontSize: 13.5, lineHeight: 1.7, color: "var(--l-text-muted)",
-                      }}>
-                        {item.a}
-                      </p>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-
+        <div className="animate-on-scroll mt-12 flex flex-col items-center gap-6 rounded-[12px] border border-l-border-strong bg-l-surface-2 px-7 py-8 text-center md:flex-row md:justify-between md:px-10 md:text-left">
+          <div>
+            <p className="m-0 text-[22px] font-bold tracking-[-.015em] text-l-text">{t("landing.faqV2.contactTitle")}</p>
+            <p className="m-0 mt-2 text-[16px] leading-[1.6] text-l-text-dim">{t("landing.faqV2.contactText")}</p>
           </div>
+          <a
+            href={`mailto:${t("landing.footer.contactEmailValue")}`}
+            className="inline-flex h-[52px] shrink-0 items-center rounded-[8px] bg-l-blue px-7 text-[16px] font-semibold text-white no-underline transition-[filter] hover:brightness-110"
+          >
+            {t("landing.faqV2.contactCta")}
+          </a>
         </div>
-
       </div>
     </section>
   );

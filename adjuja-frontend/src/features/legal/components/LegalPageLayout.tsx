@@ -1,9 +1,21 @@
-import { useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+// Mise en page partagee des 3 pages legales (mentions, CGU, confidentialite)
+// -- refaite le 2026-09-27, troisieme version.
+//
+// Deuxieme version (sommaire lateral + articles a filets) rejetee : mise en
+// page de documentation generique. Choix de l'utilisateur : la page prend la
+// forme d'un document officiel, comme ceux que le produit prepare. Onglets de
+// classeur attaches a la feuille, en-tete (logo, reference, version), articles
+// « Article 1, Article 2 », et en pied « Fait a Temara, le ... » avec le cachet.
+//
+// Forcee en sombre (.landing-dark) comme le reste du site public : les tokens
+// --l-* racine suivent le theme systeme, ce qui rendait la page claire chez un
+// visiteur en mode clair.
+
+import { Link, NavLink, useLocation, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { useScrollReveal } from "../../../hooks/useScrollReveal";
 import LandingNav from "../../landing/components/LandingNav";
 import LandingFooter from "../../landing/components/LandingFooter";
+import Cachet from "../../landing/components/Cachet";
 
 type Section = { heading: string; paragraphs: string[]; list?: string[]; anchor?: string };
 
@@ -13,144 +25,145 @@ type Props = {
   sections: Section[];
 };
 
-const BADGE_COLORS = ["#2B79E8", "#1BC9A8", "#3248CE", "#22c55e", "#a855f7", "#f59e0b"];
+const PAGES = [
+  { to: "/mentions-legales", cle: "legal.mentions.title",        ref: "ADJ-ML" },
+  { to: "/cgu",              cle: "legal.cgu.title",             ref: "ADJ-CGU" },
+  { to: "/confidentialite",  cle: "legal.confidentialite.title", ref: "ADJ-CONF" },
+];
 
-const LEGAL_CSS = `
-.legal-masonry {
-  columns: 1;
-  column-gap: 20px;
-}
-@media (min-width: 768px) {
-  .legal-masonry { columns: 2; }
-}
+const ancre = (s: Section, i: number) => s.anchor ?? `article-${i + 1}`;
 
-.legal-card {
-  position: relative;
-  display: inline-block;
-  width: 100%;
-  break-inside: avoid;
-  margin-bottom: 20px;
-  background:
-    radial-gradient(120% 100% at 15% -10%, rgba(43,121,232,0.10), transparent 55%),
-    linear-gradient(180deg, rgba(255,255,255,0.05), rgba(255,255,255,0) 40%),
-    var(--l-surface);
-  border: 1px solid var(--l-border);
-  border-radius: 18px;
-  box-shadow:
-    inset 0 1px 0 rgba(255,255,255,0.06),
-    0 1px 1px rgba(0,0,0,0.2),
-    0 16px 40px -16px rgba(0,0,0,0.6);
-  transition: border-color .25s, box-shadow .25s, transform .25s;
-}
-.legal-card:hover {
-  border-color: var(--l-border-strong);
-  transform: translateY(-2px);
-}
-`;
-
-function SectionIcon() {
-  return (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-      <polyline points="14 2 14 8 20 8" />
-      <line x1="8" y1="13" x2="16" y2="13" />
-      <line x1="8" y1="17" x2="13" y2="17" />
-    </svg>
-  );
-}
-
-/** Mise en page partagee des 3 pages legales (mentions, CGU, confidentialite). Forcee en
- * dark (.landing-dark) comme le reste du site de marque -- les tokens --l-* racine
- * s'adaptent au theme systeme, ce qui rendait cette page claire chez un visiteur en
- * light mode alors que tout le reste d'ADJUJA est sombre. Cartes avec le meme relief
- * (ombre en couches + degrade + halo) que FeaturesSection/TrustSection pour rester
- * coherent avec le reste du site. Retour par historique (navigate(-1)), pas un
- * <Link to="/"> qui pousserait toujours vers l'accueil meme venant d'ailleurs. */
 export default function LegalPageLayout({ title, updated, sections }: Props) {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  useScrollReveal();
-
-  useEffect(() => {
-    const id = "legal-css";
-    let s = document.getElementById(id) as HTMLStyleElement | null;
-    if (!s) { s = document.createElement("style"); s.id = id; document.head.appendChild(s); }
-    s.textContent = LEGAL_CSS;
-  }, []);
+  const { pathname } = useLocation();
+  const reference = PAGES.find((p) => p.to === pathname)?.ref ?? "ADJ";
+  const email = t("landing.footer.contactEmailValue");
 
   return (
-    <div className="landing-dark min-h-screen" style={{ background: "var(--l-bg)", color: "var(--l-text)" }}>
+    <div className="landing-dark relative min-h-screen overflow-hidden bg-l-bg text-l-text">
       <LandingNav onEnterApp={() => navigate("/login")} onGoRegister={() => navigate("/register")} />
 
-      <div className="max-w-[980px] mx-auto px-6 pb-14" style={{ paddingTop: "calc(64px + 40px)" }}>
+      {/* Halo de marque derriere la feuille, comme les coins du heros. */}
+      <div aria-hidden className="pointer-events-none absolute left-1/2 top-[-220px] h-[620px] w-[1100px] -translate-x-1/2 rounded-full bg-[#2B79E8] opacity-[0.14] blur-[140px]" />
 
-        <button
-          onClick={() => navigate(-1)}
-          aria-label={t("legal.backHome")}
-          className="mb-8 flex h-12 w-12 cursor-pointer items-center justify-center rounded-full border-0"
-          style={{ background: "var(--l-surface-2)", color: "var(--l-text)" }}
-        >
-          <svg width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
-          </svg>
-        </button>
+      <main className="relative mx-auto max-w-[1000px] px-4 pb-20 pt-[112px] sm:px-6 md:pt-[128px]">
 
-        <h1 className="text-[clamp(1.8rem,3vw,2.4rem)] font-bold tracking-[-0.02em] m-0 mb-2 text-center">{title}</h1>
-        <p className="text-[13px] m-0 mb-12 text-center" style={{ color: "var(--l-dim)" }}>
-          {t("legal.updated", { date: updated })}
-        </p>
+        {/* Onglets de classeur : l'onglet courant se soude a la feuille. */}
+        <nav aria-label={t("legal.docsNav")} className="flex gap-1.5 overflow-x-auto pl-3 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:pl-6">
+          {PAGES.map((p) => (
+            <NavLink
+              key={p.to}
+              to={p.to}
+              className={({ isActive }) =>
+                `relative -mb-px shrink-0 whitespace-nowrap rounded-t-[10px] border px-4 py-3 text-[15px] font-semibold no-underline transition-colors sm:px-5 ${
+                  isActive
+                    ? "z-[1] border-l-border-strong border-b-transparent bg-l-surface text-white"
+                    : "border-transparent bg-white/[0.03] text-l-text-dim hover:bg-white/[0.06] hover:text-white"
+                }`
+              }
+            >
+              {t(p.cle)}
+            </NavLink>
+          ))}
+        </nav>
 
-        <div className="legal-masonry">
-          {sections.map((s, i) => (
-            <div key={s.heading} id={s.anchor} className="legal-card p-6">
-              <div className="flex items-start gap-4">
-                <div
-                  className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[12px]"
-                  style={{ background: `${BADGE_COLORS[i % BADGE_COLORS.length]}22`, color: BADGE_COLORS[i % BADGE_COLORS.length] }}
-                >
-                  <SectionIcon />
-                </div>
+        <article className="rounded-[12px] border border-l-border-strong bg-l-surface shadow-[0_40px_120px_rgba(0,0,0,0.5)]">
+          <div className="px-6 py-10 sm:px-12 md:px-16 md:py-14">
+
+            {/* En-tete */}
+            <header className="flex flex-col gap-5 border-b-[3px] border-double border-l-border-strong pb-7 sm:flex-row sm:items-end sm:justify-between">
+              <div className="flex items-center gap-3.5">
+                <img src="/logo-adjuja-mark.png" alt="" className="h-12 w-12 rounded-[12px]" />
                 <div>
-                  <h2 className="m-0 mb-2 text-[16px] font-bold tracking-[-0.01em]" style={{ color: "var(--l-text)" }}>
-                    {s.heading}
-                  </h2>
-                  {s.paragraphs.map((p, pi) => (
-                    <p key={pi} className="m-0 mb-2 text-[13.5px] leading-[1.65] last:mb-0" style={{ color: "var(--l-text-muted)" }}>
-                      {p}
-                    </p>
-                  ))}
-                  {s.list && (
-                    <ul className="m-0 mt-2 pl-4 flex flex-col gap-1.5">
-                      {s.list.map((li, li_i) => (
-                        <li key={li_i} className="text-[13.5px] leading-[1.6]" style={{ color: "var(--l-text-muted)" }}>{li}</li>
-                      ))}
-                    </ul>
-                  )}
+                  <p className="m-0 text-[24px] font-extrabold leading-none tracking-[-.03em] text-white">Adjuja</p>
+                  <p className="m-0 mt-1.5 text-[14px] text-l-text-dim">{t("landing.footer.contactAddressValue")} · {email}</p>
                 </div>
               </div>
-            </div>
-          ))}
-        </div>
+              <dl className="m-0 grid grid-cols-[auto_auto] gap-x-4 gap-y-1 text-[14px] sm:text-right">
+                <dt className="text-l-text-dim">{t("legal.reference")}</dt>
+                <dd className="m-0 font-semibold tabular-nums text-white">{reference}</dd>
+                <dt className="text-l-text-dim">{t("legal.versionLabel")}</dt>
+                <dd className="m-0 font-semibold text-white">{updated}</dd>
+              </dl>
+            </header>
 
-        <div className="legal-card mt-14 p-10 text-center">
-          <h2 className="m-0 mb-3 text-[1.4rem] font-bold tracking-[-0.02em]" style={{ color: "var(--l-text)" }}>
-            {t("legal.ctaTitle")}
-          </h2>
-          <p className="m-0 mb-6 text-[14px]" style={{ color: "var(--l-text-muted)" }}>
-            {t("legal.ctaSubtitle")}
-          </p>
+            {/* Titre du document */}
+            <div className="py-12 text-center md:py-14">
+              <h1 className="m-0 text-[clamp(2.2rem,5vw,3.6rem)] font-extrabold leading-[1.05] tracking-[-.03em] text-white">{title}</h1>
+              <p className="m-0 mt-4 text-[16px] text-l-text-dim">{t("legal.updated", { date: updated })}</p>
+            </div>
+
+            {/* Sommaire, dans la feuille comme en tete d'un contrat */}
+            <nav aria-label={t("legal.toc")} className="rounded-[10px] border border-l-border bg-white/[0.02] px-6 py-6 md:px-8">
+              <p className="m-0 text-[16px] font-bold text-white">{t("legal.toc")}</p>
+              <ol className="m-0 mt-4 grid list-none gap-x-10 gap-y-2.5 p-0 md:grid-cols-2">
+                {sections.map((s, i) => (
+                  <li key={s.heading}>
+                    <a href={`#${ancre(s, i)}`} className="flex gap-3 text-[15px] leading-[1.45] text-[#C6D0E3] no-underline transition-colors hover:text-white">
+                      <span className="w-[4.6rem] shrink-0 font-semibold text-[color:var(--l-blue-soft)]">{t("legal.article", { n: i + 1 })}</span>
+                      {s.heading}
+                    </a>
+                  </li>
+                ))}
+              </ol>
+            </nav>
+
+            {/* Articles */}
+            <div className="mt-12">
+              {sections.map((s, i) => (
+                <section key={s.heading} id={ancre(s, i)} className="scroll-mt-[96px] pb-10 last:pb-0">
+                  <p className="m-0 text-[15px] font-bold text-[color:var(--l-blue-soft)]">{t("legal.article", { n: i + 1 })}</p>
+                  <h2 className="m-0 mt-1.5 text-[23px] font-bold leading-[1.3] tracking-[-.015em] text-white">{s.heading}</h2>
+                  <div className="mt-4 flex flex-col gap-3.5">
+                    {s.paragraphs.map((p, pi) => (
+                      <p key={pi} className="m-0 text-[17px] leading-[1.75] text-[#C6D0E3]">{p}</p>
+                    ))}
+                    {s.list && (
+                      <ul className="m-0 flex flex-col gap-2 pl-5">
+                        {s.list.map((li, li_i) => (
+                          <li key={li_i} className="text-[17px] leading-[1.7] text-[#C6D0E3] marker:text-[color:var(--l-blue-soft)]">{li}</li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
+                </section>
+              ))}
+            </div>
+
+            {/* Pied du document : lieu, date, cachet */}
+            <footer className="mt-14 flex flex-col items-end border-t border-l-border pt-10">
+              <div className="flex items-center gap-6">
+                <div className="text-right">
+                  <p className="m-0 text-[16px] text-[#C6D0E3]">{t("legal.madeAt", { date: updated })}</p>
+                  <p className="m-0 mt-1.5 text-[17px] font-bold text-white">{t("legal.signedFor")}</p>
+                </div>
+                <Cachet texte={t("legal.stampText")} taille={104} />
+              </div>
+            </footer>
+          </div>
+        </article>
+
+        {/* Sous la feuille : une question, retour a l'accueil */}
+        <div className="mt-8 flex flex-col items-start justify-between gap-5 rounded-[12px] border border-l-border bg-l-surface-2 px-7 py-6 sm:flex-row sm:items-center">
+          <div>
+            <p className="m-0 text-[19px] font-bold text-white">{t("legal.ctaTitle")}</p>
+            <p className="m-0 mt-1 max-w-[520px] text-[15px] leading-[1.6] text-l-text-dim">{t("legal.ctaSubtitle")}</p>
+          </div>
           <a
-            href="mailto:contact@adjuja.com"
-            className="inline-block rounded-[12px] px-7 py-3 text-[14px] font-semibold no-underline"
-            style={{ background: "var(--l-blue)", color: "#fff" }}
+            href={`mailto:${email}`}
+            className="inline-flex h-12 shrink-0 items-center rounded-[8px] bg-l-blue px-6 text-[15px] font-semibold text-white no-underline transition-[filter] hover:brightness-110"
           >
             {t("legal.ctaButton")}
           </a>
         </div>
 
-      </div>
+        <Link to="/" className="mt-8 inline-flex items-center gap-2 text-[15px] font-semibold text-[color:var(--l-blue-soft)] no-underline hover:text-white">
+          <span aria-hidden>←</span> {t("legal.backToSite")}
+        </Link>
+      </main>
 
-      <LandingFooter onEnterApp={() => navigate("/login")} />
+      <LandingFooter onEnterApp={() => navigate("/login")} onGoRegister={() => navigate("/register")} />
     </div>
   );
 }

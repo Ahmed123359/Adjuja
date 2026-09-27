@@ -6,7 +6,8 @@
     "access": "Se connecter",
     "signup": "Liste d'attente",
     "close": "Fermer le menu",
-    "faq": "FAQ"
+    "faq": "FAQ",
+    "menu": "Ouvrir le menu"
   },
   "notFound": {
     "title": "Page introuvable",
@@ -15,10 +16,18 @@
   },
   "landing": {
     "hero": {
-      "titleLine1": "Vos appels d'offres,",
-      "titleHighlight": "sans les nuits blanches.",
-      "subtitle": "Adjuja surveille les publications, analyse votre CPS en 4 minutes et vous aide à rédiger votre offre. Conçu au Maroc, aligné sur le décret n°2-22-431.",
-      "cta": "Demander l'accès"
+      "titleLine1": "Répondez aux appels d'offres",
+      "titleHighlight": "sans y laisser vos nuits.",
+      "subtitle": "Adjuja repère les avis qui vous concernent, lit le CPS et le RC à votre place, vous dit si le marché est à votre portée et prépare le dossier à signer.",
+      "cta": "Demander l'accès",
+      "kicker": "Marchés publics au Maroc · décret n°2-22-431",
+      "secondary": "Voir comment ça marche",
+      "proof": [
+        "Veille de marchespublics.gov.ma et des bons de commande",
+        "CPS et RC lus, même scannés",
+        "Formulaires remplis, signés, paraphés"
+      ],
+      "buyersCaption": "Leurs avis arrivent déjà dans la veille Adjuja, avec ceux de plus de 500 autres acheteurs publics"
     },
     "features": {
       "title": "Un copilote complet",
@@ -49,7 +58,28 @@
       "t2Title": "Vous décidez en 4 minutes",
       "t2Desc": "L'analyse extrait les critères, les délais et les pièces exigées. Vous gardez la décision : c'est votre marché, votre engagement, votre jugement.",
       "t3Title": "Vous rédigez trois fois plus vite",
-      "t3Desc": "Adjuja prépare la structure et les sections types. Vous relisez, ajustez, validez. Export Word, prêt à finaliser."
+      "t3Desc": "Adjuja prépare la structure et les sections types. Vous relisez, ajustez, validez. Export Word, prêt à finaliser.",
+      "outputLabel": "Vous obtenez",
+      "steps": [
+        {
+          "title": "Vous recevez les avis qui vous concernent",
+          "desc": "Adjuja surveille les portails chaque jour et ne garde que les avis de vos secteurs.",
+          "output": "une liste triée par échéance",
+          "time": "Chaque jour, sans rien faire"
+        },
+        {
+          "title": "Vous décidez en quelques minutes",
+          "desc": "Le CPS et le RC sont lus pour vous : critères, pièces exigées, délais. Le score vous dit si le marché est à votre portée.",
+          "output": "un score sur 100 et la liste de ce qui manque",
+          "time": "Quelques minutes par avis"
+        },
+        {
+          "title": "Vous déposez un dossier complet",
+          "desc": "Formulaires remplis depuis votre profil, note méthodologique préparée, pièces signées. Vous relisez et validez.",
+          "output": "un dossier Word et PDF prêt à signer",
+          "time": "Le jour même"
+        }
+      ]
     },
     "trust": {
       "label": "Confidentialité",
@@ -155,7 +185,7 @@
       "bullet3": "Support inclus"
     },
     "footer": {
-      "tagline": "Adjuja est le copilote IA des appels d'offres publics au Maroc : veille, analyse d'opportunité, analyse du CPS et rédaction assistée.",
+      "tagline": "Adjuja est le copilote IA des appels d'offres publics au Maroc : veille, analyse d'opportunité, analyse du CPS et rédaction assistée.",
       "emailPlaceholder": "Votre adresse email",
       "subscribe": "S'abonner",
       "newsletterTitle": "Restez informé",
@@ -178,7 +208,171 @@
       "contactPhoneValue": "+212 661-396413",
       "contactAddress": "Adresse",
       "contactAddressValue": "Temara, Maroc",
-      "copyright": "© 2026 ADJUJA. Tous droits réservés."
+      "copyright": "© 2026 ADJUJA. Tous droits réservés.",
+      "productTitle": "Produit",
+      "newsletterText": "Les nouveautés d'Adjuja et du décret 2-22-431, une fois par mois au plus.",
+      "subscribing": "Inscription…",
+      "subscribeOk": "C'est noté, vous êtes inscrit.",
+      "subscribeError": "Adresse invalide ou déjà inscrite.",
+      "madeBy": "Réalisé par",
+      "ctaTitle": "Le prochain marché est peut-être déjà en ligne.",
+      "ctaText": "Adjuja le repère, lit son CPS et vous dit s'il est pour vous, avant que l'échéance ne tombe."
+    },
+    "product": {
+      "title": "Du portail au dossier signé.",
+      "subtitle": "Les quatre moments d'un appel d'offres, dans un seul outil. Vous gardez la main à chacun.",
+      "moments": [
+        {
+          "key": "veille",
+          "title": "Repérer",
+          "desc": "Chaque nouvel avis des portails publics, filtré selon vos secteurs. Les échéances en jours restants ; les avis expirés disparaissent d'eux-mêmes."
+        },
+        {
+          "key": "decision",
+          "title": "Décider",
+          "desc": "Un score de compatibilité sur 100 : qualifications, chiffre d'affaires, références, équipe, pièces administratives. Et ce qu'il vous manque pour y aller."
+        },
+        {
+          "key": "preparation",
+          "title": "Préparer",
+          "desc": "Acte d'engagement, déclaration sur l'honneur et bordereau remplis depuis votre profil. La note méthodologique rédigée à partir du CPS."
+        },
+        {
+          "key": "signature",
+          "title": "Signer",
+          "desc": "Signature, cachet et paraphe apposés sur chaque pièce. Un dossier complet, prêt à déposer."
+        }
+      ],
+      "screens": {
+        "veilleTitle": "Veille des appels d'offres",
+        "veilleCount": "12 nouveaux avis",
+        "rows": [
+          {
+            "acheteur": "Province de Kénitra",
+            "objet": "Fourniture de matériel informatique pour les écoles rurales",
+            "echeance": "dans 3 jours",
+            "budget": "642 850 Dhs"
+          },
+          {
+            "acheteur": "ONEE, branche Eau",
+            "objet": "Assistance technique pour le réseau d'assainissement de Berrechid",
+            "echeance": "dans 9 jours",
+            "budget": "2 896 000 Dhs"
+          },
+          {
+            "acheteur": "Commune de Témara",
+            "objet": "Travaux d'entretien de l'éclairage public",
+            "echeance": "dans 14 jours",
+            "budget": "1 326 500 Dhs"
+          },
+          {
+            "acheteur": "Agence nationale des ports",
+            "objet": "Étude géotechnique pour l'extension du port de Safi",
+            "echeance": "dans 21 jours",
+            "budget": "4 180 000 Dhs"
+          }
+        ],
+        "decisionTitle": "Compatibilité avec votre profil",
+        "decisionBase": "calculé sur les 5 critères exigés par cet avis",
+        "eligible": "Éligible",
+        "factors": [
+          {
+            "label": "Qualifications et certifications",
+            "score": 100,
+            "note": "ISO 9001:2015 présente"
+          },
+          {
+            "label": "Capacité financière",
+            "score": 100,
+            "note": "CA moyen au-dessus du minimum exigé"
+          },
+          {
+            "label": "Références similaires",
+            "score": 67,
+            "note": "2 références proches sur 3 exigées"
+          },
+          {
+            "label": "Équipe",
+            "score": 50,
+            "note": "Chef de projet à pourvoir"
+          },
+          {
+            "label": "Conformité administrative",
+            "score": 80,
+            "note": "Attestation fiscale expirée"
+          }
+        ],
+        "prepTitle": "Dossier de réponse",
+        "docs": [
+          {
+            "nom": "Acte d'engagement",
+            "etat": "Rempli"
+          },
+          {
+            "nom": "Déclaration sur l'honneur",
+            "etat": "Remplie"
+          },
+          {
+            "nom": "Bordereau des prix",
+            "etat": "Rempli"
+          },
+          {
+            "nom": "Attestations fiscale et CNSS",
+            "etat": "Jointes"
+          },
+          {
+            "nom": "CV de l'équipe proposée",
+            "etat": "Joints"
+          },
+          {
+            "nom": "Note méthodologique",
+            "etat": "En rédaction"
+          }
+        ],
+        "signTitle": "Signature et dépôt",
+        "sign": [
+          "Signature du gérant apposée sur 4 pièces",
+          "Cachet de l'entreprise apposé",
+          "CPS et RC paraphés, 53 pages",
+          "Pièces classées : administratif, technique, financier",
+          "Dossier ZIP prêt à déposer"
+        ],
+        "veilleFooter": "Filtré selon vos 3 secteurs d'activité",
+        "decisionGap": "À combler : un chef de projet, une référence similaire, l'attestation fiscale",
+        "prepFooter": "5 pièces sur 6 prêtes",
+        "signFooter": "Prêt à déposer sur marchespublics.gov.ma"
+      }
+    },
+    "trustV2": {
+      "title": "Vos prix et vos références ne sortent pas de chez vous.",
+      "subtitle": "Un cabinet qui confie ses prix et ses références à Adjuja doit pouvoir le faire sans arrière-pensée. Nos engagements, écrits comme un contrat.",
+      "article": "Article {{n}}",
+      "docTitle": "Charte de confidentialité",
+      "docSub": "Nos engagements envers chaque client, quelle que soit son offre.",
+      "signedBy": "Pour Adjuja",
+      "stampText": "ADJUJA · CONFIDENTIEL · LOI 09-08 · "
+    },
+    "pricingV2": {
+      "title": "Un prix fixe par mois.",
+      "titleBlue": "Sans engagement.",
+      "subtitle": "Tarifs hors taxes, en dirhams. Résiliable à tout moment.",
+      "monthly": "Mensuel",
+      "annual": "Annuel",
+      "perMonth": "MAD / mois",
+      "annualNote": "par mois avec un engagement annuel, sur demande",
+      "recommended": "Recommandé",
+      "choose": "Choisir {{plan}}",
+      "redirecting": "Redirection…"
+    },
+    "faqV2": {
+      "title": "Questions fréquentes",
+      "subtitle": "Confidentialité, tarifs, fonctionnement, accès.",
+      "contactTitle": "Une autre question ?",
+      "contactText": "Écrivez-nous : un membre de l'équipe vous répond sous 48 heures.",
+      "contactCta": "Écrire à l'équipe",
+      "prev": "Questions précédentes",
+      "next": "Questions suivantes",
+      "goTo": "Aller à la question"
     }
   },
   "banner": {
@@ -264,7 +458,9 @@
       "f_export": "Export Word (.docx)",
       "f_providers": "Rédaction assistée par IA",
       "f_50_ao": "50 AOs générés / mois",
-      "f_ao_illimite": "AOs générés illimités"
+      "f_ao_illimite": "AOs générés illimités",
+      "f_all_pro": "Tout le plan Pro inclus",
+      "f_onprem": "Déploiement on-premise"
     }
   },
   "ctaBand": {
@@ -296,7 +492,9 @@
       "continueWithGoogle": "Continuer avec Google",
       "googleCallbackLoading": "Connexion avec Google…",
       "googleCallbackError": "Connexion Google invalide. Réessayez.",
-      "forgotPassword": "Mot de passe oublié ?"
+      "forgotPassword": "Mot de passe oublié ?",
+      "googleFailedTitle": "Connexion Google interrompue",
+      "backToLogin": "Retour à la connexion"
     },
     "forgot": {
       "title": "Mot de passe oublié",
@@ -312,14 +510,18 @@
       "newPasswordPlaceholder": "••••••••",
       "resetSubmit": "Réinitialiser le mot de passe",
       "resetting": "Réinitialisation…",
-      "resetError": "Code invalide. Réessayez."
+      "resetError": "Code invalide. Réessayez.",
+      "otpSentIfExists": "Si un compte existe pour cette adresse, un code vient d'être envoyé à"
     },
     "invite": {
       "title": "{{name}} vous invite à rejoindre son équipe sur ADJUJA",
       "accept": "Rejoindre l'équipe",
       "accepting": "Connexion…",
       "acceptError": "Erreur lors de l'acceptation de l'invitation.",
-      "invalid": "Invitation expirée ou introuvable."
+      "invalid": "Invitation expirée ou introuvable.",
+      "loading": "Vérification de l'invitation…",
+      "invalidTitle": "Invitation introuvable",
+      "forEmail": "Compte créé pour"
     },
     "register": {
       "title": "Créer un compte",
@@ -359,7 +561,11 @@
       "hasAccount": "Déjà un compte ?",
       "loginLink": "Se connecter",
       "or": "ou",
-      "continueWithGoogle": "Continuer avec Google"
+      "continueWithGoogle": "Continuer avec Google",
+      "step": "Étape {{n}} sur {{total}}",
+      "continue": "Continuer",
+      "back": "Retour",
+      "passwordRulesError": "Le mot de passe ne respecte pas encore les règles indiquées."
     },
     "verify": {
       "title": "Vérifiez votre email",
@@ -368,7 +574,22 @@
       "confirm": "Confirmer",
       "verifying": "Vérification…",
       "otpError": "Code invalide. Réessayez.",
-      "goLogin": "Aller à la connexion"
+      "goLogin": "Aller à la connexion",
+      "instructionShort": "Saisissez le code à 6 chiffres pour activer votre compte.",
+      "changeEmail": "Modifier l'adresse email"
+    },
+    "common": {
+      "backToSite": "Retour au site",
+      "showPassword": "Afficher le mot de passe",
+      "hidePassword": "Masquer le mot de passe",
+      "ruleLength": "{{min}} caractères minimum",
+      "ruleDigit": "Au moins un chiffre",
+      "codeLabel": "Code à 6 chiffres",
+      "codeResent": "Nouveau code envoyé.",
+      "noCode": "Pas reçu de code ?",
+      "resendIn": "Renvoyer dans {{s}} s",
+      "resend": "Renvoyer le code",
+      "genericError": "Une erreur est survenue. Réessayez."
     }
   },
   "app": {
@@ -1161,7 +1382,7 @@
       "showLess": "Voir moins",
       "tabResume": "Résumé",
       "tabDocs": "Documents",
-      "tabGoNoGo": "Analyse",
+      "tabGoNoGo": "Compatibilité",
       "noDesc": "Aucune description disponible.",
       "budget": "Budget",
       "caution": "Caution",
@@ -1179,8 +1400,13 @@
           "go": "GO : éligible",
           "risque": "À vérifier : points d'attention",
           "no_go": "NO-GO : critère(s) non rempli(s)"
-        }
-      }
+        },
+        "ocrQueued": "Documents scannés : lecture des pages en attente…",
+        "ocrProgress": "Lecture des pages scannées… {{page}} / {{pages}}",
+        "ocrHint": "La première analyse d'un dossier scanné prend quelques minutes. Le texte lu est conservé : les analyses suivantes sont immédiates."
+      },
+      "preview": "Aperçu",
+      "previewError": "Impossible d'ouvrir ce document."
     },
     "empty": {
       "allTitle": "Aucun appel d'offres",
@@ -1421,7 +1647,16 @@
           ]
         }
       ]
-    }
+    },
+    "toc": "Sommaire",
+    "docsNav": "Documents légaux",
+    "backToSite": "Retour à l'accueil",
+    "reference": "Référence",
+    "versionLabel": "Version du",
+    "article": "Article {{n}}",
+    "madeAt": "Fait à Témara, le {{date}}",
+    "signedFor": "Pour Adjuja",
+    "stampText": "ADJUJA · TÉMARA · MAROC · "
   },
   "tasks": {
     "filter": {
@@ -1452,6 +1687,66 @@
     "view": {
       "list": "Tâches",
       "chat": "Discussion"
+    }
+  },
+  "billing": {
+    "status": {
+      "active": "Actif",
+      "past_due": "Paiement en retard",
+      "canceled": "Annulé",
+      "trialing": "Essai"
+    },
+    "modal": {
+      "title": "Changer d'offre",
+      "titleLimit": "Vous avez atteint la limite de votre offre",
+      "subtitle": "Tarifs mensuels hors taxes, en dirhams.",
+      "perMonth": "MAD / mois",
+      "current": "Offre actuelle",
+      "recommended": "Recommandé",
+      "choose": "Choisir {{plan}}",
+      "included": "Inclus dans votre offre",
+      "redirecting": "Redirection vers le paiement…",
+      "changePlan": "Changer d'offre",
+      "secure": "Paiement sécurisé par CMI. Sans engagement, résiliable à tout moment.",
+      "loadError": "Impossible de charger les offres. Réessayez dans un instant.",
+      "checkoutError": "Impossible de démarrer le paiement."
+    }
+  },
+  "fitScore": {
+    "eligibilite": {
+      "eligible": "Éligible",
+      "a_verifier": "À vérifier",
+      "non_eligible": "Non éligible"
+    },
+    "aVerifierDesc": "La qualification exigée se vérifie à la main : le domaine est comparé, pas la classe ni la catégorie.",
+    "facteurs": {
+      "qualifications": "Qualifications et certifications",
+      "capacite_financiere": "Capacité financière",
+      "references": "Références similaires",
+      "equipe": "Équipe",
+      "conformite_administrative": "Conformité administrative",
+      "proximite": "Proximité"
+    },
+    "estimation": "estimation",
+    "nonExige": "Non exigé",
+    "base_one": "Calculé sur le seul critère exigé par cet AO.",
+    "base_other": "Calculé sur les {{count}} critères exigés par cet AO.",
+    "aucuneExigence": "Cet AO ne précise aucune exigence comparable à votre profil.",
+    "motsCles": "Comparaison des références approximative : le service de similarité est indisponible, les intitulés sont comparés par mots-clés.",
+    "chargement": "Calcul du score de compatibilité…",
+    "indisponible": "Score de compatibilité indisponible.",
+    "actions": {
+      "certifications": "Compléter mes certifications",
+      "classifications": "Compléter mes classifications",
+      "chiffre_affaires_moyen": "Renseigner mon chiffre d'affaires",
+      "references_similaires": "Compléter mes références",
+      "ice": "Renseigner l'ICE",
+      "rc": "Renseigner le RC",
+      "if_fiscal": "Renseigner l'identifiant fiscal",
+      "cnss": "Renseigner la CNSS",
+      "profil": "Compléter mon profil",
+      "documents": "Ajouter l'attestation fiscale",
+      "equipe": "Compléter mon équipe"
     }
   }
 }

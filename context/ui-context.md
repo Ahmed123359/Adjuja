@@ -45,8 +45,16 @@ Aucune taille sous **14px** : corps 16, libellés 15, méta 14, titres de pannea
 ### Formes
 
 Rayons 8 / 12 / 14 (`--adj-round-s/m/l`). Ni les angles durs d'un terminal, ni
-les galets. Un panneau porte un filet et presque pas d'ombre : c'est le
-contraste avec le fond qui le détoure.
+les galets.
+
+**Fond uni (décision utilisateur du 2026-09-27).** Le fond de l'application a
+la même couleur que les panneaux (`--adj-bg: var(--adj-panel)`, et côté
+Tailwind `--background` = `--card`). Rien ne se détache par une différence de
+fond ni par une ombre (`--adj-lift-1: none`) : les zones se séparent par des
+**filets** (`--adj-hairline`), comme l'écran de veille (filtres | tableau). Cela
+remplace le principe précédent, « un panneau blanc détouré par un fond gris ».
+Les creux (`--adj-panel-2` : champs, pistes) et les surfaces flottantes (ombre
+`--adj-lift-3`) gardent leur relief.
 
 ## Grille
 
@@ -138,3 +146,26 @@ Confirmé pendant cette refonte, souvent après essai :
   restant sous un repli.
 - **Un zéro reste lisible** : le griser jusqu'à `--adj-ink-4` le faisait passer
   pour un champ vide.
+
+## Site public et écrans de connexion (2026-09-27)
+
+Tokens `--l-*` sous `.landing-dark`, **forcé** sur toutes ces pages (accueil,
+pages légales, authentification) : sans lui, les tokens suivent le thème
+système et les champs passent en blanc sur fond sombre.
+
+- Largeur de contenu 1320px, titres de section centrés, Manrope, textes ≥ 14px,
+  liens et textes secondaires en couleur pleine `#C6D0E3` (le blanc à opacité
+  réduite paraissait flou), boutons à 8px (jamais en pilule).
+- Logo : `public/logo-adjuja-mark.png` (rogné) + mot-symbole « Adjuja » en
+  Manrope 800. `logo-adjuja.png` a 44 % de marge transparente.
+- Motifs d'identité réutilisables, dans `features/landing/components/` :
+  `Orbites` (écho de la Terre et de la lune du héros), `BuyersMarquee`,
+  `Cachet`. Les préférer à tout décor générique.
+- Animations continues : ralenties, pas figées, sous `prefers-reduced-motion`
+  (décision utilisateur) ; le survol met en pause.
+- `background-clip: text` ne peint que dans la boîte de ligne : prévoir un
+  retrait bas, sinon les jambages (« j ») disparaissent.
+- Rejetés sur ce chantier : grille de fiches FAQ, accordéon, maquette de
+  tableau de bord sous le héros, faux logos de partenaires, cartes flottantes
+  inclinées, mise en page « documentation » pour les pages légales.
+

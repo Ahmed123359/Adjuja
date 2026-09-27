@@ -6,7 +6,8 @@
     "access": "Sign in",
     "signup": "Waitlist",
     "close": "Close menu",
-    "faq": "FAQ"
+    "faq": "FAQ",
+    "menu": "Open menu"
   },
   "notFound": {
     "title": "Page not found",
@@ -15,10 +16,18 @@
   },
   "landing": {
     "hero": {
-      "titleLine1": "Your public tenders,",
-      "titleHighlight": "without the sleepless nights.",
-      "subtitle": "Adjuja monitors new publications, analyses your tender specifications in 4 minutes, and helps you draft your offer. Built in Morocco, aligned with decree n°2-22-431.",
-      "cta": "Request access"
+      "titleLine1": "Answer public tenders",
+      "titleHighlight": "without losing your nights.",
+      "subtitle": "Adjuja finds the notices that concern you, reads the CPS and the RC for you, tells you whether the contract is within reach and prepares the file for signature.",
+      "cta": "Request access",
+      "kicker": "Moroccan public procurement · decree no. 2-22-431",
+      "secondary": "See how it works",
+      "proof": [
+        "Monitoring of marchespublics.gov.ma and purchase orders",
+        "CPS and RC read, even when scanned",
+        "Forms filled in, signed, initialled"
+      ],
+      "buyersCaption": "Their notices already reach the Adjuja watch, along with those of more than 500 other public buyers"
     },
     "features": {
       "title": "A complete copilot",
@@ -43,13 +52,34 @@
     },
     "how": {
       "title": "Three steps.",
-      "titleBlue": "You stay in charge.",
+      "titleBlue": "You stay in control.",
       "t1Title": "You receive the tenders that matter to you",
       "t1Desc": "Adjuja monitors the portals and filters based on your profile. You stop searching.",
       "t2Title": "You decide in 4 minutes",
       "t2Desc": "The analysis extracts the criteria, deadlines and required documents. You keep the decision: it's your tender, your commitment, your judgment.",
       "t3Title": "You draft three times faster",
-      "t3Desc": "Adjuja prepares the structure and standard sections. You review, adjust, validate. Word export, ready to finalize."
+      "t3Desc": "Adjuja prepares the structure and standard sections. You review, adjust, validate. Word export, ready to finalize.",
+      "outputLabel": "You get",
+      "steps": [
+        {
+          "title": "You receive the notices that concern you",
+          "desc": "Adjuja monitors the portals every day and keeps only the notices in your sectors.",
+          "output": "a list sorted by deadline",
+          "time": "Every day, with no effort"
+        },
+        {
+          "title": "You decide in a few minutes",
+          "desc": "The CPS and the RC are read for you: criteria, required documents, deadlines. The score tells you whether the contract is within reach.",
+          "output": "a score out of 100 and the list of what is missing",
+          "time": "A few minutes per notice"
+        },
+        {
+          "title": "You submit a complete file",
+          "desc": "Forms filled from your profile, methodology note prepared, documents signed. You review and approve.",
+          "output": "a Word and PDF file ready to sign",
+          "time": "The same day"
+        }
+      ]
     },
     "trust": {
       "label": "Privacy",
@@ -178,7 +208,171 @@
       "contactPhoneValue": "+212 661-396413",
       "contactAddress": "Address",
       "contactAddressValue": "Temara, Morocco",
-      "copyright": "© 2026 ADJUJA. All rights reserved."
+      "copyright": "© 2026 ADJUJA. All rights reserved.",
+      "productTitle": "Product",
+      "newsletterText": "News from Adjuja and about decree 2-22-431, at most once a month.",
+      "subscribing": "Subscribing…",
+      "subscribeOk": "Done, you are subscribed.",
+      "subscribeError": "Invalid or already subscribed address.",
+      "madeBy": "Made by",
+      "ctaTitle": "Your next contract may already be online.",
+      "ctaText": "Adjuja finds it, reads its CPS and tells you whether it is for you, before the deadline hits."
+    },
+    "product": {
+      "title": "From the portal to the signed file.",
+      "subtitle": "The four moments of a tender, in one tool. You stay in control of each one.",
+      "moments": [
+        {
+          "key": "veille",
+          "title": "Find",
+          "desc": "Every new notice from the public portals, filtered by your sectors. Deadlines in days left; expired notices disappear on their own."
+        },
+        {
+          "key": "decision",
+          "title": "Decide",
+          "desc": "A fit score out of 100: qualifications, turnover, references, team, paperwork. And what you are missing to go for it."
+        },
+        {
+          "key": "preparation",
+          "title": "Prepare",
+          "desc": "Commitment form, sworn statement and price schedule filled from your profile. The methodology note drafted from the CPS."
+        },
+        {
+          "key": "signature",
+          "title": "Sign",
+          "desc": "Signature, stamp and initials applied to every document. A complete file, ready to submit."
+        }
+      ],
+      "screens": {
+        "veilleTitle": "Tender monitoring",
+        "veilleCount": "12 new notices",
+        "rows": [
+          {
+            "acheteur": "Province of Kenitra",
+            "objet": "IT equipment for rural schools",
+            "echeance": "in 3 days",
+            "budget": "642,850 MAD"
+          },
+          {
+            "acheteur": "ONEE, water branch",
+            "objet": "Technical assistance for the Berrechid sewer network",
+            "echeance": "in 9 days",
+            "budget": "2,896,000 MAD"
+          },
+          {
+            "acheteur": "Municipality of Temara",
+            "objet": "Street lighting maintenance works",
+            "echeance": "in 14 days",
+            "budget": "1,326,500 MAD"
+          },
+          {
+            "acheteur": "National Ports Agency",
+            "objet": "Geotechnical study for the extension of the port of Safi",
+            "echeance": "in 21 days",
+            "budget": "4,180,000 MAD"
+          }
+        ],
+        "decisionTitle": "Fit with your profile",
+        "decisionBase": "based on the 5 criteria this notice requires",
+        "eligible": "Eligible",
+        "factors": [
+          {
+            "label": "Qualifications and certifications",
+            "score": 100,
+            "note": "ISO 9001:2015 on file"
+          },
+          {
+            "label": "Financial capacity",
+            "score": 100,
+            "note": "Average turnover above the required minimum"
+          },
+          {
+            "label": "Similar references",
+            "score": 67,
+            "note": "2 close references out of 3 required"
+          },
+          {
+            "label": "Team",
+            "score": 50,
+            "note": "Project manager to assign"
+          },
+          {
+            "label": "Administrative compliance",
+            "score": 80,
+            "note": "Tax certificate expired"
+          }
+        ],
+        "prepTitle": "Response file",
+        "docs": [
+          {
+            "nom": "Commitment form",
+            "etat": "Filled"
+          },
+          {
+            "nom": "Sworn statement",
+            "etat": "Filled"
+          },
+          {
+            "nom": "Price schedule",
+            "etat": "Filled"
+          },
+          {
+            "nom": "Tax and CNSS certificates",
+            "etat": "Attached"
+          },
+          {
+            "nom": "CVs of the proposed team",
+            "etat": "Attached"
+          },
+          {
+            "nom": "Methodology note",
+            "etat": "Drafting"
+          }
+        ],
+        "signTitle": "Signature and submission",
+        "sign": [
+          "Manager's signature applied to 4 documents",
+          "Company stamp applied",
+          "CPS and RC initialled, 53 pages",
+          "Documents sorted: administrative, technical, financial",
+          "ZIP file ready to submit"
+        ],
+        "veilleFooter": "Filtered on your 3 business sectors",
+        "decisionGap": "To close: a project manager, one similar reference, the tax certificate",
+        "prepFooter": "5 of 6 documents ready",
+        "signFooter": "Ready to submit on marchespublics.gov.ma"
+      }
+    },
+    "trustV2": {
+      "title": "Your prices and references stay with you.",
+      "subtitle": "A firm that trusts Adjuja with its prices and references must be able to do so without second thoughts. Our commitments, written like a contract.",
+      "article": "Article {{n}}",
+      "docTitle": "Privacy charter",
+      "docSub": "Our commitments to every client, whatever their plan.",
+      "signedBy": "For Adjuja",
+      "stampText": "ADJUJA · CONFIDENTIAL · LAW 09-08 · "
+    },
+    "pricingV2": {
+      "title": "A fixed monthly price.",
+      "titleBlue": "No commitment.",
+      "subtitle": "Prices excluding tax, in Moroccan dirhams. Cancel at any time.",
+      "monthly": "Monthly",
+      "annual": "Yearly",
+      "perMonth": "MAD / month",
+      "annualNote": "per month with a yearly commitment, on request",
+      "recommended": "Recommended",
+      "choose": "Choose {{plan}}",
+      "redirecting": "Redirecting…"
+    },
+    "faqV2": {
+      "title": "Frequently asked questions",
+      "subtitle": "Privacy, pricing, how it works, access.",
+      "contactTitle": "Another question?",
+      "contactText": "Write to us: a team member answers within 48 hours.",
+      "contactCta": "Write to the team",
+      "prev": "Previous questions",
+      "next": "Next questions",
+      "goTo": "Go to question"
     }
   },
   "banner": {
@@ -264,7 +458,9 @@
       "f_export": "Word export (.docx)",
       "f_providers": "AI-assisted drafting",
       "f_50_ao": "50 tenders generated / month",
-      "f_ao_illimite": "Unlimited tenders generated"
+      "f_ao_illimite": "Unlimited tenders generated",
+      "f_all_pro": "Everything in Pro",
+      "f_onprem": "On-premise deployment"
     }
   },
   "ctaBand": {
@@ -296,7 +492,9 @@
       "continueWithGoogle": "Continue with Google",
       "googleCallbackLoading": "Signing in with Google…",
       "googleCallbackError": "Invalid Google sign-in. Please try again.",
-      "forgotPassword": "Forgot password?"
+      "forgotPassword": "Forgot password?",
+      "googleFailedTitle": "Google sign-in interrupted",
+      "backToLogin": "Back to sign in"
     },
     "forgot": {
       "title": "Forgot password",
@@ -312,14 +510,18 @@
       "newPasswordPlaceholder": "••••••••",
       "resetSubmit": "Reset password",
       "resetting": "Resetting…",
-      "resetError": "Invalid code. Please try again."
+      "resetError": "Invalid code. Please try again.",
+      "otpSentIfExists": "If an account exists for this address, a code has just been sent to"
     },
     "invite": {
       "title": "{{name}} invites you to join their team on ADJUJA",
       "accept": "Join the team",
       "accepting": "Signing in…",
       "acceptError": "Error accepting the invitation.",
-      "invalid": "Invitation expired or not found."
+      "invalid": "Invitation expired or not found.",
+      "loading": "Checking the invitation…",
+      "invalidTitle": "Invitation not found",
+      "forEmail": "Account created for"
     },
     "register": {
       "title": "Create an account",
@@ -359,7 +561,11 @@
       "hasAccount": "Already have an account?",
       "loginLink": "Sign in",
       "or": "or",
-      "continueWithGoogle": "Continue with Google"
+      "continueWithGoogle": "Continue with Google",
+      "step": "Step {{n}} of {{total}}",
+      "continue": "Continue",
+      "back": "Back",
+      "passwordRulesError": "The password does not meet the rules yet."
     },
     "verify": {
       "title": "Check your email",
@@ -368,7 +574,22 @@
       "confirm": "Confirm",
       "verifying": "Verifying…",
       "otpError": "Invalid code. Please try again.",
-      "goLogin": "Go to sign in"
+      "goLogin": "Go to sign in",
+      "instructionShort": "Enter the 6-digit code to activate your account.",
+      "changeEmail": "Change email address"
+    },
+    "common": {
+      "backToSite": "Back to site",
+      "showPassword": "Show password",
+      "hidePassword": "Hide password",
+      "ruleLength": "At least {{min}} characters",
+      "ruleDigit": "At least one digit",
+      "codeLabel": "6-digit code",
+      "codeResent": "New code sent.",
+      "noCode": "Didn't get a code?",
+      "resendIn": "Resend in {{s}} s",
+      "resend": "Resend code",
+      "genericError": "Something went wrong. Please try again."
     }
   },
   "app": {
@@ -1159,7 +1380,7 @@
       "showLess": "Show less",
       "tabResume": "Summary",
       "tabDocs": "Documents",
-      "tabGoNoGo": "Analyse",
+      "tabGoNoGo": "Fit score",
       "noDesc": "No description available.",
       "budget": "Budget",
       "caution": "Deposit",
@@ -1177,8 +1398,13 @@
           "go": "GO: eligible",
           "risque": "Review needed: points of attention",
           "no_go": "NO-GO: criteria not met"
-        }
-      }
+        },
+        "ocrQueued": "Scanned documents: page reading queued…",
+        "ocrProgress": "Reading scanned pages… {{page}} / {{pages}}",
+        "ocrHint": "The first analysis of a scanned file takes a few minutes. The text read is kept: later analyses are instant."
+      },
+      "preview": "Preview",
+      "previewError": "Could not open this document."
     },
     "empty": {
       "allTitle": "No tenders found",
@@ -1419,7 +1645,16 @@
           ]
         }
       ]
-    }
+    },
+    "toc": "Contents",
+    "docsNav": "Legal documents",
+    "backToSite": "Back to home",
+    "reference": "Reference",
+    "versionLabel": "Version of",
+    "article": "Article {{n}}",
+    "madeAt": "Done in Temara, on {{date}}",
+    "signedFor": "For Adjuja",
+    "stampText": "ADJUJA · TEMARA · MOROCCO · "
   },
   "tasks": {
     "filter": {
@@ -1450,6 +1685,66 @@
     "view": {
       "list": "Tasks",
       "chat": "Discussion"
+    }
+  },
+  "billing": {
+    "status": {
+      "active": "Active",
+      "past_due": "Payment overdue",
+      "canceled": "Canceled",
+      "trialing": "Trial"
+    },
+    "modal": {
+      "title": "Change plan",
+      "titleLimit": "You have reached your plan's limit",
+      "subtitle": "Monthly prices excluding tax, in Moroccan dirhams.",
+      "perMonth": "MAD / month",
+      "current": "Current plan",
+      "recommended": "Recommended",
+      "choose": "Choose {{plan}}",
+      "included": "Included in your plan",
+      "redirecting": "Redirecting to payment…",
+      "changePlan": "Change plan",
+      "secure": "Secure payment by CMI. No commitment, cancel anytime.",
+      "loadError": "Could not load the plans. Try again in a moment.",
+      "checkoutError": "Could not start the payment."
+    }
+  },
+  "fitScore": {
+    "eligibilite": {
+      "eligible": "Eligible",
+      "a_verifier": "To check",
+      "non_eligible": "Not eligible"
+    },
+    "aVerifierDesc": "The required qualification must be checked by hand: the field is compared, not the class or category.",
+    "facteurs": {
+      "qualifications": "Qualifications and certifications",
+      "capacite_financiere": "Financial capacity",
+      "references": "Similar references",
+      "equipe": "Team",
+      "conformite_administrative": "Administrative compliance",
+      "proximite": "Proximity"
+    },
+    "estimation": "estimate",
+    "nonExige": "Not required",
+    "base_one": "Based on the only criterion this tender requires.",
+    "base_other": "Based on the {{count}} criteria this tender requires.",
+    "aucuneExigence": "This tender states no requirement that can be compared with your profile.",
+    "motsCles": "Approximate reference matching: the similarity service is unavailable, titles are compared by keywords.",
+    "chargement": "Computing the fit score…",
+    "indisponible": "Fit score unavailable.",
+    "actions": {
+      "certifications": "Complete my certifications",
+      "classifications": "Complete my classifications",
+      "chiffre_affaires_moyen": "Enter my turnover",
+      "references_similaires": "Complete my references",
+      "ice": "Enter the ICE",
+      "rc": "Enter the RC",
+      "if_fiscal": "Enter the tax ID",
+      "cnss": "Enter the CNSS",
+      "profil": "Complete my profile",
+      "documents": "Add the tax certificate",
+      "equipe": "Complete my team"
     }
   }
 }

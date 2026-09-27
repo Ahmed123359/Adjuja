@@ -1,4 +1,5 @@
-import { lazy, Suspense } from "react";
+import { lazy, Suspense, useEffect } from "react";
+import { useLocation } from "react-router-dom";
 import { useScrollReveal } from "../../hooks/useScrollReveal";
 import LandingNav from "./components/LandingNav";
 import FeaturesSection from "./components/FeaturesSection";
@@ -23,6 +24,18 @@ export default function LandingPage({
   onGoRegister: () => void;
 }) {
   useScrollReveal();
+  const { hash } = useLocation();
+
+  /* Arrivee par un lien /#section (barre de navigation ou pied de page d'une
+     page legale) : le navigateur ne descend pas seul vers une ancre rendue
+     apres le chargement. */
+  useEffect(() => {
+    if (!hash) return;
+    const id = window.setTimeout(() => {
+      document.getElementById(hash.slice(1))?.scrollIntoView({ behavior: "smooth" });
+    }, 60);
+    return () => window.clearTimeout(id);
+  }, [hash]);
 
   return (
     <div className="landing-dark">
@@ -35,7 +48,7 @@ export default function LandingPage({
       <TrustSection />
       <PricingSection onEnterApp={onEnterApp} />
       <FaqSection />
-      <LandingFooter onEnterApp={onEnterApp} />
+      <LandingFooter onEnterApp={onEnterApp} onGoRegister={onGoRegister} />
     </div>
   );
 }

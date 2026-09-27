@@ -1,383 +1,233 @@
-import { useEffect } from "react";
+// Ce que fait le produit -- refait le 2026-09-27.
+//
+// Remplace la grille de quatre cartes (« Un copilote complet ») : titre trop
+// petit, formules generiques, et du CSS injecte a l'execution. Ici, les quatre
+// moments d'un appel d'offres a gauche ; a droite, l'ecran correspondant tel
+// qu'il existe dans l'application (veille, score de compatibilite, dossier,
+// signature). Les donnees affichees sont des exemples, pas des statistiques.
+//
+// La liste et l'ecran ont la meme hauteur fixe sur grand ecran (retour du
+// 2026-09-27 : l'ecran « Decider » depassait de loin la liste et les autres
+// ecrans). Chaque ecran remplit cette hauteur et se termine par un pied commun.
+
+import { useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 
-const FEATURES_CSS = `
-.feat-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
-  grid-template-rows: auto auto;
-  gap: 14px;
-}
-.feat-a { grid-column: 1; grid-row: 1; }
-.feat-b { grid-column: 2; grid-row: 1; }
-.feat-c { grid-column: 3; grid-row: 1 / 3; display: flex; flex-direction: column; }
-.feat-d { grid-column: 1 / 3; grid-row: 2; }
+type Moment = { key: string; title: string; desc: string };
+type Row = { acheteur: string; objet: string; echeance: string; budget: string };
+type Factor = { label: string; score: number; note: string };
+type Doc = { nom: string; etat: string };
+type Screens = {
+  veilleTitle: string; veilleCount: string; rows: Row[]; veilleFooter: string;
+  decisionTitle: string; decisionBase: string; eligible: string; factors: Factor[]; decisionGap: string;
+  prepTitle: string; docs: Doc[]; prepFooter: string;
+  signTitle: string; sign: string[]; signFooter: string;
+};
 
-.feat-card {
-  position: relative;
-  isolation: isolate;
-  overflow: hidden;
-  background:
-    radial-gradient(120% 100% at 15% -10%, rgba(43,121,232,0.10), transparent 55%),
-    linear-gradient(180deg, rgba(255,255,255,0.05), rgba(255,255,255,0) 40%),
-    var(--l-surface);
-  border: 1px solid var(--l-border);
-  border-radius: 18px;
-  padding: 24px;
-  display: flex; flex-direction: column; gap: 18px;
-  box-shadow:
-    inset 0 1px 0 rgba(255,255,255,0.06),
-    0 1px 1px rgba(0,0,0,0.2),
-    0 16px 40px -16px rgba(0,0,0,0.6);
-  transition: border-color .25s, box-shadow .25s, transform .25s;
-}
-.feat-card:hover {
-  border-color: var(--l-border-strong);
-  box-shadow:
-    inset 0 1px 0 rgba(255,255,255,0.09),
-    0 1px 1px rgba(0,0,0,0.25),
-    0 26px 56px -18px rgba(0,0,0,0.7);
-  transform: translateY(-3px);
+function couleur(score: number): string {
+  if (score >= 70) return "bg-[var(--l-pos)]";
+  if (score >= 40) return "bg-[var(--l-hold)]";
+  return "bg-[var(--l-neg)]";
 }
 
-.feat-card-accent {
-  background:
-    radial-gradient(120% 100% at 15% -10%, rgba(43,121,232,0.16), transparent 55%),
-    linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0) 40%),
-    var(--l-surface-2);
-  border: 1px solid var(--l-border-strong);
-}
-
-@media (max-width: 900px) {
-  .feat-grid { grid-template-columns: 1fr 1fr; }
-  .feat-a { grid-column: 1; grid-row: 1; }
-  .feat-b { grid-column: 2; grid-row: 1; }
-  .feat-c { grid-column: 1 / 3; grid-row: 2; }
-  .feat-d { grid-column: 1 / 3; grid-row: 3; }
-}
-@media (max-width: 580px) {
-  .feat-grid { grid-template-columns: 1fr; gap: 12px; }
-  .feat-a, .feat-b, .feat-c, .feat-d { grid-column: 1 !important; grid-row: auto !important; }
-  .feat-card { padding: 18px; border-radius: 14px; }
-}
-`;
-
-/* ----- Mockups (toujours dark, tokens CSS) ----- */
-
-function VeilleMockup() {
-  const aos = [
-    { ref: "AO-2026-114", secteur: "BTP",        nouveau: true },
-    { ref: "AO-2026-112", secteur: "BTP",        nouveau: true },
-    { ref: "AO-2026-108", secteur: "Ingénierie", nouveau: false },
-  ];
+function Check({ className = "" }: { className?: string }) {
   return (
-    <div style={{
-      background: "var(--l-mk-bg)", border: "1px solid var(--l-mk-border)",
-      borderRadius: "var(--l-radius)", overflow: "hidden", fontSize: 10,
-    }}>
-      <div style={{
-        background: "var(--l-mk-surf)", padding: "7px 12px",
-        display: "flex", alignItems: "center", justifyContent: "space-between",
-        borderBottom: "1px solid var(--l-mk-border)",
-      }}>
-        <span style={{ color: "var(--l-text-dim)" }}>Secteur BTP</span>
-        <span style={{
-          display: "flex", alignItems: "center", gap: 5,
-          color: "#22c55e", fontWeight: 700, fontSize: 8.5, textTransform: "uppercase" as const, letterSpacing: ".08em",
-        }}>
-          <span style={{ width: 5, height: 5, borderRadius: "50%", background: "#22c55e", animation: "blink 1.4s step-end infinite" }} />
-          En direct
-        </span>
-      </div>
-      <div style={{ padding: "10px 12px", display: "flex", flexDirection: "column", gap: 6 }}>
-        {aos.map(ao => (
-          <div key={ao.ref} style={{
-            display: "flex", alignItems: "center", justifyContent: "space-between",
-            padding: "6px 9px", borderRadius: "var(--l-radius)",
-            background: ao.nouveau ? "var(--l-blue-a)" : "transparent",
-          }}>
-            <span style={{ color: "var(--l-text)", fontWeight: 600 }}>{ao.ref}</span>
-            {ao.nouveau
-              ? <span style={{ color: "var(--l-blue)", fontWeight: 700, fontSize: 8.5, textTransform: "uppercase" as const }}>Nouveau</span>
-              : <span style={{ color: "var(--l-text-dim)", fontSize: 8.5 }}>{ao.secteur}</span>}
-          </div>
-        ))}
-      </div>
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.4} aria-hidden className={`shrink-0 ${className}`}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+    </svg>
+  );
+}
+
+/* Pied commun des ecrans : colle en bas, il aligne les quatre ecrans. */
+function Pied({ children, className = "text-l-text-dim" }: { children: ReactNode; className?: string }) {
+  return (
+    <div className={`mt-auto border-t border-l-border bg-l-surface-2 px-6 py-4 text-[14px] font-semibold ${className}`}>
+      {children}
     </div>
   );
 }
 
-function GoNoGoMockup() {
-  const criteres = [
-    { label: "Budget compatible",       ok: true },
-    { label: "Délai réalisable",        ok: true },
-    { label: "Références suffisantes",  ok: true },
-    { label: "Certification requise",   ok: false },
-  ];
+function Veille({ s }: { s: Screens }) {
   return (
-    <div style={{
-      background: "var(--l-mk-bg)", border: "1px solid var(--l-mk-border)",
-      borderRadius: "var(--l-radius)", overflow: "hidden", fontSize: 10,
-    }}>
-      <div style={{
-        background: "var(--l-mk-surf)", padding: "7px 12px",
-        borderBottom: "1px solid var(--l-mk-border)",
-      }}>
-        <span style={{ color: "var(--l-text-dim)" }}>AO-2026-114 · Verdict</span>
+    <div className="flex flex-1 flex-col">
+      <div className="flex items-baseline justify-between gap-4 border-b border-l-border px-6 py-4">
+        <span className="text-[16px] font-semibold text-l-text">{s.veilleTitle}</span>
+        <span className="text-[14px] font-semibold text-[color:var(--l-blue-soft)]">{s.veilleCount}</span>
       </div>
-      <div style={{ padding: "12px", display: "flex", gap: 10, alignItems: "center" }}>
-        <div style={{
-          width: 46, height: 46, borderRadius: "50%", flexShrink: 0,
-          background: "rgba(34,197,94,0.14)", border: "2px solid #22c55e",
-          display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column",
-        }}>
-          <span style={{ color: "#22c55e", fontWeight: 800, fontSize: 12, lineHeight: 1 }}>GO</span>
-          <span style={{ color: "#22c55e", fontSize: 7.5, marginTop: 1 }}>82/100</span>
+      <ul className="m-0 list-none p-0">
+        {s.rows.map((r, i) => (
+          <li key={r.objet} className={`grid grid-cols-[1fr_auto] gap-x-6 gap-y-1 px-6 py-4 ${i ? "border-t border-l-border" : ""}`}>
+            <span className="text-[15px] font-semibold text-l-text">{r.acheteur}</span>
+            <span className="text-right text-[15px] font-semibold tabular-nums text-l-text">{r.budget}</span>
+            <span className="text-[15px] leading-[1.45] text-l-text-dim">{r.objet}</span>
+            <span className={`text-right text-[14px] font-semibold ${i === 0 ? "text-[color:var(--l-hold)]" : "text-l-text-dim"}`}>{r.echeance}</span>
+          </li>
+        ))}
+      </ul>
+      <Pied>{s.veilleFooter}</Pied>
+    </div>
+  );
+}
+
+function Decision({ s }: { s: Screens }) {
+  // Memes poids que le fit score de l'application (qualifications 30,
+  // capacite 20, references 20, equipe 15, conformite 10) : l'exemple
+  // affiche le calcul reel, pas une moyenne simple.
+  const POIDS = [30, 20, 20, 15, 10];
+  const total = s.factors.reduce((a, _, i) => a + (POIDS[i] ?? 0), 0);
+  const score = Math.round(s.factors.reduce((a, f, i) => a + f.score * (POIDS[i] ?? 0), 0) / total);
+  return (
+    <div className="flex flex-1 flex-col">
+      <div className="px-6 pt-5">
+        {/* Le score porte l'ecran : c'est la reponse a « j'y vais ou pas ? ». */}
+        <div className="flex items-end justify-between gap-4 border-b border-l-border pb-4">
+          <div>
+            <p className="m-0 text-[15px] font-semibold text-l-text-dim">{s.decisionTitle}</p>
+            <p className="m-0 mt-2 flex items-baseline gap-2">
+              <span className="text-[72px] font-extrabold leading-[0.9] tracking-[-.04em] tabular-nums text-[color:var(--l-pos)]">{score}</span>
+              <span className="text-[18px] font-semibold text-l-text-dim">/ 100</span>
+            </p>
+          </div>
+          <span className="mb-1 shrink-0 rounded-[6px] bg-[color-mix(in_srgb,var(--l-pos)_16%,transparent)] px-3 py-1.5 text-[15px] font-bold text-[color:var(--l-pos)]">
+            {s.eligible}
+          </span>
         </div>
-        <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 4 }}>
-          {criteres.map(c => (
-            <div key={c.label} style={{ display: "flex", alignItems: "center", gap: 5 }}>
-              <span style={{
-                width: 12, height: 12, borderRadius: "50%", flexShrink: 0,
-                display: "flex", alignItems: "center", justifyContent: "center",
-                background: c.ok ? "rgba(34,197,94,0.15)" : "rgba(239,68,68,0.15)",
-              }}>
-                <span style={{ color: c.ok ? "#22c55e" : "#ef4444", fontWeight: 800, fontSize: 7.5 }}>
-                  {c.ok ? "✓" : "✕"}
-                </span>
+        <p className="m-0 mt-3 text-[14px] text-l-text-dim">{s.decisionBase}</p>
+
+        {/* Une ligne par critere : le detail de ce qui manque passe dans le
+            pied, sinon l'ecran double de hauteur. */}
+        <ul className="m-0 mt-2 list-none p-0 pb-3">
+          {s.factors.map((f) => (
+            <li key={f.label} className="grid grid-cols-[minmax(0,13rem)_1fr_2.5rem] items-center gap-4 py-2" title={f.note}>
+              <span className="truncate text-[15px] font-semibold text-l-text">{f.label}</span>
+              <span className="h-[6px] overflow-hidden rounded-full bg-[var(--l-surface-3)]">
+                <span className={`block h-full rounded-full ${couleur(f.score)}`} style={{ width: `${f.score}%` }} />
               </span>
-              <span style={{ color: "var(--l-text-muted)", fontSize: 9 }}>{c.label}</span>
-            </div>
+              <span className="text-right text-[15px] font-semibold tabular-nums text-l-text">{f.score}</span>
+            </li>
           ))}
-        </div>
+        </ul>
       </div>
+      <Pied className="text-[color:var(--l-hold)]">{s.decisionGap}</Pied>
     </div>
   );
 }
 
-function DocMockup() {
-  const rows = [
-    { label: "Objet du marché",      hit: true },
-    { label: "Critères d'attribution", hit: true },
-    { label: "Montant estimatif",    hit: true },
-    { label: "Clauses techniques",   hit: false },
-    { label: "Délai d'exécution",    hit: false },
-    { label: "Garanties requises",   hit: false },
-  ];
+function Preparation({ s }: { s: Screens }) {
   return (
-    <div style={{
-      background: "var(--l-mk-bg)", border: "1px solid var(--l-mk-border)",
-      borderRadius: "var(--l-radius)", overflow: "hidden", fontSize: 10,
-    }}>
-      <div style={{
-        background: "var(--l-mk-surf)", padding: "7px 12px",
-        display: "flex", gap: 6, alignItems: "center",
-        borderBottom: "1px solid var(--l-mk-border)",
-      }}>
-        {["#ff5f57","#febc2e","#28c840"].map(c => (
-          <div key={c} style={{ width: 7, height: 7, borderRadius: "50%", background: c }} />
-        ))}
-        <span style={{ color: "var(--l-text-dim)", marginLeft: 6 }}>DAO-2026-041.pdf</span>
-      </div>
-      <div style={{ padding: "12px", display: "flex", gap: 8 }}>
-        <div style={{ flex: 1 }}>
-          {rows.map(r => (
-            <div key={r.label} style={{
-              marginBottom: 4, padding: "5px 8px",
-              borderRadius: "var(--l-radius)",
-              background: r.hit ? "var(--l-blue-a)" : "transparent",
-              border: `1px solid ${r.hit ? "var(--l-blue-a)" : "transparent"}`,
-              display: "flex", alignItems: "center", justifyContent: "space-between",
-            }}>
-              <span style={{ color: r.hit ? "var(--l-text)" : "var(--l-text-dim)" }}>{r.label}</span>
-              {r.hit && (
-                <div style={{ width: 5, height: 5, borderRadius: "50%", background: "var(--l-blue)" }} />
-              )}
-            </div>
-          ))}
-        </div>
-        <div style={{ width: 52, display: "flex", flexDirection: "column", gap: 5 }}>
-          <div style={{
-            background: "var(--l-blue)", borderRadius: "var(--l-radius)",
-            padding: "6px 8px", textAlign: "center",
-          }}>
-            <p style={{ margin: 0, color: "#fff", fontWeight: 700, fontSize: 15, lineHeight: 1 }}>6</p>
-            <p style={{ margin: "3px 0 0", color: "rgba(255,255,255,.6)", fontSize: 8 }}>Extraits</p>
-          </div>
-          <div style={{
-            background: "var(--l-mk-surf)", border: "1px solid var(--l-mk-border)",
-            borderRadius: "var(--l-radius)", padding: "6px 8px", textAlign: "center",
-          }}>
-            <p style={{ margin: 0, color: "#22c55e", fontWeight: 700, fontSize: 15, lineHeight: 1 }}>3s</p>
-            <p style={{ margin: "3px 0 0", color: "var(--l-text-dim)", fontSize: 8 }}>Analyse</p>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function WritingMockup() {
-  const sections = [
-    { title: "Présentation de la société", lines: 3, done: true },
-    { title: "Méthodologie et approche",   lines: 2, done: true },
-    { title: "Références similaires",      lines: 1, done: false },
-  ];
-  return (
-    <div style={{
-      background: "var(--l-mk-bg)", border: "1px solid var(--l-mk-border)",
-      borderRadius: "var(--l-radius)", overflow: "hidden", fontSize: 10,
-    }}>
-      <div style={{
-        background: "var(--l-mk-surf)", padding: "7px 12px",
-        borderBottom: "1px solid var(--l-mk-border)",
-        display: "flex", alignItems: "center", justifyContent: "space-between",
-      }}>
-        <span style={{ color: "var(--l-text-dim)" }}>offre_technique.docx</span>
-        <span style={{ color: "#22c55e", fontWeight: 600, fontSize: 9 }}>Génération en cours...</span>
-      </div>
-      <div style={{ padding: "12px" }}>
-        {sections.map(s => (
-          <div key={s.title} style={{ marginBottom: 10 }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 5 }}>
-              <div style={{
-                width: 12, height: 12, borderRadius: 3,
-                background: s.done ? "var(--l-blue)" : "var(--l-mk-border)",
-                display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
-              }}>
-                {s.done && (
-                  <svg width="7" height="7" viewBox="0 0 10 10" fill="none">
-                    <path d="M1.5 5l2.5 2.5 4.5-5" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
-                )}
-              </div>
-              <span style={{ color: s.done ? "var(--l-text)" : "var(--l-text-muted)", fontWeight: 600, fontSize: 9.5 }}>
-                {s.title}
+    <div className="flex flex-1 flex-col">
+      <div className="border-b border-l-border px-6 py-4 text-[16px] font-semibold text-l-text">{s.prepTitle}</div>
+      <ul className="m-0 list-none p-0">
+        {s.docs.map((d, i) => {
+          const fait = i < s.docs.length - 1;
+          return (
+            <li key={d.nom} className={`flex items-center justify-between gap-4 px-6 py-4 ${i ? "border-t border-l-border" : ""}`}>
+              <span className="flex items-center gap-3 text-[15px] font-semibold text-l-text">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} aria-hidden className="shrink-0 text-l-text-dim">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
+                </svg>
+                {d.nom}
               </span>
-            </div>
-            <div style={{ paddingLeft: 18, display: "flex", flexDirection: "column", gap: 3 }}>
-              {Array.from({ length: s.lines }).map((_, i) => (
-                <div key={i} style={{
-                  height: 5, borderRadius: 3,
-                  background: "var(--l-mk-border)",
-                  width: i === s.lines - 1 ? "55%" : "100%",
-                  overflow: "hidden",
-                }}>
-                  {!s.done && i === 0 && (
-                    <div style={{
-                      height: "100%", width: "35%",
-                      background: "var(--l-blue)", borderRadius: 3,
-                    }} />
-                  )}
-                </div>
-              ))}
-            </div>
-          </div>
-        ))}
-      </div>
+              <span className={`flex items-center gap-1.5 text-[14px] font-semibold ${fait ? "text-[color:var(--l-pos)]" : "text-[color:var(--l-hold)]"}`}>
+                {fait ? <Check /> : <span className="h-2 w-2 animate-pulse rounded-full bg-[var(--l-hold)]" aria-hidden />}
+                {d.etat}
+              </span>
+            </li>
+          );
+        })}
+      </ul>
+      <Pied>{s.prepFooter}</Pied>
     </div>
   );
 }
 
-/* ----- Section principale ----- */
+function Signature({ s }: { s: Screens }) {
+  return (
+    <div className="flex flex-1 flex-col">
+      <div className="border-b border-l-border px-6 py-4 text-[16px] font-semibold text-l-text">{s.signTitle}</div>
+      <ul className="m-0 list-none p-0">
+        {s.sign.map((ligne, i) => {
+          const dernier = i === s.sign.length - 1;
+          return (
+            <li
+              key={ligne}
+              className={`flex items-center gap-3 px-6 py-4 text-[15px] font-semibold ${i ? "border-t border-l-border" : ""} ${dernier ? "bg-[color-mix(in_srgb,var(--l-blue)_12%,transparent)] text-[color:var(--l-blue-soft)]" : "text-l-text"}`}
+            >
+              <Check className={dernier ? "text-[color:var(--l-blue-soft)]" : "text-[color:var(--l-pos)]"} />
+              {ligne}
+            </li>
+          );
+        })}
+      </ul>
+      <Pied className="text-[color:var(--l-pos)]">{s.signFooter}</Pied>
+    </div>
+  );
+}
+
+const ECRANS = [Veille, Decision, Preparation, Signature];
 
 export default function FeaturesSection() {
   const { t } = useTranslation();
-
-  useEffect(() => {
-    const id = "features-css";
-    let s = document.getElementById(id) as HTMLStyleElement | null;
-    if (!s) { s = document.createElement("style"); s.id = id; document.head.appendChild(s); }
-    s.textContent = FEATURES_CSS;
-  }, []);
+  const moments = t("landing.product.moments", { returnObjects: true }) as Moment[];
+  const screens = t("landing.product.screens", { returnObjects: true }) as Screens;
+  const [actif, setActif] = useState(0);
+  const Ecran = ECRANS[actif] ?? Veille;
 
   return (
-    <section id="features" style={{ background: "var(--l-bg)", padding: "112px 32px 120px" }}>
-      <div style={{ maxWidth: 1120, margin: "0 auto" }}>
-
-        {/* Header centré */}
-        <div className="animate-on-scroll" style={{ marginBottom: 64, textAlign: "center" }}>
-          <h2 style={{
-            fontSize: "clamp(2rem, 3.6vw, 3rem)",
-            fontWeight: 700, lineHeight: 1.14, letterSpacing: "-0.025em",
-            color: "var(--l-text)", margin: "0 auto", maxWidth: 620,
-          }}>
-            {t("landing.features.title")}
-            <br />
-            <span style={{ color: "var(--l-blue)" }}>{t("landing.features.titleBlue")}</span>
+    <section id="features" className="bg-l-bg px-5 py-20 md:px-10 md:py-28">
+      <div className="mx-auto max-w-[1200px]">
+        <div className="animate-on-scroll mx-auto max-w-[880px] text-center">
+          <h2 className="m-0 text-[clamp(2.3rem,4.6vw,3.9rem)] font-extrabold leading-[1.04] tracking-[-.03em] text-l-text">
+            {t("landing.product.title")}
           </h2>
+          <p className="m-0 mx-auto mt-5 max-w-[640px] text-[clamp(1.05rem,1.3vw,1.2rem)] leading-[1.6] text-l-text-dim">
+            {t("landing.product.subtitle")}
+          </p>
         </div>
 
-        {/* Bento grid */}
-        <div className="feat-grid animate-on-scroll">
+        <div className="animate-on-scroll mt-12 grid gap-8 lg:mt-16 lg:h-[500px] lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] lg:gap-14">
+          {/* Le moment choisi prend la hauteur restante : la liste finit au
+              meme niveau que l'ecran, quel que soit le moment. */}
+          <ol role="tablist" aria-label={t("landing.product.title")} className="m-0 flex list-none flex-col p-0">
+            {moments.map((m, i) => {
+              const choisi = i === actif;
+              return (
+                <li key={m.key} className={`flex border-t border-l-border last:border-b ${choisi ? "lg:flex-1" : ""}`}>
+                  <button
+                    role="tab"
+                    aria-selected={choisi}
+                    onClick={() => setActif(i)}
+                    className="flex w-full cursor-pointer items-start gap-5 rounded-[8px] border-0 bg-transparent py-6 text-left outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[color:var(--l-blue)]"
+                  >
+                    <span className={`pt-1 text-[15px] font-semibold tabular-nums ${choisi ? "text-[color:var(--l-blue-soft)]" : "text-l-text-dim"}`}>
+                      0{i + 1}
+                    </span>
+                    <span className="min-w-0">
+                      <span className={`block text-[22px] font-bold tracking-[-.01em] transition-colors ${choisi ? "text-l-text" : "text-l-text-dim hover:text-l-text"}`}>
+                        {m.title}
+                      </span>
+                      {choisi && (
+                        <span className="mt-2 block animate-fade-in text-[16px] leading-[1.6] text-l-text-dim">{m.desc}</span>
+                      )}
+                    </span>
+                  </button>
+                </li>
+              );
+            })}
+          </ol>
 
-          {/* A - Veille */}
-          <div className="feat-a feat-card">
-            <VeilleMockup />
-            <div>
-              <p style={{ margin: "0 0 6px", fontSize: 16.5, fontWeight: 700, letterSpacing: "-0.015em", color: "var(--l-text)" }}>
-                {t("landing.features.veille.title")}
-              </p>
-              <p style={{ margin: 0, fontSize: 13, lineHeight: 1.68, color: "var(--l-text-muted)" }}>
-                {t("landing.features.veille.desc")}
-              </p>
+          <div
+            role="tabpanel"
+            className="flex min-h-0 flex-col overflow-hidden rounded-[12px] border border-l-border-strong bg-l-surface shadow-[0_30px_80px_rgba(0,0,0,0.45)]"
+          >
+            <div className="flex items-center justify-between border-b border-l-border bg-l-surface-2 px-6 py-3">
+              <span className="text-[14px] font-semibold text-l-text">Adjuja</span>
+              <span className="text-[14px] text-l-text-dim">{moments[actif]?.title}</span>
+            </div>
+            <div key={actif} className="flex min-h-0 flex-1 animate-fade-in flex-col">
+              <Ecran s={screens} />
             </div>
           </div>
-
-          {/* B - Go/No-Go */}
-          <div className="feat-b feat-card">
-            <GoNoGoMockup />
-            <div>
-              <p style={{ margin: "0 0 6px", fontSize: 16.5, fontWeight: 700, letterSpacing: "-0.015em", color: "var(--l-text)" }}>
-                {t("landing.features.gonogo.title")}
-              </p>
-              <p style={{ margin: 0, fontSize: 13, lineHeight: 1.68, color: "var(--l-text-muted)" }}>
-                {t("landing.features.gonogo.desc")}
-              </p>
-            </div>
-          </div>
-
-          {/* C - Analyse du CPS (tall, accent) */}
-          <div className="feat-c feat-card feat-card-accent">
-            <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 16 }}>
-              <DocMockup />
-              <div>
-                <p style={{ margin: "0 0 6px", fontSize: 16.5, fontWeight: 700, letterSpacing: "-0.015em", color: "var(--l-text)" }}>
-                  {t("landing.features.analyse.title")}
-                </p>
-                <p style={{ margin: 0, fontSize: 13, lineHeight: 1.68, color: "var(--l-text-muted)" }}>
-                  {t("landing.features.analyse.desc")}
-                </p>
-              </div>
-            </div>
-            <button
-              style={{
-                marginTop: "auto",
-                background: "var(--l-blue)", border: "none", cursor: "pointer",
-                padding: "12px 0", borderRadius: "var(--l-radius)",
-                fontSize: 13, fontWeight: 600, color: "#fff", width: "100%",
-                fontFamily: "inherit", transition: "filter .15s",
-              }}
-              onMouseEnter={e => e.currentTarget.style.filter = "brightness(1.15)"}
-              onMouseLeave={e => e.currentTarget.style.filter = ""}
-            >
-              {t("landing.features.cta")}
-            </button>
-          </div>
-
-          {/* D - Rédaction (wide) */}
-          <div className="feat-d feat-card">
-            <WritingMockup />
-            <div>
-              <p style={{ margin: "0 0 6px", fontSize: 16.5, fontWeight: 700, letterSpacing: "-0.015em", color: "var(--l-text)" }}>
-                {t("landing.features.gen.title")}
-              </p>
-              <p style={{ margin: 0, fontSize: 13, lineHeight: 1.68, color: "var(--l-text-muted)" }}>
-                {t("landing.features.gen.desc")}
-              </p>
-            </div>
-          </div>
-
         </div>
       </div>
     </section>

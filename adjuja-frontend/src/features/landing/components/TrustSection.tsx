@@ -1,105 +1,71 @@
-import { useEffect } from "react";
+// Confidentialite -- refait le 2026-09-27 (deuxieme version).
+//
+// Les engagements sont presentes comme un document : une charte, avec son
+// titre, ses six engagements en deux colonnes, et un pied « Pour Adjuja »
+// portant un cachet. Elle occupe toute la largeur de la section (retour du
+// 2026-09-27 : trop etroite) et passe a trois colonnes sur grand ecran. Le cachet n'est pas un ornement gratuit : apposer
+// signature et cachet est l'un des gestes du produit.
+
+import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
+import Cachet from "./Cachet";
 
-const TRUST_CSS = `
-.trust-card {
-  position: relative;
-  isolation: isolate;
-  overflow: hidden;
-  background:
-    radial-gradient(120% 100% at 15% -10%, rgba(27,201,168,0.10), transparent 55%),
-    linear-gradient(180deg, rgba(255,255,255,0.05), rgba(255,255,255,0) 40%),
-    var(--l-surface);
-  border: 1px solid var(--l-border);
-  border-radius: 18px;
-  box-shadow:
-    inset 0 1px 0 rgba(255,255,255,0.06),
-    0 1px 1px rgba(0,0,0,0.2),
-    0 16px 40px -16px rgba(0,0,0,0.6);
-  transition: border-color .25s, box-shadow .25s, transform .25s;
-}
-.trust-card:hover {
-  border-color: var(--l-border-strong);
-  box-shadow:
-    inset 0 1px 0 rgba(255,255,255,0.09),
-    0 1px 1px rgba(0,0,0,0.25),
-    0 24px 50px -18px rgba(0,0,0,0.7);
-  transform: translateY(-3px);
-}
-`;
-
-function TrustIcon({ shape, tint, children }: { shape: "circle" | "square"; tint: "teal" | "blue"; children: React.ReactNode }) {
-  const bg = tint === "teal" ? "rgba(27,201,168,0.14)" : "rgba(43,121,232,0.14)";
-  return (
-    <div
-      className={`flex h-11 w-11 shrink-0 items-center justify-center ${shape === "circle" ? "rounded-full" : "rounded-[12px]"}`}
-      style={{ background: bg }}
-    >
-      {children}
-    </div>
-  );
-}
-
-const ICONS = [
-  <path key="1" d="M9 12l2 2 4-4m5-4v6c0 5-3.5 8.5-8 10-4.5-1.5-8-5-8-10V6l8-3 8 3z" />,
-  <path key="2" d="M12 3l8 4v5c0 5-3.5 8.5-8 10-4.5-1.5-8-5-8-10V7l8-4z" />,
-  <path key="3" d="M18 8a6 6 0 10-12 0c0 7-3 9-3 9h18s-3-2-3-9zM13.73 21a2 2 0 01-3.46 0" />,
-  <path key="4" d="M12 2a4 4 0 014 4v2a4 4 0 01-8 0V6a4 4 0 014-4zM6 21v-2a6 6 0 0112 0v2" />,
-  <path key="5" d="M3 6h18M8 6V4a1 1 0 011-1h6a1 1 0 011 1v2m-9 0v13a2 2 0 002 2h6a2 2 0 002-2V6" />,
-  <path key="6" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />,
-];
+type Item = { title: string; desc: string };
 
 export default function TrustSection() {
   const { t } = useTranslation();
-  const items = t("landing.trust.items", { returnObjects: true }) as { title: string; desc: string }[];
-
-  useEffect(() => {
-    const id = "trust-css";
-    let s = document.getElementById(id) as HTMLStyleElement | null;
-    if (!s) { s = document.createElement("style"); s.id = id; document.head.appendChild(s); }
-    s.textContent = TRUST_CSS;
-  }, []);
+  const items = t("landing.trust.items", { returnObjects: true }) as Item[];
 
   return (
-    <section id="confiance" className="relative" style={{ background: "var(--l-bg)", padding: "112px 32px" }}>
-      <div style={{ maxWidth: 1120, margin: "0 auto" }}>
-
-        <div className="animate-on-scroll" style={{ marginBottom: 56, textAlign: "center" }}>
-          <h2 style={{
-            fontSize: "clamp(2rem, 3.6vw, 3rem)",
-            fontWeight: 700, lineHeight: 1.15, letterSpacing: "-0.025em",
-            color: "var(--l-text)", margin: "0 auto", maxWidth: 620,
-          }}>
-            {t("landing.trust.title")}
+    <section id="confiance" className="border-t border-l-border bg-l-bg px-5 py-20 md:px-10 md:py-28">
+      <div className="mx-auto max-w-[1320px]">
+        <div className="animate-on-scroll mx-auto max-w-[860px] text-center">
+          <h2 className="m-0 text-[clamp(2.2rem,4.2vw,3.5rem)] font-extrabold leading-[1.06] tracking-[-.03em] text-l-text">
+            {t("landing.trustV2.title")}
           </h2>
-          <p style={{
-            fontSize: 15, lineHeight: 1.7, color: "var(--l-text-muted)",
-            margin: "16px auto 0", maxWidth: 560,
-          }}>
-            {t("landing.trust.subtitle")}
+          <p className="m-0 mx-auto mt-5 max-w-[660px] text-[17px] leading-[1.6] text-l-text-dim">
+            {t("landing.trustV2.subtitle")}
           </p>
         </div>
 
-        <div className="animate-on-scroll grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
-          {items.map((item, i) => (
-            <div key={item.title} className="trust-card flex gap-4 p-6">
-              <TrustIcon shape={i % 2 === 0 ? "circle" : "square"} tint={i % 2 === 0 ? "teal" : "blue"}>
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={i % 2 === 0 ? "var(--l-teal)" : "var(--l-blue)"} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
-                  {ICONS[i % ICONS.length]}
-                </svg>
-              </TrustIcon>
-              <div>
-                <p style={{ margin: "0 0 6px", fontSize: 15, fontWeight: 700, letterSpacing: "-0.01em", color: "var(--l-text)" }}>
-                  {item.title}
-                </p>
-                <p style={{ margin: 0, fontSize: 13, lineHeight: 1.6, color: "var(--l-text-muted)" }}>
-                  {item.desc}
-                </p>
-              </div>
-            </div>
-          ))}
-        </div>
+        <article className="animate-on-scroll mt-12 overflow-hidden rounded-[12px] border border-l-border-strong bg-l-surface">
+          <header className="border-b border-l-border px-7 py-6 text-center md:px-10">
+            <h3 className="m-0 text-[22px] font-bold tracking-[-.015em] text-l-text">{t("landing.trustV2.docTitle")}</h3>
+            <p className="m-0 mt-1 text-[15px] text-l-text-dim">{t("landing.trustV2.docSub")}</p>
+          </header>
 
+          {/* Les filets sont l'espace d'un pixel entre cases, fond du filet
+              dessous : justes a une, deux ou trois colonnes sans calcul. */}
+          <ol className="m-0 grid list-none gap-px bg-[var(--l-border)] p-0 md:grid-cols-2 xl:grid-cols-3">
+            {items.map((item, i) => (
+              <li
+                key={item.title}
+                className="flex gap-5 bg-l-surface px-7 py-8 md:px-10"
+              >
+                <span className="w-7 shrink-0 text-[26px] font-extrabold leading-none tabular-nums text-[color:var(--l-blue-soft)]">
+                  {i + 1}
+                </span>
+                <div>
+                  <h4 className="m-0 text-[19px] font-bold tracking-[-.01em] text-l-text">{item.title}</h4>
+                  <p className="m-0 mt-2 text-[16px] leading-[1.6] text-l-text-dim">{item.desc}</p>
+                </div>
+              </li>
+            ))}
+          </ol>
+
+          <footer className="flex flex-col items-center gap-6 border-t border-l-border px-7 py-7 md:flex-row md:justify-between md:px-10">
+            <Link
+              to="/confidentialite"
+              className="inline-flex items-center gap-2 text-[16px] font-semibold text-[color:var(--l-blue-soft)] no-underline transition-colors hover:text-l-text"
+            >
+              {t("landing.trust.readMore")} <span aria-hidden>→</span>
+            </Link>
+            <div className="flex items-center gap-5">
+              <span className="text-[16px] font-semibold text-l-text">{t("landing.trustV2.signedBy")}</span>
+              <Cachet texte={t("landing.trustV2.stampText")} />
+            </div>
+          </footer>
+        </article>
       </div>
     </section>
   );

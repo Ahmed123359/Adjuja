@@ -3,6 +3,7 @@ import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { useTexture } from "@react-three/drei";
 import * as THREE from "three";
 import { useTranslation } from "react-i18next";
+import BuyersMarquee from "./BuyersMarquee";
 
 /* ── Earth, positioned like the old moon hero: huge sphere dipping below
    the viewport, only the upper horizon visible ── */
@@ -113,7 +114,7 @@ export default function HeroSection({
   const { t } = useTranslation();
 
   return (
-    <section className="relative flex h-[100svh] min-h-[640px] w-full flex-col justify-center pb-[19vh] overflow-hidden bg-[#0A0F1E]">
+    <section className="relative flex h-[100svh] min-h-[760px] w-full flex-col overflow-hidden bg-[#0A0F1E]">
 
       {/* Corner color bleed  brand cobalt top-left, teal bottom-right */}
       <div className="pointer-events-none absolute -left-32 -top-32 z-[1] h-[420px] w-[420px] rounded-full bg-[#3248CE] opacity-35 blur-[120px]" />
@@ -137,28 +138,42 @@ export default function HeroSection({
       {/* Bottom fade  dissolves the globe into the next section's bg instead of a hard cut */}
       <div className="pointer-events-none absolute inset-x-0 bottom-0 z-[2] h-[420px] bg-[linear-gradient(180deg,transparent_0%,rgba(9,13,28,0.18)_35%,rgba(9,13,28,0.55)_65%,rgba(9,13,28,0.88)_85%,#090D1C_100%)]" />
 
-      <div className="relative z-[3] mx-auto flex w-full max-w-[1280px] flex-col items-center px-8 text-center md:px-14">
-
-        <h1 className="m-0 max-w-[820px] text-[clamp(2.1rem,4.4vw,3.5rem)] font-extrabold leading-[1.2] tracking-[-.025em] text-white">
+      {/* Contenu : titre, phrase, deux boutons. Le vide sous les boutons est
+          occupe par la bande des acheteurs, pas par une maquette d'ecran. */}
+      <div className="relative z-[3] mx-auto flex w-full max-w-[1200px] flex-1 flex-col items-center justify-center px-5 pb-[15vh] pt-20 text-center md:px-10">
+        <h1 className="m-0 max-w-[1240px] text-[clamp(2.5rem,5.4vw,4.6rem)] font-extrabold leading-[1.04] tracking-[-.035em] text-white">
           {t("landing.hero.titleLine1")}
           <br />
-          <span className="bg-[linear-gradient(90deg,#3248CE_0%,#2B79E8_50%,#1BC9A8_100%)] bg-clip-text text-transparent">
-            {t("landing.hero.titleHighlight")}
-          </span>
+          <span className="text-[color:var(--l-blue-soft)]">{t("landing.hero.titleHighlight")}</span>
         </h1>
 
-        <p className="m-0 mt-5 max-w-[500px] text-[16.5px] font-medium leading-[1.6] text-white/90">
+        <p className="m-0 mt-6 max-w-[660px] text-[clamp(1.05rem,1.35vw,1.25rem)] font-medium leading-[1.55] text-white/85">
           {t("landing.hero.subtitle")}
         </p>
 
-        <button
-          onClick={onGoRegister}
-          className="mt-7 cursor-pointer rounded-md border-0 bg-white px-9 py-[15px] text-[13px] font-bold tracking-[.03em] text-[#0A0F1E] transition-transform hover:-translate-y-px focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[3px] focus-visible:outline-white/70"
-        >
-          {t("landing.hero.cta")}
-        </button>
-
+        <div className="mt-9 flex flex-wrap items-center justify-center gap-4">
+          <button
+            onClick={onGoRegister}
+            className="h-[54px] cursor-pointer rounded-[8px] border-0 bg-l-blue px-8 text-[16px] font-semibold text-white transition-[filter,transform] hover:-translate-y-px hover:brightness-110"
+          >
+            {t("landing.hero.cta")}
+          </button>
+          <a
+            href="#how-it-works"
+            onClick={(e) => { e.preventDefault(); document.getElementById("how-it-works")?.scrollIntoView({ behavior: "smooth" }); }}
+            className="inline-flex h-[54px] items-center rounded-[8px] border border-white/25 bg-white/[0.04] px-8 text-[16px] font-semibold text-white no-underline backdrop-blur-sm transition-colors hover:border-white/45 hover:bg-white/[0.08]"
+          >
+            {t("landing.hero.secondary")}
+          </a>
+        </div>
       </div>
+
+      {/* Bande des acheteurs, au pied du heros comme la rangee de logos de la
+          reference. */}
+      <div className="relative z-[3] border-t border-white/10 pb-9 pt-7">
+        <BuyersMarquee />
+      </div>
+
     </section>
   );
 }
