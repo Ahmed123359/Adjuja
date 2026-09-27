@@ -2,84 +2,99 @@
 
 Un score de compatibilité personnalisé /100 par AO, remplaçant la lecture brute
 du verdict Go/No-Go par une décomposition pondérée en 6 facteurs, chacun avec
-son propre score, sa confiance, et une justification textuelle -- inspiré du
-"Fit Score personnalisé" de Bidtndr, adapté à ce qu'Adjuja a déjà en base.
-Contrairement au verdict actuel (go/no_go/risque, une seule ligne de raisons),
-le score reste continu même quand l'éligibilité est bloquée, et pointe
-explicitement l'action pour l'améliorer ("Compléter mes qualifications").
+son propre score, sa confiance, une justification et, quand il y en a une,
+l'action qui l'améliore (« Renseigner votre chiffre d'affaires »). Inspiré du
+« Fit Score personnalisé » de Bidtndr, adapté à ce qu'Adjuja a en base.
+
+Le score reste continu même quand l'éligibilité est bloquée : une exigence
+bloquante manquante affiche « Non éligible » au-dessus du score, elle ne le
+remet pas à zéro.
+
+## Décisions de l'utilisateur (2026-09-27)
+
+1. **Périmètre V1 : règles + similarité IA pour les références.** Les
+   références sont rapprochées de l'objet de l'AO par embeddings
+   (`mistral-embed`), dans le profil et dans les documents « Référence de
+   réalisation » indexés dans Qdrant. Pas de référentiel équipements en V1.
+2. **Pondérations « équilibrées »** : qualifications & certifications 30 %,
+   capacité financière 20 %, références 20 %, équipe 15 %, conformité
+   administrative 10 %, proximité 5 %.
+3. **Exigence absente = facteur écarté.** Un facteur que l'AO n'exige pas est
+   affiché « non exigé » et le score est recalculé sur les facteurs restants
+   (poids renormalisés). Le score ne reflète que des exigences réelles.
+4. **Remplace l'affichage du verdict, garde la barrière.** Le score et son
+   détail remplacent le bloc Go/No-Go (panneau de veille, étape « Décision » du
+   mode accompagné). Les échecs bloquants de `compute_verdict` restent la
+   barrière d'éligibilité. `POST /ao/eligibility-check` garde sa forme de
+   réponse (champ ajouté, rien retiré).
+
+## État réel vérifié (2026-09-27)
+
+Corrige plusieurs affirmations de la première version de ce fichier.
+
+- **Ce qui bloque aujourd'hui** (`compute_verdict`, `hard_fails`) : CA inférieur
+  au minimum exigé, certification exigée absente, nombre de références
+  inférieur au nombre exigé. **La qualification n'est jamais bloquante** (elle ne
+  produit qu'un avertissement), contrairement à ce qu'écrivait la version
+  précédente.
+- `compute_verdict` est appelé par `POST /ao/eligibility-check` (lui-même appelé
+  par ao-watcher, `router.py:270`, pour le panneau de veille) et par l'étape
+  « Décision » du mode accompagné (`ao_routes.py:746`).
+- `analyse_json` (ao-watcher, `analysis.py`) contient : `contexte.objet`,
+  `certifications_requises`, `qualification_requise`,
+  `chiffre_affaires_minimum_exige`, `nombre_references_similaires_exige`,
+  `profils_requis` (poste, spécialité, diplôme, années d'expérience),
+  `documents_requis`, `montant_caution`. **Aucun champ de zone d'exécution** :
+  la proximité utilise `region` / `ville` de l'AO scrapé.
+- Le **profil** porte déjà tout le reste : `extra.certifications`,
+  `extra.classifications`, `extra.chiffre_affaires_moyen` (exposé dans le
+  formulaire depuis le 2026-09-27), `extra.references_similaires`, ICE / RC /
+  IF / CNSS, ville ; les CV sont dans `staff_cvs`, les pièces dans
+  `company_documents` (avec `date_validite`).
+- **RAG** : les documents d'entreprise en PDF sont indexés dans
+  `offria_kb_{org_id}` (`company_documents_routes.py:166`). Le fit score lit
+  **cette** collection directement ; il ne dépend donc pas du défaut de
+  lecture du chatbot (collection globale `offria_kb`). Il dépend en revanche de
+  deux défauts d'indexation déclarés le 2026-09-27 dans `bugs-connus.md`
+  (type écrasé en `note_metho`, identifiants de points instables).
+- **Clés IA factices en dev** (voir « Questions ouvertes » du tracker) : sans
+  vraie `MISTRAL_API_KEY`, pas d'embeddings. Le facteur « Références » a donc un
+  mode dégradé par mots-clés, signalé « confiance faible » (voir `api.md`).
 
 ## Depends on
 
-- `app/services/eligibility_service.py::compute_verdict` -- logique de
-  comparaison déterministe déjà écrite et fonctionnelle (CA, références,
-  certifications, qualification, délai). Ce chantier ne la remplace pas, il la
-  redécompose en facteurs pondérés au lieu d'un verdict binaire + liste de
-  raisons. Deux facteurs sur les six sont déjà calculables sans rien ajouter :
-  qualifications/certifications (`extra.classifications`/`extra.certifications`,
-  déjà comparées) et conformité administrative (ICE/RC/capital déjà en base
-  depuis la migration 011).
-- **Manque en base, à ajouter** : chiffre d'affaires annuel structuré
-  (`extra.chiffre_affaires_moyen` existe déjà comme clé JSONB lue par
-  `eligibility_service.py:38`, donc le champ existe informellement -- vérifier
-  s'il est exposé dans un vrai formulaire du profil entreprise ou seulement
-  consommé côté backend) et un référentiel équipements (n'existe pas du tout,
-  `staff_cvs` couvre les profils humains mais pas le matériel).
-- Références similaires : réutilise `RagService`/Qdrant
-  (`offria_kb_{org_id}`, voir `context/feature-spec/chatbot/`) pour le
-  matching sémantique plutôt que de réinventer un moteur de similarité --
-  cohérent avec `architecture-context.md`'s pattern "une interface, plusieurs
-  implémentations" déjà en place pour les providers LLM/paiement.
-- Consomme `analyse_json` (voir `context/feature-spec/analyse-ao-enrichie/`)
-  pour les exigences extraites du CPS -- ce chantier peut démarrer en
-  parallèle (l'`analyse_json` actuel a déjà les champs nécessaires aux
-  facteurs qualifications/CA/références), l'enrichissement de l'autre
-  chantier ne bloque pas celui-ci.
-
-## Facteurs proposés (à valider avec l'utilisateur avant de coder)
-
-| Facteur | Poids | Source |
-|---|---|---|
-| Qualifications & certifications | 30% | `extra.classifications`/`certifications`, déjà comparé |
-| Conformité administrative | 15% | ICE/RC/capital (migration 011), validité/complétude |
-| Références similaires | 20% | matching sémantique Qdrant `offria_kb_{org_id}` |
-| Capacité financière | 15% | CA moyen vs `chiffre_affaires_minimum_exige` |
-| Adéquation moyens | 10% | `staff_cvs` + nouveau référentiel équipements |
-| Proximité géo + bonus contextuels | 10% | siège vs zone d'exécution, préférence nationale/PME |
-
-Gate dure identique à l'existant : une qualification/certification obligatoire
-manquante bloque l'éligibilité même si le score global est élevé (reprend le
-`hard_fails` -> `no_go` de `compute_verdict`).
+- `app/services/eligibility_service.py::compute_verdict` (barrière, inchangée).
+- `app/services/rag_service.py` (`_embed`, client Qdrant, collection
+  `offria_kb_{org_id}`), après correction des deux défauts d'indexation.
+- ao-watcher `POST /aos/{id}/verdict` (relais vers l'app principale).
+- `CompanyProfile`, `StaffCv`, `CompanyDocument` (aucune migration).
+- Front : `AoDetailPanel` (veille), étape « Décision » du mode accompagné,
+  réglages d'entreprise pour les actions « compléter ».
 
 ## Build order
 
-1. `api.md` -- nouveau `FitScoreService` (ou extension d'`eligibility_service.py`
-   en `compute_fit_score`, à trancher : garder `compute_verdict` tel quel pour
-   compat ou le faire rentrer dans le nouveau calcul), migration Alembic pour
-   les nouveaux champs profil (CA structuré si pas déjà propre, référentiel
-   équipements), nouvel endpoint (ex: `GET /api/v1/ao/{id}/fit-score`).
-2. `client.md` -- composant score + détail par facteur (`FitScoreDetail.tsx`),
-   CTA vers les pages de complétion de profil concernées.
+1. `api.md` -- correctifs d'indexation RAG, `FitScoreService`, champ
+   `fit_score` ajouté à `POST /ao/eligibility-check`, relais ao-watcher,
+   `GET /ao/{ao_id}/fit-score` pour les AO du pipeline.
+2. `client.md` -- composant `FitScore` (score, barrière, 6 facteurs, actions),
+   à la place du bloc Go/No-Go dans les deux écrans.
 
 ## Check when the feature is done
 
-- Sur un AO réel avec `analyse_json` rempli et un profil entreprise réel, le
-  score global reflète correctement la moyenne pondérée des 6 facteurs.
-- Une qualification obligatoire manquante bloque l'éligibilité (`Non
-  éligible`) même si les autres facteurs sont hauts, comme le hard_fail
-  actuel de `compute_verdict`.
-- Le facteur "Références similaires" retourne un score cohérent avec au moins
-  une référence réelle indexée dans Qdrant pour cette org -- pas un score
-  fixe/placeholder.
-- Tout ce qui est dans `api.md` et `client.md` passe individuellement son
-  propre check avant celui-ci.
+- Sur un AO réel analysé et un profil réel, le score global est la moyenne
+  pondérée des seuls facteurs exigés, poids renormalisés (vérifiable à la main
+  depuis la réponse).
+- Une certification exigée absente affiche « Non éligible » même si le score
+  est haut ; une qualification non trouvée n'affiche jamais « Non éligible ».
+- Avec une vraie clé Mistral et une référence proche indexée, le facteur
+  « Références » est calculé par similarité (confiance haute ou moyenne) ; sans
+  clé, il bascule en mots-clés et l'écran le dit.
+- Un AO sans aucune exigence extraite affiche un message clair plutôt qu'un
+  score fabriqué.
+- `api.md` et `client.md` passent chacun leurs propres vérifications.
 
-## Open Questions
+## Hors V1
 
-- `compute_verdict` existant reste-t-il utilisé tel quel ailleurs (routes,
-  frontend) au point de devoir cohabiter avec ce nouveau score, ou ce chantier
-  le remplace complètement ? Non vérifié -- à faire avant `api.md`.
-- Schéma exact du référentiel équipements (nouvelle table ? JSONB dans
-  `company_profiles.extra`, même pattern que classifications/agréments ?) --
-  pas tranché, `code-standards.md` à relire pour la convention JSONB vs table
-  dédiée avant de décider.
-- Pondérations proposées à valider avec l'utilisateur, pas figées.
+Référentiel équipements (7e facteur), préférence nationale / PME (aucune donnée
+extraite aujourd'hui), zone d'exécution tirée du CPS, correspondance ville →
+région (aucun référentiel de régions en base).

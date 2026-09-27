@@ -62,6 +62,12 @@ services:
       MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY:-offria_dev}
       MINIO_SECRET_KEY: ${MINIO_SECRET_KEY:-offria_dev_secret}
       MISTRAL_API_KEY: ${MISTRAL_API_KEY:-}
+      DEEPSEEK_API_KEY: ${DEEPSEEK_API_KEY:-}
+      LLM_ANALYSIS: ${LLM_ANALYSIS:-mistral:mistral-large-latest}
+      LLM_FAST: ${LLM_FAST:-mistral:mistral-small-latest}
+      EMBEDDINGS: ${EMBEDDINGS:-mistral:mistral-embed}
+      EMBEDDINGS_DIMENSIONS: ${EMBEDDINGS_DIMENSIONS:-1024}
+      VISION: ${VISION:-mistral:pixtral-large-latest}
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}
       JWT_SECRET_KEY: ${JWT_SECRET_KEY:-change-me-in-production-32chars!!}
@@ -157,6 +163,12 @@ services:
       MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY:-offria_dev}
       MINIO_SECRET_KEY: ${MINIO_SECRET_KEY:-offria_dev_secret}
       MISTRAL_API_KEY: ${MISTRAL_API_KEY:-}
+      DEEPSEEK_API_KEY: ${DEEPSEEK_API_KEY:-}
+      LLM_ANALYSIS: ${LLM_ANALYSIS:-mistral:mistral-large-latest}
+      LLM_FAST: ${LLM_FAST:-mistral:mistral-small-latest}
+      EMBEDDINGS: ${EMBEDDINGS:-mistral:mistral-embed}
+      EMBEDDINGS_DIMENSIONS: ${EMBEDDINGS_DIMENSIONS:-1024}
+      VISION: ${VISION:-mistral:pixtral-large-latest}
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}
       JWT_SECRET_KEY: ${JWT_SECRET_KEY:-change-me-in-production-32chars!!}
@@ -198,6 +210,12 @@ services:
       MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY:-offria_dev}
       MINIO_SECRET_KEY: ${MINIO_SECRET_KEY:-offria_dev_secret}
       MISTRAL_API_KEY: ${MISTRAL_API_KEY:-}
+      DEEPSEEK_API_KEY: ${DEEPSEEK_API_KEY:-}
+      LLM_ANALYSIS: ${LLM_ANALYSIS:-mistral:mistral-large-latest}
+      LLM_FAST: ${LLM_FAST:-mistral:mistral-small-latest}
+      EMBEDDINGS: ${EMBEDDINGS:-mistral:mistral-embed}
+      EMBEDDINGS_DIMENSIONS: ${EMBEDDINGS_DIMENSIONS:-1024}
+      VISION: ${VISION:-mistral:pixtral-large-latest}
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}
       JWT_SECRET_KEY: ${JWT_SECRET_KEY:-change-me-in-production-32chars!!}
@@ -261,6 +279,13 @@ services:
       MINIO_BUCKET: offria
       MAIN_APP_PORT: 8000
       MISTRAL_API_KEY: ${MISTRAL_API_KEY:-}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      DEEPSEEK_API_KEY: ${DEEPSEEK_API_KEY:-}
+      LLM_ANALYSIS: ${LLM_ANALYSIS:-mistral:mistral-large-latest}
+      LLM_FAST: ${LLM_FAST:-mistral:mistral-small-latest}
+      EMBEDDINGS: ${EMBEDDINGS:-mistral:mistral-embed}
+      EMBEDDINGS_DIMENSIONS: ${EMBEDDINGS_DIMENSIONS:-1024}
+      VISION: ${VISION:-mistral:pixtral-large-latest}
     extra_hosts:
       - "host.docker.internal:host-gateway"
     volumes:

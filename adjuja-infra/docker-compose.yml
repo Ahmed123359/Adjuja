@@ -91,6 +91,12 @@ services:
       QDRANT_URL: http://qdrant:6333
       JWT_SECRET_KEY: ${JWT_SECRET_KEY}
       MISTRAL_API_KEY: ${MISTRAL_API_KEY:-}
+      DEEPSEEK_API_KEY: ${DEEPSEEK_API_KEY:-}
+      LLM_ANALYSIS: ${LLM_ANALYSIS:-mistral:mistral-large-latest}
+      LLM_FAST: ${LLM_FAST:-mistral:mistral-small-latest}
+      EMBEDDINGS: ${EMBEDDINGS:-mistral:mistral-embed}
+      EMBEDDINGS_DIMENSIONS: ${EMBEDDINGS_DIMENSIONS:-1024}
+      VISION: ${VISION:-mistral:pixtral-large-latest}
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}
       # Sans valeur, POST /billing/admin/activate repond 403.
@@ -144,6 +150,12 @@ services:
       QDRANT_URL: http://qdrant:6333
       JWT_SECRET_KEY: ${JWT_SECRET_KEY}
       MISTRAL_API_KEY: ${MISTRAL_API_KEY:-}
+      DEEPSEEK_API_KEY: ${DEEPSEEK_API_KEY:-}
+      LLM_ANALYSIS: ${LLM_ANALYSIS:-mistral:mistral-large-latest}
+      LLM_FAST: ${LLM_FAST:-mistral:mistral-small-latest}
+      EMBEDDINGS: ${EMBEDDINGS:-mistral:mistral-embed}
+      EMBEDDINGS_DIMENSIONS: ${EMBEDDINGS_DIMENSIONS:-1024}
+      VISION: ${VISION:-mistral:pixtral-large-latest}
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}
     depends_on:
@@ -186,6 +198,12 @@ services:
       QDRANT_URL: http://qdrant:6333
       JWT_SECRET_KEY: ${JWT_SECRET_KEY}
       MISTRAL_API_KEY: ${MISTRAL_API_KEY:-}
+      DEEPSEEK_API_KEY: ${DEEPSEEK_API_KEY:-}
+      LLM_ANALYSIS: ${LLM_ANALYSIS:-mistral:mistral-large-latest}
+      LLM_FAST: ${LLM_FAST:-mistral:mistral-small-latest}
+      EMBEDDINGS: ${EMBEDDINGS:-mistral:mistral-embed}
+      EMBEDDINGS_DIMENSIONS: ${EMBEDDINGS_DIMENSIONS:-1024}
+      VISION: ${VISION:-mistral:pixtral-large-latest}
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}
     depends_on:
@@ -269,6 +287,13 @@ services:
       MAIN_APP_HOST: api
       MAIN_APP_PORT: 8000
       MISTRAL_API_KEY: ${MISTRAL_API_KEY:-}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      DEEPSEEK_API_KEY: ${DEEPSEEK_API_KEY:-}
+      LLM_ANALYSIS: ${LLM_ANALYSIS:-mistral:mistral-large-latest}
+      LLM_FAST: ${LLM_FAST:-mistral:mistral-small-latest}
+      EMBEDDINGS: ${EMBEDDINGS:-mistral:mistral-embed}
+      EMBEDDINGS_DIMENSIONS: ${EMBEDDINGS_DIMENSIONS:-1024}
+      VISION: ${VISION:-mistral:pixtral-large-latest}
     depends_on:
       postgres:
         condition: service_healthy
@@ -302,6 +327,13 @@ services:
       NOTIFICATION_SERVICE_URL: http://notification-api:8002
       NOTIFICATION_ADMIN_SECRET: ${ADMIN_SECRET}
       MISTRAL_API_KEY: ${MISTRAL_API_KEY:-}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      DEEPSEEK_API_KEY: ${DEEPSEEK_API_KEY:-}
+      LLM_ANALYSIS: ${LLM_ANALYSIS:-mistral:mistral-large-latest}
+      LLM_FAST: ${LLM_FAST:-mistral:mistral-small-latest}
+      EMBEDDINGS: ${EMBEDDINGS:-mistral:mistral-embed}
+      EMBEDDINGS_DIMENSIONS: ${EMBEDDINGS_DIMENSIONS:-1024}
+      VISION: ${VISION:-mistral:pixtral-large-latest}
       SCRAPER_PROXY: ${SCRAPER_PROXY:-}
     depends_on:
       postgres:
