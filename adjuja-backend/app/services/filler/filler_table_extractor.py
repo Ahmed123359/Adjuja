@@ -223,38 +223,12 @@ def _call_pixtral_for_tables(images: list[Any], api_key: str) -> list[TableData]
     import json
     import re as _re
 
-    from app.services.filler.filler_llm import _post_with_retry
+    from app.services.filler.filler_llm import vision_json
     from app.services.filler.prompts import TABLE_EXTRACTION_PROMPT
-    from app.services.filler.filler_settings import VISION_LLM_MAX_TOKENS, VISION_LLM_TEMPERATURE, VISION_MODEL
 
-    content: list[dict] = []
-    for i, img in enumerate(images):
-        # Redimensionner si nécessaire
-        w, h = img.size
-        if max(w, h) > IMAGE_MAX_SIDE_PX:
-            scale = IMAGE_MAX_SIDE_PX / max(w, h)
-            img   = img.resize((int(w * scale), int(h * scale)))
-
-        buf = BytesIO()
-        img.save(buf, format="JPEG", quality=IMAGE_JPEG_QUALITY)
-        b64 = base64.b64encode(buf.getvalue()).decode()
-        content.append({"type": "text",      "text": f"Page {i + 1} :"})
-        content.append({"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{b64}"}})
-
-    payload = {
-        "model":      VISION_MODEL,
-        "messages": [
-            {"role": "system", "content": TABLE_EXTRACTION_PROMPT},
-            {"role": "user",   "content": content},
-        ],
-        "temperature":   VISION_LLM_TEMPERATURE,
-        "max_tokens":    VISION_LLM_MAX_TOKENS,
-        "response_format": {"type": "json_object"},
-        "_timeout": 300,
-    }
-
-    result = _post_with_retry(payload, api_key)
-    raw    = result["choices"][0]["message"]["content"]
+    # Tableaux : directement au modele de vision (role VISION). Tesseract perd
+    # la structure lignes/colonnes, le palier OCR n'apporterait rien ici.
+    raw = vision_json(TABLE_EXTRACTION_PROMPT, images, "Extrais les tableaux de ces pages.")
 
     # Parser la réponse JSON
     try:

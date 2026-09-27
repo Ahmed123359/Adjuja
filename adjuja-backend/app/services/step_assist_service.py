@@ -90,7 +90,8 @@ def build_step_context(ao: Any, step_key: str, verdict: dict[str, Any] | None = 
     if verdict:
         parts.append(
             "Verdict d'eligibilite calcule :\n"
-            + json.dumps(verdict, ensure_ascii=False, indent=2)[:2000]
+            # 4000 : le verdict porte desormais le detail du fit score.
+            + json.dumps(verdict, ensure_ascii=False, indent=2)[:4000]
         )
     parts.append(
         "Reponds uniquement sur cet appel d'offres et cette etape. Si la question "

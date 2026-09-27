@@ -2,6 +2,7 @@ from app.providers.base import AbstractLLMProvider
 from app.providers.openai_provider import OpenAIProvider
 from app.providers.anthropic_provider import AnthropicProvider
 from app.providers.mistral_provider import MistralProvider
+from app.providers.deepseek_provider import DeepSeekProvider
 from app.models.generation import ModeleDisponible
 
 
@@ -28,6 +29,7 @@ class ProviderFactory:
         "openai":    OpenAIProvider,
         "anthropic": AnthropicProvider,
         "mistral":   MistralProvider,
+        "deepseek":  DeepSeekProvider,
     }
 
     @classmethod

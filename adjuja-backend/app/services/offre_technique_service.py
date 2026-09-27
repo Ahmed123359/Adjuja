@@ -94,7 +94,7 @@ async def _generate_sections(
         return {}
 
     settings = get_settings()
-    rag = RagService(qdrant_url=settings.qdrant_url or "", mistral_api_key=api_key)
+    rag = RagService(qdrant_url=settings.qdrant_url or "")
     rag_contexts: dict[str, str] = {}
     if rag.is_ready:
         raw = await asyncio.gather(

@@ -10,11 +10,10 @@ import httpx
 
 from app.models.offre_technique import CPSContext, RCContext, StrategyAngle
 from app.services.offre_technique.prompts import SECTION_SYSTEMS
+from app.services.offre_technique.llm import appeler
 
 logger = logging.getLogger(__name__)
 
-_MISTRAL_URL = "https://api.mistral.ai/v1/chat/completions"
-_MODEL       = "mistral-large-latest"
 _TIMEOUT     = 120
 _RETRY_DELAYS = (15, 45, 90)
 
@@ -139,30 +138,14 @@ def _build_user_prompt(
 
 
 async def _call_mistral(system: str, user: str, api_key: str, json_mode: bool = False) -> str:
-    payload: dict = {
-        "model":       _MODEL,
-        "messages":    [
-            {"role": "system", "content": system},
-            {"role": "user",   "content": user},
-        ],
-        "temperature": 0.65,
-    }
-    if json_mode:
-        payload["response_format"] = {"type": "json_object"}
-
-    async with httpx.AsyncClient(timeout=_TIMEOUT) as client:
-        for attempt, delay in enumerate((*_RETRY_DELAYS, None), start=1):
-            resp = await client.post(
-                _MISTRAL_URL,
-                headers={"Authorization": f"Bearer {api_key}"},
-                json=payload,
-            )
-            if resp.status_code != 429 or delay is None:
-                break
-            logger.warning("Rate limit Mistral (attempt %d), waiting %ds", attempt, delay)
-            await asyncio.sleep(delay)
-        resp.raise_for_status()
-        return resp.json()["choices"][0]["message"]["content"].strip()
+    """Redaction d'une section par le role « analysis » (LLM_ANALYSIS).
+    Nom conserve pour ne pas toucher aux appelants ; `api_key` n'est plus lu,
+    la cle vient du fournisseur configure (spec fournisseurs-ia)."""
+    return await appeler(
+        "analysis", system, user,
+        temperature=0.65, max_tokens=6000, json_mode=json_mode,
+        retry_delays=_RETRY_DELAYS,
+    )
 
 
 async def generate_all(

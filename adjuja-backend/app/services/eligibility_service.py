@@ -112,5 +112,9 @@ def compute_verdict(
     return {
         "verdict": verdict,
         "raisons": hard_fails + soft_flags,
+        # Separes pour le fit score (2026-09-27), qui distingue la barriere
+        # d'eligibilite des simples avertissements. `raisons` reste inchange.
+        "bloquants": hard_fails,
+        "avertissements": soft_flags,
         "details": details,
     }

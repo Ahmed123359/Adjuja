@@ -7,7 +7,7 @@ remplissage LLM et extraction de tableaux pour un PDF entier.
 
 Architecture Action Registry :
     Chaque type de document dans DOCUMENT_REGISTRY a un champ "action" :
-        "fill"          → pipeline remplissage (Mistral texte ou Pixtral vision)
+        "fill"          → pipeline remplissage (texte, ou scan par paliers : OCR puis vision)
         "extract_table" → pipeline extraction tableau → Excel
         "skip"          → ignoré silencieusement
 
@@ -137,7 +137,7 @@ def _pages_have_corrupted_spans(pdf_path: Path, pages: list[int]) -> bool:
     get_text("dict") retourne les spans bruts du PDF  sur certains PDFs OCR,
     chaque lettre est un span séparé entouré de tirets (-l- -e- -t-t-r-e-s-).
     get_text() simple les normalise mais le case_extractor utilise "dict".
-    Si ratio > 5% des chars sont dans ce pattern, forcer le chemin Pixtral.
+    Si ratio > 5% des chars sont dans ce pattern, forcer le chemin des scans (paliers OCR puis vision).
     """
     try:
         doc       = fitz.open(str(pdf_path))
@@ -181,7 +181,7 @@ def _handle_fill(
         - Sinon : pipeline process_text_pdf() existant (modifie l'original)
 
     Pour les PDFs scannés :
-        - Pixtral vision avec prompt enrichi du cas et du lot
+        - Scan par paliers (OCR puis vision) avec prompt enrichi du cas et du lot
         - Reconstruction DOCX + PDF
 
     Args:
@@ -230,7 +230,7 @@ def _handle_fill(
         if not is_scanned and case_aware and case_name:
             is_scanned = _pages_have_corrupted_spans(pdf_path, pages)
             if is_scanned:
-                print(f"  [WARN] Encodage corrompu détecté sur pages {[p+1 for p in pages]} → Pixtral")
+                print(f"  [WARN] Encodage corrompu détecté sur pages {[p+1 for p in pages]} → chemin scan")
 
         if not is_scanned:
             # ----------------------------------------------------------------
@@ -246,7 +246,7 @@ def _handle_fill(
 
         else:
             # ----------------------------------------------------------------
-            # Pipeline scanné (Pixtral)
+            # Pipeline scanné (paliers OCR puis vision)
             # ----------------------------------------------------------------
             if case_aware and case_name:
                 _fill_scanned_with_case(
@@ -352,10 +352,10 @@ def _fill_scanned_with_case(
     api_key: str,
 ) -> None:
     """
-    Remplit un PDF scanné en demandant à Pixtral d'extraire et remplir
-    uniquement le cas sélectionné.
+    Remplit un PDF scanné en n'extrayant et remplissant que le cas
+    sélectionné, par paliers (OCR puis vision si besoin).
 
-    Le prompt enrichi (get_vision_prompt_case) indique à Pixtral :
+    Le prompt enrichi (get_vision_prompt_case) indique au modele :
         - Quel cas extraire
         - Quel lot est concerné
         - Ignorer toutes les autres variantes
@@ -369,69 +369,24 @@ def _fill_scanned_with_case(
         dst       : Chemin du fichier de sortie.
         api_key   : Clé API Mistral.
     """
-    from pdf2image import convert_from_path
-
     case_cfg   = CASE_REGISTRY.get(doc_type, {}).get(case_name, {})
     case_label = case_cfg.get("label", case_name)
 
-    first = pages[0] + 1
-    last  = pages[-1] + 1
-    from app.services.filler.filler_settings import SCAN_DPI
-    print(f"  Conversion pages {first}–{last} en images ({SCAN_DPI} dpi)...")
-    images = convert_from_path(str(pdf_path), dpi=SCAN_DPI, first_page=first, last_page=last)
-
-    print(f"  Envoi à Pixtral  cas : {case_label} | lot : {lot_number or 'tous'}...")
+    print(f"  Lecture par paliers  cas : {case_label} | lot : {lot_number or 'tous'}...")
     system_prompt = get_vision_prompt_case(doc_type, case_name, case_label, lot_number)
 
-    from app.services.filler.filler_llm import _post_with_retry
     from app.services.filler.company_adapter import get_company_info
-    import base64, json as _json
-    from io import BytesIO
-    from app.services.filler.filler_settings import (
-        IMAGE_JPEG_QUALITY, IMAGE_MAX_SIDE_PX,
-        VISION_LLM_MAX_TOKENS, VISION_LLM_TEMPERATURE, VISION_MODEL,
-    )
+    from app.services.filler.filler_llm import lire_et_remplir_scan
 
-    _company_info = get_company_info()
-
-    content: list[dict] = []
-    for i, img in enumerate(images):
-        w, h = img.size
-        if max(w, h) > IMAGE_MAX_SIDE_PX:
-            scale = IMAGE_MAX_SIDE_PX / max(w, h)
-            img   = img.resize((int(w * scale), int(h * scale)))
-        buf = BytesIO()
-        img.save(buf, format="JPEG", quality=IMAGE_JPEG_QUALITY)
-        b64 = base64.b64encode(buf.getvalue()).decode()
-        content.append({"type": "text",      "text": f"Page {i + 1} :"})
-        content.append({"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{b64}"}})
-
-    company_block = _json.dumps(_company_info, ensure_ascii=False, indent=2)
-    content.append({"type": "text", "text": f"Données entreprise :\n{company_block}"})
-
-    payload = {
-        "model": VISION_MODEL,
-        "messages": [
-            {"role": "system", "content": system_prompt},
-            {"role": "user",   "content": content},
-        ],
-        "temperature":   VISION_LLM_TEMPERATURE,
-        "max_tokens":    VISION_LLM_MAX_TOKENS,
-        "response_format": {"type": "json_object"},
-        "_timeout": 300,
-    }
-
-    result = _post_with_retry(payload, api_key)
-    raw    = result["choices"][0]["message"]["content"]
-
-    from app.services.filler.filler_llm import _extract_paragraphs_safe
-    paragraphs = _extract_paragraphs_safe(raw)
+    # Palier 2 (Tesseract avec mise en page + modele de texte), palier 3
+    # (modele de vision) seulement si la lecture OCR n'est pas fiable.
+    paragraphs, palier = lire_et_remplir_scan(pdf_path, pages, system_prompt, get_company_info())
     paragraphs = _normalize_scanned_case_paragraphs(paragraphs, doc_type, case_name, lot_number)
 
     if not paragraphs:
-        raise RuntimeError("Pixtral a retourné un document vide pour ce cas.")
+        raise RuntimeError("Aucun paragraphe lu pour ce cas dans le document scanne.")
 
-    print(f"  Pixtral : {len(paragraphs)} paragraphe(s) extrait(s).")
+    print(f"  {len(paragraphs)} paragraphe(s) extrait(s), palier {palier}.")
 
     _write_case_outputs(paragraphs, dst)
 

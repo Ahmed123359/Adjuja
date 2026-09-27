@@ -338,7 +338,6 @@ def task_analyze_ao_context(self, ao_id: str) -> dict:
         from app.db.models import AoDocument, AppelOffre
         from app.storage import minio_client as mc
         from app.config.settings import get_settings
-        from mistralai import Mistral
         from sqlalchemy import select
 
         # Deja analyse cote ao-watcher (veille) avant l'import -> pas de
@@ -366,21 +365,23 @@ def task_analyze_ao_context(self, ao_id: str) -> dict:
             docs = docs_result.scalars().all()
 
         def _texte(doc: AoDocument) -> str:
-            pdf_bytes = mc.get_file_bytes(doc.minio_key)
-            with fitz.open(stream=pdf_bytes, filetype="pdf") as pdf:
-                return "".join(page.get_text() for page in pdf)
+            # Couche texte, ou OCR Tesseract si le document est scanne (texte
+            # mis en cache sur MinIO : un document n'est lu qu'une fois).
+            from app.services.ocr_service import texte_document
+            return texte_document(doc.minio_key, mc.get_file_bytes(doc.minio_key))
 
         cps_text, meta_cps = _assemble_lots(list(docs), "cps", 60000, _texte)
         rc_text, meta_rc   = _assemble_lots(list(docs), "rc", 40000, _texte)
 
-        settings = get_settings()
-        client   = Mistral(api_key=settings.mistral_api_key)
-        response = client.chat.complete(
-            model="mistral-large-latest",
-            messages=[{"role": "user", "content": _build_analyze_prompt(cps_text, rc_text)}],
-            response_format={"type": "json_object"},
+        # Role « analysis » (spec fournisseurs-ia) : le fournisseur se choisit
+        # dans .env (LLM_ANALYSIS), plus dans le code.
+        from app.providers.router import get_chat
+        raw, _tokens = await get_chat("analysis").generate_text(
+            "Tu es un expert en marches publics marocains. Tu reponds en JSON.",
+            _build_analyze_prompt(cps_text, rc_text),
+            max_tokens=8000, temperature=0.1, json_mode=True,
         )
-        raw = response.choices[0].message.content or "{}"
+        raw = raw or "{}"
         try:
             analyse_json = json.loads(raw)
         except json.JSONDecodeError:
@@ -507,7 +508,6 @@ def task_match_team(self, ao_id: str) -> dict:
         from app.db.base import AsyncSessionLocal
         from app.db.models import AppelOffre, StaffCv, AoTeamMember
         from app.config.settings import get_settings
-        from mistralai import Mistral
         from sqlalchemy import select, delete as sa_delete
 
         async with AsyncSessionLocal() as session:
@@ -582,14 +582,13 @@ RÈGLES :
 - warning=true si AUCUN CV du pool ne satisfait le profil (expérience insuffisante, spécialité absente, etc.).
 - Ne crée pas de matching fictif : si la correspondance est mauvaise, mets warning=true et staff_cv_id=null.
 """
-        settings = get_settings()
-        client = Mistral(api_key=settings.mistral_api_key)
-        response = client.chat.complete(
-            model="mistral-large-latest",
-            messages=[{"role": "user", "content": prompt}],
-            response_format={"type": "json_object"},
+        from app.providers.router import get_chat
+        raw, _tokens = await get_chat("analysis").generate_text(
+            "Tu affectes des CV a des profils exiges. Tu reponds en JSON.",
+            prompt,
+            max_tokens=4000, temperature=0.1, json_mode=True,
         )
-        raw = response.choices[0].message.content or "{}"
+        raw = raw or "{}"
         try:
             data = json.loads(raw)
         except Exception:
@@ -1177,7 +1176,7 @@ def task_index_results(self, ao_id: str) -> dict:
             return {"ao_id": ao_id, "indexed": 0}
 
         settings = get_settings()
-        rag = RagService(qdrant_url=settings.qdrant_url or "", mistral_api_key=settings.mistral_api_key)
+        rag = RagService(qdrant_url=settings.qdrant_url or "")
         if not rag.is_ready:
             logger.warning("[index_results] RAG non disponible, skip indexation ao_id=%s", ao_id)
             return {"ao_id": ao_id, "indexed": 0}

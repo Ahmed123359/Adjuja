@@ -494,27 +494,12 @@ def process_scanned_pdf(
     pages: list[int] | None = None,
     company_info: dict[str, str] | None = None,
 ) -> None:
-    try:
-        from pdf2image import convert_from_path
-    except ImportError:
-        sys.exit("Installer les dépendances : pip install pdf2image Pillow")
-
-    if pages is not None:
-        first  = pages[0] + 1
-        last   = pages[-1] + 1
-        print(f"  Conversion des pages {first} à {last} en images ({SCAN_DPI} dpi)...")
-        images = convert_from_path(str(src), dpi=SCAN_DPI, first_page=first, last_page=last)
-    else:
-        print(f"  Conversion de toutes les pages en images ({SCAN_DPI} dpi)...")
-        images = convert_from_path(str(src), dpi=SCAN_DPI)
-
-    print(f"  {len(images)} page(s)  envoi à Pixtral...")
-    paragraphs = call_pixtral_vision(images, api_key, doc_type=doc_type, company_info=company_info)
+    # Lecture par paliers (Tesseract avec mise en page, puis vision si besoin) :
+    # voir filler_llm.lire_et_remplir_scan. `api_key` n'est plus lu.
+    paragraphs = call_pixtral_vision(src, pages, doc_type=doc_type, company_info=company_info)
 
     if not paragraphs:
-        sys.exit("Pixtral a retourné un document vide.")
-
-    print(f"  Pixtral a extrait {len(paragraphs)} paragraphe(s).")
+        sys.exit("Aucun paragraphe lu dans le document scanne.")
 
     dst_docx = dst.with_suffix(".docx")
     _build_docx_from_paragraphs(paragraphs, dst_docx)

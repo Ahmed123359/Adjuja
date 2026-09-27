@@ -2,40 +2,60 @@
 """
 filler_llm.py
 -------------
-Couche d'accès aux modèles LLM (Mistral texte + Pixtral vision).
+Acces aux modeles pour le remplissage, par ROLES (spec
+context/feature-spec/fournisseurs-ia/, 2026-09-27) : le texte passe par le role
+« analysis » (LLM_ANALYSIS), la vision par le role « vision » (VISION). Plus
+aucun appel direct a l'API Mistral ni a Pixtral.
 
-Deux fonctions publiques :
-    - call_mistral()        : pour les pipelines PDF texte et DOCX
-    - call_pixtral_vision() : pour le pipeline PDF scanné
+Remplissage d'un scan PAR PALIERS (`lire_et_remplir_scan`) :
+    palier 2 : Tesseract avec mise en page (filler_ocr_layout) puis modele de
+               texte -- rapide, peu couteux, aucune image transmise ;
+    palier 3 : modele de vision, seulement si la lecture OCR n'est pas fiable
+               (confiance ou volume de texte sous les seuils) ou si le modele
+               de texte ne rend rien d'exploitable.
+(Le palier 1, PDF avec couche texte, est le pipeline texte existant.)
 
-COMPANY_INFO est injecté dynamiquement via get_company_info() depuis
-company_adapter.py au lieu d'être lu depuis un fichier statique.
+API publique :
+    - call_mistral()        : lignes a placeholders -> lignes remplies (nom conserve)
+    - call_pixtral_vision() : document scanne generique, desormais par paliers
+    - lire_et_remplir_scan(): paliers 2 puis 3, utilise aussi par l'orchestrateur
+    - vision_json()         : appel vision brut (extraction de tableaux)
 """
 
-import base64
+import asyncio
 import json
 import re
+import threading
 import time
 from io import BytesIO
+from pathlib import Path
 from typing import Any
-
-import requests
 
 from app.services.filler.prompts import TEXT_SYSTEM_PROMPT, get_vision_prompt
 from app.services.filler.filler_settings import (
-    API_URL,
     IMAGE_JPEG_QUALITY,
     IMAGE_MAX_SIDE_PX,
     RATE_LIMIT_BASE_WAIT_SECONDS,
     RATE_LIMIT_MAX_RETRIES,
+    SCAN_DPI,
     TEXT_LLM_TEMPERATURE,
-    TEXT_LLM_TIMEOUT,
-    TEXT_MODEL,
     VISION_LLM_MAX_TOKENS,
     VISION_LLM_TEMPERATURE,
-    VISION_LLM_TIMEOUT,
-    VISION_MODEL,
 )
+
+# Resolution de rendu pour Tesseract : a 150 dpi (celle des images envoyees au
+# modele de vision), les caracteres fins des formulaires sont mal lus.
+OCR_DPI = 300
+
+_CONSIGNE_TEXTE_OCR = """
+
+=== SOURCE : TEXTE OCR, PAS D'IMAGES ===
+Le document t'est fourni sous forme de texte reconnu par OCR, mise en page
+conservee (un bloc par paragraphe, retours a la ligne d'origine, pages
+separees par « --- page N --- »). Des erreurs de reconnaissance sont possibles :
+corrige-les d'apres le contexte. Applique exactement les memes etapes et le
+meme format de sortie JSON que pour des images.
+"""
 
 
 # ---------------------------------------------------------------------------
@@ -75,26 +95,132 @@ def _resize_for_api(img: Any) -> Any:
     return img.resize((int(w * scale), int(h * scale)))
 
 
-def _post_with_retry(payload: dict[str, Any], api_key: str) -> dict[str, Any]:
-    headers = {
-        "Authorization": f"Bearer {api_key}",
-        "Content-Type": "application/json",
-    }
-    timeout = payload.get("_timeout", TEXT_LLM_TIMEOUT)
-    clean_payload = {k: v for k, v in payload.items() if k != "_timeout"}
+def _executer(coro: Any) -> Any:
+    """Execute une coroutine depuis du code synchrone, qu'une boucle tourne deja
+    (pipeline appele depuis une tache async) ou non (tache Celery)."""
+    try:
+        asyncio.get_running_loop()
+    except RuntimeError:
+        return asyncio.run(coro)
+    resultat: dict[str, Any] = {}
 
-    for attempt in range(RATE_LIMIT_MAX_RETRIES):
-        response = requests.post(API_URL, headers=headers, json=clean_payload, timeout=timeout)
-        if response.status_code == 429:
-            wait = RATE_LIMIT_BASE_WAIT_SECONDS * (attempt + 1)
-            print(f"  Rate limite : attente {wait}s avant nouvelle tentative ({attempt + 1}/{RATE_LIMIT_MAX_RETRIES - 1})...")
-            time.sleep(wait)
-            continue
-        response.raise_for_status()
-        return response.json()
+    def cible() -> None:
+        try:
+            resultat["ok"] = asyncio.run(coro)
+        except BaseException as exc:  # remonte dans le thread appelant
+            resultat["err"] = exc
 
-    response.raise_for_status()
-    return response.json()
+    t = threading.Thread(target=cible)
+    t.start()
+    t.join()
+    if "err" in resultat:
+        raise resultat["err"]
+    return resultat["ok"]
+
+
+def _est_limite_debit(exc: BaseException) -> bool:
+    code = getattr(exc, "status_code", None) or getattr(getattr(exc, "response", None), "status_code", None)
+    return code == 429 or "RateLimit" in type(exc).__name__
+
+
+def _avec_relances(appel: Any) -> str:
+    """Relances sur limitation de debit, meme politique qu'avant, pour tout fournisseur."""
+    for tentative in range(RATE_LIMIT_MAX_RETRIES):
+        try:
+            return appel()
+        except Exception as exc:
+            if not _est_limite_debit(exc) or tentative == RATE_LIMIT_MAX_RETRIES - 1:
+                raise
+            attente = RATE_LIMIT_BASE_WAIT_SECONDS * (tentative + 1)
+            print(f"  Limite de debit : attente {attente}s ({tentative + 1}/{RATE_LIMIT_MAX_RETRIES - 1})...")
+            time.sleep(attente)
+    raise RuntimeError("inatteignable")
+
+
+def texte_json(system: str, user: str, *, max_tokens: int = 8000, temperature: float = TEXT_LLM_TEMPERATURE) -> str:
+    """Modele de texte du role « analysis », reponse JSON."""
+    from app.providers.router import get_chat
+
+    def appel() -> str:
+        texte, _ = _executer(get_chat("analysis").generate_text(
+            system, user, max_tokens, temperature, json_mode=True,
+        ))
+        return texte or ""
+    return _avec_relances(appel)
+
+
+def _jpeg(img: Any) -> bytes:
+    buf = BytesIO()
+    _resize_for_api(img).convert("RGB").save(buf, format="JPEG", quality=IMAGE_JPEG_QUALITY)
+    return buf.getvalue()
+
+
+def vision_json(system: str, images: list[Any], texte: str, *, max_tokens: int = VISION_LLM_MAX_TOKENS,
+                temperature: float = VISION_LLM_TEMPERATURE) -> str:
+    """Modele du role « vision », images PIL dans l'ordre des pages, reponse JSON."""
+    from app.providers.router import get_vision
+
+    jpegs = [_jpeg(img) for img in images]
+
+    def appel() -> str:
+        return _executer(get_vision().read(
+            jpegs, texte, system=system, json_mode=True,
+            max_tokens=max_tokens, temperature=temperature, mime="image/jpeg",
+        )) or ""
+    return _avec_relances(appel)
+
+
+def _rendre_pages(pdf_path: Path, pages: list[int] | None, dpi: int) -> list[Any]:
+    """Pages du PDF en images PIL (PyMuPDF, sans poppler)."""
+    import fitz
+    from PIL import Image
+
+    images = []
+    with fitz.open(str(pdf_path)) as pdf:
+        indices = pages if pages is not None else range(len(pdf))
+        for i in indices:
+            pix = pdf[i].get_pixmap(dpi=dpi)
+            images.append(Image.frombytes("RGB", (pix.width, pix.height), pix.samples))
+    return images
+
+
+def lire_et_remplir_scan(
+    pdf_path: Path,
+    pages: list[int] | None,
+    system_prompt: str,
+    company_info: dict[str, str],
+) -> tuple[list[dict[str, Any]], str]:
+    """Lit et remplit des pages scannees par paliers. Retourne (paragraphes,
+    palier utilise : "ocr" ou "vision")."""
+    from app.services.filler.filler_ocr_layout import lire_pages
+
+    company_block = json.dumps(company_info, ensure_ascii=False, indent=2)
+
+    # Palier 2 : Tesseract avec mise en page + modele de texte.
+    try:
+        lecture = lire_pages(_rendre_pages(pdf_path, pages, OCR_DPI))
+        print(f"  OCR : {lecture.mots} mots, confiance moyenne {lecture.confiance:.0f}"
+              f" -> {'palier OCR' if lecture.fiable else 'trop faible, palier vision'}")
+        if lecture.fiable:
+            raw = texte_json(
+                system_prompt + _CONSIGNE_TEXTE_OCR,
+                f"Texte OCR du document :\n{lecture.texte}\n\nDonnees entreprise :\n{company_block}",
+                max_tokens=VISION_LLM_MAX_TOKENS,
+            )
+            paragraphes = _extract_paragraphs_safe(raw)
+            if paragraphes:
+                return paragraphes, "ocr"
+            print("  Palier OCR : reponse inexploitable, palier vision.")
+    except Exception as exc:
+        print(f"  Palier OCR indisponible ({exc.__class__.__name__}), palier vision.")
+
+    # Palier 3 : modele de vision.
+    raw = vision_json(
+        system_prompt,
+        _rendre_pages(pdf_path, pages, SCAN_DPI),
+        f"Donnees entreprise pour remplir les placeholders :\n{company_block}",
+    )
+    return _extract_paragraphs_safe(raw), "vision"
 
 
 # ---------------------------------------------------------------------------
@@ -107,11 +233,12 @@ def call_mistral(
     company_info: dict[str, str] | None = None,
 ) -> dict[str, str]:
     """
-    Envoie des lignes avec placeholders à Mistral et retourne les lignes remplies.
+    Envoie des lignes avec placeholders au modele du role « analysis » et
+    retourne les lignes remplies (nom historique conserve pour les appelants).
 
     Args:
         lines       : Liste de dicts {"id": str, "text": str} à remplir.
-        api_key     : Clé API Mistral.
+        api_key     : Ignoree : la cle vient du fournisseur du role (conservee pour les appelants).
         company_info: Données entreprise à injecter (si None, importe depuis company_adapter).
     """
     if company_info is None:
@@ -122,19 +249,7 @@ def call_mistral(
     lines_block   = json.dumps(lines, ensure_ascii=False, indent=2)
     user_prompt   = f"Données entreprise :\n{company_block}\n\nLignes à remplir :\n{lines_block}"
 
-    payload = {
-        "model": TEXT_MODEL,
-        "messages": [
-            {"role": "system", "content": TEXT_SYSTEM_PROMPT},
-            {"role": "user",   "content": user_prompt},
-        ],
-        "temperature": TEXT_LLM_TEMPERATURE,
-        "response_format": {"type": "json_object"},
-        "_timeout": TEXT_LLM_TIMEOUT,
-    }
-
-    result = _post_with_retry(payload, api_key)
-    raw_content = result["choices"][0]["message"]["content"]
+    raw_content = texte_json(TEXT_SYSTEM_PROMPT, user_prompt, temperature=TEXT_LLM_TEMPERATURE)
 
     try:
         return _normalize_filled_lines(json.loads(raw_content))
@@ -144,68 +259,27 @@ def call_mistral(
 
 
 def call_pixtral_vision(
-    images: list[Any],
-    api_key: str,
+    pdf_path: Path,
+    pages: list[int] | None = None,
     doc_type: str = "unknown",
     company_info: dict[str, str] | None = None,
 ) -> list[dict[str, Any]]:
     """
-    Envoie les images de pages scannées à Pixtral pour lecture et remplissage.
+    Document scanne generique : lecture et remplissage PAR PALIERS (OCR puis,
+    si besoin, vision). Nom historique conserve ; ne depend plus de Pixtral.
 
     Args:
-        images      : Liste d'images PIL, une par page.
-        api_key     : Clé API Mistral.
-        doc_type    : Type de document détecté (enrichit le prompt).
-        company_info: Données entreprise (si None, importe depuis company_adapter).
+        pdf_path    : PDF scanne.
+        pages       : Pages a traiter (index 0), None = toutes.
+        doc_type    : Type de document detecte (enrichit le prompt).
+        company_info: Donnees entreprise (si None, importe depuis company_adapter).
     """
     if company_info is None:
         from app.services.filler.company_adapter import get_company_info
         company_info = get_company_info()
-
-    content: list[dict[str, Any]] = []
-
-    for i, img in enumerate(images):
-        resized = _resize_for_api(img)
-        buf = BytesIO()
-        resized.save(buf, format="JPEG", quality=IMAGE_JPEG_QUALITY)
-        b64 = base64.b64encode(buf.getvalue()).decode()
-        kb  = len(buf.getvalue()) // 1024
-        print(f"    Page {i + 1} : {resized.size[0]}x{resized.size[1]} px, {kb} Ko")
-        content.append({"type": "text",      "text": f"Page {i + 1} :"})
-        content.append({"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{b64}"}})
-
-    company_block = json.dumps(company_info, ensure_ascii=False, indent=2)
-    content.append({
-        "type": "text",
-        "text": f"Données entreprise pour remplir les placeholders :\n{company_block}",
-    })
-
-    system_prompt = get_vision_prompt(doc_type)
-
-    payload = {
-        "model": VISION_MODEL,
-        "messages": [
-            {"role": "system", "content": system_prompt},
-            {"role": "user",   "content": content},
-        ],
-        "temperature": VISION_LLM_TEMPERATURE,
-        "max_tokens":  VISION_LLM_MAX_TOKENS,
-        "response_format": {"type": "json_object"},
-        "_timeout": VISION_LLM_TIMEOUT,
-    }
-
-    result = _post_with_retry(payload, api_key)
-    raw    = result["choices"][0]["message"]["content"]
-
-    finish_reason = result["choices"][0].get("finish_reason", "stop")
-    if finish_reason == "length":
-        print("  [WARN] Réponse Pixtral tronquée (limite de tokens atteinte). Récupération partielle...")
-
-    paragraphs = _extract_paragraphs_safe(raw)
-    if not paragraphs and finish_reason == "length":
-        print("  [WARN] Aucun paragraphe complet récupéré depuis la réponse tronquée.")
-
-    return paragraphs
+    paragraphes, palier = lire_et_remplir_scan(pdf_path, pages, get_vision_prompt(doc_type), company_info)
+    print(f"  {len(paragraphes)} paragraphe(s), palier {palier}.")
+    return paragraphes
 
 
 def _extract_paragraphs_safe(raw: str) -> list[dict[str, Any]]:

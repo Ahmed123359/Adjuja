@@ -32,6 +32,34 @@ class Settings(BaseSettings):
     mistral_api_key: str = ""
     """Clé API Mistral AI. Obligatoire si le provider 'mistral' est utilisé."""
 
+    deepseek_api_key: str = ""
+    """Clé API DeepSeek. Obligatoire si un rôle est configuré sur 'deepseek'."""
+
+    deepseek_base_url: str = "https://api.deepseek.com"
+    """Adresse de l'API DeepSeek (compatible OpenAI)."""
+
+    # ------------------------------------------------------------------
+    # Rôles IA : `fournisseur:modèle` (spec context/feature-spec/fournisseurs-ia/)
+    # Le code demande un rôle, jamais un fournisseur : changer de fournisseur
+    # = changer une ligne de .env. Défauts = comportement d'avant (Mistral).
+    # ------------------------------------------------------------------
+
+    llm_analysis: str = "mistral:mistral-large-latest"
+    """Analyse des dossiers (CPS/RC), génération longue."""
+
+    llm_fast: str = "mistral:mistral-small-latest"
+    """Appels courts et fréquents : extraction de CV, classements."""
+
+    embeddings: str = "mistral:mistral-embed"
+    """Embeddings (recherche RAG, fit score). Changer de modèle impose de réindexer Qdrant."""
+
+    embeddings_dimensions: int = 1024
+    """Taille des vecteurs. 1024 = taille de mistral-embed ; demandée aussi à OpenAI
+    (text-embedding-3 accepte `dimensions`) pour garder les collections existantes."""
+
+    vision: str = "mistral:pixtral-large-latest"
+    """Lecture d'images de pages (remplissage de formulaires)."""
+
     # ------------------------------------------------------------------
     # Valeurs par défaut de génération
     # ------------------------------------------------------------------

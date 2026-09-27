@@ -40,8 +40,11 @@ class AnthropicProvider(AbstractLLMProvider):
         user_prompt: str,
         max_tokens: int,
         temperature: float,
+        json_mode: bool = False,
     ) -> tuple[str, int]:
         """Appel brut à l'API Anthropic Messages. Lève une exception en cas d'erreur."""
+        if json_mode:
+            system_prompt = f"{system_prompt}\n\nReponds uniquement par un objet JSON valide, sans texte autour."
         message = self._client.messages.create(
             model=self._model_name,
             max_tokens=max_tokens,

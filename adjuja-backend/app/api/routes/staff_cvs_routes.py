@@ -150,7 +150,7 @@ async def extract_cv_from_pdf(
     current_user: UserPublic = Depends(get_current_user),
 ) -> CvExtractResponse:
     """
-    Reçoit un PDF de CV, extrait le texte, demande à Mistral d'en extraire les
+    Reçoit un PDF de CV, extrait le texte, demande au modele du role « fast » d'en extraire les
     métadonnées structurées (nom, poste, expérience...). Retourne les champs
     pré-remplis + le PDF encodé pour le re-upload après validation.
     """
@@ -174,8 +174,7 @@ async def extract_cv_from_pdf(
 
     # Extraction IA
     import json, re
-    from app.config.settings import get_settings
-    from mistralai import Mistral
+    from app.providers.router import get_chat
 
     prompt = f"""Extrait les informations professionnelles de ce CV et retourne UNIQUEMENT un JSON valide (sans markdown) :
 
@@ -196,18 +195,17 @@ RÈGLES :
 CV :
 {text}"""
 
-    settings = get_settings()
-    client   = Mistral(api_key=settings.mistral_api_key)
+    # Role « fast » (spec fournisseurs-ia) : fournisseur choisi dans .env (LLM_FAST).
     try:
-        response = client.chat.complete(
-            model="mistral-small-latest",
-            messages=[{"role": "user", "content": prompt}],
-            response_format={"type": "json_object"},
+        raw, _tokens = await get_chat("fast").generate_text(
+            "Tu extrais les informations d'un CV. Tu reponds en JSON.",
+            prompt,
+            max_tokens=1500, temperature=0, json_mode=True,
         )
     except Exception as e:
-        logger.error("Extraction CV : appel Mistral échoué : %s", e)
+        logger.error("Extraction CV : appel du modele echoue : %s", e)
         raise HTTPException(status_code=502, detail="Service d'extraction IA indisponible. Réessayez dans un instant.")
-    raw = response.choices[0].message.content or "{}"
+    raw = raw or "{}"
     try:
         extracted = json.loads(raw)
     except Exception:

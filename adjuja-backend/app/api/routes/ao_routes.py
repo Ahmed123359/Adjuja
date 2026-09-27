@@ -8,9 +8,9 @@ from typing import Annotated
 from sqlalchemy import delete as sa_delete, select
 from sqlalchemy.orm import selectinload
 
-from app.api.dependencies import get_current_user, require_within_limit
+from app.api.dependencies import get_current_user, get_fit_score_service, require_within_limit
 from app.db.base import AsyncSessionLocal
-from app.db.models import AoDocument, AoPipelineStep, AppelOffre, CompanyProfile
+from app.db.models import AoDocument, AoPipelineStep, AppelOffre, CompanyDocument, CompanyProfile, StaffCv
 from app.api.routes.chat_routes import get_chat_service
 from app.models.ao_pipeline import (
     AoCreate, AoDocumentOut, AoResponse, AoStatus, AoStepOut, AoSummary, AoUpdate,
@@ -21,6 +21,7 @@ from app.models.generation import ProviderEnum
 from app.models.user import UserPublic
 from app.services.chat_service import ChatService
 from app.services.eligibility_service import compute_verdict
+from app.services.fit_score_service import AoContext, FitScoreService
 from app.services import pipeline_steps_service as steps_svc
 from app.services import step_assist_service as assist_svc
 from app.services.security.input_sanitizer import validate_upload_size
@@ -125,6 +126,29 @@ class FromWatcherPayload(BaseModel):
 class EligibilityCheckPayload(BaseModel):
     analyse_json: dict
     date_limite: str | None = None
+    # Contexte de l'AO pour le fit score (optionnels : un appelant qui ne les
+    # envoie pas obtient le meme verdict qu'avant, avec un score moins complet).
+    objet: str | None = None
+    region: str | None = None
+    ville: str | None = None
+
+
+async def _fit_score(
+    fit: FitScoreService, org_id: str, analyse_json: dict, ctx: AoContext,
+) -> dict:
+    """Charge profil, CV actifs et documents permanents de l'org, puis calcule
+    le fit score (spec context/feature-spec/fit-score/api.md)."""
+    async with AsyncSessionLocal() as session:
+        profile = (await session.execute(
+            select(CompanyProfile).where(CompanyProfile.org_id == org_id)
+        )).scalar_one_or_none()
+        staff = list((await session.execute(
+            select(StaffCv).where(StaffCv.org_id == org_id, StaffCv.actif.is_(True))
+        )).scalars().all())
+        documents = list((await session.execute(
+            select(CompanyDocument).where(CompanyDocument.org_id == org_id)
+        )).scalars().all())
+    return await fit.compute(analyse_json, ctx, profile, staff, documents, org_id)
 
 
 @router.post(
@@ -198,6 +222,7 @@ async def import_from_watcher(
 async def eligibility_check(
     body: EligibilityCheckPayload,
     current_user: UserPublic = Depends(get_current_user),
+    fit: FitScoreService = Depends(get_fit_score_service),
 ) -> dict:
     """
     Calcule le verdict Go/No-Go pour l'org de l'appelant en comparant
@@ -213,7 +238,36 @@ async def eligibility_check(
         profile = result.scalar_one_or_none()
 
     extra = profile.extra if profile and profile.extra else {}
-    return compute_verdict(body.analyse_json, body.date_limite, extra)
+    verdict = compute_verdict(body.analyse_json, body.date_limite, extra)
+    # Champ ajoute, rien de retire : un appelant qui ne lit que verdict /
+    # raisons / details ne voit aucune difference.
+    verdict["fit_score"] = await _fit_score(
+        fit, org_id, body.analyse_json,
+        AoContext(objet=body.objet or "", region=body.region, ville=body.ville, date_limite=body.date_limite),
+    )
+    return verdict
+
+
+@router.get("/{ao_id}/fit-score")
+async def get_fit_score(
+    ao_id: str,
+    current_user: UserPublic = Depends(get_current_user),
+    fit: FitScoreService = Depends(get_fit_score_service),
+) -> dict:
+    """Fit score d'un AO du pipeline (analyse_json propre a l'org)."""
+    org_id = current_user.org_id or current_user.id
+    async with AsyncSessionLocal() as session:
+        ao = (await session.execute(
+            select(AppelOffre).where(AppelOffre.id == ao_id, AppelOffre.org_id == org_id)
+        )).scalar_one_or_none()
+    if ao is None:
+        raise HTTPException(status_code=404, detail="Appel d'offres introuvable.")
+    if not ao.analyse_json:
+        raise HTTPException(status_code=409, detail="Cet appel d'offres n'a pas encore ete analyse.")
+    return await _fit_score(
+        fit, org_id, ao.analyse_json,
+        AoContext(objet=ao.objet or "", date_limite=ao.date_limite),
+    )
 
 
 @router.get("", response_model=list[AoSummary])
@@ -744,6 +798,18 @@ async def post_step_assist(
             )
             profile = prof.scalar_one_or_none()
         verdict = compute_verdict(ao.analyse_json, None, profile.extra if profile and profile.extra else {})
+        fit_detail = await _fit_score(
+            get_fit_score_service(), org_id, ao.analyse_json,
+            AoContext(objet=ao.objet or "", date_limite=ao.date_limite),
+        )
+        verdict["fit_score"] = {
+            "score": fit_detail["score"],
+            "eligibilite": fit_detail["eligibilite"],
+            "facteurs": [
+                {"facteur": f["code"], "score": f["score"], "justification": f["justification"]}
+                for f in fit_detail["facteurs"] if f["exige"]
+            ],
+        }
 
     context = assist_svc.build_step_context(ao, step_key, verdict)
     history = [ChatMessage(role="user", content=context)]

@@ -40,8 +40,10 @@ class MistralProvider(AbstractLLMProvider):
         user_prompt: str,
         max_tokens: int,
         temperature: float,
+        json_mode: bool = False,
     ) -> tuple[str, int]:
         """Appel brut à l'API Mistral Chat. Lève une exception en cas d'erreur."""
+        extra = {"response_format": {"type": "json_object"}} if json_mode else {}
         response = self._client.chat.complete(
             model=self._model_name,
             max_tokens=max_tokens,
@@ -50,6 +52,7 @@ class MistralProvider(AbstractLLMProvider):
                 {"role": "system", "content": system_prompt},
                 {"role": "user",   "content": user_prompt},
             ],
+            **extra,
         )
         texte = response.choices[0].message.content or ""
         tokens = response.usage.total_tokens if response.usage else 0

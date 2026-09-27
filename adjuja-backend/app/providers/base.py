@@ -34,6 +34,7 @@ class AbstractLLMProvider(ABC):
         user_prompt: str,
         max_tokens: int,
         temperature: float,
+        json_mode: bool = False,
     ) -> tuple[str, int]:
         """
         Appel LLM brut : retourne (texte_généré, tokens_utilisés).
@@ -46,6 +47,10 @@ class AbstractLLMProvider(ABC):
             user_prompt:   Prompt utilisateur (contexte AO + instructions section).
             max_tokens:    Limite de tokens en sortie pour cet appel.
             temperature:   Créativité du modèle (0 = déterministe, 1 = très créatif).
+            json_mode:     Demande une réponse JSON valide (analyse, extraction).
+                           Chaque fournisseur l'obtient à sa façon : paramètre
+                           natif quand il existe, consigne sinon. Le prompt doit
+                           de toute façon décrire la structure attendue.
 
         Returns:
             Tuple (texte, tokens) où texte est la réponse brute Markdown

@@ -1,8 +1,13 @@
 from __future__ import annotations
 
 import logging
+import uuid
 
-import httpx
+
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from app.providers.embeddings import AbstractEmbeddingProvider
 
 logger = logging.getLogger(__name__)
 
@@ -14,8 +19,6 @@ except ImportError:
     _QDRANT_OK = False
     logger.warning("qdrant-client non installé -> RAG désactivé.")
 
-_MISTRAL_EMBED_URL = "https://api.mistral.ai/v1/embeddings"
-_EMBED_MODEL       = "mistral-embed"
 
 DOCUMENT_TYPES: dict[str, str] = {
     "references":     "Références et réalisations",
@@ -47,6 +50,8 @@ _OT_SECTION_TYPE_MAP: dict[str, list[str]] = {
 }
 
 _COLLECTION   = "offria_kb"
+# Espace de noms des identifiants de points (uuid5 stable d'un demarrage a l'autre).
+_POINT_NAMESPACE = uuid.UUID("5b1c2f0e-8c0a-4f5e-9a57-0d6c2b3f1a11")
 _N_CANDIDATES = 20
 _RERANK_TOP_K = 3
 
@@ -72,23 +77,28 @@ _RERANK_SYSTEM = (
 
 
 class RagService:
-    def __init__(self, qdrant_url: str, mistral_api_key: str) -> None:
+    def __init__(self, qdrant_url: str, embedder: "AbstractEmbeddingProvider | None" = None) -> None:
+        # Embeddings par le role `EMBEDDINGS` (spec fournisseurs-ia) : ce
+        # service ne sait plus quel fournisseur les produit.
+        if embedder is None:
+            from app.providers.router import get_embeddings
+            embedder = get_embeddings()
+        self._embedder = embedder
         self._client: object | None = None
-        self._api_key = mistral_api_key
 
-        if not _QDRANT_OK or not qdrant_url or not mistral_api_key:
-            logger.info("RAG non configuré (QDRANT_URL ou MISTRAL_API_KEY manquant)")
+        if not _QDRANT_OK or not qdrant_url or not embedder.is_configured:
+            logger.info("RAG non configuré (QDRANT_URL ou clé du fournisseur d'embeddings manquante)")
             return
 
         try:
             self._client = AsyncQdrantClient(url=qdrant_url)
-            logger.info("RAG initialisé  Qdrant: %s, embed: %s", qdrant_url, _EMBED_MODEL)
+            logger.info("RAG initialisé  Qdrant: %s, embeddings: %s", qdrant_url, embedder.provider_name)
         except Exception as exc:
             logger.warning("Impossible d'initialiser le client RAG : %s", exc)
 
     @property
     def is_ready(self) -> bool:
-        return self._client is not None and bool(self._api_key)
+        return self._client is not None and self._embedder.is_configured
 
     async def retrieve_for_section(self, section_title: str, ao_context: str = "") -> str:
         if not self.is_ready:
@@ -214,15 +224,41 @@ class RagService:
             logger.debug("RAG chat retrieval ignoré : %s", exc)
             return "", []
 
-    async def _embed(self, text: str) -> list[float]:
-        async with httpx.AsyncClient(timeout=15) as client:
-            resp = await client.post(
-                _MISTRAL_EMBED_URL,
-                headers={"Authorization": f"Bearer {self._api_key}"},
-                json={"model": _EMBED_MODEL, "input": [text]},
+    async def embed(self, text: str) -> list[float]:
+        """Embedding public (fit score). Leve une exception si le service est
+        indisponible : a l'appelant de prevoir son mode degrade."""
+        if not self._embedder.is_configured:
+            raise RuntimeError("Fournisseur d'embeddings non configuré (clé absente).")
+        return await self._embed(text)
+
+    async def search_org(
+        self,
+        org_id: str,
+        vector: list[float],
+        doc_types: list[str],
+        limit: int = 10,
+    ) -> list[tuple[float, dict]]:
+        """Recherche dans la collection propre a l'org (`offria_kb_{org_id}`),
+        la ou `index_document` ecrit. Retourne (score cosinus, payload).
+        Collection absente -> liste vide."""
+        if not self.is_ready:
+            return []
+        try:
+            results = await self._client.search(  # type: ignore[union-attr]
+                collection_name=f"offria_kb_{org_id}",
+                query_vector=vector,
+                query_filter=Filter(
+                    must=[FieldCondition(key="doc_type", match=MatchAny(any=doc_types))]
+                ),
+                limit=limit,
             )
-            resp.raise_for_status()
-            return resp.json()["data"][0]["embedding"]
+        except Exception as exc:
+            logger.debug("[rag] search_org ignore org=%s: %s", org_id, exc)
+            return []
+        return [(float(r.score), dict(r.payload or {})) for r in results]
+
+    async def _embed(self, text: str) -> list[float]:
+        return (await self._embedder.embed([text]))[0]
 
     def _build_query(self, section_title: str, ao_text: str) -> str:
         """Build embedding query with no LLM call  saves rate-limit budget."""
@@ -267,7 +303,7 @@ class RagService:
             try:
                 await self._client.create_collection(  # type: ignore[union-attr]
                     collection_name=collection,
-                    vectors_config=VectorParams(size=1024, distance=Distance.COSINE),
+                    vectors_config=VectorParams(size=self._embedder.dimensions, distance=Distance.COSINE),
                 )
             except Exception as exc:
                 logger.error("[rag] impossible de créer la collection %s: %s", collection, exc)
@@ -294,9 +330,14 @@ class RagService:
         for i, chunk in enumerate(chunks):
             try:
                 vector = await self._embed(chunk)
-                payload = {**metadata, "content": chunk, "org_id": org_id, "doc_type": "note_metho"}
+                # `note_metho` n'est qu'une valeur par defaut : posee APRES
+                # l'etalement, elle ecrasait le type fourni par l'appelant
+                # (reference_realisation, diplome...) pour tout document.
+                payload = {"doc_type": "note_metho", **metadata, "content": chunk, "org_id": org_id}
                 points.append(PointStruct(
-                    id=abs(hash(f"{doc_id}_{i}")) % (2**63),
+                    # uuid5 deterministe : `hash()` est sale par processus, donc
+                    # une reindexation apres redemarrage creait des doublons.
+                    id=str(uuid.uuid5(_POINT_NAMESPACE, f"{doc_id}_{i}")),
                     vector=vector,
                     payload=payload,
                 ))
@@ -313,3 +354,23 @@ class RagService:
         except Exception as exc:
             logger.error("[rag] upsert échoué collection=%s: %s", collection, exc)
             return 0
+
+
+_instance: RagService | None = None
+
+
+def get_rag_service() -> RagService:
+    """Instance unique du service RAG, hors injection FastAPI.
+
+    Importee par les routes d'envoi de documents d'entreprise et de CV
+    (`company_documents_routes`, `staff_cvs_routes`) depuis leur creation, mais
+    n'avait jamais existe : l'`ImportError`, avalee par leur `try/except`,
+    empechait silencieusement toute indexation de ces documents (2026-09-27).
+    `app.api.dependencies.get_rag_service` renvoie la meme instance.
+    """
+    global _instance
+    if _instance is None:
+        from app.config.settings import get_settings
+        s = get_settings()
+        _instance = RagService(qdrant_url=s.qdrant_url)
+    return _instance

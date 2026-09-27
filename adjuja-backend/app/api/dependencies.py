@@ -10,18 +10,17 @@ from app.config.settings import Settings, get_settings
 from app.db.base import get_db
 from app.models.user import UserPublic
 from app.services.ao_parser_service import AOParserService
+from app.services.fit_score_service import FitScoreService
 from app.services.generation_service import GenerationService
 from app.services.history_service import HistoryService
 from app.services.prompt_builder_service import PromptBuilderService
+from app.services import rag_service as rag_service_module
 from app.services.rag_service import RagService
 from app.services.subscription_service import PlanLimitExceeded, SubscriptionService
 from app.services.usage_service import UsageService
 from app.services.user_service import UserService
 
 _bearer = HTTPBearer(auto_error=False)
-
-_rag_instance: RagService | None = None
-
 
 @lru_cache
 def get_ao_parser() -> AOParserService:
@@ -33,14 +32,16 @@ def get_prompt_builder() -> PromptBuilderService:
     return PromptBuilderService()
 
 
-def get_rag_service(settings: Settings = Depends(get_settings)) -> RagService:
-    global _rag_instance
-    if _rag_instance is None:
-        _rag_instance = RagService(
-            qdrant_url=settings.qdrant_url,
-            mistral_api_key=settings.mistral_api_key,
-        )
-    return _rag_instance
+def get_rag_service() -> RagService:
+    # Meme instance que celle des routes d'envoi de documents (une seule).
+    return rag_service_module.get_rag_service()
+
+
+@lru_cache
+def get_fit_score_service() -> FitScoreService:
+    # Embeddings via le RAG ; sans cle valide, le service bascule de lui-meme
+    # en comparaison par mots-cles (voir fit_score_service).
+    return FitScoreService(rag_service_module.get_rag_service())
 
 
 def get_usage_service(db: AsyncSession = Depends(get_db)) -> UsageService:

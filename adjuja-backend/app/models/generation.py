@@ -13,6 +13,7 @@ class ProviderEnum(str, Enum):
     OPENAI    = "openai"
     ANTHROPIC = "anthropic"
     MISTRAL   = "mistral"
+    DEEPSEEK  = "deepseek"
 
 
 class CompanyContext(BaseModel):
