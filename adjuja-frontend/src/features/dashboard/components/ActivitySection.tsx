@@ -38,7 +38,6 @@ export function ProfileWarning({ check, onFix }: { check: ProfileCheck | null; o
       padding: "var(--adj-3) var(--adj-4)",
       background: "var(--adj-panel)",
       border: "1px solid var(--adj-hairline)",
-      borderLeft: "3px solid var(--adj-hold)",
       borderRadius: "var(--adj-round-l)",
       boxShadow: "var(--adj-lift-1)",
     }}>

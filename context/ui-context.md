@@ -126,6 +126,7 @@ Confirmé pendant cette refonte, souvent après essai :
 - Boutons en pilule, bandeau coloré contenant des boîtes blanches, contenu
   centré dans une largeur maximale laissant deux marges vides, salutation en
   en-tête **et** titre identique dans la barre du haut.
+- **Liseré de couleur sur le bord gauche** d'un bandeau ou d'une carte (retiré du bandeau « Profil entreprise incomplet » le 2026-09-27, à la demande de l'utilisateur).
 - **Deux entrées pour la même action** : « Nouvel AO » figurait à la fois dans
   la barre du haut et dans l'écran ; la bulle de discussion flottante doublait
   l'assistant d'étape.
