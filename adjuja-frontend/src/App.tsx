@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import LeftPanel from "./shared/layout/LeftPanel";
-import RightPanel, { OutilsLeftPanel } from "./shared/layout/RightPanel";
+import RightPanel from "./shared/layout/RightPanel";
 import AppSidebar from "./shared/layout/AppSidebar";
 import type { Outil } from "./shared/layout/RightPanel";
 import FloatingChat from "./features/chat/components/FloatingChat";
@@ -249,15 +249,6 @@ export default function App({
         </div>
       )}
 
-      {/* Outils left panel (desktop only) */}
-      {mainTab === "outils" && !isMobile && (
-        <OutilsLeftPanel
-          section={outilSection}
-          onSectionChange={setOutilSection}
-          onGoLanding={onGoLanding}
-        />
-      )}
-
       {/* Generation left panel */}
       {mainTab === "offres" && appState !== "idle" && (
         <div className={isMobile ? `fixed inset-y-0 left-0 z-50 transition-transform duration-300 ${sidebarOpen ? "translate-x-0" : "-translate-x-full"}` : ""}>
@@ -302,7 +293,7 @@ export default function App({
             mainTab={mainTab}
             onMainTabChange={setMainTab}
             outilSection={outilSection}
-            onOutilSectionChange={isMobile ? setOutilSection : undefined}
+            onOutilSectionChange={setOutilSection}
             onOpenSidebar={isMobile ? () => setSidebarOpen(true) : undefined}
           />
       </div>

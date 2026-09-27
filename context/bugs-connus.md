@@ -102,6 +102,25 @@ vérification sur les AO existants.
 
 ---
 
+### Documents permanents : CNAS / CASNOS au lieu de la CNSS marocaine
+
+`adjuja-backend/app/models/company_document.py`, `app/db/models.py:296`,
+`app/tasks/ao_tasks.py:1065`, `adjuja-frontend/.../company/tabs/DocumentsTab.tsx`
+
+Trouvé le 2026-09-27 en reprenant l'onglet Documents. Les types de documents
+permanents proposés sont `attestation_cnas` et `attestation_casnos` : ce sont
+les caisses de sécurité sociale **algériennes**. Au Maroc, la pièce exigée est
+l'attestation **CNSS** -- et c'est bien `attestation_cnss` que le pipeline
+extrait des RC (`ao_tasks.py:129`, `:251`, `:894`). Une entreprise ne peut donc
+pas déposer, parmi ses documents permanents, la pièce que les dossiers lui
+réclament.
+
+Non corrigé dans la foulée : les valeurs sont stockées en base
+(`company_documents.doc_type`) et listées côté backend. Il faut trancher
+(remplacer CNAS/CASNOS par `attestation_cnss`, migrer les lignes existantes,
+ou garder les anciennes valeurs en lecture seule) : changement de valeurs
+persistées, à discuter avant, conformément à `CLAUDE.md`.
+
 ## REPORTÉ
 
 ### `JWT_SECRET_KEY` exposée publiquement et identique à celle de production
@@ -190,6 +209,28 @@ Supprimer des tests est un choix qui appartient à l'utilisateur.
 ---
 
 ## CORRIGÉ
+
+### Un faux cachet « CACHET » était apposé sur les documents signés
+
+`adjuja-backend/app/services/signing_service.py`, `app/api/routes/signing_routes.py`
+
+Signalé par l'utilisateur le 2026-09-27, capture à l'appui : en fin de page, un
+cercle violet « CACHET » sur carré blanc opaque, qui masquait le plan en
+dessous. Quand ni l'envoi ni le profil entreprise ne fournissaient de cachet,
+le service générait ce tampon factice (et, pour la signature, un rectangle
+« Signé électroniquement »). Même effet dans le pipeline AO
+(`task_sign_and_compile`) pour une organisation sans cachet au profil. Le
+service lisait aussi `data/assets/cachet.png` s'il existait : une image unique
+pour toutes les organisations, donc un cachet d'une entreprise apposable sur
+les pièces d'une autre.
+
+**Corrigé le 2026-09-27.** Tampons factices et lecture de `data/assets/`
+supprimés : sans image, rien n'est apposé pour elle. La route refuse (400, message
+explicite affiché par le frontend) un paraphe sans aucune signature, et une
+signature sans signature ni cachet, au lieu de rendre un PDF inchangé.
+Vérifié en exécutant `sign_pdf` sur un vrai PDF : 0 image apposée sans
+tampon fourni, 1 avec un cachet seul, 2 avec signature et cachet, erreur
+explicite pour un paraphe sans image. Pas encore rejoué dans l'application.
 
 ### La date limite d'un AO importé de la veille était perdue
 

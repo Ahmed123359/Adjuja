@@ -1,7 +1,9 @@
-// Aperçu de document -- 2026-09-26.
+// Aperçu de document -- 2026-09-26, déplacé dans le socle le 2026-09-27.
 //
 // Première brique de `context/feature-spec/preview-documents-ocr/` : afficher un
-// document dans l'application. Jusqu'ici un CPS ne pouvait qu'être téléchargé,
+// document dans l'application. Vit dans `shared/ui` et non dans `features/ao` :
+// les outils produisent aussi des PDF (signés, paraphés, remplis), et « voir
+// avant de télécharger » vaut pour tous. Jusqu'ici un CPS ne pouvait qu'être téléchargé,
 // donc lu hors de l'outil, dans un autre logiciel, sans rien de ce que
 // l'application sait de lui.
 //

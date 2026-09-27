@@ -115,9 +115,9 @@ export default function SecteurPicker({ selected, onChange, categorieFilter }: P
           gap:            8,
           padding:        '8px 11px',
           borderRadius:   8,
-          border:         `1px solid ${open ? 'var(--l-blue)' : 'var(--l-card-border)'}`,
-          background:     'var(--l-input-bg)',
-          color:          selected.length ? 'var(--l-text)' : 'var(--l-dim)',
+          border:         `1px solid ${open ? 'var(--adj-brand)' : 'var(--adj-hairline)'}`,
+          background:     'var(--adj-panel-2)',
+          color:          selected.length ? 'var(--adj-ink)' : 'var(--adj-ink-4)',
           fontSize:       13,
           fontFamily:     'inherit',
           cursor:         'pointer',
@@ -144,8 +144,8 @@ export default function SecteurPicker({ selected, onChange, categorieFilter }: P
                 gap:          5,
                 padding:      '3px 6px 3px 9px',
                 borderRadius: 20,
-                background:   'var(--l-blue-a)',
-                color:        'var(--l-blue)',
+                background:   'var(--adj-brand-tint)',
+                color:        'var(--adj-brand)',
                 fontSize:     11.5,
                 fontWeight:   600,
                 maxWidth:     '100%',
@@ -160,7 +160,7 @@ export default function SecteurPicker({ selected, onChange, categorieFilter }: P
                 style={{
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   width: 14, height: 14, borderRadius: '50%', border: 'none',
-                  background: 'transparent', color: 'var(--l-blue)', cursor: 'pointer', padding: 0,
+                  background: 'transparent', color: 'var(--adj-brand)', cursor: 'pointer', padding: 0,
                   flexShrink: 0,
                 }}
               >
@@ -181,8 +181,8 @@ export default function SecteurPicker({ selected, onChange, categorieFilter }: P
             left:          0,
             right:         0,
             zIndex:        60,
-            background:    'var(--l-card)',
-            border:        '1px solid var(--l-card-border)',
+            background:    'var(--adj-panel)',
+            border:        '1px solid var(--adj-hairline)',
             borderRadius:  10,
             boxShadow:     '0 8px 24px rgba(0,0,0,0.35)',
             display:       'flex',
@@ -192,7 +192,7 @@ export default function SecteurPicker({ selected, onChange, categorieFilter }: P
           }}
         >
           {/* Search */}
-          <div style={{ padding: 10, borderBottom: '1px solid var(--l-card-border)', flexShrink: 0 }}>
+          <div style={{ padding: 10, borderBottom: '1px solid var(--adj-hairline)', flexShrink: 0 }}>
             <input
               autoFocus
               value={search}
@@ -202,9 +202,9 @@ export default function SecteurPicker({ selected, onChange, categorieFilter }: P
                 width:        '100%',
                 padding:      '7px 10px',
                 borderRadius: 7,
-                border:       '1px solid var(--l-card-border)',
-                background:   'var(--l-input-bg)',
-                color:        'var(--l-text)',
+                border:       '1px solid var(--adj-hairline)',
+                background:   'var(--adj-panel-2)',
+                color:        'var(--adj-ink)',
                 fontSize:     13,
                 outline:      'none',
                 boxSizing:    'border-box',
@@ -216,11 +216,11 @@ export default function SecteurPicker({ selected, onChange, categorieFilter }: P
           {/* List */}
           <div style={{ flex: 1, overflowY: 'auto', padding: '4px 0' }}>
             {loading ? (
-              <p style={{ margin: 0, padding: '16px 14px', fontSize: 12.5, color: 'var(--l-dim)' }}>
+              <p style={{ margin: 0, padding: '16px 14px', fontSize: 12.5, color: 'var(--adj-ink-4)' }}>
                 {t('veille.secteurPicker.loading')}
               </p>
             ) : filtered.length === 0 ? (
-              <p style={{ margin: 0, padding: '16px 14px', fontSize: 12.5, color: 'var(--l-dim)' }}>
+              <p style={{ margin: 0, padding: '16px 14px', fontSize: 12.5, color: 'var(--adj-ink-4)' }}>
                 {t('veille.secteurPicker.empty')}
               </p>
             ) : (
@@ -246,7 +246,7 @@ export default function SecteurPicker({ selected, onChange, categorieFilter }: P
                         onClick={e => e.stopPropagation()}
                         style={{ marginTop: 2, flexShrink: 0, cursor: 'pointer' }}
                       />
-                      <span style={{ flex: 1, fontSize: 12.5, color: 'var(--l-text)', lineHeight: 1.4 }}>
+                      <span style={{ flex: 1, fontSize: 12.5, color: 'var(--adj-ink)', lineHeight: 1.4 }}>
                         {s.label}
                       </span>
                       <button
@@ -255,7 +255,7 @@ export default function SecteurPicker({ selected, onChange, categorieFilter }: P
                         style={{
                           display: 'flex', alignItems: 'center', justifyContent: 'center',
                           width: 18, height: 18, border: 'none', background: 'none',
-                          color: 'var(--l-dim)', cursor: 'pointer', flexShrink: 0, padding: 0,
+                          color: 'var(--adj-ink-4)', cursor: 'pointer', flexShrink: 0, padding: 0,
                           transform: isExpanded ? 'rotate(180deg)' : 'none',
                           transition: 'transform .12s',
                         }}
@@ -274,9 +274,9 @@ export default function SecteurPicker({ selected, onChange, categorieFilter }: P
                               fontSize:     11,
                               padding:      '2px 7px',
                               borderRadius: 12,
-                              background:   'var(--l-input-bg)',
-                              color:        'var(--l-sub)',
-                              border:       '1px solid var(--l-card-border)',
+                              background:   'var(--adj-panel-2)',
+                              color:        'var(--adj-ink-2)',
+                              border:       '1px solid var(--adj-hairline)',
                             }}
                           >
                             {a}

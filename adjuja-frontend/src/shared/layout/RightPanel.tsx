@@ -645,119 +645,6 @@ const OUTILS_NAV: { id: Outil; label: string; desc: string; icon: string }[] = [
 ];
 
 // Panneau gauche Outils  rendu dans App.tsx au même niveau que LeftPanel
-export function OutilsLeftPanel({
-  section,
-  onSectionChange,
-  onGoLanding,
-}: {
-  section: Outil;
-  onSectionChange: (s: Outil) => void;
-  onGoLanding?: () => void;
-}) {
-  const active = OUTILS_NAV.find((o) => o.id === section)!;
-
-  return (
-    <aside className="w-[320px] min-w-[320px] h-screen border-r border-border bg-card flex flex-col overflow-hidden">
-      {/* Logo */}
-      <div className="h-14 flex-shrink-0 px-4 border-b border-border flex items-center">
-        <button
-          onClick={onGoLanding}
-          className="flex items-center gap-2.5 hover:opacity-80 transition-opacity"
-        >
-          <span className="font-display font-bold text-foreground text-lg tracking-tight">
-            ADJUJA
-          </span>
-        </button>
-      </div>
-
-      {/* Contenu scrollable */}
-      <div className="flex-1 overflow-y-auto px-3 py-4 space-y-5">
-        <div className="space-y-2">
-          <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground px-1">
-            Outils disponibles
-          </p>
-          <div className="border border-border rounded-xl bg-card overflow-hidden divide-y divide-border">
-            {OUTILS_NAV.map((item) => (
-              <button
-                key={item.id}
-                onClick={() => onSectionChange(item.id)}
-                className={`w-full flex items-center gap-3 px-4 py-3.5 text-left transition-all ${
-                  section === item.id
-                    ? "bg-primary/8 text-primary"
-                    : "text-foreground hover:bg-muted/50"
-                }`}
-              >
-                <div
-                  className={`h-8 w-8 rounded-lg flex items-center justify-center flex-shrink-0 ${
-                    section === item.id ? "bg-primary/15" : "bg-muted"
-                  }`}
-                >
-                  <svg
-                    className={`h-4 w-4 ${section === item.id ? "text-primary" : "text-muted-foreground"}`}
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                    strokeWidth={2}
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d={item.icon}
-                    />
-                  </svg>
-                </div>
-                <div className="flex flex-col gap-0.5">
-                  <span
-                    className={`text-sm font-medium leading-tight ${section === item.id ? "text-primary" : "text-foreground"}`}
-                  >
-                    {item.label}
-                  </span>
-                  <span className="text-[11px] text-muted-foreground">
-                    {item.desc}
-                  </span>
-                </div>
-                {section === item.id && (
-                  <div className="ml-auto h-1.5 w-1.5 rounded-full bg-primary flex-shrink-0" />
-                )}
-              </button>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {/* Footer  outil actif */}
-      <div className="px-3 py-4 border-t border-border flex-shrink-0">
-        <div className="w-full rounded-xl border border-primary/20 bg-primary/5 px-4 py-3 flex items-center gap-3">
-          <div className="h-8 w-8 rounded-lg bg-primary/15 flex items-center justify-center flex-shrink-0">
-            <svg
-              className="h-4 w-4 text-primary"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-              strokeWidth={2}
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d={active.icon}
-              />
-            </svg>
-          </div>
-          <div>
-            <p className="text-xs font-semibold text-foreground">
-              {active.label}
-            </p>
-            <p className="text-[10px] text-muted-foreground mt-0.5">
-              Outil actif
-            </p>
-          </div>
-        </div>
-      </div>
-    </aside>
-  );
-}
-
-// Contenu seul (rendu dans RightPanel)
 function OutilsContent({
   section,
   onSectionChange,
@@ -765,55 +652,69 @@ function OutilsContent({
   section: Outil;
   onSectionChange?: (s: Outil) => void;
 }) {
+  const actif = OUTILS_NAV.find(o => o.id === section) ?? OUTILS_NAV[0];
+
   return (
-    <div className="flex-1 overflow-y-auto">
-      {/* Nav mobile horizontale (desktop : panneau gauche) */}
-      {onSectionChange && (
-        <div
-          style={{
-            display: 'flex',
-            gap: 6,
-            padding: '12px 16px 0',
-            overflowX: 'auto',
-            flexShrink: 0,
-            WebkitOverflowScrolling: 'touch',
-            scrollbarWidth: 'none',
-          }}
-        >
-          {OUTILS_NAV.map((item) => (
-            <button
-              key={item.id}
-              onClick={() => onSectionChange(item.id)}
-              style={{
-                flexShrink: 0,
-                display: 'flex',
-                alignItems: 'center',
-                gap: 6,
-                padding: '7px 14px',
-                borderRadius: 10,
-                border: `1px solid ${section === item.id ? 'var(--l-blue)' : 'var(--l-card-border)'}`,
-                background: section === item.id ? 'color-mix(in srgb, var(--l-blue) 10%, transparent)' : 'var(--l-card)',
-                color: section === item.id ? 'var(--l-blue)' : 'var(--l-sub)',
-                fontSize: 13,
-                fontWeight: section === item.id ? 600 : 400,
-                cursor: 'pointer',
-                transition: 'all .15s',
-                whiteSpace: 'nowrap',
-              }}
-            >
-              <svg
-                width="14" height="14" fill="none" viewBox="0 0 24 24"
-                stroke="currentColor" strokeWidth={2}
-                style={{ flexShrink: 0 }}
-              >
-                <path strokeLinecap="round" strokeLinejoin="round" d={item.icon} />
-              </svg>
-              {item.label}
-            </button>
-          ))}
+    <div className="adj-app-bg adj-scroll" style={{ flex: 1, minHeight: 0, overflowY: "auto" }}>
+      <div style={{
+        maxWidth: "var(--adj-max)", margin: "0 auto",
+        padding: "var(--adj-5) var(--adj-6) var(--adj-10)",
+        display: "flex", flexDirection: "column", gap: "var(--adj-5)",
+      }}>
+        {/* Choix de l'outil : une rangee d'onglets dans la page, toujours
+            visible, y compris sur mobile ou le rail n'existait pas. */}
+        {onSectionChange && (
+          <div className="adj-scroll" style={{
+            display: "flex", gap: "var(--adj-2)", overflowX: "auto", flexShrink: 0, paddingBottom: 2,
+          }}>
+            {OUTILS_NAV.map(item => {
+              const choisi = section === item.id;
+              return (
+                <button
+                  key={item.id}
+                  onClick={() => onSectionChange(item.id)}
+                  className="adj-focusable adj-anim"
+                  aria-current={choisi ? "page" : undefined}
+                  style={{
+                    flexShrink: 0,
+                    display: "flex", alignItems: "center", gap: 8,
+                    height: 40, padding: "0 16px",
+                    borderRadius: "var(--adj-round-m)",
+                    border: `1px solid ${choisi ? "var(--adj-brand)" : "var(--adj-hairline)"}`,
+                    background: choisi ? "var(--adj-brand-tint)" : "var(--adj-panel)",
+                    color: choisi ? "var(--adj-brand)" : "var(--adj-ink-2)",
+                    fontFamily: "inherit", fontSize: "var(--adj-t-sm)",
+                    fontWeight: choisi ? 600 : 500,
+                    cursor: "pointer", whiteSpace: "nowrap",
+                  }}
+                >
+                  <svg
+                    width="16" height="16" fill="none" viewBox="0 0 24 24"
+                    stroke="currentColor" strokeWidth={1.9} style={{ flexShrink: 0 }}
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" d={item.icon} />
+                  </svg>
+                  {item.label}
+                </button>
+              );
+            })}
+          </div>
+        )}
+
+        {/* Ce que fait l'outil choisi, une fois : les trois cartes numerotees
+            « 01 / 02 / 03 » repetaient ce que l'ecran montre juste en dessous. */}
+        <div>
+          <h1 style={{
+            margin: 0, fontSize: "var(--adj-t-lg)", fontWeight: 700,
+            color: "var(--adj-ink)", letterSpacing: "-0.02em",
+          }}>
+            {actif.label}
+          </h1>
+          <p style={{ margin: "4px 0 0", fontSize: "var(--adj-t-sm)", color: "var(--adj-ink-3)" }}>
+            {actif.desc}
+          </p>
         </div>
-      )}
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 py-4">
+
         {section === "signatures"  && <DocumentsTab />}
         {section === "paraphe"     && <ParapheTab />}
         {section === "remplissage" && <RemplissageTab />}

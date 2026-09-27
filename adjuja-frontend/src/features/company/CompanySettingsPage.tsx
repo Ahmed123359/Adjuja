@@ -43,9 +43,9 @@ export default function CompanySettingsPage() {
 
   const TABS: { id: DashTab; label: string }[] = [
     { id: "profile", label: t("dashboard.tabs.profile") },
-    { id: "signature", label: "Paraphe & Cachet" },
-    { id: "documents", label: "Documents" },
-    { id: "equipe", label: "Equipe / CVs" },
+    { id: "signature", label: t("dashboard.tabs.signature") },
+    { id: "documents", label: t("dashboard.tabs.documents") },
+    { id: "equipe", label: t("dashboard.tabs.equipe") },
     { id: "generation", label: t("dashboard.tabs.generation") },
   ];
 
@@ -58,89 +58,96 @@ export default function CompanySettingsPage() {
         overflow: "hidden",
       }}
     >
-      {/* Tab bar */}
+      {/* Barre d'onglets, sur le socle --adj-* : libelles a 15px, soulignement
+          de marque sur l'onglet actif. */}
       <div
+        role="tablist"
+        className="adj-scroll"
         style={{
-          padding: "0 28px",
-          borderBottom: "1px solid var(--l-card-border)",
+          padding: "0 var(--adj-6)",
+          borderBottom: "1px solid var(--adj-hairline)",
           flexShrink: 0,
           display: "flex",
-          alignItems: "center",
-          gap: 2,
-          background: "var(--l-card)",
+          alignItems: "stretch",
+          gap: "var(--adj-1)",
+          background: "var(--adj-panel)",
           overflowX: "auto",
         }}
       >
-        {TABS.map((tb) => (
-          <button
-            key={tb.id}
-            onClick={() => setTab(tb.id)}
-            style={{
-              position: "relative",
-              padding: "14px 14px",
-              background: "none",
-              border: "none",
-              whiteSpace: "nowrap",
-              fontSize: 13,
-              fontWeight: tab === tb.id ? 600 : 500,
-              cursor: "pointer",
-              fontFamily: "inherit",
-              color: tab === tb.id ? "var(--l-text)" : "var(--l-sub)",
-              transition: "color .15s",
-            }}
-          >
-            {tb.label}
-            {tb.id === "profile" && profileCheck && !profileCheck.complet && (
-              <span
-                style={{
-                  position: "absolute",
-                  top: 10,
-                  right: 6,
-                  width: 6,
-                  height: 6,
-                  borderRadius: "50%",
-                  background: "#f59e0b",
-                }}
-              />
-            )}
-            {tab === tb.id && (
-              <span
-                style={{
-                  position: "absolute",
-                  bottom: 0,
-                  left: 0,
-                  right: 0,
-                  height: 2,
-                  background: "var(--l-blue)",
-                  borderRadius: "2px 2px 0 0",
-                }}
-              />
-            )}
-          </button>
-        ))}
+        {TABS.map((tb) => {
+          const actif = tab === tb.id;
+          return (
+            <button
+              key={tb.id}
+              role="tab"
+              aria-selected={actif}
+              onClick={() => setTab(tb.id)}
+              className="adj-focusable"
+              style={{
+                position: "relative",
+                display: "flex",
+                alignItems: "center",
+                gap: 8,
+                height: 52,
+                padding: "0 var(--adj-4)",
+                background: "none",
+                border: "none",
+                whiteSpace: "nowrap",
+                fontSize: "var(--adj-t-sm)",
+                fontWeight: actif ? 600 : 500,
+                cursor: "pointer",
+                fontFamily: "inherit",
+                color: actif ? "var(--adj-ink)" : "var(--adj-ink-3)",
+                transition: "color .15s",
+              }}
+            >
+              {tb.label}
+              {tb.id === "profile" && profileCheck && !profileCheck.complet && (
+                <span
+                  aria-label="incomplet"
+                  style={{
+                    width: 8,
+                    height: 8,
+                    borderRadius: "50%",
+                    background: "var(--adj-hold)",
+                  }}
+                />
+              )}
+              {actif && (
+                <span
+                  style={{
+                    position: "absolute",
+                    bottom: -1,
+                    left: "var(--adj-3)",
+                    right: "var(--adj-3)",
+                    height: 3,
+                    background: "var(--adj-brand)",
+                    borderRadius: "3px 3px 0 0",
+                  }}
+                />
+              )}
+            </button>
+          );
+        })}
       </div>
 
-      {/* Contenu.
-
-          Les onglets refondus sur le socle visuel portent eux-memes leur mise en
-          page via <Page> : largeur, gouttieres et defilement. Les envelopper
-          dans le conteneur ci-dessous produirait un double defilement et une
-          largeur bridee a 896px.
-
-          Les autres onglets gardent le conteneur historique le temps d'etre
-          repris a leur tour. Deplacer cette frontiere onglet par onglet est
-          justement ce qui rend la refonte progressive et verifiable. */}
-      {(
-        <div style={{ flex: 1, overflowY: "auto", padding: "24px" }}>
-          <div style={{ maxWidth: 896, margin: "0 auto", width: "100%" }}>
-            {tab === "profile" && <ProfileTab onProfileSaved={loadCheck} />}
-            {tab === "signature" && <SignatureTab />}
-            {tab === "documents" && <DocumentsTab />}
-            {tab === "equipe" && <EquipeTab />}
-            {tab === "generation" && <GenerationTab />}
-          </div>
+      {/* Contenu : les cinq onglets sont repris sur le socle (2026-09-27).
+          Pleine largeur de l'application (--adj-max, comme les outils), grille
+          de fractions. L'ancien conteneur de 896px centre laissait deux marges
+          vides -- motif rejete dans ui-context.md. Le profil colle sa barre
+          d'etat en haut de CE defilement. */}
+      <div className="adj-app-bg adj-scroll" style={{ flex: 1, minHeight: 0, overflowY: "auto" }}>
+        <div style={{
+          maxWidth: "var(--adj-max)", margin: "0 auto",
+          padding: "var(--adj-5) var(--adj-6) var(--adj-10)",
+        }}>
+          {tab === "profile" && <ProfileTab onProfileSaved={loadCheck} />}
+          {tab === "signature" && <SignatureTab />}
+          {tab === "documents" && <DocumentsTab />}
+          {tab === "equipe" && <EquipeTab />}
+          {tab === "generation" && <GenerationTab />}
         </div>
-      )}
+      </div>
     </div>
   );
 }

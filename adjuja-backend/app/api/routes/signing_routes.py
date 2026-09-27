@@ -70,7 +70,7 @@ async def sign_start(
     pdf_key = f"{org_id}/tools/signing/{job_id}/input.pdf"
     mc.upload_bytes(pdf_key, pdf_bytes, "application/pdf")
 
-    # Signature : fichier uploade > profil company > None (défaut dans le service)
+    # Signature : fichier uploade > profil company > None (rien d'appose)
     sig_key: str | None = None
     if signature and signature.size:
         sig_bytes = await signature.read()
@@ -90,6 +90,19 @@ async def sign_start(
             sig_key = profile_sig
         if not cac_key and profile_cac:
             cac_key = profile_cac
+
+    # Plus de tampon générique côté service : sans image, le document
+    # reviendrait inchangé. On le dit tout de suite plutôt qu'après le job.
+    if paraphe_mode and not sig_key:
+        raise HTTPException(
+            status_code=400,
+            detail="Aucune image de paraphe : ajoutez-en une, ou une signature dans le profil entreprise.",
+        )
+    if not paraphe_mode and not sig_key and not cac_key:
+        raise HTTPException(
+            status_code=400,
+            detail="Aucune signature ni cachet : ajoutez-les ici, ou dans le profil entreprise.",
+        )
 
     # Enregistrer l'etat initial
     set_job(job_id, {"status": "pending", "type": "sign", "org_id": org_id})

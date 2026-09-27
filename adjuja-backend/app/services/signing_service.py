@@ -3,71 +3,10 @@ from typing import Optional
 import fitz  # pymupdf
 
 
-# ──────────────────────────────────────────────────────────────────────────────
-# Tampons par défaut (générés dynamiquement si aucun fichier n'est fourni)
-# ──────────────────────────────────────────────────────────────────────────────
-
-def _make_default_signature() -> bytes:
-    """
-    Génère une image de signature par défaut : rectangle violet avec le texte
-    "Signé électroniquement".
-
-    Input  : aucun
-    Output : bytes  image PNG (200×58 px)
-    """
-    doc = fitz.open()
-    page = doc.new_page(width=200, height=58)
-    page.draw_rect(fitz.Rect(3, 3, 197, 55), color=(0.42, 0.2, 0.75), width=1.5)
-    page.insert_text(fitz.Point(10, 37), "Signé électroniquement", fontsize=11, color=(0.42, 0.2, 0.75))
-    pix = page.get_pixmap(alpha=False)
-    data = pix.tobytes("png")
-    doc.close()
-    return data
-
-
-def _make_default_cachet() -> bytes:
-    """
-    Génère un cachet par défaut : cercle violet avec le texte "CACHET".
-
-    Input  : aucun
-    Output : bytes  image PNG (110×110 px)
-    """
-    doc = fitz.open()
-    page = doc.new_page(width=110, height=110)
-    page.draw_circle(fitz.Point(55, 55), 50, color=(0.42, 0.2, 0.75), width=2.5)
-    page.insert_text(fitz.Point(20, 61), "CACHET", fontsize=14, color=(0.42, 0.2, 0.75))
-    pix = page.get_pixmap(alpha=False)
-    data = pix.tobytes("png")
-    doc.close()
-    return data
-
-
-def _load_asset(stem: str, fallback_fn) -> bytes:
-    """
-    Cherche une image personnalisée dans data/assets/ (volume persistant Docker).
-    Tente les extensions png, jpg, jpeg dans cet ordre.
-    Si aucun fichier n'est trouvé, appelle fallback_fn() pour générer le défaut.
-
-    Pour utiliser ta propre signature : dépose  data/assets/signature.png (ou .jpg)
-    Pour utiliser ton propre cachet   : dépose  data/assets/cachet.png    (ou .jpg)
-
-    Input  : stem        nom du fichier sans extension ("signature" ou "cachet")
-             fallback_fn  fonction appelée si le fichier est absent
-    Output : bytes  contenu brut de l'image (PNG ou JPEG)
-    """
-    from pathlib import Path
-    base = Path("data/assets")
-    for ext in ("png", "jpg", "jpeg"):
-        path = base / f"{stem}.{ext}"
-        if path.exists():
-            return path.read_bytes()
-    return fallback_fn()
-
-
-# Chargés une seule fois au démarrage du module et gardés en mémoire
-_DEFAULT_SIGNATURE: bytes = _load_asset("signature", _make_default_signature)
-_DEFAULT_CACHET: bytes    = _load_asset("cachet",    _make_default_cachet)
-
+# Pas de tampon par défaut (2026-09-27). Un faux cachet « CACHET » et une fausse
+# signature « Signé électroniquement » étaient apposés dès qu'aucune image
+# n'était fournie : sur une pièce réelle de dossier AO, c'est pire que rien.
+# Sans image, rien n'est apposé pour elle.
 
 # ──────────────────────────────────────────────────────────────────────────────
 # Détection des zones signature / cachet par token matching
@@ -179,7 +118,7 @@ def _find_zone_on_last_page(page: fitz.Page) -> fitz.Rect | None:
 def _place_image_below(
     page: fitz.Page,
     keyword_rect: fitz.Rect,
-    image_bytes: bytes,
+    image_bytes: bytes | None,
     img_w: int,
     img_h: int,
     gap: int = 6,
@@ -195,8 +134,10 @@ def _place_image_below(
              img_w         largeur cible en points PDF
              img_h         hauteur cible en points PDF
              gap           espace entre le bas du header et le haut de l'image (défaut 6pt)
-    Output : None  modifie la page en place
+    Output : None  modifie la page en place. Ne fait rien si image_bytes est None.
     """
+    if not image_bytes:
+        return
     ph = page.rect.height
     x0 = keyword_rect.x0
     y0 = keyword_rect.y1 + gap
@@ -315,8 +256,8 @@ def sign_pdf(
 
     Input  :
         pdf_bytes        contenu brut du PDF à traiter
-        signature_bytes  image de signature (PNG/JPEG), None = utilise le défaut
-        cachet_bytes     image de cachet    (PNG/JPEG), None = utilise le défaut
+        signature_bytes  image de signature (PNG/JPEG), None = pas de signature
+        cachet_bytes     image de cachet    (PNG/JPEG), None = pas de cachet
         sig_w / sig_h    dimensions de la signature en points PDF (défaut 120×50)
         sig_mx / sig_my  marges fallback depuis bord droit/bas (défaut 50/40)
         cac_w / cac_h    dimensions du cachet   en points PDF (défaut 100×100)
@@ -326,8 +267,10 @@ def sign_pdf(
 
     Output : bytes  contenu brut du PDF signé
     """
-    sig = signature_bytes or _DEFAULT_SIGNATURE
-    cac = cachet_bytes   or _DEFAULT_CACHET
+    sig = signature_bytes or None
+    cac = cachet_bytes   or None
+    if paraphe and not sig:
+        raise ValueError("Aucune image de paraphe : ajoutez-en une ou renseignez la signature du profil entreprise.")
 
     doc = fitz.open(stream=pdf_bytes, filetype="pdf")
     n_pages = len(doc)
@@ -366,11 +309,12 @@ def sign_pdf(
                 # Fallback absolu : aucun mot-clé trouvé sur la page -> cachet en bas
                 # à gauche ET signature en bas à droite (symétrique, comme le fallback
                 # utilisé par le mode paraphe plus bas dans cette fonction).
-                page.insert_image(
-                    fitz.Rect(cac_mx, ph - cac_my - cac_h, cac_mx + cac_w, ph - cac_my),
-                    stream=cac, keep_proportion=True,
-                )
-                if not cachet_seulement:
+                if cac:
+                    page.insert_image(
+                        fitz.Rect(cac_mx, ph - cac_my - cac_h, cac_mx + cac_w, ph - cac_my),
+                        stream=cac, keep_proportion=True,
+                    )
+                if sig and not cachet_seulement:
                     page.insert_image(
                         fitz.Rect(pw - sig_mx - sig_w, ph - sig_my - sig_h, pw - sig_mx, ph - sig_my),
                         stream=sig, keep_proportion=True,
@@ -388,7 +332,7 @@ def sign_pdf(
                 _stamp_lu_et_accepte(page)
 
         # Paraphe (signature bas droite sur chaque page) uniquement pour CPS/RC
-        if paraphe:
+        if paraphe and sig:
             page.insert_image(
                 fitz.Rect(pw - sig_mx - sig_w, ph - sig_my - sig_h, pw - sig_mx, ph - sig_my),
                 stream=sig, keep_proportion=True,

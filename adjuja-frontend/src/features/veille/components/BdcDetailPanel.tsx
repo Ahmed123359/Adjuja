@@ -16,10 +16,10 @@ function MetaChip({ label, value }: { label: string; value: string | null }) {
   if (!value) return null;
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 3, minWidth: 0 }}>
-      <span style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.07em', color: 'var(--l-dim)' }}>
+      <span style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.07em', color: 'var(--adj-ink-4)' }}>
         {label}
       </span>
-      <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--l-text)', wordBreak: 'break-word', overflowWrap: 'anywhere', lineHeight: 1.4 }}>
+      <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--adj-ink)', wordBreak: 'break-word', overflowWrap: 'anywhere', lineHeight: 1.4 }}>
         {value}
       </span>
     </div>
@@ -55,9 +55,9 @@ function ActionBtn({
     width:          '100%',
   };
   const styles: Record<string, React.CSSProperties> = {
-    primary:   { ...base, background: 'var(--l-blue)',   color: '#fff' },
-    secondary: { ...base, background: 'var(--l-input-bg)', color: 'var(--l-text)', border: '1px solid var(--l-card-border)' },
-    ghost:     { ...base, background: 'transparent', color: 'var(--l-sub)', border: '1px solid var(--l-card-border)' },
+    primary:   { ...base, background: 'var(--adj-brand)',   color: '#fff' },
+    secondary: { ...base, background: 'var(--adj-panel-2)', color: 'var(--adj-ink)', border: '1px solid var(--adj-hairline)' },
+    ghost:     { ...base, background: 'transparent', color: 'var(--adj-ink-2)', border: '1px solid var(--adj-hairline)' },
   };
   return (
     <button
@@ -147,7 +147,7 @@ export default function BdcDetailPanel({ bdc: initialBdc, onClose, onUpdated }: 
               zIndex:        60,
               display:       'flex',
               flexDirection: 'column',
-              background:    'var(--l-card)',
+              background:    'var(--adj-panel)',
               overflowY:     'auto',
             }
           : {
@@ -155,8 +155,8 @@ export default function BdcDetailPanel({ bdc: initialBdc, onClose, onUpdated }: 
               flexShrink:     0,
               display:        'flex',
               flexDirection:  'column',
-              background:     'var(--l-card)',
-              borderLeft:     '1px solid var(--l-card-border)',
+              background:     'var(--adj-panel)',
+              borderLeft:     '1px solid var(--adj-hairline)',
               height:         '100%',
               overflowY:      'auto',
             }
@@ -169,25 +169,25 @@ export default function BdcDetailPanel({ bdc: initialBdc, onClose, onUpdated }: 
           alignItems:     'center',
           justifyContent: 'space-between',
           padding:        '14px 18px',
-          borderBottom:   '1px solid var(--l-card-border)',
+          borderBottom:   '1px solid var(--adj-hairline)',
           flexShrink:     0,
           gap:            12,
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
           <WatcherStatusBadge status={bdc.status} size="md" />
-          <span style={{ fontSize: 11, color: 'var(--l-dim)', fontWeight: 500, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+          <span style={{ fontSize: 11, color: 'var(--adj-ink-4)', fontWeight: 500, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
             BDC
           </span>
         </div>
         <button
           onClick={onClose}
           style={{
-            background: 'none', border: 'none', cursor: 'pointer', color: 'var(--l-dim)',
+            background: 'none', border: 'none', cursor: 'pointer', color: 'var(--adj-ink-4)',
             display: 'flex', padding: 4, borderRadius: 6, flexShrink: 0, transition: 'color .15s',
           }}
-          onMouseEnter={e => (e.currentTarget.style.color = 'var(--l-text)')}
-          onMouseLeave={e => (e.currentTarget.style.color = 'var(--l-dim)')}
+          onMouseEnter={e => (e.currentTarget.style.color = 'var(--adj-ink)')}
+          onMouseLeave={e => (e.currentTarget.style.color = 'var(--adj-ink-4)')}
         >
           <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
@@ -201,11 +201,11 @@ export default function BdcDetailPanel({ bdc: initialBdc, onClose, onUpdated }: 
         {/* Acheteur + Titre */}
         <div style={{ marginBottom: 16 }}>
           {bdc.acheteur && (
-            <p style={{ margin: '0 0 5px', fontSize: 12, fontWeight: 600, color: 'var(--l-sub)' }}>
+            <p style={{ margin: '0 0 5px', fontSize: 12, fontWeight: 600, color: 'var(--adj-ink-2)' }}>
               {bdc.acheteur}
             </p>
           )}
-          <h2 style={{ margin: 0, fontSize: 15, fontWeight: 700, color: 'var(--l-text)', lineHeight: 1.4 }}>
+          <h2 style={{ margin: 0, fontSize: 15, fontWeight: 700, color: 'var(--adj-ink)', lineHeight: 1.4 }}>
             {bdc.titre}
           </h2>
         </div>
@@ -231,8 +231,8 @@ export default function BdcDetailPanel({ bdc: initialBdc, onClose, onUpdated }: 
         <div
           style={{
             display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14,
-            padding: '14px 16px', background: 'var(--l-input-bg)', borderRadius: 10,
-            border: '1px solid var(--l-card-border)', marginBottom: 18,
+            padding: '14px 16px', background: 'var(--adj-panel-2)', borderRadius: 10,
+            border: '1px solid var(--adj-hairline)', marginBottom: 18,
           }}
         >
           <MetaChip label={t('veille.detail.datePub')} value={formatDate(bdc.date_publication)} />
@@ -243,10 +243,10 @@ export default function BdcDetailPanel({ bdc: initialBdc, onClose, onUpdated }: 
           {bdc.categorie && <MetaChip label={t('veille.detail.categorie')} value={bdc.categorie} />}
           {bdc.nature_prestation && (
             <div style={{ gridColumn: '1 / -1', display: 'flex', flexDirection: 'column', gap: 3, minWidth: 0 }}>
-              <span style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.07em', color: 'var(--l-dim)' }}>
+              <span style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.07em', color: 'var(--adj-ink-4)' }}>
                 {t('bdc.detail.naturePrestation')}
               </span>
-              <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--l-text)', wordBreak: 'break-word' }}>{bdc.nature_prestation}</span>
+              <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--adj-ink)', wordBreak: 'break-word' }}>{bdc.nature_prestation}</span>
             </div>
           )}
         </div>
@@ -292,10 +292,10 @@ export default function BdcDetailPanel({ bdc: initialBdc, onClose, onUpdated }: 
               {noDocument && (
                 <div style={{
                   padding: '10px 14px', borderRadius: 8,
-                  background: 'var(--l-input-bg)',
-                  border: '1px solid var(--l-card-border)',
+                  background: 'var(--adj-panel-2)',
+                  border: '1px solid var(--adj-hairline)',
                 }}>
-                  <p style={{ margin: 0, fontSize: 12, color: 'var(--l-sub)' }}>
+                  <p style={{ margin: 0, fontSize: 12, color: 'var(--adj-ink-2)' }}>
                     {t('bdc.detail.noDoc')}
                   </p>
                 </div>
@@ -340,7 +340,7 @@ export default function BdcDetailPanel({ bdc: initialBdc, onClose, onUpdated }: 
               style={{
                 display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
                 padding: '9px 16px', borderRadius: 8, fontSize: 13, fontWeight: 600,
-                color: 'var(--l-blue)', border: '1px solid var(--l-card-border)', textDecoration: 'none',
+                color: 'var(--adj-brand)', border: '1px solid var(--adj-hairline)', textDecoration: 'none',
               }}
             >
               <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -357,11 +357,11 @@ export default function BdcDetailPanel({ bdc: initialBdc, onClose, onUpdated }: 
             style={{
               display: 'flex', alignItems: 'center', gap: 6,
               padding: '8px 14px', borderRadius: 8, fontSize: 13, fontWeight: 500,
-              color: 'var(--l-sub)', border: '1px solid var(--l-card-border)', textDecoration: 'none',
+              color: 'var(--adj-ink-2)', border: '1px solid var(--adj-hairline)', textDecoration: 'none',
               transition: 'color .15s',
             }}
-            onMouseEnter={e => (e.currentTarget.style.color = 'var(--l-text)')}
-            onMouseLeave={e => (e.currentTarget.style.color = 'var(--l-sub)')}
+            onMouseEnter={e => (e.currentTarget.style.color = 'var(--adj-ink)')}
+            onMouseLeave={e => (e.currentTarget.style.color = 'var(--adj-ink-2)')}
           >
             <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" />

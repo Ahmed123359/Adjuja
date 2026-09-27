@@ -572,7 +572,10 @@
     "tabs": {
       "overview": "Vue d'ensemble",
       "profile": "Profil entreprise",
-      "generation": "Génération"
+      "generation": "Génération",
+      "signature": "Paraphe & Cachet",
+      "documents": "Documents",
+      "equipe": "Équipe / CVs"
     },
     "overview": {
       "total": "Total",
@@ -667,6 +670,9 @@
       "incompleteProfile": "Profil incomplet. Complétez les champs obligatoires (*) pour activer le pipeline.",
       "notConfigured": "Profil non configuré. Complétez les champs obligatoires (*) pour activer le pipeline.",
       "requiredIncomplete": "Champs obligatoires incomplets.",
+      "missing_one": "Il manque {{count}} champ obligatoire pour activer le pipeline :",
+      "missing_other": "Il manque {{count}} champs obligatoires pour activer le pipeline :",
+      "unsaved": "Modifications non enregistrées",
       "error": "Erreur lors de la sauvegarde.",
       "sections": {
         "company": "Informations de l'entreprise",
@@ -674,7 +680,10 @@
         "qualifications": "Qualifications et références",
         "legal": "Identifiants légaux",
         "manager": "Gérant",
-        "contact": "Contact"
+        "contact": "Contact",
+        "identity": "Identité de l'entreprise",
+        "headquarters": "Siège et contact",
+        "capacity": "Capacité financière et certifications"
       },
       "activitesHint": "Sélectionnez les secteurs qui correspondent à votre activité. Utilisé pour filtrer la veille des marchés et, bientôt, pour les notifications d'AOs correspondant à votre profil.",
       "qualificationsHint": "Ces informations servent à évaluer automatiquement votre éligibilité (analyse d'opportunité) sur les AOs scrapés, en comparant ces données aux exigences extraites du CPS et du RC.",
@@ -719,6 +728,93 @@
     "generation": {
       "title": "Génération de réponse AO",
       "desc": "Collez le texte de l'appel d'offres dans le panneau gauche, renseignez votre profil entreprise, puis cliquez sur Générer."
+    },
+    "assets": {
+      "upload": "Importer",
+      "replace": "Remplacer",
+      "delete": "Supprimer",
+      "download": "Télécharger",
+      "noImage": "Aucune image",
+      "uploadError": "Échec de l'envoi.",
+      "deleteError": "Échec de la suppression.",
+      "signature": {
+        "title": "Signature du gérant",
+        "desc": "Apposée en paraphe sur chaque page du CPS et du RC, et comme signature dans l'outil Signature & Cachet. PNG ou JPEG, fond transparent de préférence."
+      },
+      "cachet": {
+        "title": "Cachet de l'entreprise",
+        "desc": "Apposé sur l'acte d'engagement, la déclaration sur l'honneur, le bordereau des prix et la note méthodologique. Sans cachet, rien n'est apposé."
+      },
+      "luEtAccepte": {
+        "title": "Lu et accepté",
+        "desc": "Mention manuscrite apposée sur la dernière page du CPS et du RC. Optionnelle : sans image, le texte « Lu et accepté » est écrit à la place.",
+        "fallback": "Texte généré à la place"
+      },
+      "template": {
+        "title": "Modèle de note méthodologique",
+        "desc": "Fichier .docx avec vos styles Word (Titre 1, Titre 2, Normal) : chaque note générée reprend votre logo, vos couleurs et vos en-têtes. Sans modèle, un design standard est utilisé.",
+        "configured": "Modèle configuré",
+        "default": "Design standard"
+      }
+    },
+    "docs": {
+      "hint": "Pièces administratives de l'entreprise, jointes au dossier final de chaque appel d'offres.",
+      "add": "Ajouter",
+      "empty": "Aucun document",
+      "validUntil": "Valide jusqu'au {{date}}",
+      "preview": "Aperçu",
+      "open": "Ouvrir",
+      "delete": "Supprimer",
+      "uploadError": "Échec de l'envoi.",
+      "deleteError": "Échec de la suppression.",
+      "types": {
+        "pouvoir_gerance": "Pouvoir de gérance",
+        "attestation_fiscale": "Attestation fiscale",
+        "attestation_cnas": "Attestation CNAS",
+        "attestation_casnos": "Attestation CASNOS",
+        "reference_realisation": "Référence de réalisation",
+        "diplome": "Diplôme",
+        "autre": "Autre"
+      }
+    },
+    "team": {
+      "hint": "Les CV de votre équipe. Importez un PDF : nom, poste, diplôme et expérience en sont extraits automatiquement.",
+      "add": "Ajouter un CV (PDF)",
+      "extracting": "Analyse du CV en cours",
+      "extractingDesc": "Les informations du CV sont en cours d'extraction.",
+      "confirmTitle": "Vérifier les informations extraites",
+      "editTitle": "Modifier le membre",
+      "extractedNote": "Informations extraites automatiquement : vérifiez-les et corrigez-les si nécessaire.",
+      "save": "Enregistrer",
+      "saving": "Enregistrement…",
+      "cancel": "Annuler",
+      "empty": "Aucun membre pour l'instant. Importez un CV en PDF pour commencer.",
+      "members_one": "{{count}} membre",
+      "members_other": "{{count}} membres",
+      "inactive": "Inactif",
+      "years_one": "{{count}} an d'expérience",
+      "years_other": "{{count}} ans d'expérience",
+      "cv": "CV",
+      "attachCv": "Joindre le PDF",
+      "edit": "Modifier",
+      "delete": "Supprimer",
+      "extractError": "Échec de l'extraction du CV.",
+      "saveError": "Échec de l'enregistrement.",
+      "deleteError": "Échec de la suppression.",
+      "uploadError": "Échec de l'envoi du PDF.",
+      "fields": {
+        "nom": "Nom",
+        "prenom": "Prénom",
+        "poste": "Poste",
+        "specialite": "Spécialité",
+        "diplome": "Diplôme",
+        "annees_experience": "Années d'expérience"
+      },
+      "title": "Équipe",
+      "emptyTitle": "Ajoutez le premier CV de votre équipe",
+      "emptyDesc": "Importez un CV en PDF : les informations sont extraites automatiquement, vous n'avez qu'à les vérifier. Ces profils servent à composer l'équipe proposée dans vos offres techniques.",
+      "browse": "Choisir un PDF",
+      "orDrop": "ou glissez-le ici"
     }
   },
   "pipeline": {
@@ -1027,7 +1123,8 @@
       "categorie": "Catégorie",
       "region": "Localisation",
       "budget": "Budget",
-      "caution": "Caution"
+      "caution": "Caution",
+      "statut": "État"
     },
     "status": {
       "new": "Nouveau",

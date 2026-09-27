@@ -1,26 +1,137 @@
-// Decoupe depuis pages/DashboardPage.tsx (2026-09-12, refactoring par domaine).
-// Deplacement pur : aucun changement de comportement.
+// Paraphe & cachet -- repris sur le socle visuel le 2026-09-27.
+//
+// Quatre ressources graphiques de l'entreprise (signature, cachet, « lu et
+// accepte », modele de note methodologique), rendues comme quatre panneaux de
+// meme gabarit sur une rangee : un apercu, ce a quoi sert la ressource, ses
+// actions. Avant : quatre sections empilees dans 896px, chacune avec ses
+// propres boutons et tailles d'image.
 
 import { useState, useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
+import { Download, FileText, ImageOff, Trash2, Upload } from "lucide-react";
 import {
   fetchCompanyProfile, uploadSignature, uploadCachet, deleteSignature,
   deleteCachet, uploadLuEtAccepte, deleteLuEtAccepte,
   uploadTemplateNoteMetho, deleteTemplateNoteMetho,
 } from "../api";
 import type { CompanyProfile } from "../../../types";
-import { SectionCard } from "../components/SectionCard";
-import { Spinner } from "../components/Spinner";
+import { Card } from "../../../shared/ui/Card";
+import { Button } from "../../../shared/ui/Button";
+import { ErrorLine, LoadingBlock } from "../ui";
+
+type Ressource = "signature" | "cachet" | "lu_et_accepte" | "template";
+
+const UPLOAD: Record<Ressource, (f: File) => Promise<CompanyProfile>> = {
+  signature: uploadSignature,
+  cachet: uploadCachet,
+  lu_et_accepte: uploadLuEtAccepte,
+  template: uploadTemplateNoteMetho,
+};
+const REMOVE: Record<Ressource, () => Promise<CompanyProfile>> = {
+  signature: deleteSignature,
+  cachet: deleteCachet,
+  lu_et_accepte: deleteLuEtAccepte,
+  template: deleteTemplateNoteMetho,
+};
+
+/** Zone d'apercu commune aux quatre panneaux : meme hauteur, image contenue. */
+function Apercu({ children }: { children: React.ReactNode }) {
+  return (
+    <div style={{
+      height: 160,
+      display: "flex", alignItems: "center", justifyContent: "center",
+      padding: "var(--adj-4)",
+      borderRadius: "var(--adj-round-m)",
+      border: "1px solid var(--adj-hairline)",
+      background: "var(--adj-panel-2)",
+    }}>
+      {children}
+    </div>
+  );
+}
+
+function Vide({ icon, label }: { icon: React.ReactNode; label: string }) {
+  return (
+    <span style={{
+      display: "flex", flexDirection: "column", alignItems: "center", gap: 8,
+      color: "var(--adj-ink-3)", fontSize: "var(--adj-t-sm)",
+    }}>
+      {icon}
+      {label}
+    </span>
+  );
+}
+
+function RessourceCard({
+  title, description, apercu, present, busy, accept, onUpload, onDelete, extraAction,
+}: {
+  title: string;
+  description: React.ReactNode;
+  apercu: React.ReactNode;
+  present: boolean;
+  busy: "upload" | "delete" | "other" | null;
+  accept: string;
+  onUpload: (f: File) => void;
+  onDelete: () => void;
+  extraAction?: React.ReactNode;
+}) {
+  const { t } = useTranslation();
+  const ref = useRef<HTMLInputElement>(null);
+  return (
+    <Card title={title} className="adj-1-4">
+      <div style={{ display: "flex", flexDirection: "column", gap: "var(--adj-4)", height: "100%" }}>
+        <Apercu>{apercu}</Apercu>
+        <p style={{ margin: 0, flex: 1, fontSize: "var(--adj-t-xs)", color: "var(--adj-ink-3)", lineHeight: 1.5 }}>
+          {description}
+        </p>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: "var(--adj-2)" }}>
+          <Button
+            size="sm"
+            variant={present ? "secondary" : "primary"}
+            icon={<Upload size={15} />}
+            loading={busy === "upload"}
+            disabled={busy !== null}
+            onClick={() => ref.current?.click()}
+          >
+            {present ? t("dashboard.assets.replace") : t("dashboard.assets.upload")}
+          </Button>
+          {extraAction}
+          {present && (
+            <Button
+              size="sm"
+              variant="ghost"
+              icon={<Trash2 size={15} />}
+              loading={busy === "delete"}
+              disabled={busy !== null}
+              onClick={onDelete}
+              style={{ color: "var(--adj-neg)" }}
+            >
+              {t("dashboard.assets.delete")}
+            </Button>
+          )}
+        </div>
+        <input
+          ref={ref}
+          type="file"
+          accept={accept}
+          style={{ display: "none" }}
+          onChange={(e) => {
+            const f = e.target.files?.[0];
+            if (f) onUpload(f);
+            e.target.value = "";
+          }}
+        />
+      </div>
+    </Card>
+  );
+}
 
 export function SignatureTab() {
+  const { t } = useTranslation();
   const [profile, setProfile] = useState<CompanyProfile | null>(null);
   const [loading, setLoading] = useState(true);
-  const [uploading, setUploading] = useState<"signature" | "cachet" | "lu_et_accepte" | null>(null);
-  const [deleting, setDeleting] = useState<"signature" | "cachet" | "lu_et_accepte" | null>(null);
+  const [busy, setBusy] = useState<{ res: Ressource; op: "upload" | "delete" } | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const sigRef = useRef<HTMLInputElement>(null);
-  const cacRef = useRef<HTMLInputElement>(null);
-  const leaRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     fetchCompanyProfile()
@@ -28,279 +139,100 @@ export function SignatureTab() {
       .finally(() => setLoading(false));
   }, []);
 
-  const handleUpload = async (type: "signature" | "cachet" | "lu_et_accepte", file: File) => {
-    setUploading(type);
+  const run = async (res: Ressource, op: "upload" | "delete", file?: File) => {
+    setBusy({ res, op });
     setError(null);
     try {
-      const updated =
-        type === "signature" ? await uploadSignature(file)
-        : type === "cachet"  ? await uploadCachet(file)
-        : await uploadLuEtAccepte(file);
-      setProfile(updated);
+      setProfile(op === "upload" && file ? await UPLOAD[res](file) : await REMOVE[res]());
     } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : "Erreur upload");
+      setError(e instanceof Error ? e.message : t(op === "upload" ? "dashboard.assets.uploadError" : "dashboard.assets.deleteError"));
     } finally {
-      setUploading(null);
+      setBusy(null);
     }
   };
 
-  const handleDelete = async (type: "signature" | "cachet" | "lu_et_accepte") => {
-    setDeleting(type);
-    setError(null);
-    try {
-      const updated =
-        type === "signature" ? await deleteSignature()
-        : type === "cachet"  ? await deleteCachet()
-        : await deleteLuEtAccepte();
-      setProfile(updated);
-    } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : "Erreur suppression");
-    } finally {
-      setDeleting(null);
-    }
-  };
+  if (loading) return <LoadingBlock />;
 
-  if (loading) return <Spinner />;
+  // Un seul envoi a la fois. `RessourceCard` desactive ses boutons des que
+  // `busy` n'est pas nul, et n'affiche l'indicateur de travail que sur le
+  // bouton de l'operation en cours : les autres panneaux recoivent donc un
+  // etat « occupe » sans indicateur visible.
+  const lock = (res: Ressource): "upload" | "delete" | "other" | null =>
+    busy ? (busy.res === res ? busy.op : "other") : null;
 
-  const imgStyle: React.CSSProperties = {
-    width: 160,
-    height: 80,
-    objectFit: "contain",
-    border: "1px solid var(--l-card-border)",
-    borderRadius: 8,
-    background: "var(--l-input-bg)",
-    padding: 8,
-  };
-  const placeholderStyle: React.CSSProperties = {
-    ...imgStyle,
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    color: "var(--l-dim)",
-    fontSize: 12,
-  };
-  const btnOutlineStyle: React.CSSProperties = {
-    padding: "8px 18px",
-    borderRadius: 8,
-    border: "1px solid var(--l-blue)",
-    background: "transparent",
-    color: "var(--l-blue)",
-    fontSize: 13,
-    fontWeight: 600,
-    cursor: "pointer",
-    fontFamily: "inherit",
-  };
-  const btnDangerStyle: React.CSSProperties = {
-    padding: "8px 14px",
-    borderRadius: 8,
-    border: "1px solid rgba(220,38,38,0.5)",
-    background: "transparent",
-    color: "#dc2626",
-    fontSize: 13,
-    fontWeight: 600,
-    cursor: "pointer",
-    fontFamily: "inherit",
-  };
+  const img = (url: string, alt: string) => (
+    <img src={url} alt={alt} style={{ maxWidth: "100%", maxHeight: "100%", objectFit: "contain" }} />
+  );
+  const noImage = <Vide icon={<ImageOff size={22} strokeWidth={1.7} />} label={t("dashboard.assets.noImage")} />;
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
-      <SectionCard title="Paraphe du gérant">
-        <div style={{ display: "flex", alignItems: "center", gap: 20, flexWrap: "wrap" }}>
-          {profile?.signature_url ? (
-            <img src={profile.signature_url} alt="Signature" style={imgStyle} />
-          ) : (
-            <div style={placeholderStyle as React.CSSProperties}>Aucune signature</div>
-          )}
-          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-            <p style={{ margin: 0, fontSize: 12, color: "var(--l-sub)" }}>
-              Petite signature apposée sur chaque page du CPS et RC uniquement
-            </p>
-            <div style={{ display: "flex", gap: 8 }}>
-              <button
-                onClick={() => sigRef.current?.click()}
-                disabled={uploading === "signature" || deleting === "signature"}
-                style={btnOutlineStyle}
-              >
-                {uploading === "signature" ? "Upload..." : profile?.signature_url ? "Remplacer" : "Uploader"}
-              </button>
-              {profile?.signature_url && (
-                <button
-                  onClick={() => handleDelete("signature")}
-                  disabled={deleting === "signature" || uploading === "signature"}
-                  style={btnDangerStyle}
-                >
-                  {deleting === "signature" ? "..." : "Supprimer"}
-                </button>
-              )}
-            </div>
-            <input ref={sigRef} type="file" accept="image/png,image/jpeg" style={{ display: "none" }}
-              onChange={(e) => e.target.files?.[0] && handleUpload("signature", e.target.files[0])} />
-          </div>
-        </div>
-      </SectionCard>
-
-      <SectionCard title="Cachet de l'entreprise">
-        <div style={{ display: "flex", alignItems: "center", gap: 20, flexWrap: "wrap" }}>
-          {profile?.cachet_url ? (
-            <img src={profile.cachet_url} alt="Cachet" style={{ ...imgStyle, width: 100, height: 100 }} />
-          ) : (
-            <div style={{ ...placeholderStyle, width: 100, height: 100 } as React.CSSProperties}>Aucun cachet</div>
-          )}
-          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-            <p style={{ margin: 0, fontSize: 12, color: "var(--l-sub)" }}>
-              Image PNG ou JPEG apposée avec la signature sur la dernière page
-            </p>
-            <div style={{ display: "flex", gap: 8 }}>
-              <button
-                onClick={() => cacRef.current?.click()}
-                disabled={uploading === "cachet" || deleting === "cachet"}
-                style={btnOutlineStyle}
-              >
-                {uploading === "cachet" ? "Upload..." : profile?.cachet_url ? "Remplacer" : "Uploader"}
-              </button>
-              {profile?.cachet_url && (
-                <button
-                  onClick={() => handleDelete("cachet")}
-                  disabled={deleting === "cachet" || uploading === "cachet"}
-                  style={btnDangerStyle}
-                >
-                  {deleting === "cachet" ? "..." : "Supprimer"}
-                </button>
-              )}
-            </div>
-            <input ref={cacRef} type="file" accept="image/png,image/jpeg" style={{ display: "none" }}
-              onChange={(e) => e.target.files?.[0] && handleUpload("cachet", e.target.files[0])} />
-          </div>
-        </div>
-      </SectionCard>
-
-      <SectionCard title="Lu et accepté (optionnel)">
-        <div style={{ marginBottom: 12, padding: '10px 14px', borderRadius: 9, background: 'rgba(30,136,229,0.07)', border: '1px solid rgba(30,136,229,0.2)' }}>
-          <p style={{ margin: 0, fontSize: 12.5, color: 'var(--l-sub)', lineHeight: 1.6 }}>
-            Image manuscrite apposée en bas de chaque page du CPS et RC. Si absente, le texte "Lu et accepté" est généré automatiquement.
-          </p>
-        </div>
-        <div style={{ display: "flex", alignItems: "center", gap: 20, flexWrap: "wrap" }}>
-          {profile?.lu_et_accepte_url ? (
-            <img src={profile.lu_et_accepte_url} alt="Lu et accepté" style={imgStyle} />
-          ) : (
-            <div style={placeholderStyle as React.CSSProperties}>Aucune image</div>
-          )}
-          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-            <div style={{ display: "flex", gap: 8 }}>
-              <button
-                onClick={() => leaRef.current?.click()}
-                disabled={uploading === "lu_et_accepte" || deleting === "lu_et_accepte"}
-                style={btnOutlineStyle}
-              >
-                {uploading === "lu_et_accepte" ? "Upload..." : profile?.lu_et_accepte_url ? "Remplacer" : "Uploader"}
-              </button>
-              {profile?.lu_et_accepte_url && (
-                <button
-                  onClick={() => handleDelete("lu_et_accepte")}
-                  disabled={deleting === "lu_et_accepte" || uploading === "lu_et_accepte"}
-                  style={btnDangerStyle}
-                >
-                  {deleting === "lu_et_accepte" ? "..." : "Supprimer"}
-                </button>
-              )}
-            </div>
-            <input ref={leaRef} type="file" accept="image/png,image/jpeg" style={{ display: "none" }}
-              onChange={(e) => e.target.files?.[0] && handleUpload("lu_et_accepte", e.target.files[0])} />
-          </div>
-        </div>
-      </SectionCard>
-
-      {/* Template note méthodologique */}
-      <SectionCard title="Template note méthodologique (optionnel)">
-        <div style={{ marginBottom: 14, padding: '10px 14px', borderRadius: 9, background: 'rgba(30,136,229,0.07)', border: '1px solid rgba(30,136,229,0.2)' }}>
-          <p style={{ margin: 0, fontSize: 12.5, color: 'var(--l-sub)', lineHeight: 1.6 }}>
-            Uploadez votre template DOCX pour que chaque note méthodologique hérite de votre charte graphique
-            (logo, couleurs, polices, header, footer). Sans template, un design standard est utilisé.
-          </p>
-          <p style={{ margin: '6px 0 0', fontSize: 11.5, color: 'var(--l-dim)' }}>
-            Le template doit être un fichier .docx avec vos styles Word configurés (Heading 1/2, Normal).
-            Le contenu du corps sera remplacé par le texte généré.
-          </p>
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-            {profile?.template_note_metho_minio_key ? (
-              <span style={{ fontSize: 13, color: '#16a34a', display: 'flex', alignItems: 'center', gap: 6 }}>
-                <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
-                Template configuré
-              </span>
-            ) : (
-              <span style={{ fontSize: 13, color: 'var(--l-dim)' }}>Aucun template  design par défaut utilisé</span>
-            )}
-          </div>
-          <div style={{ display: 'flex', gap: 8 }}>
-            <TemplateUploadButton profile={profile} setProfile={setProfile} setError={setError} />
-            {profile?.template_note_metho_minio_key && (
-              <>
-                {profile.template_note_metho_url && (
-                  <a href={profile.template_note_metho_url} download
-                    style={{ padding: '7px 14px', borderRadius: 7, border: '1px solid var(--l-card-border)', background: 'transparent', color: 'var(--l-sub)', fontSize: 12, cursor: 'pointer', fontFamily: 'inherit', textDecoration: 'none', display: 'flex', alignItems: 'center' }}>
-                    Télécharger
-                  </a>
-                )}
-                <TemplateDeleteButton profile={profile} setProfile={setProfile} setError={setError} />
-              </>
-            )}
-          </div>
-        </div>
-      </SectionCard>
-
-      {error && (
-        <p style={{ color: "#dc2626", fontSize: 12, margin: 0 }}>{error}</p>
-      )}
+    <div style={{ display: "flex", flexDirection: "column", gap: "var(--adj-4)" }}>
+      <div className="adj-grid">
+        <RessourceCard
+          title={t("dashboard.assets.signature.title")}
+          description={t("dashboard.assets.signature.desc")}
+          apercu={profile?.signature_url ? img(profile.signature_url, t("dashboard.assets.signature.title")) : noImage}
+          present={!!profile?.signature_url}
+          busy={lock("signature")}
+          accept="image/png,image/jpeg"
+          onUpload={(f) => run("signature", "upload", f)}
+          onDelete={() => run("signature", "delete")}
+        />
+        <RessourceCard
+          title={t("dashboard.assets.cachet.title")}
+          description={t("dashboard.assets.cachet.desc")}
+          apercu={profile?.cachet_url ? img(profile.cachet_url, t("dashboard.assets.cachet.title")) : noImage}
+          present={!!profile?.cachet_url}
+          busy={lock("cachet")}
+          accept="image/png,image/jpeg"
+          onUpload={(f) => run("cachet", "upload", f)}
+          onDelete={() => run("cachet", "delete")}
+        />
+        <RessourceCard
+          title={t("dashboard.assets.luEtAccepte.title")}
+          description={t("dashboard.assets.luEtAccepte.desc")}
+          apercu={profile?.lu_et_accepte_url
+            ? img(profile.lu_et_accepte_url, t("dashboard.assets.luEtAccepte.title"))
+            : <Vide icon={<ImageOff size={22} strokeWidth={1.7} />} label={t("dashboard.assets.luEtAccepte.fallback")} />}
+          present={!!profile?.lu_et_accepte_url}
+          busy={lock("lu_et_accepte")}
+          accept="image/png,image/jpeg"
+          onUpload={(f) => run("lu_et_accepte", "upload", f)}
+          onDelete={() => run("lu_et_accepte", "delete")}
+        />
+        <RessourceCard
+          title={t("dashboard.assets.template.title")}
+          description={t("dashboard.assets.template.desc")}
+          apercu={
+            <Vide
+              icon={<FileText size={26} strokeWidth={1.6} color={profile?.template_note_metho_minio_key ? "var(--adj-brand)" : undefined} />}
+              label={profile?.template_note_metho_minio_key ? t("dashboard.assets.template.configured") : t("dashboard.assets.template.default")}
+            />
+          }
+          present={!!profile?.template_note_metho_minio_key}
+          busy={lock("template")}
+          accept=".docx"
+          onUpload={(f) => run("template", "upload", f)}
+          onDelete={() => run("template", "delete")}
+          extraAction={profile?.template_note_metho_url ? (
+            <a
+              href={profile.template_note_metho_url}
+              download
+              className="adj-focusable"
+              style={{
+                display: "inline-flex", alignItems: "center", gap: 8, height: 36, padding: "0 14px",
+                borderRadius: "var(--adj-round-m)", border: "1px solid var(--adj-hairline)",
+                background: "var(--adj-panel)", color: "var(--adj-ink)", textDecoration: "none",
+                fontSize: "var(--adj-t-sm)", fontWeight: 600,
+              }}
+            >
+              <Download size={15} />
+              {t("dashboard.assets.download")}
+            </a>
+          ) : undefined}
+        />
+      </div>
+      {error && <ErrorLine>{error}</ErrorLine>}
     </div>
   );
 }
-
-function TemplateUploadButton({ profile, setProfile, setError }: {
-  profile: CompanyProfile | null;
-  setProfile: (p: CompanyProfile) => void;
-  setError: (e: string | null) => void;
-}) {
-  const [uploading, setUploading] = useState(false);
-  const ref = useRef<HTMLInputElement>(null);
-  const handle = async (file: File) => {
-    setUploading(true); setError(null);
-    try { setProfile(await uploadTemplateNoteMetho(file)); }
-    catch (e: unknown) { setError(e instanceof Error ? e.message : "Erreur upload"); }
-    finally { setUploading(false); }
-  };
-  return (
-    <>
-      <button onClick={() => ref.current?.click()} disabled={uploading}
-        style={{ padding: '7px 16px', borderRadius: 7, border: 'none', background: 'var(--l-blue)', color: '#fff', fontSize: 12, fontWeight: 600, cursor: uploading ? 'not-allowed' : 'pointer', fontFamily: 'inherit' }}>
-        {uploading ? "Upload..." : profile?.template_note_metho_minio_key ? "Remplacer" : "Uploader .docx"}
-      </button>
-      <input ref={ref} type="file" accept=".docx" style={{ display: 'none' }}
-        onChange={e => e.target.files?.[0] && handle(e.target.files[0])} />
-    </>
-  );
-}
-
-function TemplateDeleteButton({ profile, setProfile, setError }: {
-  profile: CompanyProfile | null;
-  setProfile: (p: CompanyProfile) => void;
-  setError: (e: string | null) => void;
-}) {
-  const [deleting, setDeleting] = useState(false);
-  const handle = async () => {
-    setDeleting(true); setError(null);
-    try { setProfile(await deleteTemplateNoteMetho()); }
-    catch (e: unknown) { setError(e instanceof Error ? e.message : "Erreur suppression"); }
-    finally { setDeleting(false); }
-  };
-  return (
-    <button onClick={handle} disabled={deleting}
-      style={{ padding: '7px 14px', borderRadius: 7, border: '1px solid rgba(220,38,38,0.3)', background: 'transparent', color: '#dc2626', fontSize: 12, cursor: deleting ? 'not-allowed' : 'pointer', fontFamily: 'inherit' }}>
-      {deleting ? "..." : "Supprimer"}
-    </button>
-  );
-}
-
-// ── Documents permanents ────────────────────────────────────

@@ -87,9 +87,9 @@ export default function NaturePrestationPicker({ value, onChange, categorieFilte
           gap:            8,
           padding:        '8px 11px',
           borderRadius:   8,
-          border:         `1px solid ${open ? 'var(--l-blue)' : 'var(--l-card-border)'}`,
-          background:     'var(--l-input-bg)',
-          color:          value.length > 0 ? 'var(--l-text)' : 'var(--l-dim)',
+          border:         `1px solid ${open ? 'var(--adj-brand)' : 'var(--adj-hairline)'}`,
+          background:     'var(--adj-panel-2)',
+          color:          value.length > 0 ? 'var(--adj-ink)' : 'var(--adj-ink-4)',
           fontSize:       13,
           fontFamily:     'inherit',
           cursor:         'pointer',
@@ -114,8 +114,8 @@ export default function NaturePrestationPicker({ value, onChange, categorieFilte
                 gap:          5,
                 padding:      '3px 6px 3px 9px',
                 borderRadius: 20,
-                background:   'var(--l-blue-a)',
-                color:        'var(--l-blue)',
+                background:   'var(--adj-brand-tint)',
+                color:        'var(--adj-brand)',
                 fontSize:     11.5,
                 fontWeight:   600,
                 maxWidth:     '100%',
@@ -130,7 +130,7 @@ export default function NaturePrestationPicker({ value, onChange, categorieFilte
                 style={{
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   width: 14, height: 14, borderRadius: '50%', border: 'none',
-                  background: 'transparent', color: 'var(--l-blue)', cursor: 'pointer', padding: 0,
+                  background: 'transparent', color: 'var(--adj-brand)', cursor: 'pointer', padding: 0,
                   flexShrink: 0,
                 }}
               >
@@ -151,8 +151,8 @@ export default function NaturePrestationPicker({ value, onChange, categorieFilte
             left:          0,
             right:         0,
             zIndex:        60,
-            background:    'var(--l-card)',
-            border:        '1px solid var(--l-card-border)',
+            background:    'var(--adj-panel)',
+            border:        '1px solid var(--adj-hairline)',
             borderRadius:  10,
             boxShadow:     '0 8px 24px rgba(0,0,0,0.35)',
             display:       'flex',
@@ -161,7 +161,7 @@ export default function NaturePrestationPicker({ value, onChange, categorieFilte
             overflow:      'hidden',
           }}
         >
-          <div style={{ padding: 10, borderBottom: '1px solid var(--l-card-border)', flexShrink: 0 }}>
+          <div style={{ padding: 10, borderBottom: '1px solid var(--adj-hairline)', flexShrink: 0 }}>
             <input
               autoFocus
               value={search}
@@ -171,9 +171,9 @@ export default function NaturePrestationPicker({ value, onChange, categorieFilte
                 width:        '100%',
                 padding:      '7px 10px',
                 borderRadius: 7,
-                border:       '1px solid var(--l-card-border)',
-                background:   'var(--l-input-bg)',
-                color:        'var(--l-text)',
+                border:       '1px solid var(--adj-hairline)',
+                background:   'var(--adj-panel-2)',
+                color:        'var(--adj-ink)',
                 fontSize:     13,
                 outline:      'none',
                 boxSizing:    'border-box',
@@ -184,11 +184,11 @@ export default function NaturePrestationPicker({ value, onChange, categorieFilte
 
           <div style={{ flex: 1, overflowY: 'auto', padding: '4px 0' }}>
             {loading ? (
-              <p style={{ margin: 0, padding: '16px 14px', fontSize: 12.5, color: 'var(--l-dim)' }}>
+              <p style={{ margin: 0, padding: '16px 14px', fontSize: 12.5, color: 'var(--adj-ink-4)' }}>
                 {t('bdc.naturePicker.loading')}
               </p>
             ) : filtered.length === 0 ? (
-              <p style={{ margin: 0, padding: '16px 14px', fontSize: 12.5, color: 'var(--l-dim)' }}>
+              <p style={{ margin: 0, padding: '16px 14px', fontSize: 12.5, color: 'var(--adj-ink-4)' }}>
                 {t('bdc.naturePicker.empty')}
               </p>
             ) : (
@@ -204,15 +204,15 @@ export default function NaturePrestationPicker({ value, onChange, categorieFilte
                       gap:        8,
                       padding:    '7px 10px',
                       cursor:     'pointer',
-                      background: isSelected ? 'var(--l-blue-a)' : 'transparent',
+                      background: isSelected ? 'var(--adj-brand-tint)' : 'transparent',
                     }}
                   >
                     <div style={{
                       width:        14,
                       height:       14,
                       borderRadius: 4,
-                      border:       `2px solid ${isSelected ? 'var(--l-blue)' : 'var(--l-card-border)'}`,
-                      background:   isSelected ? 'var(--l-blue)' : 'transparent',
+                      border:       `2px solid ${isSelected ? 'var(--adj-brand)' : 'var(--adj-hairline)'}`,
+                      background:   isSelected ? 'var(--adj-brand)' : 'transparent',
                       flexShrink:   0,
                       marginTop:    1,
                       display:      'flex',
@@ -225,7 +225,7 @@ export default function NaturePrestationPicker({ value, onChange, categorieFilte
                         </svg>
                       )}
                     </div>
-                    <span style={{ flex: 1, fontSize: 12.5, color: 'var(--l-text)', lineHeight: 1.4 }}>
+                    <span style={{ flex: 1, fontSize: 12.5, color: 'var(--adj-ink)', lineHeight: 1.4 }}>
                       {n.label}
                     </span>
                   </div>

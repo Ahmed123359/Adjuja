@@ -171,6 +171,41 @@ arbitrage :
 
 - Écrans non repris, encore alimentés par le pont de tokens : veille, outils,
   réglages d'entreprise, facturation.
+  - Outils, en partie (2026-09-27) : les trois onglets (Signature & Cachet,
+    Paraphe, Remplissage) ont la même structure. Le titre en double et les
+    cartes d'étapes « 01/02/03 » sont retirés, et les cartes sont agrandies :
+    carte de réglages en `p-6`, boutons d'image plus hauts, zone de dépôt
+    haute et centrée. La largeur pleine (`--adj-max`) est conservée, à la
+    demande de l'utilisateur.
+  - Aperçu dans les trois outils (2026-09-27) : bouton « Aperçu » sur chaque
+    document déposé (le PDF local, via une URL `blob:`) puis sur le résultat
+    (signé, paraphé, rempli). Nom du fichier cliquable pour revoir l'original.
+    Hook partagé `useApercuDocument()` dans `shared/ui/DocumentPreviewModal.tsx`,
+    qui révoque l'URL `blob:` à la fermeture. Remplissage : aperçu seulement
+    pour les PDF (un .zip ou un .docx n'a pas de rendu navigateur).
+  - Signature (2026-09-27) : plus aucun faux tampon « CACHET » / « Signé
+    électroniquement ». Sans image (ni envoyée, ni au profil), rien n'est
+    apposé ; la route répond 400 si rien ne peut l'être. Voir `bugs-connus.md`.
+- Réglages d'entreprise, repris (2026-09-27) : les cinq onglets sur le socle,
+  pleine largeur (`--adj-max`), plus de colonne centrée de 896px.
+  - Briques communes dans `features/company/ui.tsx` : champ 44px, libellé 15px,
+    `FieldGrid` = grille de fractions ; chaque champ déclare sa fraction
+    (`span="1-4"`...) et chaque panneau compose ses lignes pour tomber sur 8/8.
+  - Profil : barre d'état collée en haut (champs obligatoires manquants
+    cliquables, modifications non enregistrées, bouton Enregistrer toujours
+    visible) ; rangées 1/2+1/2 (identité, identifiants), 5/8+3/8 (siège,
+    gérant), 1/2+1/2 (secteurs, capacité), agréments/classifications,
+    références, puis notifications et membres côte à côte.
+  - Paraphe & Cachet : quatre panneaux 1/4 de même gabarit (aperçu, usage,
+    actions). Texte « Lu et accepté » corrigé : apposé sur la DERNIÈRE page
+    du CPS/RC (code `signing_service`), pas sur chaque page.
+  - Documents : un panneau par type avec son propre « Ajouter », aperçu PDF.
+  - Équipe : membres en panneaux 1/4, formulaire 1/2, état vide en zone de
+    dépôt (glisser un PDF). Génération : panneau du socle.
+  - `Select` du socle : liste rendue en portail, position fixe, s'ouvre vers
+    le haut faute de place (elle était rognée par les `Card` en overflow hidden).
+  - `SectionCard` n'est plus qu'un alias de `Card` ; `styles.ts` aligné.
+  - Libellés des onglets et textes des nouveaux écrans passés en i18n (fr/en).
 - `<input type="date">` natif encore présent dans quatre écrans (outils, filtres
   de veille) ; `DateField` existe désormais pour les remplacer.
 - Les mentions de la discussion d'équipe sont enregistrées mais **ne notifient

@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { DateField } from '../../../shared/ui/DateField';
 import type { AoCategorie, ModePassation, WatcherFilters } from '../../../types';
 import { useIsMobile } from '../../../hooks/useIsMobile';
 import { fetchModesPassation } from '../../../api';
@@ -20,9 +21,9 @@ const inputStyle: React.CSSProperties = {
   width:        '100%',
   padding:      '8px 11px',
   borderRadius: 8,
-  border:       '1px solid var(--l-card-border)',
-  background:   'var(--l-input-bg)',
-  color:        'var(--l-text)',
+  border:       '1px solid var(--adj-hairline)',
+  background:   'var(--adj-panel-2)',
+  color:        'var(--adj-ink)',
   fontSize:     13,
   outline:      'none',
   boxSizing:    'border-box',
@@ -39,7 +40,7 @@ function FilterSection({ label, children }: { label: string; children: React.Rea
           fontWeight:    700,
           textTransform: 'uppercase',
           letterSpacing: '.07em',
-          color:         'var(--l-dim)',
+          color:         'var(--adj-ink-4)',
         }}
       >
         {label}
@@ -93,8 +94,8 @@ export default function VeilleFilters({ filters, onChange, onReset, onClose }: P
                 maxWidth:      '85vw',
                 display:       'flex',
                 flexDirection: 'column',
-                background:    'var(--l-card)',
-                borderRight:   '1px solid var(--l-card-border)',
+                background:    'var(--adj-panel)',
+                borderRight:   '1px solid var(--adj-hairline)',
                 overflowY:     'auto',
               }
             : {
@@ -102,8 +103,8 @@ export default function VeilleFilters({ filters, onChange, onReset, onClose }: P
                 flexShrink:     0,
                 display:        'flex',
                 flexDirection:  'column',
-                background:     'var(--l-card)',
-                borderRight:    '1px solid var(--l-card-border)',
+                background:     'var(--adj-panel)',
+                borderRight:    '1px solid var(--adj-hairline)',
                 height:         '100%',
                 overflowY:      'auto',
               }
@@ -116,12 +117,12 @@ export default function VeilleFilters({ filters, onChange, onReset, onClose }: P
           alignItems:     'center',
           justifyContent: 'space-between',
           padding:        '14px 16px 10px',
-          borderBottom:   '1px solid var(--l-card-border)',
+          borderBottom:   '1px solid var(--adj-hairline)',
           flexShrink:     0,
           gap:            10,
         }}
       >
-        <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--l-text)' }}>
+        <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--adj-ink)' }}>
           {t('veille.filters.title')}
         </span>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
@@ -133,7 +134,7 @@ export default function VeilleFilters({ filters, onChange, onReset, onClose }: P
                 border:       'none',
                 cursor:       'pointer',
                 fontSize:     12,
-                color:        'var(--l-blue)',
+                color:        'var(--adj-brand)',
                 fontFamily:   'inherit',
                 padding:      0,
                 fontWeight:   600,
@@ -145,7 +146,7 @@ export default function VeilleFilters({ filters, onChange, onReset, onClose }: P
           {isMobile && onClose && (
             <button
               onClick={onClose}
-              style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--l-dim)', display: 'flex', padding: 2 }}
+              style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--adj-ink-4)', display: 'flex', padding: 2 }}
             >
               <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
@@ -173,7 +174,7 @@ export default function VeilleFilters({ filters, onChange, onReset, onClose }: P
             height="14"
             fill="none"
             viewBox="0 0 24 24"
-            stroke="var(--l-dim)"
+            stroke="var(--adj-ink-4)"
             strokeWidth={2}
             style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }}
           >
@@ -184,8 +185,8 @@ export default function VeilleFilters({ filters, onChange, onReset, onClose }: P
             onChange={e => onChange({ search: e.target.value, page: 1 })}
             placeholder={t('veille.filters.search')}
             style={{ ...inputStyle, paddingLeft: 32 }}
-            onFocus={e  => (e.currentTarget.style.borderColor = 'var(--l-blue)')}
-            onBlur={e   => (e.currentTarget.style.borderColor = 'var(--l-card-border)')}
+            onFocus={e  => (e.currentTarget.style.borderColor = 'var(--adj-brand)')}
+            onBlur={e   => (e.currentTarget.style.borderColor = 'var(--adj-hairline)')}
           />
         </div>
 
@@ -229,20 +230,16 @@ export default function VeilleFilters({ filters, onChange, onReset, onClose }: P
             onChange={e => onChange({ region: e.target.value, page: 1 })}
             placeholder={t('veille.filters.regionPh')}
             style={inputStyle}
-            onFocus={e  => (e.currentTarget.style.borderColor = 'var(--l-blue)')}
-            onBlur={e   => (e.currentTarget.style.borderColor = 'var(--l-card-border)')}
+            onFocus={e  => (e.currentTarget.style.borderColor = 'var(--adj-brand)')}
+            onBlur={e   => (e.currentTarget.style.borderColor = 'var(--adj-hairline)')}
           />
         </FilterSection>
 
         {/* Date limite from */}
         <FilterSection label={t('veille.filters.dateLimite')}>
-          <input
-            type="date"
+          <DateField
             value={filters.date_limite_from}
-            onChange={e => onChange({ date_limite_from: e.target.value, page: 1 })}
-            style={inputStyle}
-            onFocus={e  => (e.currentTarget.style.borderColor = 'var(--l-blue)')}
-            onBlur={e   => (e.currentTarget.style.borderColor = 'var(--l-card-border)')}
+            onChange={v => onChange({ date_limite_from: v, page: 1 })}
           />
         </FilterSection>
       </div>

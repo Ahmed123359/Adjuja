@@ -38,10 +38,10 @@ type Props = {
 function MetaChip({ label, value }: { label: string; value: string }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 3, minWidth: 0 }}>
-      <span style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.07em', color: 'var(--l-dim)' }}>
+      <span style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.07em', color: 'var(--adj-ink-4)' }}>
         {label}
       </span>
-      <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--l-text)', wordBreak: 'break-word', overflowWrap: 'anywhere', lineHeight: 1.4 }}>
+      <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--adj-ink)', wordBreak: 'break-word', overflowWrap: 'anywhere', lineHeight: 1.4 }}>
         {value}
       </span>
     </div>
@@ -64,11 +64,13 @@ function ActionBtn({
     alignItems:     'center',
     justifyContent: 'center',
     gap:            6,
-    padding:        '11px 16px',
-    minHeight:      44,
-    borderRadius:   10,
-    fontSize:       14,
+    padding:        '0 14px',
+    height:         38,
+    flex:           '1 1 auto',
+    borderRadius:   'var(--adj-round-m)',
+    fontSize:       'var(--adj-t-sm)',
     fontWeight:     600,
+    whiteSpace:     'nowrap',
     cursor:         disabled ? 'not-allowed' : 'pointer',
     border:         'none',
     fontFamily:     'inherit',
@@ -77,9 +79,9 @@ function ActionBtn({
     width:          '100%',
   };
   const styles: Record<string, React.CSSProperties> = {
-    primary:   { ...base, background: 'var(--l-blue)',   color: '#fff' },
-    secondary: { ...base, background: 'var(--l-input-bg)', color: 'var(--l-text)', border: '1px solid var(--l-card-border)' },
-    ghost:     { ...base, background: 'transparent', color: 'var(--l-sub)', border: '1px solid var(--l-card-border)' },
+    primary:   { ...base, background: 'var(--adj-brand)',   color: '#fff' },
+    secondary: { ...base, background: 'var(--adj-panel-2)', color: 'var(--adj-ink)', border: '1px solid var(--adj-hairline)' },
+    ghost:     { ...base, background: 'transparent', color: 'var(--adj-ink-2)', border: '1px solid var(--adj-hairline)' },
   };
   return (
     <button
@@ -241,11 +243,32 @@ export default function AoDetailPanel({ ao: initialAo, onClose, onUpdated }: Pro
     timer = setTimeout(tick, 3000);
     return () => { cancelled = true; clearTimeout(timer); };
   }, [isDownloading, noZipLink, ao.id]);
+  useEffect(() => {
+    const touche = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
+    document.addEventListener('keydown', touche);
+    return () => document.removeEventListener('keydown', touche);
+  }, [onClose]);
+
   const zipReady      = ao.status === 'favorited' && !!ao.zip_downloaded_at && !!ao.classified_docs;
   const canImport     = zipReady && ao.status === 'favorited';
 
   return (
+    <>
+      {/* Voile : il assombrit la liste, dit que le panneau est au premier plan,
+          et le referme d'un clic a cote. */}
+      {!isMobile && (
+        <div
+          className="adj-overlay"
+          onClick={onClose}
+          style={{
+            position: 'fixed', inset: 0, zIndex: 55,
+            background: 'rgba(16, 21, 41, 0.42)',
+          }}
+        />
+      )}
+
     <aside
+      className={isMobile ? undefined : 'adj-drawer'}
       style={
         isMobile
           ? {
@@ -254,18 +277,25 @@ export default function AoDetailPanel({ ao: initialAo, onClose, onUpdated }: Pro
               zIndex:        60,
               display:       'flex',
               flexDirection: 'column',
-              background:    'var(--l-card)',
+              background:    'var(--adj-panel)',
               overflowY:     'auto',
             }
           : {
-              width:          460,
-              flexShrink:     0,
-              display:        'flex',
-              flexDirection:  'column',
-              background:     'var(--l-card)',
-              borderLeft:     '1px solid var(--l-card-border)',
-              height:         '100%',
-              overflowY:      'auto',
+              // En SUPERPOSITION, pas en colonne voisine : en prenant 460px a
+              // la liste, le panneau faisait deborder le tableau et ses
+              // dernieres colonnes passaient dessous, donc invisibles.
+              position:      'fixed',
+              top:           0,
+              right:         0,
+              bottom:        0,
+              zIndex:        60,
+              width:         'min(520px, 92vw)',
+              display:       'flex',
+              flexDirection: 'column',
+              background:    'var(--adj-panel)',
+              borderLeft:    '1px solid var(--adj-hairline)',
+              boxShadow:     'var(--adj-lift-3)',
+              overflowY:     'auto',
             }
       }
     >
@@ -276,7 +306,7 @@ export default function AoDetailPanel({ ao: initialAo, onClose, onUpdated }: Pro
           alignItems:     'center',
           justifyContent: 'space-between',
           padding:        '14px 18px',
-          borderBottom:   '1px solid var(--l-card-border)',
+          borderBottom:   '1px solid var(--adj-hairline)',
           flexShrink:     0,
           gap:            12,
         }}
@@ -284,16 +314,17 @@ export default function AoDetailPanel({ ao: initialAo, onClose, onUpdated }: Pro
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
           <WatcherStatusBadge status={ao.status} size="md" />
           <span
+            title={ao.external_id || ao.source}
             style={{
-              fontSize:       11,
-              color:          'var(--l-dim)',
+              fontSize:       'var(--adj-t-xs)',
+              color:          'var(--adj-ink-4)',
               fontWeight:     500,
               whiteSpace:     'nowrap',
               overflow:       'hidden',
               textOverflow:   'ellipsis',
             }}
           >
-            {ao.source}
+            {ao.external_id || ao.source}
           </span>
         </div>
         <button
@@ -302,15 +333,15 @@ export default function AoDetailPanel({ ao: initialAo, onClose, onUpdated }: Pro
             background:   'none',
             border:       'none',
             cursor:       'pointer',
-            color:        'var(--l-dim)',
+            color:        'var(--adj-ink-4)',
             display:      'flex',
             padding:      4,
             borderRadius: 6,
             flexShrink:   0,
             transition:   'color .15s',
           }}
-          onMouseEnter={e => (e.currentTarget.style.color = 'var(--l-text)')}
-          onMouseLeave={e => (e.currentTarget.style.color = 'var(--l-dim)')}
+          onMouseEnter={e => (e.currentTarget.style.color = 'var(--adj-ink)')}
+          onMouseLeave={e => (e.currentTarget.style.color = 'var(--adj-ink-4)')}
         >
           <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
@@ -324,7 +355,7 @@ export default function AoDetailPanel({ ao: initialAo, onClose, onUpdated }: Pro
         {/* Acheteur + Titre */}
         <div style={{ marginBottom: 16 }}>
           {ao.acheteur && (
-            <p style={{ margin: '0 0 5px', fontSize: 12, fontWeight: 600, color: 'var(--l-sub)' }}>
+            <p style={{ margin: '0 0 5px', fontSize: 12, fontWeight: 600, color: 'var(--adj-ink-2)' }}>
               {ao.acheteur}
             </p>
           )}
@@ -339,7 +370,7 @@ export default function AoDetailPanel({ ao: initialAo, onClose, onUpdated }: Pro
                     margin: 0,
                     fontSize: 15,
                     fontWeight: 700,
-                    color: 'var(--l-text)',
+                    color: 'var(--adj-ink)',
                     lineHeight: 1.4,
                     ...(isLong && !titreExpanded
                       ? {
@@ -364,7 +395,7 @@ export default function AoDetailPanel({ ao: initialAo, onClose, onUpdated }: Pro
                       cursor: 'pointer',
                       fontSize: 12,
                       fontWeight: 600,
-                      color: 'var(--l-blue)',
+                      color: 'var(--adj-brand)',
                       fontFamily: 'inherit',
                     }}
                   >
@@ -377,10 +408,10 @@ export default function AoDetailPanel({ ao: initialAo, onClose, onUpdated }: Pro
                       marginTop: 8,
                       padding: '7px 11px',
                       borderRadius: 8,
-                      background: 'var(--l-blue-a)',
+                      background: 'var(--adj-brand-tint)',
                       border: '1px solid rgba(30,136,229,0.2)',
                       fontSize: 12,
-                      color: 'var(--l-blue)',
+                      color: 'var(--adj-brand)',
                       lineHeight: 1.5,
                     }}
                   >
@@ -398,8 +429,8 @@ export default function AoDetailPanel({ ao: initialAo, onClose, onUpdated }: Pro
             {ao.budget_estime && (
               <span style={{
                 fontSize: 12, fontWeight: 600, padding: '4px 10px',
-                borderRadius: 20, background: 'var(--l-blue-a)',
-                color: 'var(--l-blue)', border: '1px solid rgba(30,136,229,0.2)',
+                borderRadius: 20, background: 'var(--adj-brand-tint)',
+                color: 'var(--adj-brand)', border: '1px solid rgba(30,136,229,0.2)',
               }}>
                 {t('veille.detail.budget')}: {formatAmount(ao.budget_estime)}
               </span>
@@ -407,8 +438,8 @@ export default function AoDetailPanel({ ao: initialAo, onClose, onUpdated }: Pro
             {ao.caution && (
               <span style={{
                 fontSize: 12, fontWeight: 600, padding: '4px 10px',
-                borderRadius: 20, background: 'var(--l-input-bg)',
-                color: 'var(--l-sub)', border: '1px solid var(--l-card-border)',
+                borderRadius: 20, background: 'var(--adj-panel-2)',
+                color: 'var(--adj-ink-2)', border: '1px solid var(--adj-hairline)',
               }}>
                 {t('veille.detail.caution')}: {formatAmount(ao.caution)}
               </span>
@@ -423,9 +454,9 @@ export default function AoDetailPanel({ ao: initialAo, onClose, onUpdated }: Pro
             gridTemplateColumns: '1fr 1fr',
             gap:                 14,
             padding:             '14px 16px',
-            background:          'var(--l-input-bg)',
+            background:          'var(--adj-panel-2)',
             borderRadius:        10,
-            border:              '1px solid var(--l-card-border)',
+            border:              '1px solid var(--adj-hairline)',
             marginBottom:        18,
           }}
         >
@@ -443,7 +474,7 @@ export default function AoDetailPanel({ ao: initialAo, onClose, onUpdated }: Pro
         </div>
 
         {/* Actions */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 20 }}>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 'var(--adj-2)', marginBottom: 'var(--adj-5)' }}>
 
           {/* Mark seen */}
           {ao.status === 'new' && (
@@ -490,9 +521,9 @@ export default function AoDetailPanel({ ao: initialAo, onClose, onUpdated }: Pro
                 <div style={{
                   padding: '10px 14px', borderRadius: 8,
                   background: 'rgba(107,139,179,0.08)',
-                  border: '1px solid var(--l-card-border)',
+                  border: '1px solid var(--adj-hairline)',
                 }}>
-                  <p style={{ margin: 0, fontSize: 12, color: 'var(--l-sub)' }}>
+                  <p style={{ margin: 0, fontSize: 12, color: 'var(--adj-ink-2)' }}>
                     {t('veille.detail.noZipLink')}
                   </p>
                 </div>
@@ -574,13 +605,13 @@ export default function AoDetailPanel({ ao: initialAo, onClose, onUpdated }: Pro
               borderRadius:   8,
               fontSize:       13,
               fontWeight:     500,
-              color:          'var(--l-sub)',
-              border:         '1px solid var(--l-card-border)',
+              color:          'var(--adj-ink-2)',
+              border:         '1px solid var(--adj-hairline)',
               textDecoration: 'none',
               transition:     'color .15s',
             }}
-            onMouseEnter={e => (e.currentTarget.style.color = 'var(--l-text)')}
-            onMouseLeave={e => (e.currentTarget.style.color = 'var(--l-sub)')}
+            onMouseEnter={e => (e.currentTarget.style.color = 'var(--adj-ink)')}
+            onMouseLeave={e => (e.currentTarget.style.color = 'var(--adj-ink-2)')}
           >
             <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" />
@@ -595,7 +626,7 @@ export default function AoDetailPanel({ ao: initialAo, onClose, onUpdated }: Pro
         )}
 
         {/* Tabs */}
-        <div style={{ display: 'flex', gap: 0, borderBottom: '1px solid var(--l-card-border)', marginBottom: 16 }}>
+        <div style={{ display: 'flex', gap: 0, borderBottom: '1px solid var(--adj-hairline)', marginBottom: 16 }}>
           {(['resume', 'docs', 'goNoGo'] as Tab[]).map(t2 => (
             <button
               key={t2}
@@ -604,8 +635,8 @@ export default function AoDetailPanel({ ao: initialAo, onClose, onUpdated }: Pro
                 padding:      '8px 16px',
                 background:   'none',
                 border:       'none',
-                borderBottom: tab === t2 ? '2px solid var(--l-blue)' : '2px solid transparent',
-                color:        tab === t2 ? 'var(--l-blue)' : 'var(--l-sub)',
+                borderBottom: tab === t2 ? '2px solid var(--adj-brand)' : '2px solid transparent',
+                color:        tab === t2 ? 'var(--adj-brand)' : 'var(--adj-ink-2)',
                 fontSize:     13,
                 fontWeight:   tab === t2 ? 700 : 500,
                 cursor:       'pointer',
@@ -621,7 +652,7 @@ export default function AoDetailPanel({ ao: initialAo, onClose, onUpdated }: Pro
 
         {/* Tab content */}
         {tab === 'resume' && (
-          <p style={{ margin: 0, fontSize: 13, color: 'var(--l-sub)', lineHeight: 1.7 }}>
+          <p style={{ margin: 0, fontSize: 13, color: 'var(--adj-ink-2)', lineHeight: 1.7 }}>
             {ao.description ?? t('veille.detail.noDesc')}
           </p>
         )}
@@ -638,25 +669,25 @@ export default function AoDetailPanel({ ao: initialAo, onClose, onUpdated }: Pro
                       justifyContent: 'space-between',
                       padding:        '10px 12px',
                       borderRadius:   8,
-                      border:         '1px solid var(--l-card-border)',
-                      background:     'var(--l-input-bg)',
+                      border:         '1px solid var(--adj-hairline)',
+                      background:     'var(--adj-panel-2)',
                     }}
                   >
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                      <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="var(--l-dim)" strokeWidth={1.5}>
+                      <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="var(--adj-ink-4)" strokeWidth={1.5}>
                         <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
                       </svg>
-                      <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--l-text)', textTransform: 'capitalize' }}>
+                      <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--adj-ink)', textTransform: 'capitalize' }}>
                         {label.replace(/_/g, ' ')}
                       </span>
                     </div>
-                    <span style={{ fontSize: 11, color: 'var(--l-dim)', fontFamily: 'monospace' }}>
+                    <span style={{ fontSize: 11, color: 'var(--adj-ink-4)', fontFamily: 'monospace' }}>
                       {key.split('/').pop()}
                     </span>
                   </div>
                 ))
               : (
-                <p style={{ margin: 0, fontSize: 13, color: 'var(--l-dim)' }}>
+                <p style={{ margin: 0, fontSize: 13, color: 'var(--adj-ink-4)' }}>
                   {isDownloading || progress
                     ? t('veille.detail.downloadingZip')
                     : noZipLink
@@ -670,7 +701,7 @@ export default function AoDetailPanel({ ao: initialAo, onClose, onUpdated }: Pro
         {tab === 'goNoGo' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
             {!zipReady ? (
-              <p style={{ margin: 0, fontSize: 13, color: 'var(--l-dim)' }}>
+              <p style={{ margin: 0, fontSize: 13, color: 'var(--adj-ink-4)' }}>
                 {t('veille.detail.goNoGo.needFavorite')}
               </p>
             ) : (
@@ -704,7 +735,7 @@ export default function AoDetailPanel({ ao: initialAo, onClose, onUpdated }: Pro
                     {verdict.raisons.length > 0 && (
                       <ul style={{ margin: 0, padding: '0 0 0 18px', display: 'flex', flexDirection: 'column', gap: 6 }}>
                         {verdict.raisons.map((raison, i) => (
-                          <li key={i} style={{ fontSize: 12.5, color: 'var(--l-sub)', lineHeight: 1.5 }}>
+                          <li key={i} style={{ fontSize: 12.5, color: 'var(--adj-ink-2)', lineHeight: 1.5 }}>
                             {raison}
                           </li>
                         ))}
@@ -718,5 +749,6 @@ export default function AoDetailPanel({ ao: initialAo, onClose, onUpdated }: Pro
         )}
       </div>
     </aside>
+    </>
   );
 }

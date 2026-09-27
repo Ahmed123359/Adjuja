@@ -271,33 +271,6 @@ html, body { max-width: 100%; overflow-x: hidden; }
   .adj-tasks-split { grid-template-rows: minmax(0, 1fr); }
 }
 
-/* --- Apparition des surfaces flottantes --------------------------------------
-   Modales, palettes et listes deroulantes apparaissaient d'un coup : sans
-   transition, l'oeil ne sait pas d'ou la surface sort ni ce qu'elle recouvre.
-
-   Deux mouvements seulement, et courts : le voile se fond, le panneau monte de
-   quelques pixels en grandissant tres legerement. La courbe sort vite et
-   ralentit a l'arrivee, ce qui donne l'impression que la surface se pose.
-   Au-dela de 200ms une ouverture devient une attente. */
-@keyframes adj-fade {
-  from { opacity: 0; }
-  to   { opacity: 1; }
-}
-
-@keyframes adj-pop {
-  from { opacity: 0; transform: translateY(8px) scale(.985); }
-  to   { opacity: 1; transform: none; }
-}
-
-.adj-overlay { animation: adj-fade .16s ease-out; }
-.adj-pop     { animation: adj-pop .18s cubic-bezier(.16, 1, .3, 1); }
-
-/* Le mouvement reduit supprime le deplacement, jamais le fondu : sans aucun
-   signal d'apparition, une modale semble avoir toujours ete la. */
-@media (prefers-reduced-motion: reduce) {
-  .adj-pop { animation: adj-fade .12s ease-out; }
-}
-
 /* Chiffres alignes. Applique partout ou des nombres se comparent. */
 .adj-fig {
   font-variant-numeric: tabular-nums lining-nums;
@@ -438,8 +411,19 @@ html, body { max-width: 100%; overflow-x: hidden; }
 
 /* Le mouvement reduit supprime le deplacement, jamais le fondu : sans aucun
    signal d'apparition, une modale semble avoir toujours ete la. */
+/* Tiroir lateral : il entre par la droite plutot que d'apparaitre. Le
+   mouvement dit d'ou vient le panneau et ce qu'il recouvre -- sans lui, un
+   panneau de 520px qui surgit passe pour un changement d'ecran. */
+@keyframes adj-drawer {
+  from { opacity: 0; transform: translateX(24px); }
+  to   { opacity: 1; transform: none; }
+}
+
+.adj-drawer { animation: adj-drawer .2s cubic-bezier(.16, 1, .3, 1); }
+
 @media (prefers-reduced-motion: reduce) {
-  .adj-pop { animation: adj-fade .12s ease-out; }
+  .adj-pop,
+  .adj-drawer { animation: adj-fade .12s ease-out; }
 }
 
 /* Chiffres alignes. Applique partout ou des nombres se comparent. */

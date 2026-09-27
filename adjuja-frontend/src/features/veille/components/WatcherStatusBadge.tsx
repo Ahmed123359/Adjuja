@@ -3,24 +3,24 @@ import type { ScrapedAoStatus } from '../../../types';
 
 const STYLES: Record<ScrapedAoStatus, { bg: string; color: string; border: string }> = {
   new: {
-    bg:     'rgba(30,136,229,0.10)',
-    color:  '#1E88E5',
-    border: 'rgba(30,136,229,0.25)',
+    bg:     'var(--adj-brand-tint)',
+    color:  'var(--adj-brand)',
+    border: 'var(--adj-brand-edge)',
   },
   seen: {
-    bg:     'var(--l-input-bg)',
-    color:  'var(--l-sub)',
-    border: 'var(--l-card-border)',
+    bg:     'var(--adj-panel-2)',
+    color:  'var(--adj-ink-2)',
+    border: 'var(--adj-hairline)',
   },
   favorited: {
-    bg:     'rgba(245,158,11,0.10)',
-    color:  '#d97706',
-    border: 'rgba(245,158,11,0.25)',
+    bg:     'var(--adj-hold-tint)',
+    color:  'var(--adj-hold)',
+    border: 'var(--adj-hold)',
   },
   imported: {
-    bg:     'rgba(34,197,94,0.10)',
-    color:  '#16a34a',
-    border: 'rgba(34,197,94,0.25)',
+    bg:     'var(--adj-pos-tint)',
+    color:  'var(--adj-pos)',
+    border: 'var(--adj-pos)',
   },
 };
 
@@ -35,10 +35,12 @@ export default function WatcherStatusBadge({ status, size = 'sm' }: Props) {
   return (
     <span
       style={{
-        fontSize:      size === 'sm' ? 11 : 12,
+        display:       'inline-block',
+        flexShrink:    0,
+        fontSize:      size === 'sm' ? 'var(--adj-t-xs)' : 'var(--adj-t-sm)',
         fontWeight:    600,
         padding:       size === 'sm' ? '2px 8px' : '4px 11px',
-        borderRadius:  20,
+        borderRadius:  'var(--adj-round-s)',
         background:    s.bg,
         color:         s.color,
         border:        `1px solid ${s.border}`,

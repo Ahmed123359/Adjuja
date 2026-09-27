@@ -33,22 +33,22 @@ export default function DownloadProgressBanner({ progress, fallback }: Props) {
       style={{
         display: 'flex', alignItems: 'center', gap: 10,
         padding: '10px 14px', borderRadius: 8,
-        background: 'var(--l-warn-bg)',
-        border: '1px solid var(--l-warn-border)',
+        background: 'var(--adj-hold-tint)',
+        border: '1px solid var(--adj-hold)',
       }}
     >
       <div style={{
         width: 14, height: 14, borderRadius: '50%',
-        border: '2px solid var(--l-warn-border)',
-        borderTopColor: 'var(--l-warn)',
+        border: '2px solid var(--adj-hold)',
+        borderTopColor: 'var(--adj-hold)',
         animation: 'spin 1s linear infinite',
         flexShrink: 0,
       }} />
-      <span style={{ flex: 1, minWidth: 0, fontSize: 13, color: 'var(--l-warn)', fontWeight: 500 }}>
+      <span style={{ flex: 1, minWidth: 0, fontSize: 13, color: 'var(--adj-hold)', fontWeight: 500 }}>
         {label}
       </span>
       {progress && !retrying && (
-        <span style={{ flexShrink: 0, fontSize: 12, color: 'var(--l-warn)', fontVariantNumeric: 'tabular-nums' }}>
+        <span style={{ flexShrink: 0, fontSize: 12, color: 'var(--adj-hold)', fontVariantNumeric: 'tabular-nums' }}>
           {t('veille.detail.downloadElapsed', { s: progress.elapsed_s })}
         </span>
       )}

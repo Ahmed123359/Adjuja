@@ -44,9 +44,9 @@ export default function CategorieSelect({ value, onChange, options }: Props) {
           gap:            8,
           padding:        '8px 11px',
           borderRadius:   8,
-          border:         `1px solid ${open ? 'var(--l-blue)' : 'var(--l-card-border)'}`,
-          background:     'var(--l-input-bg)',
-          color:          value ? 'var(--l-text)' : 'var(--l-dim)',
+          border:         `1px solid ${open ? 'var(--adj-brand)' : 'var(--adj-hairline)'}`,
+          background:     'var(--adj-panel-2)',
+          color:          value ? 'var(--adj-ink)' : 'var(--adj-ink-4)',
           fontSize:       13,
           fontFamily:     'inherit',
           cursor:         'pointer',
@@ -71,8 +71,8 @@ export default function CategorieSelect({ value, onChange, options }: Props) {
             left:         0,
             right:        0,
             zIndex:       60,
-            background:   'var(--l-card)',
-            border:       '1px solid var(--l-card-border)',
+            background:   'var(--adj-panel)',
+            border:       '1px solid var(--adj-hairline)',
             borderRadius: 10,
             boxShadow:    '0 8px 24px rgba(0,0,0,0.35)',
             overflow:     'hidden',
@@ -92,14 +92,14 @@ export default function CategorieSelect({ value, onChange, options }: Props) {
                   padding:      '8px 10px',
                   borderRadius: 6,
                   border:       'none',
-                  background:   selected ? 'var(--l-blue-a)' : 'transparent',
-                  color:        selected ? 'var(--l-blue)' : 'var(--l-text)',
+                  background:   selected ? 'var(--adj-brand-tint)' : 'transparent',
+                  color:        selected ? 'var(--adj-brand)' : 'var(--adj-ink)',
                   fontSize:     13,
                   fontWeight:   selected ? 600 : 500,
                   fontFamily:   'inherit',
                   cursor:       'pointer',
                 }}
-                onMouseEnter={e => { if (!selected) e.currentTarget.style.background = 'var(--l-input-bg)'; }}
+                onMouseEnter={e => { if (!selected) e.currentTarget.style.background = 'var(--adj-panel-2)'; }}
                 onMouseLeave={e => { if (!selected) e.currentTarget.style.background = 'transparent'; }}
               >
                 {opt.label}

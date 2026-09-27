@@ -1,14 +1,16 @@
-// Decoupe depuis pages/DashboardPage.tsx (2026-09-12, refactoring par domaine).
-// Deplacement pur : aucun changement de comportement.
+// Champ de saisie des sections de reglages encore ecrites en style inline
+// (notifications, membres). Aligne le 2026-09-27 sur le champ du socle
+// (`fieldInputStyle` de ./ui.tsx) : 44px, texte a 16px, tokens --adj-*.
 
 export const inputStyle: React.CSSProperties = {
   width: "100%",
-  padding: "7px 10px",
-  borderRadius: 7,
-  border: "1px solid var(--l-card-border)",
-  background: "var(--l-input-bg)",
-  color: "var(--l-text)",
-  fontSize: 13,
+  height: 44,
+  padding: "0 14px",
+  borderRadius: "var(--adj-round-s)",
+  border: "1px solid var(--adj-hairline)",
+  background: "var(--adj-panel)",
+  color: "var(--adj-ink)",
+  fontSize: "var(--adj-t-base)",
   outline: "none",
   boxSizing: "border-box",
   fontFamily: "inherit",

@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { startFiller, getFillerStatus, cancelFiller } from "../../../api";
 import type { FillerResult, FillerOutputFile } from "../../../types";
+import { useApercuDocument } from "../../../shared/ui/DocumentPreviewModal";
 
 const LS_KEY = "remplissage_job_id";
 
@@ -41,6 +42,10 @@ export default function RemplissageTab() {
   const [error, setError] = useState<string | null>(null);
 
   const fileRef = useRef<HTMLInputElement>(null);
+  // Apercu du dossier depose et des documents remplis. Seuls les PDF
+  // s'affichent : un .zip ou un .docx n'a pas de rendu dans le navigateur.
+  const { ouvrirFichier, ouvrirUrl, modale: apercuModale } = useApercuDocument();
+  const estPdf = (nom: string) => /\.pdf$/i.test(nom);
 
   // Restauration d'un job actif au montage
   useEffect(() => {
@@ -134,43 +139,16 @@ export default function RemplissageTab() {
 
   return (
     <div className="space-y-4">
-      {/* Hero */}
-      <div className="space-y-1 animate-fade-in">
-        <h1 className="text-2xl font-bold text-foreground tracking-tight">Remplissage automatique</h1>
-        <p className="text-sm text-muted-foreground max-w-xl">
-          Chargez votre dossier AO et ADJUJA remplit automatiquement l'acte d'engagement, le bordereau
-          des prix et les autres formulaires à partir de votre profil entreprise.
-        </p>
-      </div>
-
-      {/* Steps */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-        {[
-          { n: "01", title: "Profil entreprise", desc: "Vos informations légales (configurées dans votre profil)" },
-          { n: "02", title: "Lots concernés", desc: "Un ou plusieurs lots séparés par des virgules" },
-          { n: "03", title: "Dossier AO", desc: "PDF contenant les formulaires à remplir" },
-        ].map(({ n, title, desc }) => (
-          <div
-            key={n}
-            className="flex flex-col gap-1.5 p-3 rounded-xl border border-border bg-card hover:shadow-card-hover hover:border-primary/20 transition-all group"
-          >
-            <div className="h-7 w-7 rounded-lg gradient-primary flex items-center justify-center text-primary-foreground text-xs font-bold">
-              {n}
-            </div>
-            <div>
-              <p className="text-sm font-semibold text-foreground group-hover:text-primary transition-colors">{title}</p>
-              <p className="text-xs text-muted-foreground mt-0.5">{desc}</p>
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {/* Lots */}
-      <div className="border border-border rounded-xl bg-card p-4 space-y-2">
-        <label className="text-xs font-medium text-foreground block">
-          Lots <span className="text-muted-foreground font-normal">(numéros séparés par des virgules)</span>
-        </label>
+      {/* Configuration : meme carte que Signature & Cachet et Paraphe */}
+      <div className="border border-border rounded-xl bg-card p-6 space-y-5">
+        <div className="flex items-center justify-between">
+          <label htmlFor="remplissage-lots" className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+            Lots concernés
+          </label>
+          <span className="text-xs text-muted-foreground">Données : profil entreprise</span>
+        </div>
         <input
+          id="remplissage-lots"
           type="text"
           value={lotsRaw}
           onChange={(e) => setLotsRaw(e.target.value)}
@@ -193,7 +171,7 @@ export default function RemplissageTab() {
         onDragLeave={() => setIsDragging(false)}
         onDrop={(e) => { e.preventDefault(); setIsDragging(false); pickFile(e.dataTransfer.files); }}
         onClick={() => !file && fileRef.current?.click()}
-        className={`border-2 border-dashed rounded-xl px-6 py-5 flex items-center gap-4 transition-all ${
+        className={`border-2 border-dashed rounded-xl px-6 py-12 flex flex-col items-center justify-center text-center gap-4 transition-all ${
           file
             ? "border-emerald-500/30 bg-emerald-500/5 cursor-default"
             : isDragging
@@ -201,33 +179,45 @@ export default function RemplissageTab() {
             : "border-border hover:border-primary/40 hover:bg-accent/20 cursor-pointer"
         }`}
       >
-        <div className={`h-12 w-12 rounded-xl flex items-center justify-center flex-shrink-0 ${file ? "bg-emerald-500/10" : "bg-accent"}`}>
+        <div className={`h-14 w-14 rounded-2xl flex items-center justify-center flex-shrink-0 ${file ? "bg-emerald-500/10" : "bg-accent"}`}>
           {file ? (
-            <svg className="h-6 w-6 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <svg className="h-5 w-5 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
             </svg>
           ) : (
-            <svg className="h-6 w-6 text-accent-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+            <svg className="h-5 w-5 text-accent-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
             </svg>
           )}
         </div>
-        <div className="flex-1 min-w-0">
+        <div className="min-w-0 max-w-full">
           {file ? (
             <>
-              <p className="text-sm font-semibold text-foreground truncate">{file.name}</p>
+              <p className="text-base font-semibold text-foreground truncate">{file.name}</p>
               <p className="text-xs text-muted-foreground mt-0.5">{formatSize(file.size)}</p>
             </>
           ) : (
             <>
-              <p className="text-sm font-semibold text-foreground">Dossier AO</p>
+              <p className="text-base font-semibold text-foreground">Glissez votre dossier AO ici</p>
               <p className="text-xs text-muted-foreground">
-                Glissez votre fichier PDF ou{" "}
-                <span className="text-primary font-medium">parcourez vos fichiers</span>
+                ou <span className="text-primary font-medium">parcourez vos fichiers</span> · .pdf ou .zip · un seul fichier
               </p>
             </>
           )}
         </div>
+        {file && estPdf(file.name) && (
+          <button
+            onClick={(e) => { e.stopPropagation(); ouvrirFichier(file); }}
+            title="Voir le dossier déposé"
+            className="text-xs font-medium px-3 py-1.5 rounded-lg border border-border bg-card text-muted-foreground hover:text-primary hover:border-primary/30 transition-colors flex items-center gap-1.5"
+          >
+            <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                      </svg>
+            Aperçu
+          </button>
+        )}
         {file && (
           <button
             onClick={(e) => { e.stopPropagation(); setFile(null); setResult(null); setError(null); }}
@@ -332,6 +322,19 @@ export default function RemplissageTab() {
                     {f.filename} · <span className="uppercase font-medium">{f.format}</span>
                   </p>
                 </div>
+                {f.download_url && (f.format === "pdf" || estPdf(f.filename)) && (
+                  <button
+                    onClick={() => ouvrirUrl(f.download_url!, f.filename)}
+                    title="Voir le document rempli"
+                    className="text-xs font-medium px-3 py-1.5 rounded-lg border border-border bg-card text-muted-foreground hover:text-primary hover:border-primary/30 transition-colors flex items-center gap-1.5 flex-shrink-0"
+                  >
+                    <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                      </svg>
+                    Aperçu
+                  </button>
+                )}
                 <button
                   onClick={() => handleDownload(f)}
                   className="text-xs font-medium px-3 py-1.5 rounded-lg border border-border bg-card text-muted-foreground hover:text-primary hover:border-primary/30 transition-colors flex items-center gap-1.5 flex-shrink-0"
@@ -365,6 +368,7 @@ export default function RemplissageTab() {
           </p>
         </div>
       )}
+      {apercuModale}
     </div>
   );
 }

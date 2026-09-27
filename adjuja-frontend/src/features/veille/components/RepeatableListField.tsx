@@ -2,12 +2,13 @@ import { useState } from 'react';
 
 const inputStyle: React.CSSProperties = {
   flex:         1,
-  padding:      '7px 10px',
-  borderRadius: 7,
-  border:       '1px solid var(--l-card-border)',
-  background:   'var(--l-input-bg)',
-  color:        'var(--l-text)',
-  fontSize:     12.5,
+  height:       44,
+  padding:      '0 14px',
+  borderRadius: 'var(--adj-round-s)',
+  border:       '1px solid var(--adj-hairline)',
+  background:   'var(--adj-panel)',
+  color:        'var(--adj-ink)',
+  fontSize:     'var(--adj-t-base)',
   outline:      'none',
   boxSizing:    'border-box',
   fontFamily:   'inherit',
@@ -21,11 +22,11 @@ function RemoveButton({ onClick }: { onClick: () => void }) {
       onClick={onClick}
       style={{
         display: 'flex', alignItems: 'center', justifyContent: 'center',
-        width: 26, height: 26, borderRadius: 7, border: '1px solid var(--l-card-border)',
-        background: 'var(--l-input-bg)', color: 'var(--l-dim)', cursor: 'pointer', flexShrink: 0, padding: 0,
+        width: 44, height: 44, borderRadius: 'var(--adj-round-s)', border: '1px solid var(--adj-hairline)',
+        background: 'var(--adj-panel)', color: 'var(--adj-ink-3)', cursor: 'pointer', flexShrink: 0, padding: 0,
       }}
     >
-      <svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+      <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
         <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
       </svg>
     </button>
@@ -39,12 +40,12 @@ function AddButton({ onClick, label }: { onClick: () => void; label: string }) {
       onClick={onClick}
       style={{
         display: 'flex', alignItems: 'center', gap: 6,
-        padding: '7px 12px', borderRadius: 7, border: '1px dashed var(--l-card-border)',
-        background: 'transparent', color: 'var(--l-blue)', cursor: 'pointer',
-        fontSize: 12.5, fontWeight: 600, fontFamily: 'inherit', alignSelf: 'flex-start',
+        height: 44, padding: '0 16px', borderRadius: 'var(--adj-round-s)', border: '1px dashed var(--adj-edge)',
+        background: 'transparent', color: 'var(--adj-brand)', cursor: 'pointer', flexShrink: 0, whiteSpace: 'nowrap',
+        fontSize: 'var(--adj-t-sm)', fontWeight: 600, fontFamily: 'inherit', alignSelf: 'flex-start',
       }}
     >
-      <svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+      <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
         <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
       </svg>
       {label}
@@ -80,9 +81,9 @@ export function StringListField({ items, onChange, placeholder, addLabel }: Stri
               key={`${item}-${i}`}
               style={{
                 display: 'flex', alignItems: 'center', gap: 6,
-                padding: '4px 6px 4px 10px', borderRadius: 20,
-                background: 'var(--l-blue-a)', color: 'var(--l-blue)',
-                fontSize: 12, fontWeight: 600,
+                padding: '6px 8px 6px 12px', borderRadius: 'var(--adj-round-s)',
+                background: 'var(--adj-brand-tint)', color: 'var(--adj-brand)',
+                fontSize: 'var(--adj-t-sm)', fontWeight: 600,
               }}
             >
               {item}
@@ -91,11 +92,11 @@ export function StringListField({ items, onChange, placeholder, addLabel }: Stri
                 onClick={() => onChange(items.filter((_, j) => j !== i))}
                 style={{
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  width: 14, height: 14, borderRadius: '50%', border: 'none',
-                  background: 'transparent', color: 'var(--l-blue)', cursor: 'pointer', padding: 0,
+                  width: 20, height: 20, borderRadius: '50%', border: 'none',
+                  background: 'transparent', color: 'var(--adj-brand)', cursor: 'pointer', padding: 0,
                 }}
               >
-                <svg width="9" height="9" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                <svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
                 </svg>
               </button>

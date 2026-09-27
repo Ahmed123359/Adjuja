@@ -62,14 +62,14 @@ function TableSkeleton() {
               key={j}
               style={{
                 padding:     '11px 14px',
-                borderBottom: '1px solid var(--l-card-border)',
+                borderBottom: '1px solid var(--adj-hairline)',
               }}
             >
               <div
                 style={{
                   height:       12,
                   borderRadius: 4,
-                  background:   'var(--l-input-bg)',
+                  background:   'var(--adj-panel-2)',
                   width:        j === 1 ? '80%' : j === 0 ? '70%' : '55%',
                   animation:    'pulse 1.5s infinite',
                 }}
@@ -116,7 +116,7 @@ function EmptyState({
 
   return (
     <tr>
-      <td colSpan={7}>
+      <td colSpan={8}>
         <div
           style={{
             display:       'flex',
@@ -132,19 +132,19 @@ function EmptyState({
               width:          52,
               height:         52,
               borderRadius:   14,
-              background:     'var(--l-blue-a)',
-              border:         '1px solid var(--l-card-border)',
+              background:     'var(--adj-brand-tint)',
+              border:         '1px solid var(--adj-hairline)',
               display:        'flex',
               alignItems:     'center',
               justifyContent: 'center',
             }}
           >
-            <svg width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="var(--l-blue)" strokeWidth={1.5}>
+            <svg width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="var(--adj-brand)" strokeWidth={1.5}>
               <path strokeLinecap="round" strokeLinejoin="round" d={icon} />
             </svg>
           </div>
-          <p style={{ margin: 0, fontSize: 14, fontWeight: 600, color: 'var(--l-text)' }}>{title}</p>
-          <p style={{ margin: 0, fontSize: 13, color: 'var(--l-sub)', maxWidth: 380 }}>{desc}</p>
+          <p style={{ margin: 0, fontSize: 14, fontWeight: 600, color: 'var(--adj-ink)' }}>{title}</p>
+          <p style={{ margin: 0, fontSize: 13, color: 'var(--adj-ink-2)', maxWidth: '46ch' }}>{desc}</p>
         </div>
       </td>
     </tr>
@@ -167,70 +167,92 @@ function AoTableRow({
       onClick={onClick}
       style={{
         cursor:     'pointer',
-        background: selected ? 'var(--l-blue-a)' : 'transparent',
+        background: selected ? 'var(--adj-brand-tint)' : 'transparent',
         transition: 'background .1s',
       }}
       onMouseEnter={e => {
-        if (!selected) (e.currentTarget as HTMLTableRowElement).style.background = 'var(--l-input-bg)';
+        if (!selected) (e.currentTarget as HTMLTableRowElement).style.background = 'var(--adj-panel-2)';
       }}
       onMouseLeave={e => {
-        (e.currentTarget as HTMLTableRowElement).style.background = selected ? 'var(--l-blue-a)' : 'transparent';
+        (e.currentTarget as HTMLTableRowElement).style.background = selected ? 'var(--adj-brand-tint)' : 'transparent';
       }}
     >
       {/* Acheteur */}
-      <td style={{ padding: '10px 14px', borderBottom: '1px solid var(--l-card-border)', minWidth: 160, maxWidth: 220 }}>
-        <p style={{ margin: 0, fontSize: 13, fontWeight: 500, color: 'var(--l-text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+      <td style={{ padding: '12px 14px', borderBottom: '1px solid var(--adj-hairline)', maxWidth: '26ch' }}>
+        <p
+          title={ao.acheteur ?? undefined}
+          style={{
+            margin: 0, fontSize: 'var(--adj-t-sm)', fontWeight: 500, color: 'var(--adj-ink)',
+            // Deux lignes plutot qu'une troncature : « MENESFC / DMENB -
+            // DIRECTI... » ne permet pas de distinguer deux directions du meme
+            // ministere, ce qui est precisement ce qu'on lit ici.
+            display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical',
+            overflow: 'hidden', lineHeight: 1.35,
+          }}
+        >
           {ao.acheteur ?? '-'}
         </p>
       </td>
 
-      {/* Titre */}
-      <td style={{ padding: '10px 14px', borderBottom: '1px solid var(--l-card-border)' }}>
-        <p style={{ margin: 0, fontSize: 13, color: 'var(--l-text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 340 }}>
+      {/* Titre : la colonne qu'on lit reellement, donc la plus large. */}
+      <td style={{ padding: '12px 14px', borderBottom: '1px solid var(--adj-hairline)', width: '100%' }}>
+        <p
+          title={ao.titre}
+          style={{
+            margin: 0, fontSize: 'var(--adj-t-sm)', color: 'var(--adj-ink)', lineHeight: 1.4,
+            display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden',
+          }}
+        >
           {formatTitre(splitReservationClause(ao.titre).main)}
         </p>
       </td>
 
-      {/* Date pub */}
-      <td style={{ padding: '10px 14px', borderBottom: '1px solid var(--l-card-border)', whiteSpace: 'nowrap' }}>
-        <span style={{ fontSize: 12, color: 'var(--l-sub)' }}>{formatDate(ao.date_publication)}</span>
+      {/* Date de publication */}
+      <td style={{ padding: '10px 14px', borderBottom: '1px solid var(--adj-hairline)', whiteSpace: 'nowrap' }}>
+        <span style={{ fontSize: 12, color: 'var(--adj-ink-2)' }}>{formatDate(ao.date_publication)}</span>
       </td>
 
       {/* Date limite */}
-      <td style={{ padding: '10px 14px', borderBottom: '1px solid var(--l-card-border)', whiteSpace: 'nowrap' }}>
+      <td style={{ padding: '10px 14px', borderBottom: '1px solid var(--adj-hairline)', whiteSpace: 'nowrap' }}>
         <span style={{
           fontSize:   12,
           fontWeight: deadlineSoon ? 700 : 400,
-          color:      deadlineSoon ? '#d97706' : 'var(--l-sub)',
+          color:      deadlineSoon ? '#d97706' : 'var(--adj-ink-2)',
         }}>
           {formatDate(ao.date_limite)}
         </span>
       </td>
 
-      {/* Catégorie */}
-      <td style={{ padding: '10px 14px', borderBottom: '1px solid var(--l-card-border)', maxWidth: 140 }}>
-        <span style={{ fontSize: 12, color: 'var(--l-sub)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'block' }}>
+      {/* Categorie */}
+      <td style={{ padding: '10px 14px', borderBottom: '1px solid var(--adj-hairline)', maxWidth: '18ch' }}>
+        <span style={{ fontSize: 12, color: 'var(--adj-ink-2)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'block' }}>
           {ao.categorie ?? '-'}
         </span>
       </td>
 
-      {/* Région */}
-      <td style={{ padding: '10px 14px', borderBottom: '1px solid var(--l-card-border)', maxWidth: 140 }}>
-        <span style={{ fontSize: 12, color: 'var(--l-sub)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'block' }}>
+      {/* Localisation */}
+      <td style={{ padding: '10px 14px', borderBottom: '1px solid var(--adj-hairline)', maxWidth: '18ch' }}>
+        <span style={{ fontSize: 12, color: 'var(--adj-ink-2)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'block' }}>
           {ao.region || ao.ville || '-'}
         </span>
       </td>
 
-      {/* Budget + Statut */}
-      <td style={{ padding: '10px 14px', borderBottom: '1px solid var(--l-card-border)', textAlign: 'right', whiteSpace: 'nowrap' }}>
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4 }}>
-          {ao.budget_estime && (
-            <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--l-text)' }}>
-              {formatAmount(ao.budget_estime)} Dhs
-            </span>
-          )}
-          <WatcherStatusBadge status={ao.status} />
-        </div>
+      {/* Budget : le montant seul, en chiffres tabulaires pour que les
+          ordres de grandeur se comparent d'une ligne a l'autre. */}
+      <td style={{ padding: '12px 14px', borderBottom: '1px solid var(--adj-hairline)', textAlign: 'right', whiteSpace: 'nowrap', width: 1 }}>
+        {ao.budget_estime ? (
+          <span className="adj-fig" style={{ fontSize: 'var(--adj-t-sm)', fontWeight: 600, color: 'var(--adj-ink)' }}>
+            {formatAmount(ao.budget_estime)} Dhs
+          </span>
+        ) : (
+          <span style={{ fontSize: 'var(--adj-t-xs)', color: 'var(--adj-ink-4)' }}>—</span>
+        )}
+      </td>
+
+      {/* Etat : sa propre colonne, pour ne plus empieter sur le montant ni sur
+          le nom de l'acheteur. */}
+      <td style={{ padding: '12px 14px', borderBottom: '1px solid var(--adj-hairline)', whiteSpace: 'nowrap', width: 1 }}>
+        <WatcherStatusBadge status={ao.status} />
       </td>
     </tr>
   );
@@ -312,15 +334,13 @@ export default function VeillePage() {
   const totalPages = Math.ceil(total / PAGE_LIMIT);
 
   const thStyle: React.CSSProperties = {
-    padding:        '10px 14px',
-    fontSize:       11,
-    fontWeight:     700,
-    textTransform:  'uppercase',
-    letterSpacing:  '.07em',
-    color:          'var(--l-dim)',
+    padding:        '12px 14px',
+    fontSize:       'var(--adj-t-xs)',
+    fontWeight:     600,
+    color:          'var(--adj-ink-3)',
     textAlign:      'left',
-    borderBottom:   '1px solid var(--l-card-border)',
-    background:     'var(--l-card)',
+    borderBottom:   '1px solid var(--adj-hairline)',
+    background:     'var(--adj-panel)',
     position:       'sticky',
     top:            0,
     whiteSpace:     'nowrap',
@@ -349,8 +369,8 @@ export default function VeillePage() {
             alignItems:     'center',
             gap:            0,
             padding:        '0 16px',
-            borderBottom:   '1px solid var(--l-card-border)',
-            background:     'var(--l-card)',
+            borderBottom:   '1px solid var(--adj-hairline)',
+            background:     'var(--adj-panel)',
             flexShrink:     0,
             height:         48,
           }}
@@ -366,8 +386,8 @@ export default function VeillePage() {
                   padding:      '0 14px',
                   background:   'none',
                   border:       'none',
-                  borderBottom: activeTab === tab ? '2px solid var(--l-blue)' : '2px solid transparent',
-                  color:        activeTab === tab ? 'var(--l-blue)' : 'var(--l-sub)',
+                  borderBottom: activeTab === tab ? '2px solid var(--adj-brand)' : '2px solid transparent',
+                  color:        activeTab === tab ? 'var(--adj-brand)' : 'var(--adj-ink-2)',
                   fontSize:     13,
                   fontWeight:   activeTab === tab ? 700 : 500,
                   cursor:       'pointer',
@@ -383,8 +403,8 @@ export default function VeillePage() {
                 {tab === 'all' && data && !loading && (
                   <span style={{
                     fontSize: 11, fontWeight: 600, padding: '1px 6px',
-                    borderRadius: 10, background: 'var(--l-input-bg)',
-                    color: 'var(--l-sub)',
+                    borderRadius: 10, background: 'var(--adj-panel-2)',
+                    color: 'var(--adj-ink-2)',
                   }}>
                     {total.toLocaleString()}
                   </span>
@@ -396,7 +416,7 @@ export default function VeillePage() {
           {/* Right: total + toggle filters */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexShrink: 0 }}>
             {!isMobile && !loading && data && (
-              <span style={{ fontSize: 12, color: 'var(--l-dim)', whiteSpace: 'nowrap' }}>
+              <span style={{ fontSize: 12, color: 'var(--adj-ink-4)', whiteSpace: 'nowrap' }}>
                 {total.toLocaleString()} {total <= 1 ? t('veille.totalSingle') : t('veille.total')}
               </span>
             )}
@@ -408,9 +428,9 @@ export default function VeillePage() {
                 gap:            6,
                 padding:        isMobile ? '6px' : '6px 11px',
                 borderRadius:   7,
-                border:         '1px solid var(--l-card-border)',
-                background:     showFilters ? 'var(--l-blue-a)' : 'transparent',
-                color:          showFilters ? 'var(--l-blue)' : 'var(--l-sub)',
+                border:         '1px solid var(--adj-hairline)',
+                background:     showFilters ? 'var(--adj-brand-tint)' : 'transparent',
+                color:          showFilters ? 'var(--adj-brand)' : 'var(--adj-ink-2)',
                 fontSize:       12,
                 fontWeight:     600,
                 cursor:         'pointer',
@@ -439,17 +459,24 @@ export default function VeillePage() {
         )}
 
         {/* Table area */}
-        <div style={{ flex: 1, overflowY: 'auto', overflowX: 'auto' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', tableLayout: 'fixed', minWidth: 760 }}>
-            <colgroup>
-              <col style={{ width: '18%' }} />
-              <col style={{ width: '32%' }} />
-              <col style={{ width: '9%'  }} />
-              <col style={{ width: '9%'  }} />
-              <col style={{ width: '12%' }} />
-              <col style={{ width: '10%' }} />
-              <col style={{ width: '10%' }} />
-            </colgroup>
+        <div
+          className="adj-scroll"
+          style={{
+            flex: 1, overflowY: 'auto', overflowX: 'auto',
+            // La bulle de discussion est fixee en bas a droite : sans cette
+            // reserve, elle recouvre la derniere ligne du tableau, et c'est
+            // justement la colonne d'etat qui passe dessous.
+            paddingBottom: 72,
+          }}
+        >
+          {/* Disposition AUTOMATIQUE, sans colgroup : `table-layout: fixed`
+              obligeait a decider chaque largeur a l'avance -- donc a deviner
+              celle d'une pastille ou d'un montant. Trop etroit, le contenu
+              etait coupe ; somme differente de 100 %, il restait un vide ; et
+              le bon reglage changeait avec la largeur de l'ecran.
+              Ici chaque colonne prend ce que son contenu demande, le titre
+              absorbe le reste. */}
+          <table style={{ width: '100%', borderCollapse: 'collapse', tableLayout: 'auto', minWidth: 720 }}>
             <thead>
               <tr>
                 <th style={thStyle}>{t('veille.table.acheteur')}</th>
@@ -459,6 +486,7 @@ export default function VeillePage() {
                 <th style={thStyle}>{t('veille.table.categorie')}</th>
                 <th style={thStyle}>{t('veille.table.region')}</th>
                 <th style={{ ...thStyle, textAlign: 'right' }}>{t('veille.table.budget')}</th>
+                <th style={thStyle}>{t('veille.table.statut')}</th>
               </tr>
             </thead>
             <tbody style={{ opacity: loading && data ? 0.45 : 1, transition: 'opacity 0.15s' }}>
@@ -489,8 +517,8 @@ export default function VeillePage() {
               justifyContent: 'center',
               gap:            8,
               padding:        '10px 16px',
-              borderTop:      '1px solid var(--l-card-border)',
-              background:     'var(--l-card)',
+              borderTop:      '1px solid var(--adj-hairline)',
+              background:     'var(--adj-panel)',
               flexShrink:     0,
             }}
           >
@@ -500,9 +528,9 @@ export default function VeillePage() {
               style={{
                 padding:      '6px 13px',
                 borderRadius: 7,
-                border:       '1px solid var(--l-card-border)',
-                background:   'var(--l-input-bg)',
-                color:        'var(--l-sub)',
+                border:       '1px solid var(--adj-hairline)',
+                background:   'var(--adj-panel-2)',
+                color:        'var(--adj-ink-2)',
                 fontSize:     13,
                 fontWeight:   500,
                 cursor:       filters.page <= 1 ? 'not-allowed' : 'pointer',
@@ -513,7 +541,7 @@ export default function VeillePage() {
               {t('veille.pagination.prev')}
             </button>
 
-            <span style={{ fontSize: 13, color: 'var(--l-sub)' }}>
+            <span style={{ fontSize: 13, color: 'var(--adj-ink-2)' }}>
               {filters.page} {t('veille.pagination.of')} {totalPages}
             </span>
 
@@ -523,9 +551,9 @@ export default function VeillePage() {
               style={{
                 padding:      '6px 13px',
                 borderRadius: 7,
-                border:       '1px solid var(--l-card-border)',
-                background:   'var(--l-input-bg)',
-                color:        'var(--l-sub)',
+                border:       '1px solid var(--adj-hairline)',
+                background:   'var(--adj-panel-2)',
+                color:        'var(--adj-ink-2)',
                 fontSize:     13,
                 fontWeight:   500,
                 cursor:       filters.page >= totalPages ? 'not-allowed' : 'pointer',

@@ -1,3 +1,5 @@
+import { DateField } from '../../../shared/ui/DateField';
+import { useApercuDocument } from '../../../shared/ui/DocumentPreviewModal';
 import { useEffect, useRef, useState } from "react";
 import { startSign, getSignStatus, cancelSign } from "../../../api";
 
@@ -129,6 +131,9 @@ export default function DocumentsTab() {
     }
   }
 
+  // Apercu : le PDF depose tant qu'il n'est pas signe, le PDF signe ensuite.
+  const { ouvrirFichier, ouvrirUrl, modale: apercuModale } = useApercuDocument();
+
   function downloadSigned(doc: UploadedDoc) {
     if (!doc.downloadUrl) return;
     const a = document.createElement("a");
@@ -140,32 +145,12 @@ export default function DocumentsTab() {
   const isActive = (d: UploadedDoc) => d.status === "pending" || d.status === "running";
 
   return (
+    <>
     <div className="space-y-4">
-      <div className="space-y-1 animate-fade-in">
-        <h1 className="text-2xl font-bold text-foreground tracking-tight">Documents & Signatures</h1>
-        <p className="text-sm text-muted-foreground max-w-xl">
-          Déposez vos documents PDF, signez-les automatiquement avec votre signature et cachet, puis téléchargez les versions signées.
-        </p>
-      </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-        {[
-          { n: "01", title: "Configurez signature & cachet", desc: "Importez vos images ou utilisez celles du profil entreprise" },
-          { n: "02", title: "Déposez vos PDFs", desc: "Plusieurs documents acceptés en une seule fois" },
-          { n: "03", title: "Signez & téléchargez", desc: "Traitement en arrière-plan, vous pouvez quitter la page" },
-        ].map(({ n, title, desc }) => (
-          <div key={n} className="flex flex-col gap-1.5 p-3 rounded-xl border border-border bg-card hover:shadow-card-hover hover:border-primary/20 transition-all group">
-            <div className="h-7 w-7 rounded-lg gradient-primary flex items-center justify-center text-primary-foreground text-xs font-bold">{n}</div>
-            <div>
-              <p className="text-sm font-semibold text-foreground group-hover:text-primary transition-colors">{title}</p>
-              <p className="text-xs text-muted-foreground mt-0.5">{desc}</p>
-            </div>
-          </div>
-        ))}
-      </div>
 
       {/* Configuration signature & cachet */}
-      <div className="border border-border rounded-xl bg-card p-4 space-y-3">
+      <div className="border border-border rounded-xl bg-card p-6 space-y-5">
         <div className="flex items-center justify-between">
           <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Signature & Cachet</h3>
           <span className="text-xs text-muted-foreground">Par défaut : images du profil entreprise</span>
@@ -178,12 +163,12 @@ export default function DocumentsTab() {
             <button
               key={label}
               onClick={() => (ref as React.RefObject<HTMLInputElement>).current?.click()}
-              className={`flex items-center gap-3 p-3 rounded-lg border transition-all text-left ${file ? "border-emerald-500/30 bg-emerald-500/5" : "border-dashed border-border hover:border-primary/40 hover:bg-accent/20"}`}
+              className={`flex items-center gap-4 px-5 py-6 rounded-xl border transition-all text-left ${file ? "border-emerald-500/30 bg-emerald-500/5" : "border-dashed border-border hover:border-primary/40 hover:bg-accent/20"}`}
             >
-              <div className={`h-9 w-9 rounded-lg flex items-center justify-center flex-shrink-0 ${file ? "bg-emerald-500/10" : "bg-accent"}`}>
+              <div className={`h-12 w-12 rounded-xl flex items-center justify-center flex-shrink-0 ${file ? "bg-emerald-500/10" : "bg-accent"}`}>
                 {file
-                  ? <svg className="h-4 w-4 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
-                  : <svg className="h-4 w-4 text-accent-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
+                  ? <svg className="h-5 w-5 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
+                  : <svg className="h-5 w-5 text-accent-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
                 }
               </div>
               <div className="min-w-0 flex-1">
@@ -199,7 +184,7 @@ export default function DocumentsTab() {
           <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">Lieu & Date</p>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <input type="text" value={lieu} onChange={(e) => setLieu(e.target.value)} placeholder="Ville (ex : Casablanca)" className="w-full px-3 py-2.5 text-sm bg-background border border-border rounded-lg text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/50 transition-all" />
-            <input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="w-full px-3 py-2.5 text-sm bg-background border border-border rounded-lg text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/50 transition-all [color-scheme:light] dark:[color-scheme:dark]" />
+            <DateField value={date} onChange={setDate} />
           </div>
         </div>
       </div>
@@ -210,13 +195,13 @@ export default function DocumentsTab() {
         onDragLeave={() => setIsDragging(false)}
         onDrop={(e) => { e.preventDefault(); setIsDragging(false); addFiles(e.dataTransfer.files); }}
         onClick={() => pdfInputRef.current?.click()}
-        className={`border-2 border-dashed rounded-xl px-6 py-4 flex items-center gap-4 cursor-pointer transition-all ${isDragging ? "border-primary bg-accent/50" : "border-border hover:border-primary/40 hover:bg-accent/20"}`}
+        className={`border-2 border-dashed rounded-xl px-6 py-12 flex flex-col items-center justify-center text-center gap-4 cursor-pointer transition-all ${isDragging ? "border-primary bg-accent/50" : "border-border hover:border-primary/40 hover:bg-accent/20"}`}
       >
-        <div className="h-10 w-10 rounded-xl bg-accent flex items-center justify-center flex-shrink-0">
+        <div className="h-14 w-14 rounded-2xl bg-accent flex items-center justify-center flex-shrink-0">
           <svg className="h-5 w-5 text-accent-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
         </div>
-        <div className="flex-1 min-w-0">
-          <p className="text-sm font-semibold text-foreground">Glissez vos documents PDF ici</p>
+        <div className="min-w-0">
+          <p className="text-base font-semibold text-foreground">Glissez vos documents PDF ici</p>
           <p className="text-xs text-muted-foreground">ou <span className="text-primary font-medium">parcourez vos fichiers</span> · .pdf · plusieurs fichiers acceptés</p>
         </div>
         <input ref={pdfInputRef} type="file" accept=".pdf" multiple className="hidden" onChange={(e) => addFiles(e.target.files)} />
@@ -249,7 +234,13 @@ export default function DocumentsTab() {
 
                 {/* Info */}
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold text-foreground truncate">{doc.name}</p>
+                  <button
+                    onClick={() => ouvrirFichier(doc.file)}
+                    title="Voir le document déposé"
+                    className="block max-w-full text-sm font-semibold text-foreground truncate text-left hover:text-primary transition-colors"
+                  >
+                    {doc.name}
+                  </button>
                   <p className="text-xs text-muted-foreground mt-0.5">
                     {doc.size}
                     {doc.status === "done" && <span className="ml-2 text-emerald-600 font-medium">· Signé</span>}
@@ -262,6 +253,19 @@ export default function DocumentsTab() {
 
                 {/* Actions */}
                 <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => doc.status === "done" && doc.downloadUrl
+                      ? ouvrirUrl(doc.downloadUrl, doc.signedFilename || doc.name.replace(/\.pdf$/i, "_signe.pdf"))
+                      : ouvrirFichier(doc.file)}
+                    title={doc.status === "done" ? "Voir le document signé" : "Voir le document déposé"}
+                    className="text-xs font-medium px-3 py-1.5 rounded-lg border border-border bg-card text-muted-foreground hover:text-primary hover:border-primary/30 transition-colors flex items-center gap-1.5"
+                  >
+                    <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                      </svg>
+                    Aperçu
+                  </button>
                   {doc.status === "done" && doc.downloadUrl && (
                     <button onClick={() => downloadSigned(doc)} className="text-xs font-medium px-3 py-1.5 rounded-lg border border-border bg-card text-muted-foreground hover:text-primary hover:border-primary/30 transition-colors flex items-center gap-1.5">
                       <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
@@ -291,20 +295,21 @@ export default function DocumentsTab() {
       )}
 
       {/* Stats */}
-      <div className="grid grid-cols-2 gap-3">
-        {[
-          { label: "Documents", value: String(documents.length), sub: "fichiers déposés" },
-          { label: "Signés", value: `${signedCount}/${documents.length || 0}`, sub: "documents signés" },
-        ].map(({ label, value, sub }) => (
-          <div key={label} className="border border-border rounded-xl bg-card p-4 shadow-card hover:shadow-card-hover transition-shadow">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{label}</span>
-            </div>
-            <p className="text-2xl font-bold text-foreground tracking-tight">{value}</p>
-            <p className="text-xs text-muted-foreground mt-0.5">{sub}</p>
-          </div>
-        ))}
-      </div>
+      {documents.length > 0 && (
+        <div className="flex flex-wrap items-center gap-x-6 gap-y-2 px-1 text-sm">
+          <span className="text-muted-foreground">
+            <span className="font-semibold text-foreground">{documents.length}</span>
+            {' '}fichier{documents.length > 1 ? 's' : ''} déposé{documents.length > 1 ? 's' : ''}
+          </span>
+          <span className="text-muted-foreground">
+            <span className="font-semibold text-foreground">{signedCount}</span>
+            {' '}signé{signedCount > 1 ? 's' : ''}
+          </span>
+        </div>
+      )}
     </div>
+
+      {apercuModale}
+    </>
   );
 }

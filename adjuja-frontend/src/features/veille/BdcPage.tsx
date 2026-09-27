@@ -43,9 +43,9 @@ function TableSkeleton() {
       {Array.from({ length: 8 }).map((_, i) => (
         <tr key={i}>
           {Array.from({ length: 6 }).map((_, j) => (
-            <td key={j} style={{ padding: '11px 14px', borderBottom: '1px solid var(--l-card-border)' }}>
+            <td key={j} style={{ padding: '11px 14px', borderBottom: '1px solid var(--adj-hairline)' }}>
               <div style={{
-                height: 12, borderRadius: 4, background: 'var(--l-input-bg)',
+                height: 12, borderRadius: 4, background: 'var(--adj-panel-2)',
                 width: j === 1 ? '80%' : j === 0 ? '70%' : '55%', animation: 'pulse 1.5s infinite',
               }} />
             </td>
@@ -78,15 +78,15 @@ function EmptyState({ statusTab, hasFilters }: { statusTab: StatusTab; hasFilter
       <td colSpan={6}>
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '72px 24px', gap: 12, textAlign: 'center' }}>
           <div style={{
-            width: 52, height: 52, borderRadius: 14, background: 'var(--l-blue-a)',
-            border: '1px solid var(--l-card-border)', display: 'flex', alignItems: 'center', justifyContent: 'center',
+            width: 52, height: 52, borderRadius: 14, background: 'var(--adj-brand-tint)',
+            border: '1px solid var(--adj-hairline)', display: 'flex', alignItems: 'center', justifyContent: 'center',
           }}>
-            <svg width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="var(--l-blue)" strokeWidth={1.5}>
+            <svg width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="var(--adj-brand)" strokeWidth={1.5}>
               <path strokeLinecap="round" strokeLinejoin="round" d={icon} />
             </svg>
           </div>
-          <p style={{ margin: 0, fontSize: 14, fontWeight: 600, color: 'var(--l-text)' }}>{title}</p>
-          <p style={{ margin: 0, fontSize: 13, color: 'var(--l-sub)', maxWidth: 380 }}>{desc}</p>
+          <p style={{ margin: 0, fontSize: 14, fontWeight: 600, color: 'var(--adj-ink)' }}>{title}</p>
+          <p style={{ margin: 0, fontSize: 13, color: 'var(--adj-ink-2)', maxWidth: 380 }}>{desc}</p>
         </div>
       </td>
     </tr>
@@ -100,46 +100,46 @@ function BdcTableRow({ bdc, selected, onClick }: { bdc: ScrapedBdc; selected: bo
   return (
     <tr
       onClick={onClick}
-      style={{ cursor: 'pointer', background: selected ? 'var(--l-blue-a)' : 'transparent', transition: 'background .1s' }}
-      onMouseEnter={e => { if (!selected) (e.currentTarget as HTMLTableRowElement).style.background = 'var(--l-input-bg)'; }}
-      onMouseLeave={e => { (e.currentTarget as HTMLTableRowElement).style.background = selected ? 'var(--l-blue-a)' : 'transparent'; }}
+      style={{ cursor: 'pointer', background: selected ? 'var(--adj-brand-tint)' : 'transparent', transition: 'background .1s' }}
+      onMouseEnter={e => { if (!selected) (e.currentTarget as HTMLTableRowElement).style.background = 'var(--adj-panel-2)'; }}
+      onMouseLeave={e => { (e.currentTarget as HTMLTableRowElement).style.background = selected ? 'var(--adj-brand-tint)' : 'transparent'; }}
     >
-      <td style={{ padding: '10px 14px', borderBottom: '1px solid var(--l-card-border)', minWidth: 160, maxWidth: 220 }}>
-        <p style={{ margin: 0, fontSize: 13, fontWeight: 500, color: 'var(--l-text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+      <td style={{ padding: '10px 14px', borderBottom: '1px solid var(--adj-hairline)', minWidth: 160, maxWidth: 220 }}>
+        <p style={{ margin: 0, fontSize: 13, fontWeight: 500, color: 'var(--adj-ink)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
           {bdc.acheteur ?? '-'}
         </p>
       </td>
 
-      <td style={{ padding: '10px 14px', borderBottom: '1px solid var(--l-card-border)' }}>
+      <td style={{ padding: '10px 14px', borderBottom: '1px solid var(--adj-hairline)' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
           {bdc.est_annule && (
             <span style={{ fontSize: 10, fontWeight: 700, padding: '1px 6px', borderRadius: 4, background: 'rgba(220,38,38,0.1)', color: '#dc2626', flexShrink: 0 }}>
               {t('bdc.table.annule')}
             </span>
           )}
-          <p style={{ margin: 0, fontSize: 13, color: 'var(--l-text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 320 }}>
+          <p style={{ margin: 0, fontSize: 13, color: 'var(--adj-ink)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 320 }}>
             {bdc.titre}
           </p>
         </div>
       </td>
 
-      <td style={{ padding: '10px 14px', borderBottom: '1px solid var(--l-card-border)', whiteSpace: 'nowrap' }}>
-        <span style={{ fontSize: 12, color: 'var(--l-sub)' }}>{formatDate(bdc.date_publication)}</span>
+      <td style={{ padding: '10px 14px', borderBottom: '1px solid var(--adj-hairline)', whiteSpace: 'nowrap' }}>
+        <span style={{ fontSize: 12, color: 'var(--adj-ink-2)' }}>{formatDate(bdc.date_publication)}</span>
       </td>
 
-      <td style={{ padding: '10px 14px', borderBottom: '1px solid var(--l-card-border)', whiteSpace: 'nowrap' }}>
-        <span style={{ fontSize: 12, fontWeight: deadlineSoon ? 700 : 400, color: deadlineSoon ? '#d97706' : 'var(--l-sub)' }}>
+      <td style={{ padding: '10px 14px', borderBottom: '1px solid var(--adj-hairline)', whiteSpace: 'nowrap' }}>
+        <span style={{ fontSize: 12, fontWeight: deadlineSoon ? 700 : 400, color: deadlineSoon ? '#d97706' : 'var(--adj-ink-2)' }}>
           {formatDate(bdc.date_limite)}
         </span>
       </td>
 
-      <td style={{ padding: '10px 14px', borderBottom: '1px solid var(--l-card-border)', maxWidth: 140 }}>
-        <span style={{ fontSize: 12, color: 'var(--l-sub)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'block' }}>
+      <td style={{ padding: '10px 14px', borderBottom: '1px solid var(--adj-hairline)', maxWidth: 140 }}>
+        <span style={{ fontSize: 12, color: 'var(--adj-ink-2)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'block' }}>
           {bdc.categorie ?? '-'}
         </span>
       </td>
 
-      <td style={{ padding: '10px 14px', borderBottom: '1px solid var(--l-card-border)', textAlign: 'right', whiteSpace: 'nowrap' }}>
+      <td style={{ padding: '10px 14px', borderBottom: '1px solid var(--adj-hairline)', textAlign: 'right', whiteSpace: 'nowrap' }}>
         <WatcherStatusBadge status={bdc.status} />
       </td>
     </tr>
@@ -213,8 +213,8 @@ export default function BdcPage() {
 
   const thStyle: React.CSSProperties = {
     padding: '10px 14px', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.07em',
-    color: 'var(--l-dim)', textAlign: 'left', borderBottom: '1px solid var(--l-card-border)',
-    background: 'var(--l-card)', position: 'sticky', top: 0, whiteSpace: 'nowrap',
+    color: 'var(--adj-ink-4)', textAlign: 'left', borderBottom: '1px solid var(--adj-hairline)',
+    background: 'var(--adj-panel)', position: 'sticky', top: 0, whiteSpace: 'nowrap',
   };
 
   return (
@@ -232,7 +232,7 @@ export default function BdcPage() {
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', minWidth: 0 }}>
 
         {/* Toolbar */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 0, padding: '0 16px', borderBottom: '1px solid var(--l-card-border)', background: 'var(--l-card)', flexShrink: 0, height: 48 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 0, padding: '0 16px', borderBottom: '1px solid var(--adj-hairline)', background: 'var(--adj-panel)', flexShrink: 0, height: 48 }}>
           <div style={{ display: 'flex', alignItems: 'center', height: '100%', gap: 0, flex: 1, minWidth: 0, overflowX: 'auto' }}>
             {STATUS_TABS.map(tab => (
               <button
@@ -240,15 +240,15 @@ export default function BdcPage() {
                 onClick={() => patchFilters({ status: tab === 'all' ? 'all' : tab, page: 1 })}
                 style={{
                   height: '100%', padding: '0 14px', background: 'none', border: 'none',
-                  borderBottom: activeTab === tab ? '2px solid var(--l-blue)' : '2px solid transparent',
-                  color: activeTab === tab ? 'var(--l-blue)' : 'var(--l-sub)', fontSize: 13,
+                  borderBottom: activeTab === tab ? '2px solid var(--adj-brand)' : '2px solid transparent',
+                  color: activeTab === tab ? 'var(--adj-brand)' : 'var(--adj-ink-2)', fontSize: 13,
                   fontWeight: activeTab === tab ? 700 : 500, cursor: 'pointer', fontFamily: 'inherit',
                   display: 'flex', alignItems: 'center', gap: 6, whiteSpace: 'nowrap', transition: 'color .12s',
                 }}
               >
                 {t(`veille.tabs.${tab}`)}
                 {tab === 'all' && data && !loading && (
-                  <span style={{ fontSize: 11, fontWeight: 600, padding: '1px 6px', borderRadius: 10, background: 'var(--l-input-bg)', color: 'var(--l-sub)' }}>
+                  <span style={{ fontSize: 11, fontWeight: 600, padding: '1px 6px', borderRadius: 10, background: 'var(--adj-panel-2)', color: 'var(--adj-ink-2)' }}>
                     {total.toLocaleString()}
                   </span>
                 )}
@@ -258,7 +258,7 @@ export default function BdcPage() {
 
           <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexShrink: 0 }}>
             {!isMobile && !loading && data && (
-              <span style={{ fontSize: 12, color: 'var(--l-dim)', whiteSpace: 'nowrap' }}>
+              <span style={{ fontSize: 12, color: 'var(--adj-ink-4)', whiteSpace: 'nowrap' }}>
                 {total.toLocaleString()} {total <= 1 ? t('veille.totalSingle') : t('veille.total')}
               </span>
             )}
@@ -266,8 +266,8 @@ export default function BdcPage() {
               onClick={() => setShowFilters(v => !v)}
               style={{
                 display: 'flex', alignItems: 'center', gap: 6, padding: isMobile ? '6px' : '6px 11px',
-                borderRadius: 7, border: '1px solid var(--l-card-border)',
-                background: showFilters ? 'var(--l-blue-a)' : 'transparent', color: showFilters ? 'var(--l-blue)' : 'var(--l-sub)',
+                borderRadius: 7, border: '1px solid var(--adj-hairline)',
+                background: showFilters ? 'var(--adj-brand-tint)' : 'transparent', color: showFilters ? 'var(--adj-brand)' : 'var(--adj-ink-2)',
                 fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', transition: 'background .12s, color .12s', flexShrink: 0,
               }}
             >
@@ -285,7 +285,16 @@ export default function BdcPage() {
           </div>
         )}
 
-        <div style={{ flex: 1, overflowY: 'auto', overflowX: 'auto' }}>
+        <div
+          className="adj-scroll"
+          style={{
+            flex: 1, overflowY: 'auto', overflowX: 'auto',
+            // La bulle de discussion est fixee en bas a droite : sans cette
+            // reserve, elle recouvre la derniere ligne du tableau, et c'est
+            // justement la colonne d'etat qui passe dessous.
+            paddingBottom: 72,
+          }}
+        >
           <table style={{ width: '100%', borderCollapse: 'collapse', tableLayout: 'fixed', minWidth: 700 }}>
             <colgroup>
               <col style={{ width: '18%' }} />
@@ -325,27 +334,27 @@ export default function BdcPage() {
         </div>
 
         {totalPages > 1 && (
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '10px 16px', borderTop: '1px solid var(--l-card-border)', background: 'var(--l-card)', flexShrink: 0 }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '10px 16px', borderTop: '1px solid var(--adj-hairline)', background: 'var(--adj-panel)', flexShrink: 0 }}>
             <button
               onClick={() => patchFilters({ page: filters.page - 1 })}
               disabled={filters.page <= 1}
               style={{
-                padding: '6px 13px', borderRadius: 7, border: '1px solid var(--l-card-border)', background: 'var(--l-input-bg)',
-                color: 'var(--l-sub)', fontSize: 13, fontWeight: 500, cursor: filters.page <= 1 ? 'not-allowed' : 'pointer',
+                padding: '6px 13px', borderRadius: 7, border: '1px solid var(--adj-hairline)', background: 'var(--adj-panel-2)',
+                color: 'var(--adj-ink-2)', fontSize: 13, fontWeight: 500, cursor: filters.page <= 1 ? 'not-allowed' : 'pointer',
                 opacity: filters.page <= 1 ? 0.4 : 1, fontFamily: 'inherit',
               }}
             >
               {t('veille.pagination.prev')}
             </button>
-            <span style={{ fontSize: 13, color: 'var(--l-sub)' }}>
+            <span style={{ fontSize: 13, color: 'var(--adj-ink-2)' }}>
               {filters.page} {t('veille.pagination.of')} {totalPages}
             </span>
             <button
               onClick={() => patchFilters({ page: filters.page + 1 })}
               disabled={filters.page >= totalPages}
               style={{
-                padding: '6px 13px', borderRadius: 7, border: '1px solid var(--l-card-border)', background: 'var(--l-input-bg)',
-                color: 'var(--l-sub)', fontSize: 13, fontWeight: 500, cursor: filters.page >= totalPages ? 'not-allowed' : 'pointer',
+                padding: '6px 13px', borderRadius: 7, border: '1px solid var(--adj-hairline)', background: 'var(--adj-panel-2)',
+                color: 'var(--adj-ink-2)', fontSize: 13, fontWeight: 500, cursor: filters.page >= totalPages ? 'not-allowed' : 'pointer',
                 opacity: filters.page >= totalPages ? 0.4 : 1, fontFamily: 'inherit',
               }}
             >

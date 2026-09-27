@@ -572,7 +572,10 @@
     "tabs": {
       "overview": "Overview",
       "profile": "Company profile",
-      "generation": "Generation"
+      "generation": "Generation",
+      "signature": "Initials & Stamp",
+      "documents": "Documents",
+      "equipe": "Team / CVs"
     },
     "overview": {
       "total": "Total",
@@ -667,6 +670,9 @@
       "incompleteProfile": "Incomplete profile. Complete the required fields (*) to activate the pipeline.",
       "notConfigured": "Profile not configured. Complete the required fields (*) to activate the pipeline.",
       "requiredIncomplete": "Required fields incomplete.",
+      "missing_one": "{{count}} required field missing to enable the pipeline:",
+      "missing_other": "{{count}} required fields missing to enable the pipeline:",
+      "unsaved": "Unsaved changes",
       "error": "Error saving.",
       "sections": {
         "company": "Company information",
@@ -674,7 +680,10 @@
         "qualifications": "Qualifications and references",
         "legal": "Legal identifiers",
         "manager": "Manager",
-        "contact": "Contact"
+        "contact": "Contact",
+        "identity": "Company identity",
+        "headquarters": "Headquarters and contact",
+        "capacity": "Financial capacity and certifications"
       },
       "activitesHint": "Select the sectors that match your activity. Used to filter tender monitoring and, soon, to notify you about tenders matching your profile.",
       "qualificationsHint": "This information is used to automatically assess your eligibility (opportunity analysis) on scraped tenders, by comparing it against requirements extracted from the CPS and RC.",
@@ -719,6 +728,93 @@
     "generation": {
       "title": "Generate a response",
       "desc": "Paste the tender text in the left panel, fill in your company profile, then click Generate."
+    },
+    "assets": {
+      "upload": "Upload",
+      "replace": "Replace",
+      "delete": "Delete",
+      "download": "Download",
+      "noImage": "No image",
+      "uploadError": "Upload failed.",
+      "deleteError": "Delete failed.",
+      "signature": {
+        "title": "Manager's signature",
+        "desc": "Applied as initials on every page of the CPS and RC, and as the signature in the Signature & Stamp tool. PNG or JPEG, ideally with a transparent background."
+      },
+      "cachet": {
+        "title": "Company stamp",
+        "desc": "Applied to the commitment form, the sworn statement, the price schedule and the methodology note. Without a stamp, nothing is applied."
+      },
+      "luEtAccepte": {
+        "title": "Read and accepted",
+        "desc": "Handwritten mention applied to the last page of the CPS and RC. Optional: without an image, the text \"Lu et accepté\" is written instead.",
+        "fallback": "Generated text used instead"
+      },
+      "template": {
+        "title": "Methodology note template",
+        "desc": ".docx file with your Word styles (Heading 1, Heading 2, Normal): every generated note reuses your logo, colors and headers. Without a template, a standard design is used.",
+        "configured": "Template configured",
+        "default": "Standard design"
+      }
+    },
+    "docs": {
+      "hint": "Company administrative documents, attached to the final file of every tender.",
+      "add": "Add",
+      "empty": "No document",
+      "validUntil": "Valid until {{date}}",
+      "preview": "Preview",
+      "open": "Open",
+      "delete": "Delete",
+      "uploadError": "Upload failed.",
+      "deleteError": "Delete failed.",
+      "types": {
+        "pouvoir_gerance": "Power of management",
+        "attestation_fiscale": "Tax certificate",
+        "attestation_cnas": "CNAS certificate",
+        "attestation_casnos": "CASNOS certificate",
+        "reference_realisation": "Project reference",
+        "diplome": "Diploma",
+        "autre": "Other"
+      }
+    },
+    "team": {
+      "hint": "Your team's CVs. Upload a PDF: name, position, degree and experience are extracted automatically.",
+      "add": "Add a CV (PDF)",
+      "extracting": "Analysing the CV",
+      "extractingDesc": "The CV information is being extracted.",
+      "confirmTitle": "Check the extracted information",
+      "editTitle": "Edit member",
+      "extractedNote": "Information extracted automatically: check it and correct it if needed.",
+      "save": "Save",
+      "saving": "Saving…",
+      "cancel": "Cancel",
+      "empty": "No member yet. Upload a CV as a PDF to start.",
+      "members_one": "{{count}} member",
+      "members_other": "{{count}} members",
+      "inactive": "Inactive",
+      "years_one": "{{count}} year of experience",
+      "years_other": "{{count}} years of experience",
+      "cv": "CV",
+      "attachCv": "Attach the PDF",
+      "edit": "Edit",
+      "delete": "Delete",
+      "extractError": "CV extraction failed.",
+      "saveError": "Save failed.",
+      "deleteError": "Delete failed.",
+      "uploadError": "PDF upload failed.",
+      "fields": {
+        "nom": "Last name",
+        "prenom": "First name",
+        "poste": "Position",
+        "specialite": "Specialty",
+        "diplome": "Degree",
+        "annees_experience": "Years of experience"
+      },
+      "title": "Team",
+      "emptyTitle": "Add your team's first CV",
+      "emptyDesc": "Upload a CV as a PDF: the information is extracted automatically, you only have to check it. These profiles are used to build the team proposed in your technical offers.",
+      "browse": "Choose a PDF",
+      "orDrop": "or drop it here"
     }
   },
   "pipeline": {
@@ -1025,7 +1121,8 @@
       "categorie": "Category",
       "region": "Location",
       "budget": "Budget",
-      "caution": "Deposit"
+      "caution": "Deposit",
+      "statut": "Status"
     },
     "status": {
       "new": "New",

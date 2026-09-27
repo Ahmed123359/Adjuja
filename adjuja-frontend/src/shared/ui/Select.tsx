@@ -18,7 +18,8 @@
 //     lecteur d'écran ne voit qu'un bouton ;
 //   - l'option active suivie au clavier, et ramenée dans la vue au défilement.
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { Check, ChevronDown } from 'lucide-react';
 
 export type Option = { value: string; label: string };
@@ -51,10 +52,40 @@ export function Select({ value, onChange, options, placeholder, id, disabled }: 
   useEffect(() => {
     if (!ouvert) return;
     const clic = (e: MouseEvent) => {
-      if (!zone.current?.contains(e.target as Node)) setOuvert(false);
+      const cible = e.target as Node;
+      if (!zone.current?.contains(cible) && !liste.current?.contains(cible)) setOuvert(false);
     };
     document.addEventListener('mousedown', clic);
     return () => document.removeEventListener('mousedown', clic);
+  }, [ouvert]);
+
+  // Position de la liste. Elle est rendue dans un portail, en position fixe,
+  // au-dessus de tout (2026-09-27) : en position absolue dans son parent, elle
+  // était rognée par tout panneau en `overflow: hidden` (la `Card` du socle) et
+  // étirait ou coupait le contenu au lieu de flotter. Elle s'ouvre vers le haut
+  // quand la place manque en bas de la fenêtre.
+  const [pos, setPos] = useState<{ left: number; width: number; top?: number; bottom?: number; max: number } | null>(null);
+  useLayoutEffect(() => {
+    if (!ouvert) { setPos(null); return; }
+    const placer = () => {
+      const r = zone.current?.getBoundingClientRect();
+      if (!r) return;
+      const ecart = 5, marge = 12, voulu = 260;
+      const bas = window.innerHeight - r.bottom - ecart - marge;
+      const haut = r.top - ecart - marge;
+      const versLeHaut = bas < Math.min(voulu, 160) && haut > bas;
+      setPos(versLeHaut
+        ? { left: r.left, width: r.width, bottom: window.innerHeight - r.top + ecart, max: Math.min(voulu, haut) }
+        : { left: r.left, width: r.width, top: r.bottom + ecart, max: Math.min(voulu, bas) });
+    };
+    placer();
+    // Suit le defilement de n'importe quel conteneur (capture) et le redimensionnement.
+    window.addEventListener('scroll', placer, true);
+    window.addEventListener('resize', placer);
+    return () => {
+      window.removeEventListener('scroll', placer, true);
+      window.removeEventListener('resize', placer);
+    };
   }, [ouvert]);
 
   // Une liste plus haute que sa fenêtre laisserait l'option active hors champ
@@ -125,19 +156,19 @@ export function Select({ value, onChange, options, placeholder, id, disabled }: 
         />
       </button>
 
-      {ouvert && (
+      {ouvert && pos && createPortal(
         <div
           ref={liste}
           role="listbox"
           className="adj-scroll adj-pop"
           style={{
-            position: 'absolute', top: 'calc(100% + 5px)', left: 0, right: 0,
+            position: 'fixed', left: pos.left, width: pos.width, top: pos.top, bottom: pos.bottom,
             background: 'var(--adj-panel)',
             border: '1px solid var(--adj-hairline)',
             borderRadius: 'var(--adj-round-m)',
             boxShadow: 'var(--adj-lift-3)',
-            padding: 4, zIndex: 200,
-            maxHeight: 260, overflowY: 'auto',
+            padding: 4, zIndex: 1000,
+            maxHeight: pos.max, overflowY: 'auto', boxSizing: 'border-box',
           }}
         >
           {options.map((o, i) => {
@@ -168,7 +199,8 @@ export function Select({ value, onChange, options, placeholder, id, disabled }: 
               </div>
             );
           })}
-        </div>
+        </div>,
+        document.body,
       )}
     </div>
   );

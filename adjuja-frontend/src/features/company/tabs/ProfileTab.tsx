@@ -1,19 +1,36 @@
-// Decoupe depuis pages/DashboardPage.tsx (2026-09-12, refactoring par domaine).
-// Deplacement pur : aucun changement de comportement.
+// Profil entreprise -- repris sur le socle visuel le 2026-09-27.
+//
+// Avant : une colonne de 896px centree, six sections empilees au meme poids,
+// libelles a 11px, et un bouton « Enregistrer » tout en bas, grise sans dire
+// quel champ manquait. On remplissait vingt champs pour decouvrir, en bas de
+// page, que l'enregistrement etait bloque.
+//
+// Maintenant :
+//   - une barre d'etat collee en haut du defilement porte l'etat du profil, les
+//     champs obligatoires manquants (cliquables : ils menent au champ) et
+//     l'enregistrement, toujours atteignable ;
+//   - les champs sont regroupes par usage sur la grille de fractions : identite
+//     et identifiants legaux cote a cote, siege et gerant cote a cote, puis les
+//     secteurs et les qualifications en pleine largeur.
+//
+// Les champs obligatoires sont ceux qu'exigeait deja ce formulaire (les cinq
+// du pipeline cote backend, `_PIPELINE_REQUIRED`, plus le secteur, requis par
+// la generation). Aucune regle metier n'a change.
 
 import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
+import { Check } from "lucide-react";
 import { fetchCompanyProfile, upsertCompanyProfile } from "../api";
 import type { AoCategorie, CompanyProfile, CompanyProfileForm } from "../../../types";
 import SecteurPicker from "../../veille/components/SecteurPicker";
-import CategorieSelect from "../../veille/components/CategorieSelect";
 import { StringListField, StructuredListField } from "../../veille/components/RepeatableListField";
-import { SectionCard } from "../components/SectionCard";
-import { Field } from "../components/Field";
 import { NotificationPreferencesSection } from "../components/NotificationPreferencesSection";
 import { OrgMembersSection } from "../components/OrgMembersSection";
-import { inputStyle } from "../styles";
 import { AO_CATEGORIES } from "../constants";
+import { Card } from "../../../shared/ui/Card";
+import { Button } from "../../../shared/ui/Button";
+import { Select } from "../../../shared/ui/Select";
+import { FieldGrid, TextField, LoadingBlock, type Fraction, labelStyle, fieldInputStyle, focusOn, focusOff } from "../ui";
 
 const EMPTY_FORM: CompanyProfileForm = {
   nom_entreprise: "",
@@ -35,6 +52,61 @@ const EMPTY_FORM: CompanyProfileForm = {
   extra: null,
 };
 
+const REQUIRED_KEYS: (keyof CompanyProfileForm)[] = [
+  "nom_entreprise",
+  "secteur",
+  "ice",
+  "gerant_nom",
+  "gerant_prenom",
+  "adresse",
+];
+
+const fieldId = (key: string) => `profil-${key}`;
+
+// ── Champs ──────────────────────────────────────────────────
+
+function ProfileField({
+  fieldKey, form, onChange, placeholder, span, type = "text",
+}: {
+  fieldKey: keyof CompanyProfileForm;
+  form: CompanyProfileForm;
+  onChange: (key: keyof CompanyProfileForm, value: string) => void;
+  placeholder?: string;
+  /** Fraction occupee dans la grille de champs du panneau. */
+  span?: Fraction;
+  type?: string;
+}) {
+  const { t } = useTranslation();
+  return (
+    <TextField
+      id={fieldId(fieldKey)}
+      label={t(`dashboard.profile.fields.${fieldKey}`)}
+      required={REQUIRED_KEYS.includes(fieldKey)}
+      value={(form[fieldKey] as string) ?? ""}
+      onChange={(v) => onChange(fieldKey, v)}
+      placeholder={placeholder}
+      span={span}
+      type={type}
+    />
+  );
+}
+
+/** Bloc titre + controle a l'interieur d'un panneau (agrements, certifications...). */
+function SubBlock({ label, htmlFor, children }: {
+  label: string;
+  htmlFor?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div style={{ minWidth: 0 }}>
+      <label htmlFor={htmlFor} style={labelStyle}>{label}</label>
+      {children}
+    </div>
+  );
+}
+
+// ── Onglet ──────────────────────────────────────────────────
+
 export function ProfileTab({ onProfileSaved }: { onProfileSaved: () => void }) {
   const { t } = useTranslation();
   const [form, setForm] = useState<CompanyProfileForm>(EMPTY_FORM);
@@ -42,6 +114,7 @@ export function ProfileTab({ onProfileSaved }: { onProfileSaved: () => void }) {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [dirty, setDirty] = useState(false);
   const [error, setError] = useState<string | null>(null);
   // Loupe locale (non sauvegardee) : cadre la liste d'activites affichee
   // dans le picker, sans jamais effacer les secteurs deja selectionnes
@@ -65,20 +138,24 @@ export function ProfileTab({ onProfileSaved }: { onProfileSaved: () => void }) {
       .finally(() => setLoading(false));
   }, []);
 
+  const touch = () => {
+    setSaved(false);
+    setDirty(true);
+  };
+
   const handleChange = (key: keyof CompanyProfileForm, value: string) => {
     setForm((prev) => ({ ...prev, [key]: value }));
-    setSaved(false);
+    touch();
+  };
+
+  const updateExtra = (key: string, value: unknown) => {
+    setForm((prev) => ({ ...prev, extra: { ...prev.extra, [key]: value } }));
+    touch();
   };
 
   const secteursInteret = Array.isArray(form.extra?.secteurs_interet)
     ? (form.extra!.secteurs_interet as string[])
     : [];
-
-  const handleSecteursChange = (codes: string[]) => {
-    setForm((prev) => ({ ...prev, extra: { ...prev.extra, secteurs_interet: codes } }));
-    setSaved(false);
-  };
-
   const agrements = Array.isArray(form.extra?.agrements)
     ? (form.extra!.agrements as Record<string, string>[])
     : [];
@@ -95,11 +172,6 @@ export function ProfileTab({ onProfileSaved }: { onProfileSaved: () => void }) {
     ? (form.extra!.chiffre_affaires_moyen as string)
     : "";
 
-  const updateExtra = (key: string, value: unknown) => {
-    setForm((prev) => ({ ...prev, extra: { ...prev.extra, [key]: value } }));
-    setSaved(false);
-  };
-
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     setSaving(true);
@@ -108,6 +180,7 @@ export function ProfileTab({ onProfileSaved }: { onProfileSaved: () => void }) {
       const p = await upsertCompanyProfile(form);
       setProfile(p);
       setSaved(true);
+      setDirty(false);
       onProfileSaved();
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : t("dashboard.profile.error"));
@@ -116,158 +189,204 @@ export function ProfileTab({ onProfileSaved }: { onProfileSaved: () => void }) {
     }
   };
 
-  if (loading)
-    return (
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          height: 160,
-        }}
-      >
-        <div
-          style={{
-            width: 20,
-            height: 20,
-            borderRadius: "50%",
-            border: "2px solid var(--l-card-border)",
-            borderTopColor: "var(--l-blue)",
-            animation: "spin 1s linear infinite",
-          }}
-        />
-      </div>
-    );
+  if (loading) return <LoadingBlock />;
 
-  const requiredKeys: (keyof CompanyProfileForm)[] = [
-    "nom_entreprise",
-    "secteur",
-    "ice",
-    "gerant_nom",
-    "gerant_prenom",
-    "adresse",
-  ];
-  const isComplete = requiredKeys.every((k) => !!(form[k] as string));
+  const missing = REQUIRED_KEYS.filter((k) => !(form[k] as string)?.trim());
+  const isComplete = missing.length === 0;
 
-  const statusStyle = profile?.complet
-    ? {
-        bg: "rgba(34,197,94,0.08)",
-        border: "rgba(34,197,94,0.25)",
-        color: "#16a34a",
-        dot: "#16a34a",
-      }
-    : {
-        bg: "rgba(245,158,11,0.08)",
-        border: "rgba(245,158,11,0.25)",
-        color: "#d97706",
-        dot: "#f59e0b",
-      };
+  const allerAuChamp = (key: string) => {
+    const el = document.getElementById(fieldId(key));
+    if (!el) return;
+    el.scrollIntoView({ behavior: "smooth", block: "center" });
+    (el as HTMLInputElement).focus({ preventScroll: true });
+  };
 
-  const statusMsg = profile?.complet
-    ? t("dashboard.profile.complete")
-    : profile
-      ? t("dashboard.profile.incompleteProfile")
-      : t("dashboard.profile.notConfigured");
+  // Etat affiche : ce qui est ENREGISTRE (profile.complet, calcule par le
+  // backend) quand il n'y a rien en attente, sinon ce que donnera
+  // l'enregistrement du formulaire en cours.
+  const actif = isComplete && (dirty || profile?.complet);
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-    <form
-      onSubmit={handleSave}
-      style={{ display: "flex", flexDirection: "column", gap: 16 }}
-    >
-      {/* Status banner */}
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          gap: 8,
-          padding: "10px 14px",
-          borderRadius: 10,
-          background: statusStyle.bg,
-          border: `1px solid ${statusStyle.border}`,
-        }}
-      >
-        <span
-          style={{
-            width: 7,
-            height: 7,
-            borderRadius: "50%",
-            background: statusStyle.dot,
-            flexShrink: 0,
-          }}
-        />
-        <p
-          style={{
-            margin: 0,
-            fontSize: 13,
-            color: statusStyle.color,
-            fontWeight: 500,
-          }}
-        >
-          {statusMsg}
-        </p>
-      </div>
+    <div style={{ display: "flex", flexDirection: "column", gap: "var(--adj-5)" }}>
+      <form onSubmit={handleSave} noValidate style={{ display: "flex", flexDirection: "column", gap: "var(--adj-5)" }}>
 
-      {/* Section: Entreprise */}
-      <SectionCard title={t("dashboard.profile.sections.company")}>
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "1fr 1fr",
-            gap: "12px 16px",
-          }}
-        >
-          <Field form={form} onChange={handleChange} t={t}
-            fieldKey="nom_entreprise"
-            required
-            placeholder="SARL Mon Entreprise"
-          />
-          <Field form={form} onChange={handleChange} t={t}
-            fieldKey="secteur"
-            required
-            placeholder="Informatique, BTP..."
-            half
-          />
-          <Field form={form} onChange={handleChange} t={t} fieldKey="ville" placeholder="Casablanca" half />
-          <Field form={form} onChange={handleChange} t={t} fieldKey="adresse" required />
+        {/* Barre d'etat et d'enregistrement, collee en haut du defilement */}
+        <div style={{
+          position: "sticky", top: 0, zIndex: 5,
+          display: "flex", alignItems: "center", justifyContent: "space-between",
+          flexWrap: "wrap", gap: "var(--adj-3) var(--adj-5)",
+          padding: "14px var(--adj-pad)",
+          background: "var(--adj-panel)",
+          border: "1px solid var(--adj-hairline)",
+          borderRadius: "var(--adj-round-l)",
+          boxShadow: "var(--adj-lift-2)",
+        }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "var(--adj-3)", minWidth: 0, flex: "1 1 360px" }}>
+            <span aria-hidden style={{
+              width: 10, height: 10, borderRadius: "50%", flexShrink: 0,
+              background: actif ? "var(--adj-pos)" : "var(--adj-hold)",
+              boxShadow: `0 0 0 4px ${actif ? "var(--adj-pos-tint)" : "var(--adj-hold-tint)"}`,
+            }} />
+            {isComplete ? (
+              <p style={{ margin: 0, fontSize: "var(--adj-t-base)", fontWeight: 600, color: "var(--adj-ink)" }}>
+                {t("dashboard.profile.complete")}
+              </p>
+            ) : (
+              <p style={{ margin: 0, fontSize: "var(--adj-t-base)", color: "var(--adj-ink-2)", lineHeight: 1.6 }}>
+                <span style={{ fontWeight: 600, color: "var(--adj-ink)" }}>
+                  {t("dashboard.profile.missing", { count: missing.length })}
+                </span>{" "}
+                {missing.map((k, i) => (
+                  <span key={k}>
+                    <button
+                      type="button"
+                      onClick={() => allerAuChamp(k)}
+                      className="adj-focusable"
+                      style={{
+                        padding: 0, border: "none", background: "none", cursor: "pointer",
+                        fontFamily: "inherit", fontSize: "inherit", fontWeight: 600,
+                        color: "var(--adj-brand)", textDecoration: "underline",
+                        textUnderlineOffset: 3,
+                      }}
+                    >
+                      {t(`dashboard.profile.fields.${k}`)}
+                    </button>
+                    {i < missing.length - 1 ? ", " : ""}
+                  </span>
+                ))}
+              </p>
+            )}
+          </div>
+
+          <div style={{ display: "flex", alignItems: "center", gap: "var(--adj-4)", flexShrink: 0 }}>
+            {error && (
+              <span style={{ fontSize: "var(--adj-t-sm)", color: "var(--adj-neg)" }}>{error}</span>
+            )}
+            {!error && saved && (
+              <span style={{ display: "flex", alignItems: "center", gap: 6, fontSize: "var(--adj-t-sm)", color: "var(--adj-pos)", fontWeight: 600 }}>
+                <Check size={16} strokeWidth={2.5} />
+                {t("dashboard.profile.saved")}
+              </span>
+            )}
+            {!error && !saved && dirty && (
+              <span style={{ fontSize: "var(--adj-t-sm)", color: "var(--adj-ink-3)" }}>
+                {t("dashboard.profile.unsaved")}
+              </span>
+            )}
+            <Button type="submit" variant="primary" loading={saving} disabled={!isComplete || (!dirty && !!profile)}>
+              {saving ? t("dashboard.profile.saving") : t("dashboard.profile.save")}
+            </Button>
+          </div>
         </div>
-      </SectionCard>
 
-      {/* Section: Secteurs d'activite */}
-      <SectionCard title={t("dashboard.profile.sections.activites")}>
-        <p style={{ margin: "0 0 10px", fontSize: 12.5, color: "var(--l-sub)" }}>
-          {t("dashboard.profile.activitesHint")}
-        </p>
-        <div style={{ marginBottom: 10 }}>
-          <label style={{ display: "block", fontSize: 11.5, fontWeight: 600, color: "var(--l-sub)", marginBottom: 6 }}>
-            {t("veille.filters.categorie")}
-          </label>
-          <CategorieSelect
-            value={secteurCategorieLens}
-            onChange={setSecteurCategorieLens}
-            options={[
-              { value: "", label: t("veille.filters.categorieAll") },
-              ...AO_CATEGORIES.map((cat) => ({ value: cat, label: t(`veille.categories.${cat}`) })),
-            ]}
-          />
-        </div>
-        <SecteurPicker
-          selected={secteursInteret}
-          onChange={handleSecteursChange}
-          categorieFilter={secteurCategorieLens}
-        />
-      </SectionCard>
+        <div className="adj-grid">
+          {/* Rangee 1 -- 1/2 + 1/2, deux lignes de champs de chaque cote,
+              chaque ligne tombant pile sur 8/8. */}
+          <Card title={t("dashboard.profile.sections.identity")} className="adj-1-2">
+            <FieldGrid>
+              <ProfileField form={form} onChange={handleChange} fieldKey="nom_entreprise" placeholder="SARL Mon Entreprise" span="1-2" />
+              <ProfileField form={form} onChange={handleChange} fieldKey="forme_juridique" placeholder="SARL, SA..." span="1-4" />
+              <ProfileField form={form} onChange={handleChange} fieldKey="capital_social" span="1-4" />
+              <ProfileField form={form} onChange={handleChange} fieldKey="secteur" placeholder="Informatique, BTP..." span="1-1" />
+            </FieldGrid>
+          </Card>
 
-      {/* Section: Qualifications et references */}
-      <SectionCard title={t("dashboard.profile.sections.qualifications")}>
-        <p style={{ margin: "0 0 12px", fontSize: 12.5, color: "var(--l-sub)" }}>
-          {t("dashboard.profile.qualificationsHint")}
-        </p>
-        <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
-          <div>
-            <label style={{ display: "block", fontSize: 11.5, fontWeight: 600, color: "var(--l-sub)", marginBottom: 6 }}>
-              {t("dashboard.profile.fields.agrements")}
-            </label>
+          <Card title={t("dashboard.profile.sections.legal")} className="adj-1-2">
+            <FieldGrid>
+              <ProfileField form={form} onChange={handleChange} fieldKey="ice" placeholder="15 chiffres" span="1-2" />
+              <ProfileField form={form} onChange={handleChange} fieldKey="rc" placeholder="12345" span="1-4" />
+              <ProfileField form={form} onChange={handleChange} fieldKey="if_fiscal" span="1-4" />
+              <ProfileField form={form} onChange={handleChange} fieldKey="cnss" span="1-4" />
+              <ProfileField form={form} onChange={handleChange} fieldKey="rib" span="3-4" />
+            </FieldGrid>
+          </Card>
+
+          {/* Rangee 2 -- 5/8 + 3/8 : le siege a quatre champs, le gerant trois,
+              deux lignes de champs de chaque cote. */}
+          <Card title={t("dashboard.profile.sections.headquarters")} className="adj-5-8">
+            <FieldGrid>
+              <ProfileField form={form} onChange={handleChange} fieldKey="adresse" span="3-4" />
+              <ProfileField form={form} onChange={handleChange} fieldKey="ville" placeholder="Casablanca" span="1-4" />
+              <ProfileField form={form} onChange={handleChange} fieldKey="telephone" type="tel" span="1-2" />
+              <ProfileField form={form} onChange={handleChange} fieldKey="email" type="email" span="1-2" />
+            </FieldGrid>
+          </Card>
+
+          <Card title={t("dashboard.profile.sections.manager")} className="adj-3-8">
+            <FieldGrid>
+              <ProfileField form={form} onChange={handleChange} fieldKey="gerant_nom" span="1-2" />
+              <ProfileField form={form} onChange={handleChange} fieldKey="gerant_prenom" span="1-2" />
+              <ProfileField form={form} onChange={handleChange} fieldKey="gerant_cin" span="1-1" />
+            </FieldGrid>
+          </Card>
+
+          {/* Secteurs et capacite, cote a cote. En pleine largeur, le selecteur
+              de categorie et la liste d'activites s'etiraient sur 1500px. */}
+          <Card
+            title={t("dashboard.profile.sections.activites")}
+            subtitle={t("dashboard.profile.activitesHint")}
+            className="adj-1-2"
+          >
+            <div style={{ display: "flex", flexDirection: "column", gap: "var(--adj-4)" }}>
+              <div>
+                <label htmlFor="profil-categorie" style={labelStyle}>{t("veille.filters.categorie")}</label>
+                <Select
+                  id="profil-categorie"
+                  value={secteurCategorieLens}
+                  onChange={(v) => setSecteurCategorieLens(v as AoCategorie | "")}
+                  options={[
+                    { value: "", label: t("veille.filters.categorieAll") },
+                    ...AO_CATEGORIES.map((cat) => ({ value: cat, label: t(`veille.categories.${cat}`) })),
+                  ]}
+                />
+              </div>
+              <SecteurPicker
+                selected={secteursInteret}
+                onChange={(codes) => updateExtra("secteurs_interet", codes)}
+                categorieFilter={secteurCategorieLens}
+              />
+            </div>
+          </Card>
+
+          <Card title={t("dashboard.profile.sections.capacity")} className="adj-1-2">
+            <div style={{ display: "flex", flexDirection: "column", gap: "var(--adj-5)" }}>
+              <SubBlock label={t("dashboard.profile.fields.chiffre_affaires_moyen")} htmlFor="profil-ca">
+                <input
+                  id="profil-ca"
+                  type="number"
+                  value={chiffreAffairesMoyen}
+                  onChange={(e) => updateExtra("chiffre_affaires_moyen", e.target.value)}
+                  placeholder={t("dashboard.profile.caPh")}
+                  style={fieldInputStyle}
+                  onFocus={focusOn}
+                  onBlur={focusOff}
+                />
+              </SubBlock>
+              <SubBlock label={t("dashboard.profile.fields.certifications")}>
+                <StringListField
+                  items={certifications}
+                  onChange={(items) => updateExtra("certifications", items)}
+                  placeholder={t("dashboard.profile.certificationPh")}
+                  addLabel={t("dashboard.profile.addCertification")}
+                />
+              </SubBlock>
+            </div>
+          </Card>
+
+          {/* Qualifications : un intertitre, puis un panneau par liste. */}
+          <div className="adj-1-1" style={{ padding: "var(--adj-4) 2px 0" }}>
+            <h2 style={{
+              margin: 0, fontSize: "var(--adj-t-lg)", fontWeight: 700,
+              letterSpacing: "-0.02em", color: "var(--adj-ink)",
+            }}>
+              {t("dashboard.profile.sections.qualifications")}
+            </h2>
+            <p style={{ margin: "6px 0 0", fontSize: "var(--adj-t-sm)", color: "var(--adj-ink-3)", lineHeight: 1.5 }}>
+              {t("dashboard.profile.qualificationsHint")}
+            </p>
+          </div>
+
+          <Card title={t("dashboard.profile.fields.agrements")} count={agrements.length} className="adj-1-2">
             <StructuredListField
               rows={agrements}
               onChange={(rows) => updateExtra("agrements", rows)}
@@ -277,12 +396,9 @@ export function ProfileTab({ onProfileSaved }: { onProfileSaved: () => void }) {
                 { key: "numero", placeholder: t("dashboard.profile.fields.agrementNumero") },
               ]}
             />
-          </div>
+          </Card>
 
-          <div>
-            <label style={{ display: "block", fontSize: 11.5, fontWeight: 600, color: "var(--l-sub)", marginBottom: 6 }}>
-              {t("dashboard.profile.fields.classifications")}
-            </label>
+          <Card title={t("dashboard.profile.fields.classifications")} count={classifications.length} className="adj-1-2">
             <StructuredListField
               rows={classifications}
               onChange={(rows) => updateExtra("classifications", rows)}
@@ -293,24 +409,9 @@ export function ProfileTab({ onProfileSaved }: { onProfileSaved: () => void }) {
                 { key: "classe", placeholder: t("dashboard.profile.fields.classe") },
               ]}
             />
-          </div>
+          </Card>
 
-          <div>
-            <label style={{ display: "block", fontSize: 11.5, fontWeight: 600, color: "var(--l-sub)", marginBottom: 6 }}>
-              {t("dashboard.profile.fields.certifications")}
-            </label>
-            <StringListField
-              items={certifications}
-              onChange={(items) => updateExtra("certifications", items)}
-              placeholder={t("dashboard.profile.certificationPh")}
-              addLabel={t("dashboard.profile.addCertification")}
-            />
-          </div>
-
-          <div>
-            <label style={{ display: "block", fontSize: 11.5, fontWeight: 600, color: "var(--l-sub)", marginBottom: 6 }}>
-              {t("dashboard.profile.fields.references_similaires")}
-            </label>
+          <Card title={t("dashboard.profile.fields.references_similaires")} count={referencesSimilaires.length} className="adj-1-1">
             <StructuredListField
               rows={referencesSimilaires}
               onChange={(rows) => updateExtra("references_similaires", rows)}
@@ -321,137 +422,19 @@ export function ProfileTab({ onProfileSaved }: { onProfileSaved: () => void }) {
                 { key: "annee", placeholder: t("dashboard.profile.fields.annee"), type: "number" },
               ]}
             />
-          </div>
-
-          <div>
-            <label style={{ display: "block", fontSize: 11.5, fontWeight: 600, color: "var(--l-sub)", marginBottom: 6 }}>
-              {t("dashboard.profile.fields.chiffre_affaires_moyen")}
-            </label>
-            <input
-              type="number"
-              value={chiffreAffairesMoyen}
-              onChange={(e) => updateExtra("chiffre_affaires_moyen", e.target.value)}
-              placeholder={t("dashboard.profile.caPh")}
-              style={inputStyle}
-            />
-          </div>
+          </Card>
         </div>
-      </SectionCard>
+      </form>
 
-      {/* Section: Identifiants légaux */}
-      <SectionCard title={t("dashboard.profile.sections.legal")}>
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "1fr 1fr",
-            gap: "14px 16px",
-          }}
-        >
-          <Field form={form} onChange={handleChange} t={t} fieldKey="forme_juridique" half />
-          <Field form={form} onChange={handleChange} t={t} fieldKey="capital_social" half />
-          <Field form={form} onChange={handleChange} t={t} fieldKey="ice" required placeholder="15 chiffres" half />
-          <Field form={form} onChange={handleChange} t={t} fieldKey="rc" placeholder="12345" half />
-          <Field form={form} onChange={handleChange} t={t} fieldKey="if_fiscal" half />
-          <Field form={form} onChange={handleChange} t={t} fieldKey="cnss" half />
-          <Field form={form} onChange={handleChange} t={t} fieldKey="rib" half />
+      {/* Notifications et membres, cote a cote plutot qu'etires en pleine largeur. */}
+      <div className="adj-grid">
+        <div className="adj-1-2" style={{ display: "flex", flexDirection: "column", minWidth: 0 }}>
+          <NotificationPreferencesSection secteursInteretDefault={secteursInteret} />
         </div>
-      </SectionCard>
-
-      {/* Section: Gérant */}
-      <SectionCard title={t("dashboard.profile.sections.manager")}>
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "1fr 1fr",
-            gap: "14px 16px",
-          }}
-        >
-          <Field form={form} onChange={handleChange} t={t} fieldKey="gerant_nom" required half />
-          <Field form={form} onChange={handleChange} t={t} fieldKey="gerant_prenom" required half />
-          <Field form={form} onChange={handleChange} t={t} fieldKey="gerant_cin" half />
+        <div className="adj-1-2" style={{ display: "flex", flexDirection: "column", minWidth: 0 }}>
+          <OrgMembersSection />
         </div>
-      </SectionCard>
-
-      {/* Section: Contact */}
-      <SectionCard title={t("dashboard.profile.sections.contact")}>
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "1fr 1fr",
-            gap: "14px 16px",
-          }}
-        >
-          <Field form={form} onChange={handleChange} t={t} fieldKey="telephone" half />
-          <Field form={form} onChange={handleChange} t={t} fieldKey="email" half />
-        </div>
-      </SectionCard>
-
-      {error && (
-        <p style={{ margin: 0, fontSize: 12, color: "#dc2626" }}>{error}</p>
-      )}
-
-      <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-        <button
-          type="submit"
-          disabled={saving || !isComplete}
-          style={{
-            padding: "10px 24px",
-            borderRadius: 9,
-            border: "none",
-            background:
-              saving || !isComplete ? "var(--l-dim)" : "var(--l-blue)",
-            color: "#fff",
-            fontSize: 13.5,
-            fontWeight: 600,
-            cursor: saving || !isComplete ? "not-allowed" : "pointer",
-            fontFamily: "inherit",
-            transition: "opacity .15s",
-          }}
-          onMouseEnter={(e) => {
-            if (!saving && isComplete) e.currentTarget.style.opacity = ".85";
-          }}
-          onMouseLeave={(e) => (e.currentTarget.style.opacity = "1")}
-        >
-          {saving ? t("dashboard.profile.saving") : t("dashboard.profile.save")}
-        </button>
-        {saved && (
-          <span
-            style={{
-              fontSize: 13,
-              color: "#16a34a",
-              display: "flex",
-              alignItems: "center",
-              gap: 5,
-            }}
-          >
-            <svg
-              width="14"
-              height="14"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-              strokeWidth={2.5}
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M4.5 12.75l6 6 9-13.5"
-              />
-            </svg>
-            {t("dashboard.profile.saved")}
-          </span>
-        )}
-        {!isComplete && !saved && (
-          <p style={{ margin: 0, fontSize: 12, color: "var(--l-dim)" }}>
-            {t("dashboard.profile.requiredIncomplete")}
-          </p>
-        )}
       </div>
-    </form>
-    <NotificationPreferencesSection secteursInteretDefault={secteursInteret} />
-    <OrgMembersSection />
     </div>
   );
 }
-
-// ── Signature & Cachet ─────────────────────────────────────

@@ -1,5 +1,11 @@
-// Decoupe depuis pages/DashboardPage.tsx (2026-09-12, refactoring par domaine).
-// Deplacement pur : aucun changement de comportement.
+// Panneau de section des reglages d'entreprise.
+//
+// Repris le 2026-09-27 : n'est plus qu'un alias du `Card` du socle. Il reste
+// importe par les sections de notifications, de membres et d'abonnement ; les
+// faire passer par ici leur donne le titre a 20px, le filet et le rayon du
+// socle sans toucher a leur contenu.
+
+import { Card } from "../../../shared/ui/Card";
 
 export function SectionCard({
   title,
@@ -8,34 +14,5 @@ export function SectionCard({
   title: string;
   children: React.ReactNode;
 }) {
-  return (
-    <div
-      style={{
-        background: "var(--l-card)",
-        border: "1px solid var(--l-card-border)",
-        borderRadius: 14,
-      }}
-    >
-      <div
-        style={{
-          padding: "11px 16px",
-          borderBottom: "1px solid var(--l-card-border)",
-        }}
-      >
-        <p
-          style={{
-            margin: 0,
-            fontSize: 12.5,
-            fontWeight: 600,
-            color: "var(--l-text)",
-          }}
-        >
-          {title}
-        </p>
-      </div>
-      <div style={{ padding: "16px" }}>{children}</div>
-    </div>
-  );
+  return <Card title={title}>{children}</Card>;
 }
-
-// ── Abonnement ──────────────────────────────────────────────

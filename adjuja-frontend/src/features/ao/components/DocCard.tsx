@@ -4,7 +4,7 @@
 import { useState } from "react";
 import { Eye } from "lucide-react";
 import { Modal } from "../../../shared/ui/Modal";
-import { DocumentPreview } from "./DocumentPreview";
+import { DocumentPreview } from "../../../shared/ui/DocumentPreview";
 import { useTranslation } from "react-i18next";
 import { getAoDocumentDownloadUrl } from "../api";
 import type { AoDocumentOut } from "../types";
