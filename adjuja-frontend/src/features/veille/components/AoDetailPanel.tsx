@@ -1,9 +1,13 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { EligibilityVerdict, EligibilityVerdictType, ScrapedAo } from '../../../types';
+import type { DownloadProgress } from '../types';
 import WatcherStatusBadge from './WatcherStatusBadge';
 import DownloadProgressBanner from './DownloadProgressBanner';
 import { updateScrapedAoStatus, importScrapedAo, analyzeScrapedAo, fetchScrapedAo, downloadScrapedAoZip } from '../../../api';
+import { fetchScrapedAoDocument } from '../api';
+import { useApercuDocument } from '../../../shared/ui/DocumentPreviewModal';
+import { FitScore } from '../../ao/components/FitScore';
 import { useIsMobile } from '../../../hooks/useIsMobile';
 import { formatTitre, splitReservationClause } from '../../../utils/formatTitre';
 
@@ -13,19 +17,19 @@ type Tab = 'resume' | 'docs' | 'goNoGo';
 
 const VERDICT_STYLES: Record<EligibilityVerdictType, { bg: string; color: string; border: string }> = {
   go: {
-    bg:     'rgba(34,197,94,0.10)',
-    color:  '#16a34a',
-    border: 'rgba(34,197,94,0.25)',
+    bg:     'var(--adj-pos-tint)',
+    color:  'var(--adj-pos)',
+    border: 'color-mix(in srgb, var(--adj-pos) 25%, transparent)',
   },
   risque: {
-    bg:     'rgba(245,158,11,0.10)',
-    color:  '#d97706',
-    border: 'rgba(245,158,11,0.25)',
+    bg:     'var(--adj-hold-tint)',
+    color:  'var(--adj-hold)',
+    border: 'color-mix(in srgb, var(--adj-hold) 25%, transparent)',
   },
   no_go: {
-    bg:     'rgba(220,38,38,0.10)',
-    color:  '#dc2626',
-    border: 'rgba(220,38,38,0.25)',
+    bg:     'var(--adj-neg-tint)',
+    color:  'var(--adj-neg)',
+    border: 'color-mix(in srgb, var(--adj-neg) 25%, transparent)',
   },
 };
 
@@ -38,10 +42,10 @@ type Props = {
 function MetaChip({ label, value }: { label: string; value: string }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 3, minWidth: 0 }}>
-      <span style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.07em', color: 'var(--adj-ink-4)' }}>
+      <span style={{ fontSize: 'var(--adj-t-xs)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.07em', color: 'var(--adj-ink-4)' }}>
         {label}
       </span>
-      <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--adj-ink)', wordBreak: 'break-word', overflowWrap: 'anywhere', lineHeight: 1.4 }}>
+      <span style={{ fontSize: 'var(--adj-t-sm)', fontWeight: 600, color: 'var(--adj-ink)', wordBreak: 'break-word', overflowWrap: 'anywhere', lineHeight: 1.4 }}>
         {value}
       </span>
     </div>
@@ -135,6 +139,22 @@ export default function AoDetailPanel({ ao: initialAo, onClose, onUpdated }: Pro
   const [error, setError] = useState<string | null>(null);
   const [analyzing, setAnalyzing] = useState(false);
   const [verdict, setVerdict] = useState<EligibilityVerdict | null>(null);
+  // Apercu des documents de l'onglet Documents (2026-09-27).
+  const { ouvrirFichier, modale: apercuModale } = useApercuDocument();
+  const [apercuEnCours, setApercuEnCours] = useState<string | null>(null);
+  const [apercuErreur, setApercuErreur] = useState<string | null>(null);
+  async function ouvrirDocument(label: string, nom: string) {
+    setApercuErreur(null);
+    setApercuEnCours(label);
+    try {
+      const blob = await fetchScrapedAoDocument(ao.id, label);
+      ouvrirFichier(new File([blob], nom, { type: blob.type || 'application/pdf' }));
+    } catch (e) {
+      setApercuErreur(e instanceof Error ? e.message : t('veille.detail.previewError'));
+    } finally {
+      setApercuEnCours(null);
+    }
+  }
   const [analyzeError, setAnalyzeError] = useState<string | null>(null);
   const [titreExpanded, setTitreExpanded] = useState(false);
   const [downloadingZip, setDownloadingZip] = useState(false);
@@ -182,17 +202,38 @@ export default function AoDetailPanel({ ao: initialAo, onClose, onUpdated }: Pro
     }
   };
 
+  // Documents scannes : la route repond 202 tant que l'OCR tourne (plusieurs
+  // secondes par page) ; on la rappelle jusqu'au verdict. Arret si le panneau
+  // se ferme.
+  const [ocrProgress, setOcrProgress] = useState<DownloadProgress | null>(null);
+  const ferme = useRef(false);
+  useEffect(() => () => { ferme.current = true; }, []);
+
   const doAnalyze = async () => {
     setAnalyzing(true);
     setAnalyzeError(null);
     try {
-      const result = await analyzeScrapedAo(ao.id);
-      setVerdict(result);
-      setAo(prev => ({ ...prev, analyse_json: result.analyse_json }));
+      for (;;) {
+        const result = await analyzeScrapedAo(ao.id);
+        if (ferme.current) return;
+        if ('ocr' in result) {
+          setOcrProgress(result.ocr);
+          await new Promise(r => setTimeout(r, 3000));
+          if (ferme.current) return;
+          continue;
+        }
+        setOcrProgress(null);
+        setVerdict(result);
+        setAo(prev => ({ ...prev, analyse_json: result.analyse_json }));
+        break;
+      }
     } catch (e: unknown) {
-      setAnalyzeError(e instanceof Error ? e.message : t('veille.detail.goNoGo.error'));
+      if (!ferme.current) setAnalyzeError(e instanceof Error ? e.message : t('veille.detail.goNoGo.error'));
     } finally {
-      setAnalyzing(false);
+      if (!ferme.current) {
+        setAnalyzing(false);
+        setOcrProgress(null);
+      }
     }
   };
 
@@ -355,7 +396,7 @@ export default function AoDetailPanel({ ao: initialAo, onClose, onUpdated }: Pro
         {/* Acheteur + Titre */}
         <div style={{ marginBottom: 16 }}>
           {ao.acheteur && (
-            <p style={{ margin: '0 0 5px', fontSize: 12, fontWeight: 600, color: 'var(--adj-ink-2)' }}>
+            <p style={{ margin: '0 0 5px', fontSize: 'var(--adj-t-xs)', fontWeight: 600, color: 'var(--adj-ink-2)' }}>
               {ao.acheteur}
             </p>
           )}
@@ -393,7 +434,7 @@ export default function AoDetailPanel({ ao: initialAo, onClose, onUpdated }: Pro
                       border: 'none',
                       padding: 0,
                       cursor: 'pointer',
-                      fontSize: 12,
+                      fontSize: 'var(--adj-t-xs)',
                       fontWeight: 600,
                       color: 'var(--adj-brand)',
                       fontFamily: 'inherit',
@@ -409,8 +450,8 @@ export default function AoDetailPanel({ ao: initialAo, onClose, onUpdated }: Pro
                       padding: '7px 11px',
                       borderRadius: 8,
                       background: 'var(--adj-brand-tint)',
-                      border: '1px solid rgba(30,136,229,0.2)',
-                      fontSize: 12,
+                      border: '1px solid var(--adj-brand-edge)',
+                      fontSize: 'var(--adj-t-xs)',
                       color: 'var(--adj-brand)',
                       lineHeight: 1.5,
                     }}
@@ -428,16 +469,16 @@ export default function AoDetailPanel({ ao: initialAo, onClose, onUpdated }: Pro
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 16 }}>
             {ao.budget_estime && (
               <span style={{
-                fontSize: 12, fontWeight: 600, padding: '4px 10px',
+                fontSize: 'var(--adj-t-xs)', fontWeight: 600, padding: '4px 10px',
                 borderRadius: 20, background: 'var(--adj-brand-tint)',
-                color: 'var(--adj-brand)', border: '1px solid rgba(30,136,229,0.2)',
+                color: 'var(--adj-brand)', border: '1px solid var(--adj-brand-edge)',
               }}>
                 {t('veille.detail.budget')}: {formatAmount(ao.budget_estime)}
               </span>
             )}
             {ao.caution && (
               <span style={{
-                fontSize: 12, fontWeight: 600, padding: '4px 10px',
+                fontSize: 'var(--adj-t-xs)', fontWeight: 600, padding: '4px 10px',
                 borderRadius: 20, background: 'var(--adj-panel-2)',
                 color: 'var(--adj-ink-2)', border: '1px solid var(--adj-hairline)',
               }}>
@@ -507,23 +548,23 @@ export default function AoDetailPanel({ ao: initialAo, onClose, onUpdated }: Pro
               {hasZipError && (
                 <div style={{
                   padding: '10px 14px', borderRadius: 8,
-                  background: 'rgba(220,38,38,0.07)',
-                  border: '1px solid rgba(220,38,38,0.2)',
+                  background: 'var(--adj-neg-tint)',
+                  border: '1px solid color-mix(in srgb, var(--adj-neg) 25%, transparent)',
                 }}>
-                  <p style={{ margin: '0 0 4px', fontSize: 12, fontWeight: 700, color: '#dc2626' }}>
+                  <p style={{ margin: '0 0 4px', fontSize: 'var(--adj-t-xs)', fontWeight: 700, color: 'var(--adj-neg)' }}>
                     {t('veille.detail.zipError')}
                   </p>
-                  <p style={{ margin: 0, fontSize: 12, color: '#dc2626' }}>{ao.zip_error}</p>
+                  <p style={{ margin: 0, fontSize: 'var(--adj-t-xs)', color: 'var(--adj-neg)' }}>{ao.zip_error}</p>
                 </div>
               )}
 
               {noZipLink && !progress && (
                 <div style={{
                   padding: '10px 14px', borderRadius: 8,
-                  background: 'rgba(107,139,179,0.08)',
+                  background: 'var(--adj-panel-2)',
                   border: '1px solid var(--adj-hairline)',
                 }}>
-                  <p style={{ margin: 0, fontSize: 12, color: 'var(--adj-ink-2)' }}>
+                  <p style={{ margin: 0, fontSize: 'var(--adj-t-xs)', color: 'var(--adj-ink-2)' }}>
                     {t('veille.detail.noZipLink')}
                   </p>
                 </div>
@@ -533,13 +574,13 @@ export default function AoDetailPanel({ ao: initialAo, onClose, onUpdated }: Pro
                 <div style={{
                   display: 'flex', alignItems: 'center', gap: 8,
                   padding: '9px 14px', borderRadius: 8,
-                  background: 'rgba(34,197,94,0.08)',
-                  border: '1px solid rgba(34,197,94,0.2)',
+                  background: 'var(--adj-pos-tint)',
+                  border: '1px solid color-mix(in srgb, var(--adj-pos) 25%, transparent)',
                 }}>
-                  <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="#16a34a" strokeWidth={2.5}>
+                  <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="var(--adj-pos)" strokeWidth={2.5}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
-                  <span style={{ fontSize: 13, fontWeight: 600, color: '#16a34a' }}>
+                  <span style={{ fontSize: 'var(--adj-t-sm)', fontWeight: 600, color: 'var(--adj-pos)' }}>
                     {t('veille.detail.zipReady')} ({Object.keys(ao.classified_docs!).length} docs)
                   </span>
                 </div>
@@ -557,7 +598,7 @@ export default function AoDetailPanel({ ao: initialAo, onClose, onUpdated }: Pro
               )}
 
               {downloadError && (
-                <p style={{ margin: 0, fontSize: 12, color: '#dc2626' }}>{downloadError}</p>
+                <p style={{ margin: 0, fontSize: 'var(--adj-t-xs)', color: 'var(--adj-neg)' }}>{downloadError}</p>
               )}
 
               {canImport && (
@@ -578,13 +619,13 @@ export default function AoDetailPanel({ ao: initialAo, onClose, onUpdated }: Pro
             <div style={{
               display: 'flex', alignItems: 'center', gap: 8,
               padding: '9px 14px', borderRadius: 8,
-              background: 'rgba(34,197,94,0.08)',
-              border: '1px solid rgba(34,197,94,0.2)',
+              background: 'var(--adj-pos-tint)',
+              border: '1px solid color-mix(in srgb, var(--adj-pos) 25%, transparent)',
             }}>
-              <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="#16a34a" strokeWidth={2.5}>
+              <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="var(--adj-pos)" strokeWidth={2.5}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
-              <span style={{ fontSize: 13, fontWeight: 600, color: '#16a34a' }}>
+              <span style={{ fontSize: 'var(--adj-t-sm)', fontWeight: 600, color: 'var(--adj-pos)' }}>
                 {importedId
                   ? `${t('veille.detail.importDone')} (#${importedId})`
                   : t('veille.detail.importDone')}
@@ -603,7 +644,7 @@ export default function AoDetailPanel({ ao: initialAo, onClose, onUpdated }: Pro
               gap:            6,
               padding:        '8px 14px',
               borderRadius:   8,
-              fontSize:       13,
+              fontSize:       'var(--adj-t-sm)',
               fontWeight:     500,
               color:          'var(--adj-ink-2)',
               border:         '1px solid var(--adj-hairline)',
@@ -622,7 +663,7 @@ export default function AoDetailPanel({ ao: initialAo, onClose, onUpdated }: Pro
 
         {/* Error */}
         {error && (
-          <p style={{ fontSize: 12, color: '#dc2626', marginBottom: 16 }}>{error}</p>
+          <p style={{ fontSize: 'var(--adj-t-xs)', color: 'var(--adj-neg)', marginBottom: 16 }}>{error}</p>
         )}
 
         {/* Tabs */}
@@ -637,7 +678,7 @@ export default function AoDetailPanel({ ao: initialAo, onClose, onUpdated }: Pro
                 border:       'none',
                 borderBottom: tab === t2 ? '2px solid var(--adj-brand)' : '2px solid transparent',
                 color:        tab === t2 ? 'var(--adj-brand)' : 'var(--adj-ink-2)',
-                fontSize:     13,
+                fontSize:     'var(--adj-t-sm)',
                 fontWeight:   tab === t2 ? 700 : 500,
                 cursor:       'pointer',
                 fontFamily:   'inherit',
@@ -652,7 +693,7 @@ export default function AoDetailPanel({ ao: initialAo, onClose, onUpdated }: Pro
 
         {/* Tab content */}
         {tab === 'resume' && (
-          <p style={{ margin: 0, fontSize: 13, color: 'var(--adj-ink-2)', lineHeight: 1.7 }}>
+          <p style={{ margin: 0, fontSize: 'var(--adj-t-sm)', color: 'var(--adj-ink-2)', lineHeight: 1.7 }}>
             {ao.description ?? t('veille.detail.noDesc')}
           </p>
         )}
@@ -677,17 +718,43 @@ export default function AoDetailPanel({ ao: initialAo, onClose, onUpdated }: Pro
                       <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="var(--adj-ink-4)" strokeWidth={1.5}>
                         <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
                       </svg>
-                      <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--adj-ink)', textTransform: 'capitalize' }}>
+                      <span style={{ fontSize: 'var(--adj-t-sm)', fontWeight: 600, color: 'var(--adj-ink)', textTransform: 'capitalize' }}>
                         {label.replace(/_/g, ' ')}
                       </span>
                     </div>
-                    <span style={{ fontSize: 11, color: 'var(--adj-ink-4)', fontFamily: 'monospace' }}>
-                      {key.split('/').pop()}
-                    </span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
+                      <span style={{ fontSize: 'var(--adj-t-xs)', color: 'var(--adj-ink-4)', fontFamily: 'monospace', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {key.split('/').pop()}
+                      </span>
+                      {/\.pdf$/i.test(key) && (
+                        <button
+                          type="button"
+                          className="adj-focusable"
+                          onClick={() => ouvrirDocument(label, key.split('/').pop() || `${label}.pdf`)}
+                          disabled={apercuEnCours !== null}
+                          style={{
+                            flexShrink: 0, display: 'inline-flex', alignItems: 'center', gap: 6,
+                            height: 32, padding: '0 10px', borderRadius: 'var(--adj-round-s)',
+                            border: '1px solid var(--adj-hairline)', background: 'var(--adj-panel)',
+                            color: 'var(--adj-brand)', fontFamily: 'inherit',
+                            fontSize: 'var(--adj-t-xs)', fontWeight: 600,
+                            cursor: apercuEnCours !== null ? 'wait' : 'pointer',
+                          }}
+                        >
+                          {apercuEnCours === label ? <Spinner /> : (
+                            <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                            </svg>
+                          )}
+                          {t('veille.detail.preview')}
+                        </button>
+                      )}
+                    </div>
                   </div>
                 ))
               : (
-                <p style={{ margin: 0, fontSize: 13, color: 'var(--adj-ink-4)' }}>
+                <p style={{ margin: 0, fontSize: 'var(--adj-t-sm)', color: 'var(--adj-ink-4)' }}>
                   {isDownloading || progress
                     ? t('veille.detail.downloadingZip')
                     : noZipLink
@@ -698,10 +765,14 @@ export default function AoDetailPanel({ ao: initialAo, onClose, onUpdated }: Pro
           </div>
         )}
 
+        {tab === 'docs' && apercuErreur && (
+          <p role="alert" style={{ margin: '8px 0 0', fontSize: 'var(--adj-t-xs)', color: 'var(--adj-neg)' }}>{apercuErreur}</p>
+        )}
+
         {tab === 'goNoGo' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
             {!zipReady ? (
-              <p style={{ margin: 0, fontSize: 13, color: 'var(--adj-ink-4)' }}>
+              <p style={{ margin: 0, fontSize: 'var(--adj-t-sm)', color: 'var(--adj-ink-4)' }}>
                 {t('veille.detail.goNoGo.needFavorite')}
               </p>
             ) : (
@@ -715,11 +786,37 @@ export default function AoDetailPanel({ ao: initialAo, onClose, onUpdated }: Pro
                   {analyzing ? t('veille.detail.goNoGo.analyzing') : t('veille.detail.goNoGo.cta')}
                 </ActionBtn>
 
-                {analyzeError && (
-                  <p style={{ margin: 0, fontSize: 12, color: '#dc2626' }}>{analyzeError}</p>
+                {ocrProgress && (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                    <p style={{ margin: 0, fontSize: 'var(--adj-t-sm)', fontWeight: 600, color: 'var(--adj-ink)' }}>
+                      {ocrProgress.pages
+                        ? t('veille.detail.goNoGo.ocrProgress', { page: ocrProgress.page ?? 0, pages: ocrProgress.pages })
+                        : t('veille.detail.goNoGo.ocrQueued')}
+                    </p>
+                    {!!ocrProgress.pages && (
+                      <div aria-hidden style={{ height: 6, borderRadius: 3, background: 'var(--adj-panel-2)', overflow: 'hidden' }}>
+                        <div style={{
+                          height: '100%', borderRadius: 3, background: 'var(--adj-brand)',
+                          width: `${Math.round(100 * (ocrProgress.page ?? 0) / ocrProgress.pages)}%`,
+                          transition: 'width .4s',
+                        }} />
+                      </div>
+                    )}
+                    <p style={{ margin: 0, fontSize: 'var(--adj-t-xs)', color: 'var(--adj-ink-3)', lineHeight: 1.45 }}>
+                      {t('veille.detail.goNoGo.ocrHint')}
+                    </p>
+                  </div>
                 )}
 
-                {verdict && (
+                {analyzeError && (
+                  <p style={{ margin: 0, fontSize: 'var(--adj-t-xs)', color: 'var(--adj-neg)' }}>{analyzeError}</p>
+                )}
+
+                {/* Fit score (2026-09-27) ; l'ancien verdict ne reste qu'en repli,
+                    si l'app principale ne renvoie pas encore de score. */}
+                {verdict?.fit_score && <FitScore data={verdict.fit_score} />}
+
+                {verdict && !verdict.fit_score && (
                   <>
                     <div style={{
                       display: 'flex', alignItems: 'center', gap: 8,
@@ -727,7 +824,7 @@ export default function AoDetailPanel({ ao: initialAo, onClose, onUpdated }: Pro
                       background: VERDICT_STYLES[verdict.verdict].bg,
                       border: `1px solid ${VERDICT_STYLES[verdict.verdict].border}`,
                     }}>
-                      <span style={{ fontSize: 13, fontWeight: 700, color: VERDICT_STYLES[verdict.verdict].color }}>
+                      <span style={{ fontSize: 'var(--adj-t-sm)', fontWeight: 700, color: VERDICT_STYLES[verdict.verdict].color }}>
                         {t(`veille.detail.goNoGo.verdict.${verdict.verdict}`)}
                       </span>
                     </div>
@@ -735,7 +832,7 @@ export default function AoDetailPanel({ ao: initialAo, onClose, onUpdated }: Pro
                     {verdict.raisons.length > 0 && (
                       <ul style={{ margin: 0, padding: '0 0 0 18px', display: 'flex', flexDirection: 'column', gap: 6 }}>
                         {verdict.raisons.map((raison, i) => (
-                          <li key={i} style={{ fontSize: 12.5, color: 'var(--adj-ink-2)', lineHeight: 1.5 }}>
+                          <li key={i} style={{ fontSize: 'var(--adj-t-xs)', color: 'var(--adj-ink-2)', lineHeight: 1.5 }}>
                             {raison}
                           </li>
                         ))}
@@ -749,6 +846,7 @@ export default function AoDetailPanel({ ao: initialAo, onClose, onUpdated }: Pro
         )}
       </div>
     </aside>
+    {apercuModale}
     </>
   );
 }

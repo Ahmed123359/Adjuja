@@ -28,6 +28,7 @@ import { NotificationPreferencesSection } from "../components/NotificationPrefer
 import { OrgMembersSection } from "../components/OrgMembersSection";
 import { AO_CATEGORIES } from "../constants";
 import { Card } from "../../../shared/ui/Card";
+import { invalider } from "../../../shared/lib/cache";
 import { Button } from "../../../shared/ui/Button";
 import { Select } from "../../../shared/ui/Select";
 import { FieldGrid, TextField, LoadingBlock, type Fraction, labelStyle, fieldInputStyle, focusOn, focusOff } from "../ui";
@@ -107,7 +108,12 @@ function SubBlock({ label, htmlFor, children }: {
 
 // ── Onglet ──────────────────────────────────────────────────
 
-export function ProfileTab({ onProfileSaved }: { onProfileSaved: () => void }) {
+export function ProfileTab({ onProfileSaved, champ, onChampAtteint }: {
+  onProfileSaved: () => void;
+  /** Champ a montrer a l'ouverture (action du fit score), ex. `certifications`. */
+  champ?: string | null;
+  onChampAtteint?: () => void;
+}) {
   const { t } = useTranslation();
   const [form, setForm] = useState<CompanyProfileForm>(EMPTY_FORM);
   const [profile, setProfile] = useState<CompanyProfile | null>(null);
@@ -181,6 +187,8 @@ export function ProfileTab({ onProfileSaved }: { onProfileSaved: () => void }) {
       setProfile(p);
       setSaved(true);
       setDirty(false);
+      // Le fit score depend du profil : il sera recalcule a la prochaine lecture.
+      invalider("ao:fit:");
       onProfileSaved();
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : t("dashboard.profile.error"));
@@ -188,6 +196,18 @@ export function ProfileTab({ onProfileSaved }: { onProfileSaved: () => void }) {
       setSaving(false);
     }
   };
+
+  // Action du fit score : defiler jusqu'au champ vise une fois le profil charge.
+  useEffect(() => {
+    if (loading || !champ) return;
+    const id = champ === "chiffre_affaires_moyen" ? "profil-ca" : `profil-${champ}`;
+    const el = document.getElementById(id);
+    if (el) {
+      el.scrollIntoView({ behavior: "smooth", block: "center" });
+      if (el instanceof HTMLInputElement) el.focus({ preventScroll: true });
+    }
+    onChampAtteint?.();
+  }, [loading, champ, onChampAtteint]);
 
   if (loading) return <LoadingBlock />;
 
@@ -363,6 +383,7 @@ export function ProfileTab({ onProfileSaved }: { onProfileSaved: () => void }) {
                 />
               </SubBlock>
               <SubBlock label={t("dashboard.profile.fields.certifications")}>
+                <span id="profil-certifications" aria-hidden style={{ display: "block", scrollMarginTop: 120 }} />
                 <StringListField
                   items={certifications}
                   onChange={(items) => updateExtra("certifications", items)}
@@ -399,6 +420,7 @@ export function ProfileTab({ onProfileSaved }: { onProfileSaved: () => void }) {
           </Card>
 
           <Card title={t("dashboard.profile.fields.classifications")} count={classifications.length} className="adj-1-2">
+            <span id="profil-classifications" aria-hidden style={{ display: "block", scrollMarginTop: 120 }} />
             <StructuredListField
               rows={classifications}
               onChange={(rows) => updateExtra("classifications", rows)}
@@ -412,6 +434,7 @@ export function ProfileTab({ onProfileSaved }: { onProfileSaved: () => void }) {
           </Card>
 
           <Card title={t("dashboard.profile.fields.references_similaires")} count={referencesSimilaires.length} className="adj-1-1">
+            <span id="profil-references_similaires" aria-hidden style={{ display: "block", scrollMarginTop: 120 }} />
             <StructuredListField
               rows={referencesSimilaires}
               onChange={(rows) => updateExtra("references_similaires", rows)}

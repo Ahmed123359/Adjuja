@@ -9,10 +9,12 @@
 //   - une jauge d'abonnement n'apparaît que s'il existe un vrai plafond, sinon
 //     elle mentirait sur la consommation.
 
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useRessource } from "../../../shared/lib/cache";
 import { fetchAos } from "../../ao/api";
 import { getSubscription } from "../../billing/api";
+import PricingModal from "../../billing/components/PricingModal";
 import { fetchScrapedAos } from "../../veille/api";
 import type { AoSummary, ProfileCheck, Subscription } from "../../../types";
 import { Card, CardAction } from "../../../shared/ui/Card";
@@ -246,6 +248,9 @@ function Usage({ label, used, limit }: { label: string; used: number; limit: num
 
 export function PlanCard() {
   const { t } = useTranslation();
+  // Seul point d'entree permanent vers le changement d'offre (2026-09-27) :
+  // avant, la grille ne s'ouvrait que depuis un formulaire inatteignable.
+  const [offres, setOffres] = useState(false);
   const { data: sub } = useRessource<Subscription>("billing:subscription", getSubscription);
   if (!sub) return null;
 
@@ -255,6 +260,9 @@ export function PlanCard() {
     <Card
       title={t("dashboard.overview.planTitle")}
       subtitle={t(`billing.status.${sub.status}`, { defaultValue: sub.status })}
+      footer={
+        <CardAction onClick={() => setOffres(true)}>{t("billing.modal.changePlan")}</CardAction>
+      }
       action={
         <span style={{
           padding: "5px 11px", borderRadius: "var(--adj-round-s)",
@@ -279,6 +287,7 @@ export function PlanCard() {
           limit={sub.usage.documents.limit}
         />
       </div>
+      {offres && <PricingModal onClose={() => setOffres(false)} />}
     </Card>
   );
 }

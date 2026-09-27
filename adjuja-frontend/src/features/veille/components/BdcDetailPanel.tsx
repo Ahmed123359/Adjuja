@@ -16,10 +16,10 @@ function MetaChip({ label, value }: { label: string; value: string | null }) {
   if (!value) return null;
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 3, minWidth: 0 }}>
-      <span style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.07em', color: 'var(--adj-ink-4)' }}>
+      <span style={{ fontSize: 'var(--adj-t-xs)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.07em', color: 'var(--adj-ink-4)' }}>
         {label}
       </span>
-      <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--adj-ink)', wordBreak: 'break-word', overflowWrap: 'anywhere', lineHeight: 1.4 }}>
+      <span style={{ fontSize: 'var(--adj-t-sm)', fontWeight: 600, color: 'var(--adj-ink)', wordBreak: 'break-word', overflowWrap: 'anywhere', lineHeight: 1.4 }}>
         {value}
       </span>
     </div>
@@ -42,10 +42,10 @@ function ActionBtn({
     alignItems:     'center',
     justifyContent: 'center',
     gap:            6,
-    padding:        '11px 16px',
+    padding:        '0 14px',
     minHeight:      44,
-    borderRadius:   10,
-    fontSize:       14,
+    borderRadius:   'var(--adj-round-m)',
+    fontSize:       'var(--adj-t-sm)',
     fontWeight:     600,
     cursor:         disabled ? 'not-allowed' : 'pointer',
     border:         'none',
@@ -123,6 +123,13 @@ export default function BdcDetailPanel({ bdc: initialBdc, onClose, onUpdated }: 
     return () => { cancelled = true; clearTimeout(timer); };
   }, [isDownloading, bdc.id]);
 
+  // Echap ferme le panneau, comme celui des AO.
+  useEffect(() => {
+    const touche = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
+    document.addEventListener('keydown', touche);
+    return () => document.removeEventListener('keydown', touche);
+  }, [onClose]);
+
   const update = async (status: string) => {
     setLoadingStatus(true);
     setError(null);
@@ -138,7 +145,18 @@ export default function BdcDetailPanel({ bdc: initialBdc, onClose, onUpdated }: 
   };
 
   return (
+    <>
+      {/* Voile et tiroir identiques au panneau des AO (2026-09-27) : en colonne
+          voisine de 460px, ce panneau comprimait le tableau des BDC. */}
+      {!isMobile && (
+        <div
+          className="adj-overlay"
+          onClick={onClose}
+          style={{ position: 'fixed', inset: 0, zIndex: 55, background: 'rgba(16, 21, 41, 0.42)' }}
+        />
+      )}
     <aside
+      className={isMobile ? undefined : 'adj-drawer'}
       style={
         isMobile
           ? {
@@ -151,14 +169,18 @@ export default function BdcDetailPanel({ bdc: initialBdc, onClose, onUpdated }: 
               overflowY:     'auto',
             }
           : {
-              width:          460,
-              flexShrink:     0,
-              display:        'flex',
-              flexDirection:  'column',
-              background:     'var(--adj-panel)',
-              borderLeft:     '1px solid var(--adj-hairline)',
-              height:         '100%',
-              overflowY:      'auto',
+              position:      'fixed',
+              top:           0,
+              right:         0,
+              bottom:        0,
+              zIndex:        60,
+              width:         'min(520px, 92vw)',
+              display:       'flex',
+              flexDirection: 'column',
+              background:    'var(--adj-panel)',
+              borderLeft:    '1px solid var(--adj-hairline)',
+              boxShadow:     'var(--adj-lift-3)',
+              overflowY:     'auto',
             }
       }
     >
@@ -176,7 +198,7 @@ export default function BdcDetailPanel({ bdc: initialBdc, onClose, onUpdated }: 
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
           <WatcherStatusBadge status={bdc.status} size="md" />
-          <span style={{ fontSize: 11, color: 'var(--adj-ink-4)', fontWeight: 500, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+          <span style={{ fontSize: 'var(--adj-t-xs)', color: 'var(--adj-ink-4)', fontWeight: 500, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
             BDC
           </span>
         </div>
@@ -201,7 +223,7 @@ export default function BdcDetailPanel({ bdc: initialBdc, onClose, onUpdated }: 
         {/* Acheteur + Titre */}
         <div style={{ marginBottom: 16 }}>
           {bdc.acheteur && (
-            <p style={{ margin: '0 0 5px', fontSize: 12, fontWeight: 600, color: 'var(--adj-ink-2)' }}>
+            <p style={{ margin: '0 0 5px', fontSize: 'var(--adj-t-xs)', fontWeight: 600, color: 'var(--adj-ink-2)' }}>
               {bdc.acheteur}
             </p>
           )}
@@ -215,14 +237,14 @@ export default function BdcDetailPanel({ bdc: initialBdc, onClose, onUpdated }: 
           <div
             style={{
               marginBottom: 16, padding: '10px 14px', borderRadius: 8,
-              background: 'rgba(220,38,38,0.07)', border: '1px solid rgba(220,38,38,0.2)',
+              background: 'var(--adj-neg-tint)', border: '1px solid color-mix(in srgb, var(--adj-neg) 25%, transparent)',
             }}
           >
-            <p style={{ margin: '0 0 4px', fontSize: 12, fontWeight: 700, color: '#dc2626' }}>
+            <p style={{ margin: '0 0 4px', fontSize: 'var(--adj-t-xs)', fontWeight: 700, color: 'var(--adj-neg)' }}>
               {t('bdc.detail.annule')} {bdc.date_annulation && `· ${formatDate(bdc.date_annulation)}`}
             </p>
             {bdc.raison_annulation && (
-              <p style={{ margin: 0, fontSize: 12, color: '#dc2626' }}>{bdc.raison_annulation}</p>
+              <p style={{ margin: 0, fontSize: 'var(--adj-t-xs)', color: 'var(--adj-neg)' }}>{bdc.raison_annulation}</p>
             )}
           </div>
         )}
@@ -243,10 +265,10 @@ export default function BdcDetailPanel({ bdc: initialBdc, onClose, onUpdated }: 
           {bdc.categorie && <MetaChip label={t('veille.detail.categorie')} value={bdc.categorie} />}
           {bdc.nature_prestation && (
             <div style={{ gridColumn: '1 / -1', display: 'flex', flexDirection: 'column', gap: 3, minWidth: 0 }}>
-              <span style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.07em', color: 'var(--adj-ink-4)' }}>
+              <span style={{ fontSize: 'var(--adj-t-xs)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.07em', color: 'var(--adj-ink-4)' }}>
                 {t('bdc.detail.naturePrestation')}
               </span>
-              <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--adj-ink)', wordBreak: 'break-word' }}>{bdc.nature_prestation}</span>
+              <span style={{ fontSize: 'var(--adj-t-sm)', fontWeight: 600, color: 'var(--adj-ink)', wordBreak: 'break-word' }}>{bdc.nature_prestation}</span>
             </div>
           )}
         </div>
@@ -277,12 +299,12 @@ export default function BdcDetailPanel({ bdc: initialBdc, onClose, onUpdated }: 
               <div style={{
                 display: 'flex', alignItems: 'center', gap: 8,
                 padding: '9px 14px', borderRadius: 8,
-                background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.2)',
+                background: 'var(--adj-hold-tint)', border: '1px solid color-mix(in srgb, var(--adj-hold) 25%, transparent)',
               }}>
-                <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="#d97706" strokeWidth={2.5}>
+                <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="var(--adj-hold)" strokeWidth={2.5}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M11.48 3.499a.562.562 0 011.04 0l2.125 5.111a.563.563 0 00.475.345l5.518.442c.499.04.701.663.321.988l-4.204 3.602a.563.563 0 00-.182.557l1.285 5.385a.562.562 0 01-.84.61l-4.725-2.885a.563.563 0 00-.586 0L6.982 20.54a.562.562 0 01-.84-.61l1.285-5.386a.562.562 0 00-.182-.557l-4.204-3.602a.562.562 0 01.321-.988l5.518-.442a.563.563 0 00.475-.345L11.48 3.5z" />
                 </svg>
-                <span style={{ fontSize: 13, fontWeight: 600, color: '#d97706' }}>{t('veille.detail.favorited')}</span>
+                <span style={{ fontSize: 'var(--adj-t-sm)', fontWeight: 600, color: 'var(--adj-hold)' }}>{t('veille.detail.favorited')}</span>
               </div>
 
               {isDownloading && (
@@ -295,7 +317,7 @@ export default function BdcDetailPanel({ bdc: initialBdc, onClose, onUpdated }: 
                   background: 'var(--adj-panel-2)',
                   border: '1px solid var(--adj-hairline)',
                 }}>
-                  <p style={{ margin: 0, fontSize: 12, color: 'var(--adj-ink-2)' }}>
+                  <p style={{ margin: 0, fontSize: 'var(--adj-t-xs)', color: 'var(--adj-ink-2)' }}>
                     {t('bdc.detail.noDoc')}
                   </p>
                 </div>
@@ -304,13 +326,13 @@ export default function BdcDetailPanel({ bdc: initialBdc, onClose, onUpdated }: 
               {hasZipError && (
                 <div style={{
                   padding: '10px 14px', borderRadius: 8,
-                  background: 'rgba(220,38,38,0.07)',
-                  border: '1px solid rgba(220,38,38,0.2)',
+                  background: 'var(--adj-neg-tint)',
+                  border: '1px solid color-mix(in srgb, var(--adj-neg) 25%, transparent)',
                 }}>
-                  <p style={{ margin: '0 0 4px', fontSize: 12, fontWeight: 700, color: '#dc2626' }}>
+                  <p style={{ margin: '0 0 4px', fontSize: 'var(--adj-t-xs)', fontWeight: 700, color: 'var(--adj-neg)' }}>
                     {t('bdc.detail.docError')}
                   </p>
-                  <p style={{ margin: 0, fontSize: 12, color: '#dc2626' }}>{bdc.zip_error}</p>
+                  <p style={{ margin: 0, fontSize: 'var(--adj-t-xs)', color: 'var(--adj-neg)' }}>{bdc.zip_error}</p>
                 </div>
               )}
 
@@ -318,13 +340,13 @@ export default function BdcDetailPanel({ bdc: initialBdc, onClose, onUpdated }: 
                 <div style={{
                   display: 'flex', alignItems: 'center', gap: 8,
                   padding: '9px 14px', borderRadius: 8,
-                  background: 'rgba(34,197,94,0.08)',
-                  border: '1px solid rgba(34,197,94,0.2)',
+                  background: 'var(--adj-pos-tint)',
+                  border: '1px solid color-mix(in srgb, var(--adj-pos) 25%, transparent)',
                 }}>
-                  <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="#16a34a" strokeWidth={2.5}>
+                  <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="var(--adj-pos)" strokeWidth={2.5}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
-                  <span style={{ fontSize: 13, fontWeight: 600, color: '#16a34a' }}>
+                  <span style={{ fontSize: 'var(--adj-t-sm)', fontWeight: 600, color: 'var(--adj-pos)' }}>
                     {t('bdc.detail.docReady')}
                   </span>
                 </div>
@@ -339,7 +361,7 @@ export default function BdcDetailPanel({ bdc: initialBdc, onClose, onUpdated }: 
               rel="noopener noreferrer"
               style={{
                 display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
-                padding: '9px 16px', borderRadius: 8, fontSize: 13, fontWeight: 600,
+                padding: '9px 16px', borderRadius: 8, fontSize: 'var(--adj-t-sm)', fontWeight: 600,
                 color: 'var(--adj-brand)', border: '1px solid var(--adj-hairline)', textDecoration: 'none',
               }}
             >
@@ -356,7 +378,7 @@ export default function BdcDetailPanel({ bdc: initialBdc, onClose, onUpdated }: 
             rel="noopener noreferrer"
             style={{
               display: 'flex', alignItems: 'center', gap: 6,
-              padding: '8px 14px', borderRadius: 8, fontSize: 13, fontWeight: 500,
+              padding: '8px 14px', borderRadius: 8, fontSize: 'var(--adj-t-sm)', fontWeight: 500,
               color: 'var(--adj-ink-2)', border: '1px solid var(--adj-hairline)', textDecoration: 'none',
               transition: 'color .15s',
             }}
@@ -371,9 +393,10 @@ export default function BdcDetailPanel({ bdc: initialBdc, onClose, onUpdated }: 
         </div>
 
         {error && (
-          <p style={{ fontSize: 12, color: '#dc2626', marginBottom: 16 }}>{error}</p>
+          <p style={{ fontSize: 'var(--adj-t-xs)', color: 'var(--adj-neg)', marginBottom: 16 }}>{error}</p>
         )}
       </div>
     </aside>
+    </>
   );
 }

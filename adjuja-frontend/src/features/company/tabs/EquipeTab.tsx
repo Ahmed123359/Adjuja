@@ -8,6 +8,7 @@
 // Le parcours n'a pas change : import d'un PDF -> extraction -> verification
 // -> enregistrement (le PDF est rattache au membre cree).
 
+import { invalider } from "../../../shared/lib/cache";
 import { useState, useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { Eye, FileUp, Paperclip, Pencil, Plus, Trash2 } from "lucide-react";
@@ -83,6 +84,7 @@ export function EquipeTab() {
       }
       await load();
       setMode("list"); setForm(EMPTY_CV); setPendingPdf(null);
+      invalider("ao:fit:"); // le fit score compte ces pieces
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : t("dashboard.team.saveError"));
     } finally { setSaving(false); }

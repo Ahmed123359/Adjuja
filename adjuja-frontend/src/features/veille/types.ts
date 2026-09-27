@@ -1,6 +1,8 @@
 // Veille des appels d'offres et des bons de commande (service ao-watcher).
 // Decoupe depuis l'ancien src/types.ts monolithique (2026-09-12).
 
+import type { FitScore } from '../ao/types';
+
 
 // ── AO Watcher ───────────────────────────────────────────────────────────────
 
@@ -14,6 +16,9 @@ export interface DownloadProgress {
   max_tentatives: number | null;
   elapsed_s:      number;
   retry_in_s:     number | null;
+  /** OCR des documents scannes : pages lues sur le total (2026-09-27). */
+  page?:          number | null;
+  pages?:         number | null;
 }
 
 export interface ScrapedAo {
@@ -52,7 +57,13 @@ export interface EligibilityVerdict {
   verdict:      EligibilityVerdictType;
   raisons:      string[];
   details:      Record<string, unknown>;
+  /** Fit score /100 (2026-09-27), absent si l'app principale ne l'a pas calcule. */
+  fit_score?:   FitScore | null;
 }
+
+/** Reponse de l'analyse : le verdict, ou (202) la progression de l'OCR des
+ *  documents scannes, a redemander jusqu'au verdict. */
+export type AnalyseResult = EligibilityVerdict | { ocr: DownloadProgress };
 
 export interface ScrapedAoList {
   items: ScrapedAo[];

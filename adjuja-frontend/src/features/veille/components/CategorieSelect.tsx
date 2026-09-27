@@ -47,7 +47,7 @@ export default function CategorieSelect({ value, onChange, options }: Props) {
           border:         `1px solid ${open ? 'var(--adj-brand)' : 'var(--adj-hairline)'}`,
           background:     'var(--adj-panel-2)',
           color:          value ? 'var(--adj-ink)' : 'var(--adj-ink-4)',
-          fontSize:       13,
+          fontSize:       'var(--adj-t-sm)',
           fontFamily:     'inherit',
           cursor:         'pointer',
         }}
@@ -94,7 +94,7 @@ export default function CategorieSelect({ value, onChange, options }: Props) {
                   border:       'none',
                   background:   selected ? 'var(--adj-brand-tint)' : 'transparent',
                   color:        selected ? 'var(--adj-brand)' : 'var(--adj-ink)',
-                  fontSize:     13,
+                  fontSize:     'var(--adj-t-sm)',
                   fontWeight:   selected ? 600 : 500,
                   fontFamily:   'inherit',
                   cursor:       'pointer',

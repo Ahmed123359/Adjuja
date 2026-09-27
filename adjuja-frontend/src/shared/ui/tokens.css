@@ -79,7 +79,7 @@
      Un panneau ne flotte pas : il est pose. Les deux niveaux hauts sont
      reserves a ce qui se superpose reellement (menus, infobulles). */
   --adj-lift-0: none;
-  --adj-lift-1: 0 1px 2px rgba(17, 24, 39, 0.05);
+  --adj-lift-1: none;   /* fond uni : un panneau se detoure par son filet, sans ombre */
   --adj-lift-2: 0 4px 14px rgba(17, 24, 39, 0.09);
   --adj-lift-3: 0 16px 40px rgba(17, 24, 39, 0.17);
 
@@ -93,12 +93,18 @@
      Ici tout l'ecran est dans la meme famille froide, et le fond est nettement
      plus clair que le gris-bleu terne du premier essai (#EEF0F4) : les panneaux
      blancs s'en detachent franchement. */
-  --adj-bg:       #F1F4FA;
+  /* 2026-09-27, demande de l'utilisateur : fond UNI dans toute l'application.
+     Le fond d'ecran prend la couleur des panneaux ; ce qui separe les zones
+     n'est plus une difference de fond mais un filet (--adj-hairline). Remplace
+     le principe precedent (« panneau blanc detoure par un fond gris »). */
+  --adj-bg:       var(--adj-panel);
   --adj-panel:    #FFFFFF;
   --adj-panel-2:  #EEF2F8;   /* zones creuses, pistes de barre, champs */
   --adj-panel-3:  #F7F9FC;   /* survol de ligne */
-  --adj-hairline: #E1E7F0;
-  --adj-edge:     #CBD3E1;
+  /* Filets renforces d'un cran le 2026-09-27 : avec le fond uni, ce sont eux
+     qui separent les zones, ils doivent se voir. */
+  --adj-hairline: #D5DDE9;
+  --adj-edge:     #BCC6D6;
 
   /* --- Encre ------------------------------------------------------------------
      Meme famille : un gris neutre sur un fond bleute parait jaune par contraste
@@ -164,12 +170,12 @@
 }
 
 .dark {
-  --adj-bg:       #0A0D16;
+  --adj-bg:       var(--adj-panel);   /* fond uni, voir le bloc clair */
   --adj-panel:    #141929;
   --adj-panel-2:  #1B2133;
   --adj-panel-3:  #1F2639;
-  --adj-hairline: #242B3E;
-  --adj-edge:     #333B52;
+  --adj-hairline: #2E364C;
+  --adj-edge:     #3E4761;
 
   --adj-ink:   #F0F3FA;
   --adj-ink-2: #C6CCDC;
@@ -201,7 +207,7 @@
   --adj-rail:      #0A0E1E;
   --adj-rail-deep: #070A16;
 
-  --adj-lift-1: 0 1px 2px rgba(0, 0, 0, 0.36);
+  --adj-lift-1: none;
   --adj-lift-2: 0 4px 16px rgba(0, 0, 0, 0.44);
   --adj-lift-3: 0 16px 44px rgba(0, 0, 0, 0.58);
 

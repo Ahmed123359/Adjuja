@@ -19,6 +19,7 @@ import { SignatureTab } from "./tabs/SignatureTab";
 import { DocumentsTab } from "./tabs/DocumentsTab";
 import { EquipeTab } from "./tabs/EquipeTab";
 import { GenerationTab } from "./tabs/GenerationTab";
+import { consommerCibleReglages, surOuvertureReglages } from "../../shared/lib/navigation";
 
 type DashTab =
   | "profile"
@@ -29,7 +30,16 @@ type DashTab =
 
 export default function CompanySettingsPage() {
   const { t } = useTranslation();
-  const [tab, setTab] = useState<DashTab>("profile");
+  // Une cible posee par ouvrirReglages() avant le montage (fit score) choisit
+  // l'onglet initial et le champ a montrer.
+  const [cibleInitiale] = useState(() => consommerCibleReglages());
+  const [tab, setTab] = useState<DashTab>(cibleInitiale?.onglet ?? "profile");
+  const [champ, setChamp] = useState<string | null>(cibleInitiale?.champ ?? null);
+  useEffect(() => surOuvertureReglages((c) => {
+    consommerCibleReglages();
+    setTab(c.onglet);
+    setChamp(c.champ ?? null);
+  }), []);
   const [profileCheck, setProfileCheck] = useState<ProfileCheck | null>(null);
 
   const loadCheck = useCallback(() => {
@@ -141,7 +151,7 @@ export default function CompanySettingsPage() {
           maxWidth: "var(--adj-max)", margin: "0 auto",
           padding: "var(--adj-5) var(--adj-6) var(--adj-10)",
         }}>
-          {tab === "profile" && <ProfileTab onProfileSaved={loadCheck} />}
+          {tab === "profile" && <ProfileTab onProfileSaved={loadCheck} champ={champ} onChampAtteint={() => setChamp(null)} />}
           {tab === "signature" && <SignatureTab />}
           {tab === "documents" && <DocumentsTab />}
           {tab === "equipe" && <EquipeTab />}

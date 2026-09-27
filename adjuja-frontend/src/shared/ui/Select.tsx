@@ -18,9 +18,10 @@
 //     lecteur d'écran ne voit qu'un bouton ;
 //   - l'option active suivie au clavier, et ramenée dans la vue au défilement.
 
-import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Check, ChevronDown } from 'lucide-react';
+import { useFloating, floatingStyle } from './useFloating';
 
 export type Option = { value: string; label: string };
 
@@ -59,34 +60,9 @@ export function Select({ value, onChange, options, placeholder, id, disabled }: 
     return () => document.removeEventListener('mousedown', clic);
   }, [ouvert]);
 
-  // Position de la liste. Elle est rendue dans un portail, en position fixe,
-  // au-dessus de tout (2026-09-27) : en position absolue dans son parent, elle
-  // était rognée par tout panneau en `overflow: hidden` (la `Card` du socle) et
-  // étirait ou coupait le contenu au lieu de flotter. Elle s'ouvre vers le haut
-  // quand la place manque en bas de la fenêtre.
-  const [pos, setPos] = useState<{ left: number; width: number; top?: number; bottom?: number; max: number } | null>(null);
-  useLayoutEffect(() => {
-    if (!ouvert) { setPos(null); return; }
-    const placer = () => {
-      const r = zone.current?.getBoundingClientRect();
-      if (!r) return;
-      const ecart = 5, marge = 12, voulu = 260;
-      const bas = window.innerHeight - r.bottom - ecart - marge;
-      const haut = r.top - ecart - marge;
-      const versLeHaut = bas < Math.min(voulu, 160) && haut > bas;
-      setPos(versLeHaut
-        ? { left: r.left, width: r.width, bottom: window.innerHeight - r.top + ecart, max: Math.min(voulu, haut) }
-        : { left: r.left, width: r.width, top: r.bottom + ecart, max: Math.min(voulu, bas) });
-    };
-    placer();
-    // Suit le defilement de n'importe quel conteneur (capture) et le redimensionnement.
-    window.addEventListener('scroll', placer, true);
-    window.addEventListener('resize', placer);
-    return () => {
-      window.removeEventListener('scroll', placer, true);
-      window.removeEventListener('resize', placer);
-    };
-  }, [ouvert]);
+  // Liste rendue en portail, en position fixe (voir ./useFloating) : en
+  // position absolue, elle etait rognee par les `Card` en overflow hidden.
+  const pos = useFloating(zone, ouvert);
 
   // Une liste plus haute que sa fenêtre laisserait l'option active hors champ
   // quand on la rejoint au clavier.
@@ -162,13 +138,12 @@ export function Select({ value, onChange, options, placeholder, id, disabled }: 
           role="listbox"
           className="adj-scroll adj-pop"
           style={{
-            position: 'fixed', left: pos.left, width: pos.width, top: pos.top, bottom: pos.bottom,
+            ...floatingStyle(pos),
             background: 'var(--adj-panel)',
             border: '1px solid var(--adj-hairline)',
             borderRadius: 'var(--adj-round-m)',
             boxShadow: 'var(--adj-lift-3)',
-            padding: 4, zIndex: 1000,
-            maxHeight: pos.max, overflowY: 'auto', boxSizing: 'border-box',
+            padding: 4, overflowY: 'auto',
           }}
         >
           {options.map((o, i) => {

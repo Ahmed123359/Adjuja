@@ -44,11 +44,11 @@ export default function DownloadProgressBanner({ progress, fallback }: Props) {
         animation: 'spin 1s linear infinite',
         flexShrink: 0,
       }} />
-      <span style={{ flex: 1, minWidth: 0, fontSize: 13, color: 'var(--adj-hold)', fontWeight: 500 }}>
+      <span style={{ flex: 1, minWidth: 0, fontSize: 'var(--adj-t-sm)', color: 'var(--adj-hold)', fontWeight: 500 }}>
         {label}
       </span>
       {progress && !retrying && (
-        <span style={{ flexShrink: 0, fontSize: 12, color: 'var(--adj-hold)', fontVariantNumeric: 'tabular-nums' }}>
+        <span style={{ flexShrink: 0, fontSize: 'var(--adj-t-xs)', color: 'var(--adj-hold)', fontVariantNumeric: 'tabular-nums' }}>
           {t('veille.detail.downloadElapsed', { s: progress.elapsed_s })}
         </span>
       )}

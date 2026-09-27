@@ -1,238 +1,175 @@
+// Changement d'offre dans l'application -- refait le 2026-09-27.
+//
+// L'ancienne version affichait 79 EUR / 249 EUR (la page publique et le backend
+// facturent 490 / 990 MAD), renvoyait vers un lien Stripe et un rendez-vous
+// Calendly alors que le paiement passe par CMI, et n'etait atteignable que
+// depuis le formulaire de generation, lui-meme inatteignable.
+//
+// Maintenant :
+//   - prix et noms d'offre lus sur `GET /billing/plans`, la source de verite
+//     (`app/billing/plans.py`) : ils ne peuvent plus diverger ;
+//   - listes d'avantages reprises des memes cles i18n que la page publique ;
+//   - l'offre actuelle est signalee, chaque offre superieure lance le paiement
+//     CMI (`startCheckout`), une erreur (CMI non configure, 503) s'affiche.
+// Seul le tarif mensuel est propose : le paiement ne prend qu'un code d'offre,
+// il n'y a pas d'engagement annuel a la souscription.
+
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
+import { Check } from "lucide-react";
+import { Modal } from "../../../shared/ui/Modal";
+import { Button } from "../../../shared/ui/Button";
+import { useRessource } from "../../../shared/lib/cache";
+import { fetchPlans, getSubscription, startCheckout } from "../api";
+import type { PlanCode, PlanInfo, Subscription } from "../types";
 
-const PLANS = [
-  {
-    name: "Starter",
-    price: "79€",
-    period: "/ mois HT",
-    tagline: "Pour tester et convaincre en interne",
-    highlighted: false,
-    features: [
-      "50 AOs générés / mois",
-      "3 providers LLM (GPT-4o, Claude, Mistral)",
-      "Export Word (.docx)",
-      "Signatures instantanées illimitées",
-      "1 utilisateur",
-      "Support e-mail (48h)",
-    ],
-    cta: "S'abonner  79€/mois",
-    note: "Sans engagement · résiliable à tout moment",
-    action: () =>
-      window.open("https://buy.stripe.com/eVq28qcic8UD3Eb8wDdQQ00", "_blank"),
-  },
-  {
-    name: "Pro",
-    price: "249€",
-    period: "/ mois HT",
-    tagline: "Pour les équipes commerciales actives",
-    highlighted: true,
-    features: [
-      "Génération illimitée",
-      "Digestion jusqu'à 50 documents†",
-      "Chat avec vos documents ✨",
-      "Signatures instantanées illimitées",
-      "5 utilisateurs",
-      "Support prioritaire (4h)",
-    ],
-    cta: "Contacter l'équipe",
-    note: "Le plus choisi par nos clients PME / ETI",
-    action: () =>
-      (window as any).Calendly?.initPopupWidget({
-        url: "https://calendly.com/charif-eljazouli",
-      }),
-  },
-  {
-    name: "Entreprise",
-    price: "Sur devis",
-    period: "",
-    tagline: "Pour les grands groupes et cabinets",
-    highlighted: false,
-    features: [
-      "Génération illimitée",
-      "Digestion jusqu'à 200 documents†",
-      "Chat avec vos documents ✨",
-      "Signatures instantanées illimitées",
-      "Utilisateurs illimités",
-      "SSO / Active Directory",
-      "SLA 99,9 % garanti",
-    ],
-    cta: "Contacter l'équipe",
-    note: "Déploiement en 5 jours ouvrés",
-    action: () =>
-      (window as any).Calendly?.initPopupWidget({
-        url: "https://calendly.com/charif-eljazouli",
-      }),
-  },
-];
+const OFFRES: PlanCode[] = ["starter", "pro", "enterprise"];
+const RECOMMANDEE: PlanCode = "pro";
 
-function IconCheck() {
-  return (
-    <svg
-      className="w-3.5 h-3.5 flex-shrink-0"
-      fill="none"
-      viewBox="0 0 24 24"
-      stroke="currentColor"
-      strokeWidth={2.5}
-    >
-      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-    </svg>
-  );
-}
+/** Avantages par offre : les memes cles que la page publique (PricingSection). */
+const AVANTAGES: Record<string, string[]> = {
+  starter: ["f_users_1", "f_50_ao", "f_export", "f_docs_50", "f_support_email"],
+  pro: ["f_users_5", "f_ao_illimite", "f_export", "f_docs_200", "f_chat", "f_providers", "f_signatures", "f_support_priority"],
+  enterprise: ["f_users_unlimited", "f_all_pro", "f_sso", "f_sla", "f_onboarding", "f_onprem"],
+};
 
-type Props = { onClose: () => void };
+type Props = {
+  onClose: () => void;
+  /** "limit" : ouverte parce que la limite de l'offre est atteinte. */
+  reason?: "limit" | "upgrade";
+};
 
-export default function PricingModal({ onClose }: Props) {
-  const [closing, setClosing] = useState(false);
+export default function PricingModal({ onClose, reason = "upgrade" }: Props) {
+  const { t } = useTranslation();
+  const { data: plans, erreur: erreurPlans } = useRessource<Record<string, PlanInfo>>("billing:plans", fetchPlans, 10 * 60_000);
+  const { data: sub } = useRessource<Subscription>("billing:subscription", getSubscription);
+  const [enCours, setEnCours] = useState<PlanCode | null>(null);
+  const [erreur, setErreur] = useState<string | null>(null);
 
-  function handleClose() {
-    setClosing(true);
-    setTimeout(onClose, 200);
+  const actuelle = sub?.plan_code ?? "free";
+  const prixActuel = plans?.[actuelle]?.price_mad ?? 0;
+
+  async function choisir(code: PlanCode) {
+    setErreur(null);
+    setEnCours(code);
+    try {
+      const { redirect_url } = await startCheckout(code);
+      window.location.href = redirect_url;
+    } catch (e: unknown) {
+      setErreur(e instanceof Error ? e.message : t("billing.modal.checkoutError"));
+      setEnCours(null);
+    }
   }
 
   return (
-    <div
-      className={`fixed inset-0 z-50 flex items-center justify-center p-4 transition-opacity duration-200 ${closing ? "opacity-0" : "opacity-100"}`}
-      style={{ background: "rgba(0,0,0,0.7)", backdropFilter: "blur(6px)" }}
+    <Modal
+      open
+      onClose={onClose}
+      title={reason === "limit" ? t("billing.modal.titleLimit") : t("billing.modal.title")}
+      subtitle={t("billing.modal.subtitle")}
+      width={1080}
     >
-      <div
-        className="relative w-full max-w-4xl max-h-[90vh] overflow-y-auto rounded-2xl border border-white/[.08]"
-        style={{ background: "#0a101c" }}
-      >
-        {/* Header */}
-        <div
-          className="sticky top-0 z-10 px-6 pt-6 pb-4 border-b border-white/[.06]"
-          style={{ background: "#0a101c" }}
-        >
-          <button
-            onClick={handleClose}
-            className="absolute top-4 right-4 p-2 rounded-lg text-slate-500 hover:text-white hover:bg-white/10 transition-colors"
-          >
-            <svg
-              className="w-5 h-5"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-              strokeWidth={2}
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M6 18L18 6M6 6l12 12"
-              />
-            </svg>
-          </button>
-          <p className="text-center text-[11px] font-semibold uppercase tracking-widest text-indigo-400 mb-1">
-            Passez à la vitesse supérieure
+      <div style={{ display: "flex", flexDirection: "column", gap: "var(--adj-5)" }}>
+        {erreurPlans && (
+          <p role="alert" style={{ margin: 0, fontSize: "var(--adj-t-sm)", color: "var(--adj-neg)" }}>
+            {t("billing.modal.loadError")}
           </p>
-          <h2 className="text-center font-bold text-white text-xl">
-            Vous avez utilisé votre génération gratuite
-          </h2>
-          <p className="text-center text-slate-500 text-sm mt-1">
-            Choisissez un plan pour continuer à générer des réponses AO.
-          </p>
-        </div>
+        )}
 
-        {/* Cards */}
-        <div className="p-6 grid grid-cols-1 sm:grid-cols-3 gap-4">
-          {PLANS.map(
-            ({
-              name,
-              price,
-              period,
-              tagline,
-              highlighted,
-              features,
-              cta,
-              note,
-              action,
-            }) => (
-              <div
-                key={name}
-                className="relative rounded-xl p-5 flex flex-col border transition-all"
-                style={
-                  highlighted
-                    ? {
-                        background: "rgba(99,102,241,0.08)",
-                        border: "1px solid rgba(99,102,241,0.4)",
-                        boxShadow: "0 0 30px rgba(99,102,241,0.15)",
-                      }
-                    : {
-                        background: "rgba(255,255,255,0.03)",
-                        border: "1px solid rgba(255,255,255,0.07)",
-                      }
-                }
+        <div style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))",
+          gap: "var(--adj-4)",
+        }}>
+          {OFFRES.map((code) => {
+            const plan = plans?.[code];
+            const estActuelle = actuelle === code;
+            const inferieure = !!plan && plan.price_mad < prixActuel;
+            const recommandee = code === RECOMMANDEE && !estActuelle;
+            return (
+              <section
+                key={code}
+                aria-label={plan?.label ?? code}
+                style={{
+                  position: "relative",
+                  display: "flex", flexDirection: "column", gap: "var(--adj-4)",
+                  padding: "var(--adj-pad)",
+                  borderRadius: "var(--adj-round-l)",
+                  border: `1px solid ${recommandee ? "var(--adj-brand)" : estActuelle ? "var(--adj-pos)" : "var(--adj-hairline)"}`,
+                  background: recommandee ? "var(--adj-brand-tint)" : "var(--adj-panel)",
+                }}
               >
-                {highlighted && (
-                  <span
-                    className="absolute -top-3 left-1/2 -translate-x-1/2 text-[10px] font-bold px-3 py-1 rounded-full"
-                    style={{
-                      background: "linear-gradient(135deg,#4338ca,#6366f1)",
-                      color: "#fff",
-                    }}
-                  >
-                    Recommandé
-                  </span>
-                )}
-
-                <div className="mb-3">
-                  <p className="font-bold text-white text-sm">{name}</p>
-                  <p className="text-slate-500 text-xs">{tagline}</p>
-                </div>
-
-                <div className="mb-4">
-                  <span className="font-bold text-2xl text-white">{price}</span>
-                  {period && (
-                    <span className="text-slate-500 text-xs ml-1">
-                      {period}
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
+                  <h3 style={{ margin: 0, fontSize: "var(--adj-t-md)", fontWeight: 700, color: "var(--adj-ink)", letterSpacing: "-0.015em" }}>
+                    {plan?.label ?? "…"}
+                  </h3>
+                  {(estActuelle || recommandee) && (
+                    <span style={{
+                      padding: "3px 10px", borderRadius: "var(--adj-round-s)",
+                      fontSize: "var(--adj-t-xs)", fontWeight: 600, whiteSpace: "nowrap",
+                      background: estActuelle ? "var(--adj-pos-tint)" : "var(--adj-brand)",
+                      color: estActuelle ? "var(--adj-pos)" : "var(--adj-on-brand)",
+                    }}>
+                      {estActuelle ? t("billing.modal.current") : t("billing.modal.recommended")}
                     </span>
                   )}
                 </div>
 
-                <ul className="space-y-1.5 mb-4 flex-1">
-                  {features.map((f, i) => (
-                    <li
-                      key={i}
-                      className="flex items-center gap-2 text-xs text-slate-400"
-                    >
-                      <span className="text-indigo-400">
-                        <IconCheck />
-                      </span>
-                      {f}
+                <p style={{ margin: 0, display: "flex", alignItems: "baseline", gap: 6 }}>
+                  <span className="adj-fig" style={{ fontSize: "var(--adj-t-num)", fontWeight: 800, color: "var(--adj-ink)", letterSpacing: "-0.03em", lineHeight: 1 }}>
+                    {plan ? plan.price_mad.toLocaleString("fr-FR") : "—"}
+                  </span>
+                  <span style={{ fontSize: "var(--adj-t-sm)", color: "var(--adj-ink-3)" }}>
+                    {t("billing.modal.perMonth")}
+                  </span>
+                </p>
+
+                <p style={{ margin: 0, fontSize: "var(--adj-t-xs)", color: "var(--adj-ink-3)", lineHeight: 1.5, minHeight: "3em" }}>
+                  {t(`pricing.plans.${code}_tagline`)}
+                </p>
+
+                <ul style={{ listStyle: "none", margin: 0, padding: 0, display: "flex", flexDirection: "column", gap: 10, flex: 1 }}>
+                  {AVANTAGES[code].map((k) => (
+                    <li key={k} style={{ display: "flex", alignItems: "flex-start", gap: 10, fontSize: "var(--adj-t-sm)", color: "var(--adj-ink-2)", lineHeight: 1.4 }}>
+                      <Check size={17} strokeWidth={2.4} style={{ flexShrink: 0, marginTop: 1, color: "var(--adj-brand)" }} />
+                      {t(`pricing.plans.${k}`)}
                     </li>
                   ))}
                 </ul>
 
-                <button
-                  onClick={action}
-                  className="w-full py-2 rounded-xl text-sm font-semibold transition-all hover:scale-[1.02] active:scale-[0.98]"
-                  style={
-                    highlighted
-                      ? {
-                          background: "linear-gradient(135deg,#4338ca,#6366f1)",
-                          color: "#fff",
-                          boxShadow: "0 4px 20px rgba(99,102,241,0.4)",
-                        }
-                      : {
-                          background: "rgba(99,102,241,0.12)",
-                          color: "#a5b4fc",
-                          border: "1px solid rgba(99,102,241,0.3)",
-                        }
-                  }
+                <Button
+                  block
+                  variant={recommandee ? "primary" : "secondary"}
+                  disabled={!plan || estActuelle || inferieure || enCours !== null}
+                  loading={enCours === code}
+                  onClick={() => choisir(code)}
                 >
-                  {cta}
-                </button>
-                <p className="text-[10px] text-slate-600 text-center mt-2">
-                  {note}
-                </p>
-              </div>
-            ),
-          )}
+                  {estActuelle
+                    ? t("billing.modal.current")
+                    : inferieure
+                      ? t("billing.modal.included")
+                      : enCours === code
+                        ? t("billing.modal.redirecting")
+                        : t("billing.modal.choose", { plan: plan?.label ?? "" })}
+                </Button>
+              </section>
+            );
+          })}
         </div>
 
-        <p className="text-center text-slate-700 text-xs pb-4">
-          † 1 document = fichier PDF jusqu'à 20 pages A4
+        {erreur && (
+          <p role="alert" style={{
+            margin: 0, padding: "12px 16px", borderRadius: "var(--adj-round-m)",
+            background: "var(--adj-neg-tint)", color: "var(--adj-neg)", fontSize: "var(--adj-t-sm)",
+          }}>
+            {erreur}
+          </p>
+        )}
+
+        <p style={{ margin: 0, fontSize: "var(--adj-t-xs)", color: "var(--adj-ink-3)", textAlign: "center" }}>
+          {t("billing.modal.secure")}
         </p>
       </div>
-    </div>
+    </Modal>
   );
 }

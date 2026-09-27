@@ -2,6 +2,7 @@
 // Decoupe depuis l'ancien src/api.ts monolithique (2026-09-12).
 
 import { authHeaders, readJson } from '../../shared/lib/http';
+import type { FitScore } from './types';
 import type { AoDocumentOut, AoMode, AoResponse, AoStatus, AoStep, AoStepKey, AoSummary, StepAssistResponse } from '../../types';
 
 // ── Pipeline Appel d'offres (Phase 4) ────────────────────────────────────────
@@ -134,4 +135,10 @@ export async function deleteAo(aoId: string): Promise<void> {
     const json = await res.json().catch(() => ({}));
     throw new Error(typeof json.detail === 'string' ? json.detail : 'Erreur suppression AO.');
   }
+}
+
+/** Fit score d'un AO du pipeline. 409 tant que l'AO n'est pas analyse. */
+export async function fetchFitScore(aoId: string): Promise<FitScore> {
+  const res = await fetch(`/api/v1/ao/${aoId}/fit-score`, { headers: authHeaders() });
+  return readJson<FitScore>(res, 'Impossible de calculer le score de compatibilite.');
 }

@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
+import { useFloating, floatingStyle } from '../../../shared/ui/useFloating';
 import type { AoCategorie, NaturePrestation } from '../../../types';
 import { fetchNaturesPrestation } from '../../../api';
 
@@ -41,11 +43,15 @@ export default function NaturePrestationPicker({ value, onChange, categorieFilte
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState('');
   const containerRef = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const popRef = useRef<HTMLDivElement>(null);
+  const pos = useFloating(triggerRef, open, 420);
 
   useEffect(() => {
     if (!open) return;
     function onClickOutside(e: MouseEvent) {
-      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+      const cible = e.target as Node;
+      if (containerRef.current && !containerRef.current.contains(cible) && !popRef.current?.contains(cible)) {
         setOpen(false);
       }
     }
@@ -77,34 +83,40 @@ export default function NaturePrestationPicker({ value, onChange, categorieFilte
   return (
     <div ref={containerRef} style={{ position: 'relative' }}>
       <button
+        ref={triggerRef}
         type="button"
+        aria-haspopup="listbox"
+        aria-expanded={open}
         onClick={() => setOpen(v => !v)}
+        className="adj-focusable"
         style={{
           width:          '100%',
           display:        'flex',
           alignItems:     'center',
           justifyContent: 'space-between',
           gap:            8,
-          padding:        '8px 11px',
-          borderRadius:   8,
-          border:         `1px solid ${open ? 'var(--adj-brand)' : 'var(--adj-hairline)'}`,
-          background:     'var(--adj-panel-2)',
+          height:         44,
+          padding:        '0 14px',
+          borderRadius:   'var(--adj-round-s)',
+          border:         `1px solid ${open ? 'var(--adj-brand)' : 'var(--adj-edge)'}`,
+          background:     'var(--adj-panel)',
           color:          value.length > 0 ? 'var(--adj-ink)' : 'var(--adj-ink-4)',
-          fontSize:       13,
+          fontSize:       'var(--adj-t-base)',
           fontFamily:     'inherit',
+          textAlign:      'left',
           cursor:         'pointer',
         }}
       >
         <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
           {placeholder}
         </span>
-        <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} style={{ flexShrink: 0 }}>
+        <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} style={{ flexShrink: 0, color: 'var(--adj-ink-4)', transform: open ? 'rotate(180deg)' : 'none', transition: 'transform .15s' }}>
           <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
         </svg>
       </button>
 
       {value.length > 0 && (
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5, marginTop: 7 }}>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 10 }}>
           {value.map(label => (
             <span
               key={label}
@@ -112,11 +124,11 @@ export default function NaturePrestationPicker({ value, onChange, categorieFilte
                 display:      'flex',
                 alignItems:   'center',
                 gap:          5,
-                padding:      '3px 6px 3px 9px',
-                borderRadius: 20,
+                padding:      '5px 8px 5px 11px',
+                borderRadius: 'var(--adj-round-s)',
                 background:   'var(--adj-brand-tint)',
                 color:        'var(--adj-brand)',
-                fontSize:     11.5,
+                fontSize:     'var(--adj-t-xs)',
                 fontWeight:   600,
                 maxWidth:     '100%',
               }}
@@ -129,12 +141,12 @@ export default function NaturePrestationPicker({ value, onChange, categorieFilte
                 onClick={e => { e.stopPropagation(); remove(label); }}
                 style={{
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  width: 14, height: 14, borderRadius: '50%', border: 'none',
+                  width: 20, height: 20, borderRadius: '50%', border: 'none',
                   background: 'transparent', color: 'var(--adj-brand)', cursor: 'pointer', padding: 0,
                   flexShrink: 0,
                 }}
               >
-                <svg width="9" height="9" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                <svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
                 </svg>
               </button>
@@ -143,21 +155,20 @@ export default function NaturePrestationPicker({ value, onChange, categorieFilte
         </div>
       )}
 
-      {open && (
+      {/* Liste flottante, en portail (shared/ui/useFloating) : dans un panneau
+          en overflow hidden, elle etait rognee au lieu de passer par-dessus. */}
+      {open && pos && createPortal(
         <div
+          ref={popRef}
+          className="adj-pop"
           style={{
-            position:      'absolute',
-            top:           'calc(100% + 6px)',
-            left:          0,
-            right:         0,
-            zIndex:        60,
+            ...floatingStyle(pos),
             background:    'var(--adj-panel)',
             border:        '1px solid var(--adj-hairline)',
-            borderRadius:  10,
-            boxShadow:     '0 8px 24px rgba(0,0,0,0.35)',
+            borderRadius:  'var(--adj-round-m)',
+            boxShadow:     'var(--adj-lift-3)',
             display:       'flex',
             flexDirection: 'column',
-            maxHeight:     420,
             overflow:      'hidden',
           }}
         >
@@ -169,12 +180,13 @@ export default function NaturePrestationPicker({ value, onChange, categorieFilte
               placeholder={t('bdc.naturePicker.searchPh')}
               style={{
                 width:        '100%',
-                padding:      '7px 10px',
-                borderRadius: 7,
+                height:       40,
+                padding:      '0 12px',
+                borderRadius: 'var(--adj-round-s)',
                 border:       '1px solid var(--adj-hairline)',
-                background:   'var(--adj-panel-2)',
+                background:   'var(--adj-panel)',
                 color:        'var(--adj-ink)',
-                fontSize:     13,
+                fontSize:     'var(--adj-t-sm)',
                 outline:      'none',
                 boxSizing:    'border-box',
                 fontFamily:   'inherit',
@@ -182,13 +194,13 @@ export default function NaturePrestationPicker({ value, onChange, categorieFilte
             />
           </div>
 
-          <div style={{ flex: 1, overflowY: 'auto', padding: '4px 0' }}>
+          <div className="adj-scroll" style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: '4px 0' }}>
             {loading ? (
-              <p style={{ margin: 0, padding: '16px 14px', fontSize: 12.5, color: 'var(--adj-ink-4)' }}>
+              <p style={{ margin: 0, padding: '16px 14px', fontSize: 'var(--adj-t-xs)', color: 'var(--adj-ink-4)' }}>
                 {t('bdc.naturePicker.loading')}
               </p>
             ) : filtered.length === 0 ? (
-              <p style={{ margin: 0, padding: '16px 14px', fontSize: 12.5, color: 'var(--adj-ink-4)' }}>
+              <p style={{ margin: 0, padding: '16px 14px', fontSize: 'var(--adj-t-xs)', color: 'var(--adj-ink-4)' }}>
                 {t('bdc.naturePicker.empty')}
               </p>
             ) : (
@@ -202,7 +214,7 @@ export default function NaturePrestationPicker({ value, onChange, categorieFilte
                       display:    'flex',
                       alignItems: 'flex-start',
                       gap:        8,
-                      padding:    '7px 10px',
+                      padding:    '10px 14px',
                       cursor:     'pointer',
                       background: isSelected ? 'var(--adj-brand-tint)' : 'transparent',
                     }}
@@ -225,7 +237,7 @@ export default function NaturePrestationPicker({ value, onChange, categorieFilte
                         </svg>
                       )}
                     </div>
-                    <span style={{ flex: 1, fontSize: 12.5, color: 'var(--adj-ink)', lineHeight: 1.4 }}>
+                    <span style={{ flex: 1, fontSize: 'var(--adj-t-sm)', color: 'var(--adj-ink)', lineHeight: 1.4 }}>
                       {n.label}
                     </span>
                   </div>
@@ -233,7 +245,8 @@ export default function NaturePrestationPicker({ value, onChange, categorieFilte
               })
             )}
           </div>
-        </div>
+        </div>,
+        document.body,
       )}
     </div>
   );

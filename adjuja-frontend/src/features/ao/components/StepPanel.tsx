@@ -8,6 +8,7 @@
 
 import { useState } from "react";
 import { ErrorNotice } from "./ErrorNotice";
+import { FitScoreForAo } from "./FitScore";
 import { useTranslation } from "react-i18next";
 import type { AoDocumentOut, AoResponse, AoStep, AoStepKey } from "../types";
 
@@ -163,7 +164,8 @@ export function StepPanel({
         <Bloc titre={t("pipeline.steps.resultLabel")}>
           {step.step_key === "documents" && <VueDocuments documents={ao.documents} />}
           {step.step_key === "comprehension" && <VueComprehension analyse={ao.analyse_json} />}
-          {step.step_key !== "documents" && step.step_key !== "comprehension" && (
+          {step.step_key === "decision" && <FitScoreForAo aoId={ao.id} />}
+          {step.step_key !== "documents" && step.step_key !== "comprehension" && step.step_key !== "decision" && (
             <p style={{ margin: 0, fontSize: 13, color: "var(--adj-ink-4)" }}>
               {t(`pipeline.steps.${step.step_key}.placeholder`)}
             </p>

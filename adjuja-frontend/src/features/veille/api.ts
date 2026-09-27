@@ -91,9 +91,21 @@ export async function downloadScrapedAoZip(id: number): Promise<void> {
   URL.revokeObjectURL(url);
 }
 
-export async function analyzeScrapedAo(id: number): Promise<EligibilityVerdict> {
+/** Un document classifie de l'AO (CPS, RC, avis...), pour l'apercu. La route
+ *  exige l'en-tete d'authentification : le fichier est donc lu ici puis ouvert
+ *  depuis la memoire, pdf.js ne sachant pas envoyer cet en-tete. */
+export async function fetchScrapedAoDocument(id: number, label: string): Promise<Blob> {
+  const res = await fetch(`${WATCHER_BASE}/aos/${id}/documents/${encodeURIComponent(label)}`, { headers: authHeaders() });
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    throw new Error(typeof data.detail === 'string' ? data.detail : 'Document indisponible.');
+  }
+  return res.blob();
+}
+
+export async function analyzeScrapedAo(id: number): Promise<import('./types').AnalyseResult> {
   const res = await fetch(`${WATCHER_BASE}/aos/${id}/verdict`, { method: 'POST', headers: authHeaders() });
-  const json = await readJson<EligibilityVerdict>(res, 'Erreur analyse AO.');
+  const json = await readJson<import('./types').AnalyseResult>(res, 'Erreur analyse AO.');
   return json;
 }
 

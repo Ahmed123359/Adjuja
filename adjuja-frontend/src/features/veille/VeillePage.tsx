@@ -1,3 +1,9 @@
+// Veille des appels d'offres -- habillage repris sur le socle le 2026-09-27.
+//
+// Barre d'outils, pagination, etat vide et cellule d'echeance viennent de
+// ./components/ListChrome, partages avec les bons de commande (BdcPage). La
+// logique de chargement, de filtres et de selection n'a pas change.
+
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { ScrapedAo, ScrapedAoList, WatcherFilters } from '../../types';
@@ -5,12 +11,15 @@ import { fetchScrapedAos, updateScrapedAoStatus } from '../../api';
 import WatcherStatusBadge from './components/WatcherStatusBadge';
 import VeilleFilters from './components/VeilleFilters';
 import AoDetailPanel from './components/AoDetailPanel';
+import {
+  ListToolbar, ListError, Pagination, EmptyRow, SkeletonRows, EcheanceCell,
+  thStyle, tdStyle, clamp2, formatDateCourte, rowHandlers, type StatusTab,
+} from './components/ListChrome';
 import { useIsMobile } from '../../hooks/useIsMobile';
 import { formatTitre, splitReservationClause } from '../../utils/formatTitre';
 
-// ── Constants ────────────────────────────────────────────────────────────────
-
 const PAGE_LIMIT = 50;
+const COLS = 8;
 
 const DEFAULT_FILTERS: WatcherFilters = {
   status:           'all',
@@ -23,20 +32,6 @@ const DEFAULT_FILTERS: WatcherFilters = {
   page:             1,
 };
 
-const STATUS_TABS = ['all', 'new', 'favorited'] as const;
-type StatusTab = typeof STATUS_TABS[number];
-
-// ── Helpers ──────────────────────────────────────────────────────────────────
-
-function formatDate(iso: string | null): string {
-  if (!iso) return '-';
-  try {
-    return new Date(iso).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: '2-digit' });
-  } catch {
-    return iso;
-  }
-}
-
 function formatAmount(raw: string | null): string {
   if (!raw) return '-';
   const n = parseFloat(raw);
@@ -44,202 +39,56 @@ function formatAmount(raw: string | null): string {
   return n.toLocaleString('fr-MA', { maximumFractionDigits: 0 });
 }
 
-function isDeadlineSoon(iso: string | null): boolean {
-  if (!iso) return false;
-  const diff = new Date(iso).getTime() - Date.now();
-  return diff > 0 && diff < 7 * 24 * 60 * 60 * 1000;
-}
+const metaText: React.CSSProperties = {
+  fontSize: 'var(--adj-t-xs)', color: 'var(--adj-ink-2)', lineHeight: 1.4,
+};
 
-// ── Sub-components ───────────────────────────────────────────────────────────
-
-function TableSkeleton() {
-  return (
-    <>
-      {Array.from({ length: 8 }).map((_, i) => (
-        <tr key={i}>
-          {Array.from({ length: 7 }).map((_, j) => (
-            <td
-              key={j}
-              style={{
-                padding:     '11px 14px',
-                borderBottom: '1px solid var(--adj-hairline)',
-              }}
-            >
-              <div
-                style={{
-                  height:       12,
-                  borderRadius: 4,
-                  background:   'var(--adj-panel-2)',
-                  width:        j === 1 ? '80%' : j === 0 ? '70%' : '55%',
-                  animation:    'pulse 1.5s infinite',
-                }}
-              />
-            </td>
-          ))}
-        </tr>
-      ))}
-    </>
-  );
-}
-
-function EmptyState({
-  statusTab,
-  hasFilters,
-}: {
-  statusTab: StatusTab;
-  hasFilters: boolean;
-}) {
-  const { t } = useTranslation();
-
-  const [icon, title, desc] = (() => {
-    if (hasFilters) return [
-      'M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z',
-      t('veille.empty.allTitle'),
-      t('veille.empty.allDesc'),
-    ];
-    if (statusTab === 'new')       return [
-      'M9.348 14.651a3.75 3.75 0 010-5.303m5.304-.001a3.75 3.75 0 010 5.304m-7.425 2.122a6.75 6.75 0 010-9.546m9.546.001a6.75 6.75 0 010 9.545M5.106 18.894c-3.808-3.808-3.808-9.98 0-13.789m13.788 0c3.808 3.808 3.808 9.981 0 13.79M12 12h.008v.007H12V12zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z',
-      t('veille.empty.newTitle'),
-      t('veille.empty.newDesc'),
-    ];
-    if (statusTab === 'favorited') return [
-      'M11.48 3.499a.562.562 0 011.04 0l2.125 5.111a.563.563 0 00.475.345l5.518.442c.499.04.701.663.321.988l-4.204 3.602a.563.563 0 00-.182.557l1.285 5.385a.562.562 0 01-.84.61l-4.725-2.885a.563.563 0 00-.586 0L6.982 20.54a.562.562 0 01-.84-.61l1.285-5.386a.562.562 0 00-.182-.557l-4.204-3.602a.562.562 0 01.321-.988l5.518-.442a.563.563 0 00.475-.345L11.48 3.5z',
-      t('veille.empty.favTitle'),
-      t('veille.empty.favDesc'),
-    ];
-    return [
-      'M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m6.75 12H9m1.5-12H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z',
-      t('veille.empty.allTitle'),
-      t('veille.empty.allDesc'),
-    ];
-  })();
-
-  return (
-    <tr>
-      <td colSpan={8}>
-        <div
-          style={{
-            display:       'flex',
-            flexDirection: 'column',
-            alignItems:    'center',
-            padding:       '72px 24px',
-            gap:           12,
-            textAlign:     'center',
-          }}
-        >
-          <div
-            style={{
-              width:          52,
-              height:         52,
-              borderRadius:   14,
-              background:     'var(--adj-brand-tint)',
-              border:         '1px solid var(--adj-hairline)',
-              display:        'flex',
-              alignItems:     'center',
-              justifyContent: 'center',
-            }}
-          >
-            <svg width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="var(--adj-brand)" strokeWidth={1.5}>
-              <path strokeLinecap="round" strokeLinejoin="round" d={icon} />
-            </svg>
-          </div>
-          <p style={{ margin: 0, fontSize: 14, fontWeight: 600, color: 'var(--adj-ink)' }}>{title}</p>
-          <p style={{ margin: 0, fontSize: 13, color: 'var(--adj-ink-2)', maxWidth: '46ch' }}>{desc}</p>
-        </div>
-      </td>
-    </tr>
-  );
-}
-
-function AoTableRow({
-  ao,
-  selected,
-  onClick,
-}: {
+function AoTableRow({ ao, selected, onClick }: {
   ao: ScrapedAo;
   selected: boolean;
   onClick: () => void;
 }) {
-  const deadlineSoon = isDeadlineSoon(ao.date_limite);
-
   return (
     <tr
       onClick={onClick}
-      style={{
-        cursor:     'pointer',
-        background: selected ? 'var(--adj-brand-tint)' : 'transparent',
-        transition: 'background .1s',
-      }}
-      onMouseEnter={e => {
-        if (!selected) (e.currentTarget as HTMLTableRowElement).style.background = 'var(--adj-panel-2)';
-      }}
-      onMouseLeave={e => {
-        (e.currentTarget as HTMLTableRowElement).style.background = selected ? 'var(--adj-brand-tint)' : 'transparent';
-      }}
+      aria-selected={selected}
+      style={{ cursor: 'pointer', background: selected ? 'var(--adj-brand-tint)' : 'transparent', transition: 'background .1s' }}
+      {...rowHandlers(selected)}
     >
-      {/* Acheteur */}
-      <td style={{ padding: '12px 14px', borderBottom: '1px solid var(--adj-hairline)', maxWidth: '26ch' }}>
-        <p
-          title={ao.acheteur ?? undefined}
-          style={{
-            margin: 0, fontSize: 'var(--adj-t-sm)', fontWeight: 500, color: 'var(--adj-ink)',
-            // Deux lignes plutot qu'une troncature : « MENESFC / DMENB -
-            // DIRECTI... » ne permet pas de distinguer deux directions du meme
-            // ministere, ce qui est precisement ce qu'on lit ici.
-            display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical',
-            overflow: 'hidden', lineHeight: 1.35,
-          }}
-        >
+      {/* Acheteur, sur deux lignes : « MENESFC / DMENB - DIRECTI... » ne
+          distingue pas deux directions du meme ministere. */}
+      <td style={{ ...tdStyle, maxWidth: '26ch' }}>
+        <p title={ao.acheteur ?? undefined} style={{ ...clamp2, fontSize: 'var(--adj-t-sm)', fontWeight: 500, color: 'var(--adj-ink)' }}>
           {ao.acheteur ?? '-'}
         </p>
       </td>
 
       {/* Titre : la colonne qu'on lit reellement, donc la plus large. */}
-      <td style={{ padding: '12px 14px', borderBottom: '1px solid var(--adj-hairline)', width: '100%' }}>
-        <p
-          title={ao.titre}
-          style={{
-            margin: 0, fontSize: 'var(--adj-t-sm)', color: 'var(--adj-ink)', lineHeight: 1.4,
-            display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden',
-          }}
-        >
+      <td style={{ ...tdStyle, width: '100%' }}>
+        <p title={ao.titre} style={{ ...clamp2, fontSize: 'var(--adj-t-sm)', color: 'var(--adj-ink)' }}>
           {formatTitre(splitReservationClause(ao.titre).main)}
         </p>
       </td>
 
-      {/* Date de publication */}
-      <td style={{ padding: '10px 14px', borderBottom: '1px solid var(--adj-hairline)', whiteSpace: 'nowrap' }}>
-        <span style={{ fontSize: 12, color: 'var(--adj-ink-2)' }}>{formatDate(ao.date_publication)}</span>
+      <td style={{ ...tdStyle, whiteSpace: 'nowrap' }}>
+        <span className="adj-fig" style={metaText}>{formatDateCourte(ao.date_publication)}</span>
       </td>
 
-      {/* Date limite */}
-      <td style={{ padding: '10px 14px', borderBottom: '1px solid var(--adj-hairline)', whiteSpace: 'nowrap' }}>
-        <span style={{
-          fontSize:   12,
-          fontWeight: deadlineSoon ? 700 : 400,
-          color:      deadlineSoon ? '#d97706' : 'var(--adj-ink-2)',
-        }}>
-          {formatDate(ao.date_limite)}
-        </span>
+      <td style={{ ...tdStyle, whiteSpace: 'nowrap' }}>
+        <EcheanceCell iso={ao.date_limite} />
       </td>
 
-      {/* Categorie */}
-      <td style={{ padding: '10px 14px', borderBottom: '1px solid var(--adj-hairline)', maxWidth: '18ch' }}>
-        <span style={{ fontSize: 12, color: 'var(--adj-ink-2)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'block' }}>
-          {ao.categorie ?? '-'}
-        </span>
+      <td style={{ ...tdStyle, maxWidth: '18ch' }}>
+        <p style={{ ...clamp2, ...metaText }}>{ao.categorie ?? '-'}</p>
       </td>
 
-      {/* Localisation */}
-      <td style={{ padding: '10px 14px', borderBottom: '1px solid var(--adj-hairline)', maxWidth: '18ch' }}>
-        <span style={{ fontSize: 12, color: 'var(--adj-ink-2)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'block' }}>
-          {ao.region || ao.ville || '-'}
-        </span>
+      <td style={{ ...tdStyle, maxWidth: '18ch' }}>
+        <p style={{ ...clamp2, ...metaText }}>{ao.region || ao.ville || '-'}</p>
       </td>
 
-      {/* Budget : le montant seul, en chiffres tabulaires pour que les
-          ordres de grandeur se comparent d'une ligne a l'autre. */}
-      <td style={{ padding: '12px 14px', borderBottom: '1px solid var(--adj-hairline)', textAlign: 'right', whiteSpace: 'nowrap', width: 1 }}>
+      {/* Budget en chiffres tabulaires : les ordres de grandeur se comparent
+          d'une ligne a l'autre. */}
+      <td style={{ ...tdStyle, textAlign: 'right', whiteSpace: 'nowrap', width: 1 }}>
         {ao.budget_estime ? (
           <span className="adj-fig" style={{ fontSize: 'var(--adj-t-sm)', fontWeight: 600, color: 'var(--adj-ink)' }}>
             {formatAmount(ao.budget_estime)} Dhs
@@ -249,16 +98,12 @@ function AoTableRow({
         )}
       </td>
 
-      {/* Etat : sa propre colonne, pour ne plus empieter sur le montant ni sur
-          le nom de l'acheteur. */}
-      <td style={{ padding: '12px 14px', borderBottom: '1px solid var(--adj-hairline)', whiteSpace: 'nowrap', width: 1 }}>
+      <td style={{ ...tdStyle, whiteSpace: 'nowrap', width: 1 }}>
         <WatcherStatusBadge status={ao.status} />
       </td>
     </tr>
   );
 }
-
-// ── Main page ────────────────────────────────────────────────────────────────
 
 export default function VeillePage() {
   const { t } = useTranslation();
@@ -281,7 +126,7 @@ export default function VeillePage() {
       const result = await fetchScrapedAos(f, PAGE_LIMIT);
       if (id !== loadIdRef.current) return;
       setData(result);
-    } catch (e: unknown) {
+    } catch {
       if (id !== loadIdRef.current) return;
       setError(t('veille.error.loadFailed'));
     } finally {
@@ -333,23 +178,8 @@ export default function VeillePage() {
   const total = data?.total ?? 0;
   const totalPages = Math.ceil(total / PAGE_LIMIT);
 
-  const thStyle: React.CSSProperties = {
-    padding:        '12px 14px',
-    fontSize:       'var(--adj-t-xs)',
-    fontWeight:     600,
-    color:          'var(--adj-ink-3)',
-    textAlign:      'left',
-    borderBottom:   '1px solid var(--adj-hairline)',
-    background:     'var(--adj-panel)',
-    position:       'sticky',
-    top:            0,
-    whiteSpace:     'nowrap',
-  };
-
   return (
     <div style={{ display: 'flex', height: '100%', overflow: 'hidden' }}>
-
-      {/* Filter sidebar */}
       {showFilters && (
         <VeilleFilters
           filters={filters}
@@ -359,124 +189,31 @@ export default function VeillePage() {
         />
       )}
 
-      {/* Main column */}
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', minWidth: 0 }}>
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', minWidth: 0, background: 'var(--adj-panel)' }}>
+        <ListToolbar
+          activeTab={activeTab}
+          onTab={(tab) => patchFilters({ status: tab, page: 1 })}
+          total={data ? total : null}
+          loading={loading}
+          showFilters={showFilters}
+          onToggleFilters={() => setShowFilters(v => !v)}
+          compact={isMobile}
+        />
 
-        {/* Toolbar */}
-        <div
-          style={{
-            display:        'flex',
-            alignItems:     'center',
-            gap:            0,
-            padding:        '0 16px',
-            borderBottom:   '1px solid var(--adj-hairline)',
-            background:     'var(--adj-panel)',
-            flexShrink:     0,
-            height:         48,
-          }}
-        >
-          {/* Status tabs */}
-          <div style={{ display: 'flex', alignItems: 'center', height: '100%', gap: 0, flex: 1, minWidth: 0, overflowX: 'auto' }}>
-            {STATUS_TABS.map(tab => (
-              <button
-                key={tab}
-                onClick={() => patchFilters({ status: tab === 'all' ? 'all' : tab, page: 1 })}
-                style={{
-                  height:       '100%',
-                  padding:      '0 14px',
-                  background:   'none',
-                  border:       'none',
-                  borderBottom: activeTab === tab ? '2px solid var(--adj-brand)' : '2px solid transparent',
-                  color:        activeTab === tab ? 'var(--adj-brand)' : 'var(--adj-ink-2)',
-                  fontSize:     13,
-                  fontWeight:   activeTab === tab ? 700 : 500,
-                  cursor:       'pointer',
-                  fontFamily:   'inherit',
-                  display:      'flex',
-                  alignItems:   'center',
-                  gap:          6,
-                  whiteSpace:   'nowrap',
-                  transition:   'color .12s',
-                }}
-              >
-                {t(`veille.tabs.${tab}`)}
-                {tab === 'all' && data && !loading && (
-                  <span style={{
-                    fontSize: 11, fontWeight: 600, padding: '1px 6px',
-                    borderRadius: 10, background: 'var(--adj-panel-2)',
-                    color: 'var(--adj-ink-2)',
-                  }}>
-                    {total.toLocaleString()}
-                  </span>
-                )}
-              </button>
-            ))}
-          </div>
+        {error && <ListError>{error}</ListError>}
 
-          {/* Right: total + toggle filters */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexShrink: 0 }}>
-            {!isMobile && !loading && data && (
-              <span style={{ fontSize: 12, color: 'var(--adj-ink-4)', whiteSpace: 'nowrap' }}>
-                {total.toLocaleString()} {total <= 1 ? t('veille.totalSingle') : t('veille.total')}
-              </span>
-            )}
-            <button
-              onClick={() => setShowFilters(v => !v)}
-              style={{
-                display:        'flex',
-                alignItems:     'center',
-                gap:            6,
-                padding:        isMobile ? '6px' : '6px 11px',
-                borderRadius:   7,
-                border:         '1px solid var(--adj-hairline)',
-                background:     showFilters ? 'var(--adj-brand-tint)' : 'transparent',
-                color:          showFilters ? 'var(--adj-brand)' : 'var(--adj-ink-2)',
-                fontSize:       12,
-                fontWeight:     600,
-                cursor:         'pointer',
-                fontFamily:     'inherit',
-                transition:     'background .12s, color .12s',
-                flexShrink:     0,
-              }}
-            >
-              <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 6h9.75M10.5 6a1.5 1.5 0 11-3 0m3 0a1.5 1.5 0 10-3 0M3.75 6H7.5m3 12h9.75m-9.75 0a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m-3.75 0H7.5m9-6h3.75m-3.75 0a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m-9.75 0h9.75" />
-              </svg>
-              {!isMobile && (showFilters ? t('veille.filters.hide') : t('veille.filters.show'))}
-            </button>
-          </div>
-        </div>
-
-        {/* Error banner */}
-        {error && (
-          <div style={{
-            padding: '10px 16px', background: 'rgba(220,38,38,0.07)',
-            borderBottom: '1px solid rgba(220,38,38,0.2)',
-            fontSize: 13, color: '#dc2626', flexShrink: 0,
-          }}>
-            {error}
-          </div>
-        )}
-
-        {/* Table area */}
         <div
           className="adj-scroll"
           style={{
             flex: 1, overflowY: 'auto', overflowX: 'auto',
             // La bulle de discussion est fixee en bas a droite : sans cette
-            // reserve, elle recouvre la derniere ligne du tableau, et c'est
-            // justement la colonne d'etat qui passe dessous.
+            // reserve, elle recouvre la derniere ligne du tableau.
             paddingBottom: 72,
           }}
         >
-          {/* Disposition AUTOMATIQUE, sans colgroup : `table-layout: fixed`
-              obligeait a decider chaque largeur a l'avance -- donc a deviner
-              celle d'une pastille ou d'un montant. Trop etroit, le contenu
-              etait coupe ; somme differente de 100 %, il restait un vide ; et
-              le bon reglage changeait avec la largeur de l'ecran.
-              Ici chaque colonne prend ce que son contenu demande, le titre
-              absorbe le reste. */}
-          <table style={{ width: '100%', borderCollapse: 'collapse', tableLayout: 'auto', minWidth: 720 }}>
+          {/* Disposition automatique : chaque colonne prend ce que son contenu
+              demande, le titre absorbe le reste. */}
+          <table style={{ width: '100%', borderCollapse: 'collapse', tableLayout: 'auto', minWidth: 760 }}>
             <thead>
               <tr>
                 <th style={thStyle}>{t('veille.table.acheteur')}</th>
@@ -491,9 +228,9 @@ export default function VeillePage() {
             </thead>
             <tbody style={{ opacity: loading && data ? 0.45 : 1, transition: 'opacity 0.15s' }}>
               {loading && !data ? (
-                <TableSkeleton />
+                <SkeletonRows cols={COLS} />
               ) : !data?.items.length ? (
-                <EmptyState statusTab={activeTab} hasFilters={hasActiveTextFilters} />
+                <EmptyRow colSpan={COLS} statusTab={activeTab} hasFilters={hasActiveTextFilters} />
               ) : (
                 data.items.map(ao => (
                   <AoTableRow
@@ -508,66 +245,9 @@ export default function VeillePage() {
           </table>
         </div>
 
-        {/* Pagination */}
-        {totalPages > 1 && (
-          <div
-            style={{
-              display:        'flex',
-              alignItems:     'center',
-              justifyContent: 'center',
-              gap:            8,
-              padding:        '10px 16px',
-              borderTop:      '1px solid var(--adj-hairline)',
-              background:     'var(--adj-panel)',
-              flexShrink:     0,
-            }}
-          >
-            <button
-              onClick={() => patchFilters({ page: filters.page - 1 })}
-              disabled={filters.page <= 1}
-              style={{
-                padding:      '6px 13px',
-                borderRadius: 7,
-                border:       '1px solid var(--adj-hairline)',
-                background:   'var(--adj-panel-2)',
-                color:        'var(--adj-ink-2)',
-                fontSize:     13,
-                fontWeight:   500,
-                cursor:       filters.page <= 1 ? 'not-allowed' : 'pointer',
-                opacity:      filters.page <= 1 ? 0.4 : 1,
-                fontFamily:   'inherit',
-              }}
-            >
-              {t('veille.pagination.prev')}
-            </button>
-
-            <span style={{ fontSize: 13, color: 'var(--adj-ink-2)' }}>
-              {filters.page} {t('veille.pagination.of')} {totalPages}
-            </span>
-
-            <button
-              onClick={() => patchFilters({ page: filters.page + 1 })}
-              disabled={filters.page >= totalPages}
-              style={{
-                padding:      '6px 13px',
-                borderRadius: 7,
-                border:       '1px solid var(--adj-hairline)',
-                background:   'var(--adj-panel-2)',
-                color:        'var(--adj-ink-2)',
-                fontSize:     13,
-                fontWeight:   500,
-                cursor:       filters.page >= totalPages ? 'not-allowed' : 'pointer',
-                opacity:      filters.page >= totalPages ? 0.4 : 1,
-                fontFamily:   'inherit',
-              }}
-            >
-              {t('veille.pagination.next')}
-            </button>
-          </div>
-        )}
+        <Pagination page={filters.page} totalPages={totalPages} onPage={(page) => patchFilters({ page })} />
       </div>
 
-      {/* Detail panel */}
       {selectedAo && (
         <AoDetailPanel
           key={selectedAo.id}

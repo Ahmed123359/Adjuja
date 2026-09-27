@@ -80,3 +80,37 @@ export interface StepAssistResponse {
   answer:  string;
   sources: string[];
 }
+
+// ── Fit score (context/feature-spec/fit-score/) ─────────────────────────────
+
+export type FitFacteurCode =
+  | 'qualifications' | 'capacite_financiere' | 'references'
+  | 'equipe' | 'conformite_administrative' | 'proximite';
+
+export interface FitAction {
+  /** Onglet des reglages d'entreprise a ouvrir. */
+  cible: 'profil' | 'documents' | 'equipe';
+  /** Champ du profil vers lequel defiler, quand il y en a un. */
+  champ: string | null;
+}
+
+export interface FitFacteur {
+  code:          FitFacteurCode;
+  poids:         number;
+  /** 0-100, null quand l'AO n'exige rien sur ce facteur. */
+  score:         number | null;
+  exige:         boolean;
+  confiance:     'haute' | 'moyenne' | 'faible';
+  justification: string;
+  action:        FitAction | null;
+}
+
+export interface FitScore {
+  /** null quand aucun facteur n'est exige : pas de score fabrique. */
+  score:              number | null;
+  eligibilite:        'eligible' | 'a_verifier' | 'non_eligible';
+  bloquants:          string[];
+  avertissements:     string[];
+  facteurs:           FitFacteur[];
+  methode_references: 'embeddings' | 'mots_cles';
+}

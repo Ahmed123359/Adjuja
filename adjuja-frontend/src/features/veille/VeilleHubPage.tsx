@@ -31,7 +31,7 @@ export default function VeilleHubPage() {
               padding: '8px 14px', background: 'none', border: 'none',
               borderBottom: source === tab.key ? '2px solid var(--adj-brand)' : '2px solid transparent',
               color: source === tab.key ? 'var(--adj-brand)' : 'var(--adj-ink-2)',
-              fontSize: 13.5, fontWeight: source === tab.key ? 700 : 500,
+              fontSize: 'var(--adj-t-sm)', fontWeight: source === tab.key ? 700 : 500,
               cursor: 'pointer', fontFamily: 'inherit', marginBottom: -1, transition: 'color .12s',
             }}
           >

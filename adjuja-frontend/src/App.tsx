@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
+import { surOuvertureReglages } from "./shared/lib/navigation";
 import LeftPanel from "./shared/layout/LeftPanel";
 import RightPanel from "./shared/layout/RightPanel";
 import AppSidebar from "./shared/layout/AppSidebar";
@@ -86,6 +87,10 @@ export default function App({
   const [usage, setUsage] = useState<UsageData | null>(null);
   const [history, setHistory] = useState<HistorySummary[]>([]);
   const [showPricing, setShowPricing] = useState(false);
+
+  // Actions « completer mon profil » du fit score : ouvrent les reglages
+  // d'entreprise depuis n'importe quel ecran (shared/lib/navigation).
+  useEffect(() => surOuvertureReglages(() => setMainTab("entreprise")), []);
 
   const reloadHistory = useCallback(() => {
     fetchHistory()
@@ -299,7 +304,7 @@ export default function App({
       </div>
 
       <FloatingChat provider={provider} model={model} />
-      {showPricing && <PricingModal onClose={() => setShowPricing(false)} />}
+      {showPricing && <PricingModal reason="limit" onClose={() => setShowPricing(false)} />}
     </div>
   );
 }

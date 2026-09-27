@@ -10,7 +10,8 @@
 
 @layer base {
   :root {
-    --background: 222 40% 98%;
+    /* Fond uni (2026-09-27) : meme valeur que --card, comme --adj-bg = --adj-panel. */
+    --background: 0 0% 100%;
     --foreground: 222 68% 12%;
 
     --card: 0 0% 100%;
@@ -28,7 +29,7 @@
     --destructive: 0 72% 51%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 222 25% 88%;
+    --border: 216 31% 87%;   /* = --adj-hairline */
     --input: 222 25% 88%;
     --ring: 222 67% 29%;
 
@@ -80,10 +81,11 @@
   }
 
   .dark {
-    --background: 225 50% 7%;
+    /* Fond uni : #141929, la valeur de --adj-panel en sombre. */
+    --background: 226 34% 12%;
     --foreground: 214 50% 94%;
 
-    --card: 224 44% 10%;
+    --card: 226 34% 12%;
     --card-foreground: 214 50% 94%;
 
     --primary: 210 76% 58%;
@@ -98,7 +100,7 @@
     --destructive: 0 62% 50%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 224 35% 18%;
+    --border: 224 25% 24%;   /* = --adj-hairline */
     --input: 224 35% 18%;
     --ring: 210 76% 58%;
 

@@ -9,6 +9,7 @@
 // Un PDF s'ouvre dans l'apercu commun de l'application ; les autres formats
 // (image, .docx) s'ouvrent dans un nouvel onglet.
 
+import { invalider } from "../../../shared/lib/cache";
 import { useState, useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { Eye, ExternalLink, FileText, Plus, Trash2 } from "lucide-react";
@@ -67,6 +68,7 @@ export function DocumentsTab() {
     setError(null);
     try {
       await uploadCompanyDocument(file, type);
+      invalider("ao:fit:"); // le fit score compte ces pieces
       await load();
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : t("dashboard.docs.uploadError"));

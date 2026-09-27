@@ -88,7 +88,17 @@ export function DocumentPreview({
     setErreur(null);
     dessinees.current.clear();
 
-    const tache = pdfjs.getDocument({ url });
+    // Ressources de pdf.js servies sous /pdfjs/ (voir vite.config.ts) : sans
+    // wasmUrl, les images des documents scannes (fax CCITT, JBIG2) n'etaient
+    // pas decodees et la page s'affichait presque blanche.
+    const tache = pdfjs.getDocument({
+      url,
+      wasmUrl: '/pdfjs/wasm/',
+      cMapUrl: '/pdfjs/cmaps/',
+      cMapPacked: true,
+      standardFontDataUrl: '/pdfjs/standard_fonts/',
+      iccUrl: '/pdfjs/iccs/',
+    });
     tache.promise
       .then(async d => {
         if (!vivant) return;
