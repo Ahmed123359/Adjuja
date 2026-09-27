@@ -5,7 +5,7 @@ from app.core import download_progress
 from app.core.database import get_db
 from app.core.mode_passation import MODES_PASSATION
 from app.core.taxonomie import SECTEURS
-from app.modules.ao_scraper.analysis import AnalysisError, analyze_ao
+from app.modules.ao_scraper.analysis import AnalysisError, OcrRequise, analyze_ao
 from app.modules.ao_scraper.repository import AoRepository
 from app.modules.ao_scraper.schemas import AoListOut, AoOut, ImportResult, ModePassationOut, SecteurOut, StatusUpdate, VerdictOut
 
@@ -239,6 +239,49 @@ async def download_zip(
     )
 
 
+@router.get("/{ao_id}/documents/{label}")
+async def get_document(
+    ao_id: int,
+    label: str,
+    db: AsyncSession = Depends(get_db),
+    _auth: str = Depends(_require_auth_header),
+):
+    """Un document classifie de l'AO (CPS, RC, avis...), pour l'apercu dans le
+    panneau de veille (2026-09-27). `label` est une cle de `classified_docs` ;
+    aucune cle MinIO n'est acceptee telle quelle depuis le client."""
+    from fastapi.responses import Response
+
+    from app.workers.tasks.download_tasks import _minio_client
+    from app.core.config import settings
+
+    repo = AoRepository(db)
+    ao = await repo.get_by_id(ao_id)
+    if not ao:
+        raise HTTPException(status_code=404, detail="AO not found")
+    minio_key = (ao.classified_docs or {}).get(label)
+    if not minio_key:
+        raise HTTPException(status_code=404, detail="Document introuvable pour cette AO.")
+
+    resp = None
+    try:
+        resp = _minio_client().get_object(settings.minio_bucket, minio_key)
+        data = resp.read()
+    except Exception:
+        raise HTTPException(status_code=404, detail="Ce document n'est plus disponible sur le stockage.")
+    finally:
+        if resp is not None:
+            resp.close()
+            resp.release_conn()
+
+    filename = minio_key.rsplit("/", 1)[-1]
+    media = "application/pdf" if filename.lower().endswith(".pdf") else "application/octet-stream"
+    return Response(
+        content=data,
+        media_type=media,
+        headers={"Content-Disposition": f'inline; filename="{filename}"'},
+    )
+
+
 @router.post("/{ao_id}/verdict", response_model=VerdictOut)
 async def get_verdict(
     ao_id: int,
@@ -258,8 +301,40 @@ async def get_verdict(
     if ao.analyse_json:
         analyse_json = ao.analyse_json
     else:
+        # OCR en cours ou en file : on rend sa progression sans relancer
+        # l'analyse. Sinon, des que le CPS etait lu, l'analyse partait sans
+        # attendre le RC -- et chaque rappel relisait les PDF depuis MinIO.
+        en_cours = await download_progress.read("ocr", ao_id)
+        if en_cours is not None and en_cours.etape != "erreur":
+            from fastapi.responses import JSONResponse
+
+            return JSONResponse(status_code=202, content={"ocr": en_cours.model_dump()})
+
         try:
             analyse_json = await analyze_ao(ao)
+        except OcrRequise:
+            # Documents scannes : l'OCR tourne en tache de fond (plusieurs
+            # secondes par page). 202 + progression ; le panneau rappelle cette
+            # route jusqu'a obtenir le verdict. Une seule tache a la fois par AO.
+            from fastapi.responses import JSONResponse
+
+            prog = await download_progress.read("ocr", ao_id)
+            if prog is not None and prog.etape == "erreur":
+                download_progress.clear("ocr", ao_id)
+                raise HTTPException(
+                    status_code=400,
+                    detail="La lecture des pages scannees a echoue. Relancez l'analyse pour reessayer.",
+                )
+            if prog is None:
+                from app.workers.tasks.ocr_tasks import ocr_ao_documents
+
+                await download_progress.mark_queued("ocr", ao_id)
+                ocr_ao_documents.delay(ao_id)
+                prog = await download_progress.read("ocr", ao_id)
+            return JSONResponse(
+                status_code=202,
+                content={"ocr": prog.model_dump() if prog else {"etape": "en_file", "elapsed_s": 0}},
+            )
         except AnalysisError as e:
             raise HTTPException(status_code=400, detail=str(e))
         await repo.update_analyse_json(ao_id, analyse_json)
@@ -275,6 +350,10 @@ async def get_verdict(
                 json={
                     "analyse_json": analyse_json,
                     "date_limite": ao.date_limite.isoformat() if ao.date_limite else None,
+                    # Contexte du fit score : objet (titre scrape), lieu d'execution.
+                    "objet": ao.titre,
+                    "region": ao.region,
+                    "ville": ao.ville,
                 },
                 headers={"Authorization": auth},
             )
@@ -290,4 +369,5 @@ async def get_verdict(
         verdict=verdict_data["verdict"],
         raisons=verdict_data["raisons"],
         details=verdict_data["details"],
+        fit_score=verdict_data.get("fit_score"),
     )

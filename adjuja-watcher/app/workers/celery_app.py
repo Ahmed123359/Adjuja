@@ -13,6 +13,7 @@ celery_app = Celery(
         "app.workers.tasks.scrape_bdc_tasks",
         "app.workers.tasks.download_bdc_tasks",
         "app.workers.tasks.cleanup_tasks",
+        "app.workers.tasks.ocr_tasks",
     ],
 )
 

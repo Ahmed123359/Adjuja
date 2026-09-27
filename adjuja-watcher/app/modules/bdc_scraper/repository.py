@@ -94,6 +94,16 @@ class BdcRepository:
             seen[(item.source, item.external_id)] = item
         items = list(seen.values())
 
+        # Pas d'insertion d'element deja echu (2026-09-27) : les portails listent
+        # encore d'anciens avis (echeances de 2017 constatees), chaque scrape les
+        # reinserait en « nouveau » et le nettoyage nocturne ne les retirait que
+        # pour quelques heures. Un element deja suivi n'est pas touche : il n'est
+        # simplement plus rafraichi une fois echu.
+        today = date.today()
+        items = [x for x in items if not x.date_limite or x.date_limite >= today]
+        if not items:
+            return 0
+
         rows = [
             {
                 "source": d.source,
@@ -153,18 +163,21 @@ class BdcRepository:
         await self.db.commit()
         return await self.get_by_id(bdc_id)
 
-    async def delete_expired_unactioned(self, before: date) -> int:
-        """Nettoyage : supprime les BDC jamais favorises dont la date limite
-        est depassee. Les BDC favorises sont preserves. Aucun fichier MinIO
-        a nettoyer ici : new/seen n'ont jamais declenche de telechargement."""
-        result = await self.db.execute(
-            delete(ScrapedBdc).where(
+    async def delete_expired_unactioned(self, before: date) -> tuple[int, list[str]]:
+        """Nettoyage : supprime les BDC echus hors favoris et renvoie les cles
+        MinIO de leur document, a supprimer aussi (2026-09-27)."""
+        cibles = (await self.db.execute(
+            select(ScrapedBdc.id, ScrapedBdc.zip_minio_key).where(
                 ScrapedBdc.date_limite < before,
                 ScrapedBdc.status.in_(["new", "seen"]),
             )
-        )
+        )).all()
+        if not cibles:
+            return 0, []
+        cles = [k for _id, k in cibles if k]
+        await self.db.execute(delete(ScrapedBdc).where(ScrapedBdc.id.in_([c[0] for c in cibles])))
         await self.db.commit()
-        return result.rowcount
+        return len(cibles), cles
 
     async def update_zip_result(
         self,

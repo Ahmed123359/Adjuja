@@ -70,3 +70,6 @@ class VerdictOut(BaseModel):
     verdict: str
     raisons: list[str]
     details: dict
+    # Fit score /100 calcule par l'app principale (2026-09-27). Optionnel : une
+    # app principale plus ancienne ne le renvoie pas.
+    fit_score: dict | None = None

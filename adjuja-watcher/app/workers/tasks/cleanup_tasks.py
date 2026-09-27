@@ -17,13 +17,36 @@ def cleanup_expired_watcher_items() -> dict:
     return result
 
 
+def _supprimer_fichiers(cles: list[str]) -> int:
+    """Supprime les objets MinIO des elements retires. Un objet deja absent
+    n'est pas une erreur ; une panne MinIO est journalisee sans bloquer."""
+    if not cles:
+        return 0
+    from minio.deleteobjects import DeleteObject
+
+    from app.core.config import settings
+    from app.workers.tasks.download_tasks import _minio_client
+
+    try:
+        erreurs = list(_minio_client().remove_objects(
+            settings.minio_bucket, [DeleteObject(k) for k in cles],
+        ))
+    except Exception as exc:
+        log.warning("Suppression des fichiers echus impossible", error=str(exc), nb=len(cles))
+        return 0
+    for e in erreurs:
+        log.warning("Fichier echu non supprime", key=getattr(e, "object_name", "?"), error=str(e))
+    return len(cles) - len(erreurs)
+
+
 async def _cleanup() -> dict:
     today = date.today()
 
     async with task_db() as db:
-        ao_deleted = await AoRepository(db).delete_expired_unactioned(today)
+        ao_deleted, ao_cles = await AoRepository(db).delete_expired_unactioned(today)
 
     async with task_db() as db:
-        bdc_deleted = await BdcRepository(db).delete_expired_unactioned(today)
+        bdc_deleted, bdc_cles = await BdcRepository(db).delete_expired_unactioned(today)
 
-    return {"ao_deleted": ao_deleted, "bdc_deleted": bdc_deleted}
+    fichiers = _supprimer_fichiers(ao_cles + bdc_cles)
+    return {"ao_deleted": ao_deleted, "bdc_deleted": bdc_deleted, "files_deleted": fichiers}

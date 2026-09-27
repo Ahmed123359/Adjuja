@@ -37,6 +37,9 @@ class DownloadProgressOut(BaseModel):
     max_tentatives: int | None = None
     elapsed_s: int
     retry_in_s: int | None = None
+    # OCR des documents scannes (genre « ocr ») : pages lues sur le total.
+    page: int | None = None
+    pages: int | None = None
 
 
 def _key(kind: str, item_id: int) -> str:
@@ -105,4 +108,6 @@ async def read(kind: str, item_id: int) -> DownloadProgressOut | None:
         max_tentatives=data.get("max_tentatives"),
         elapsed_s=max(0, int(now - data.get("debut", now))),
         retry_in_s=max(0, int(prochaine - now)) if prochaine else None,
+        page=data.get("page"),
+        pages=data.get("pages"),
     )

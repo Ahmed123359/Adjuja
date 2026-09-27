@@ -135,6 +135,16 @@ class AoRepository:
             seen[(ao.source, ao.external_id)] = ao
         aos = list(seen.values())
 
+        # Pas d'insertion d'element deja echu (2026-09-27) : les portails listent
+        # encore d'anciens avis (echeances de 2017 constatees), chaque scrape les
+        # reinserait en « nouveau » et le nettoyage nocturne ne les retirait que
+        # pour quelques heures. Un element deja suivi n'est pas touche : il n'est
+        # simplement plus rafraichi une fois echu.
+        today = date.today()
+        aos = [x for x in aos if not x.date_limite or x.date_limite >= today]
+        if not aos:
+            return 0
+
         rows = [
             {
                 "source": ao.source,
@@ -234,19 +244,31 @@ class AoRepository:
         )
         await self.db.commit()
 
-    async def delete_expired_unactioned(self, before: date) -> int:
-        """Nettoyage : supprime les AO jamais favorisees/importees dont la date
-        limite est depassee. Les AO favorited/imported sont preservees (docs
-        deja telecharges, potentiellement encore utiles). Aucun fichier MinIO
-        a nettoyer ici : new/seen n'ont jamais declenche de telechargement."""
-        result = await self.db.execute(
-            delete(ScrapedAo).where(
+    async def delete_expired_unactioned(self, before: date) -> tuple[int, list[str]]:
+        """Nettoyage : supprime les AO echues qui ne sont ni en favori ni
+        importees, et renvoie les cles MinIO de leurs documents pour que
+        l'appelant les supprime aussi (2026-09-27, demande utilisateur).
+
+        L'ancienne version affirmait qu'un AO new/seen n'avait jamais de
+        fichier : faux pour un AO retire des favoris apres telechargement
+        (documents, zip, texte OCR restaient sur MinIO sans plus aucune ligne)."""
+        cibles = (await self.db.execute(
+            select(ScrapedAo.id, ScrapedAo.classified_docs, ScrapedAo.zip_minio_key).where(
                 ScrapedAo.date_limite < before,
                 ScrapedAo.status.in_(["new", "seen"]),
             )
-        )
+        )).all()
+        if not cibles:
+            return 0, []
+        cles: list[str] = []
+        for _id, docs, zip_key in cibles:
+            for key in (docs or {}).values():
+                cles += [key, key + ".ocr.txt"]
+            if zip_key:
+                cles.append(zip_key)
+        await self.db.execute(delete(ScrapedAo).where(ScrapedAo.id.in_([c[0] for c in cibles])))
         await self.db.commit()
-        return result.rowcount
+        return len(cibles), cles
 
     async def update_analyse_json(self, ao_id: int, analyse_json: dict) -> None:
         await self.db.execute(

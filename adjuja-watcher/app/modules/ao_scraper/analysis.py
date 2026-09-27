@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 """
-Analyse CPS/RC d'un AO scrape via Mistral. Calculee UNE SEULE FOIS par AO
+Analyse CPS/RC d'un AO scrape par le modele du role « analysis »
+(LLM_ANALYSIS, app/core/llm.py). Calculee UNE SEULE FOIS par AO
 (cf. router.py : si scraped_aos.analyse_json existe deja, ce module n'est
 jamais rappele) -- le resultat est partage entre toutes les orgs qui
 consultent cet AO.
@@ -16,16 +17,22 @@ import re
 import fitz
 import structlog
 from minio import Minio
-from mistralai import Mistral
 
 from app.core.config import settings
+from app.core.llm import get_chat
 from app.core.models import ScrapedAo
+from app.modules.ao_scraper import ocr
 
 log = structlog.get_logger(__name__)
 
 
 class AnalysisError(Exception):
     pass
+
+
+class OcrRequise(AnalysisError):
+    """Le CPS/RC n'a pas de couche texte et n'a pas encore ete lu par OCR :
+    la route lance l'OCR en tache de fond au lieu de renvoyer une erreur."""
 
 
 def _minio_client() -> Minio:
@@ -53,6 +60,10 @@ def _extract_pdf_text(minio_key: str, max_chars: int) -> tuple[str, int]:
         response.release_conn()
     with fitz.open(stream=pdf_bytes, filetype="pdf") as pdf:
         text = "".join(page.get_text() for page in pdf)
+    # Document scanne : le texte vient de l'OCR, s'il a deja ete fait
+    # (cache MinIO ecrit par app/workers/tasks/ocr_tasks.py).
+    if len(text.strip()) < ocr.SEUIL_TEXTE:
+        text = ocr.lire_cache(minio, settings.minio_bucket, minio_key) or text
     perdu = max(0, len(text) - max_chars)
     if perdu:
         log.warning(
@@ -167,7 +178,7 @@ REGLES :
 
 async def analyze_ao(ao: ScrapedAo) -> dict:
     """Extrait le texte du CPS/RC (deja sur MinIO via classified_docs) et
-    appelle Mistral. Leve AnalysisError si aucun cps/rc n'est disponible."""
+    appelle le modele d'analyse. Leve AnalysisError si aucun cps/rc n'est disponible."""
     docs = ao.classified_docs or {}
 
     cps_text, meta_cps = _lire_type(docs, "cps", 60000)
@@ -181,7 +192,11 @@ async def analyze_ao(ao: ScrapedAo) -> dict:
     # Documents presents mais sans couche texte : ce n'est PAS "aucun document".
     # L'ancien test `not cps_text and not rc_text` confondait les deux cas et
     # renvoyait a l'utilisateur un diagnostic faux (constate sur l'AO 599).
-    if not meta_cps.get("caracteres_lus") and not meta_rc.get("caracteres_lus"):
+    # Meme seuil que la tache d'OCR : un scan avec une ligne d'en-tete tapee
+    # (quelques dizaines de caracteres) reste un scan.
+    if (meta_cps.get("caracteres_lus") or 0) < ocr.SEUIL_TEXTE and (meta_rc.get("caracteres_lus") or 0) < ocr.SEUIL_TEXTE:
+        if ocr.ocr_disponible():
+            raise OcrRequise("Documents scannes : lecture OCR necessaire.")
         raise AnalysisError(
             "Le CPS et le RC de cet AO ne contiennent aucun texte extractible "
             "(documents probablement scannes). L'analyse automatique necessite "
@@ -194,19 +209,29 @@ async def analyze_ao(ao: ScrapedAo) -> dict:
             ao_id=ao.id, lots_cps=meta_cps["lots"], lots_rc=meta_rc["lots"],
         )
 
-    client = Mistral(api_key=settings.mistral_api_key)
-    response = client.chat.complete(
-        model="mistral-large-latest",
-        messages=[{"role": "user", "content": _build_analyze_prompt(cps_text, rc_text)}],
-        response_format={"type": "json_object"},
-    )
-    raw = response.choices[0].message.content or "{}"
+    # Role « analysis » (LLM_ANALYSIS) : le fournisseur se choisit dans .env.
+    try:
+        raw = await get_chat().complete(
+            "Tu es un expert en marches publics marocains. Tu reponds en JSON.",
+            _build_analyze_prompt(cps_text, rc_text),
+            json_mode=True, max_tokens=8000, temperature=0.1,
+        )
+    except Exception as exc:
+        # Une panne du fournisseur (cle refusee, quota, reseau) remontait en 500
+        # brut ; l'ecran recoit maintenant une phrase qui dit quoi faire.
+        log.error("Appel du modele d'analyse echoue", ao_id=ao.id, error=str(exc))
+        raise AnalysisError(
+            "Le service d'analyse IA n'a pas repondu (cle API refusee ou service "
+            "indisponible). Le texte des documents est conserve : relancez "
+            "l'analyse une fois le service retabli."
+        ) from exc
+    raw = raw or "{}"
     try:
         resultat = json.loads(raw)
     except json.JSONDecodeError:
         match = re.search(r"\{.*\}", raw, re.DOTALL)
         if not match:
-            raise AnalysisError("Reponse Mistral non interpretable en JSON.")
+            raise AnalysisError("Reponse du modele d'analyse non interpretable en JSON.")
         resultat = json.loads(match.group())
 
     # Metadonnees d'analyse, prefixees par `_` : elles disent sur quoi le modele
