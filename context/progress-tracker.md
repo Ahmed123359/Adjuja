@@ -42,6 +42,38 @@ remplissage, type MIME des images de profil choisi par le client, `/health`
 bloquant) et un quatrième (suppression d'un CV affecté à une équipe en 500).
 Détails dans `bugs-connus.md`, section CORRIGÉ.
 
+**Question ouverte importante** (2026-09-28) : la méthode de rédaction des
+notes méthodologiques de l'utilisateur avec Claude (« AO-System »), à partager
+pour la génération du mode express. Détail dans « Questions ouvertes ».
+
+**Prochaine feature : analyse AO enrichie** (2026-09-28). `api.md` écrit :
+matrice de risque (gravité calculée en Python), budget, clauses, questions au
+maître d'ouvrage, jalons ; priorisation des articles des CPS trop longs ;
+ré-analyse unique des AO ouverts sans écraser les corrections du mode
+accompagné. Décisions de l'utilisateur consignées dans `00-overview.md`.
+`client.md` écrit le même jour.
+
+**Codé le 2026-09-28, non commité, non essayé avec une vraie clé IA :**
+- serveur, dans les deux services : module miroir identique
+  (`adjuja-watcher/app/modules/ao_scraper/enrichissement.py` =
+  `adjuja-backend/app/services/analyse_enrichissement.py`) : gravité, nettoyage
+  de la réponse, priorisation des articles, fusion sans écrasement ; prompts
+  enrichis ; `analyser_documents_ao` extraite de `task_analyze_ao_context` ;
+- scripts de ré-analyse des AO ouverts, simulation par défaut :
+  `adjuja-watcher/enrichir_analyses.py` (à lancer d'abord) puis
+  `python -m app.scripts.enrichir_analyses` (backend) ;
+- tests : 127 backend, 30 watcher (ses premiers) ;
+- écran : fiche partagée `features/ao/components/analyse/` branchée dans la
+  veille (onglet « Go/No-Go » renommé « Analyse »), le détail express (section
+  « Analyse du dossier ») et les étapes Compréhension (fin du JSON brut) et
+  Préparation du mode accompagné ; textes FR/EN `analyse.*`. Vérifié par rendu
+  réel (SSR) de 7 cas : complète, ancienne, sans risque, nulle.
+
+**Reste, côté utilisateur** : avec une vraie clé IA, analyser un AO réel
+(l'AO 6388 à 3 lots), lancer les deux scripts en simulation puis en réel, et
+juger la fiche sur capture (clair et sombre, téléphone). Le watcher n'a pas de
+CI : ses tests se lancent à la main.
+
 **Chantier : site public et écrans de connexion.** Rien n'a été vu dans un
 navigateur par l'assistant : l'utilisateur a validé sur captures.
 
@@ -1773,6 +1805,18 @@ arbitrage :
     sans rapport avec ce chantier.
 
 ## Questions ouvertes
+
+- 🟠 **IMPORTANTE pour le mode express : la méthode de rédaction des notes
+  méthodologiques de l'utilisateur** (noté le 2026-09-28, à sa demande).
+  L'utilisateur produit ses notes méthodologiques avec Claude dans son espace
+  « AO-System », avec une méthode qui lui donne de bons résultats. Il doit
+  partager cette méthode (consignes, structure de la note, exemples, étapes)
+  pour qu'elle soit reprise par la génération automatique
+  (`task_generate_note_metho`, étape « Rédaction » du mode accompagné, et le
+  mode express où l'utilisateur ne relit pas avant la fin). **En attente du
+  partage par l'utilisateur** ; rien à coder avant de l'avoir lue. À comparer
+  alors avec le prompt actuel de `app/services/offre_technique/` et avec le
+  skill local `offres-techniques`.
 
 - **Fit score -- implémenté** (2026-09-27). Backend : `FitScoreService`
   (`app/services/fit_score_service.py`), 13 tests unitaires verts

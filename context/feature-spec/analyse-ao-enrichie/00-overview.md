@@ -105,6 +105,15 @@ Le LLM retourne **probabilité et impact séparément**, jamais la sévérité :
 celle-ci est calculée en Python à partir des deux axes, pour rester
 reproductible et ne pas dépendre de l'humeur du modèle d'un appel à l'autre.
 
+## Décisions (2026-09-28)
+
+- Troncature : **priorisation des articles** avant l'appel au modèle (détail
+  dans `api.md`, section 3). Le correctif multi-lots et le signal de
+  troncature, listés plus haut comme à faire, sont déjà livrés (commit
+  `79f62c1`).
+- AO déjà analysés : **ré-analyse unique des AO encore ouverts**, en ajoutant
+  les nouvelles clés sans jamais écraser les existantes (`api.md`, section 4).
+
 ## Open Questions
 
 - Stratégie sur la troncature (60k/40k caractères) : simple avertissement
