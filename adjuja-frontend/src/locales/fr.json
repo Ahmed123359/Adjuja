@@ -1259,6 +1259,19 @@
       "download": "Télécharger",
       "failed": "Impossible d'afficher ce document.",
       "failedHint": "Le lien d'accès a peut-être expiré, ou le stockage n'autorise pas la lecture depuis le navigateur. Le téléchargement reste possible."
+    },
+    "documents": {
+      "aide": "Pour corriger un document, téléchargez-le, modifiez-le dans Word, puis remplacez-le par votre version (PDF ou Word). C'est votre version qui sera signée et mise dans le dossier.",
+      "remplacer": "Remplacer par ma version",
+      "remplacement": "Envoi en cours…",
+      "corrige": "Corrigé par vous",
+      "nonSignable": "Votre version Word n'a pas pu être convertie en PDF : elle sera jointe au dossier sans signature ni cachet. Remplacez-la par un PDF pour qu'elle soit signée.",
+      "erreurRemplacement": "Le remplacement du document a échoué. Réessayez."
+    },
+    "equipe": {
+      "titre": "Équipe proposée",
+      "aPourvoir": "À pourvoir",
+      "aucunCv": "Aucun CV correspondant dans votre équipe"
     }
   },
   "settings": {

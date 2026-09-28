@@ -1257,6 +1257,19 @@
       "download": "Download",
       "failed": "This document cannot be displayed.",
       "failedHint": "The access link may have expired, or storage does not allow reading from the browser. Downloading still works."
+    },
+    "documents": {
+      "aide": "To correct a document, download it, edit it in Word, then replace it with your version (PDF or Word). Your version is the one that will be signed and put in the file.",
+      "remplacer": "Replace with my version",
+      "remplacement": "Uploading…",
+      "corrige": "Corrected by you",
+      "nonSignable": "Your Word version could not be converted to PDF: it will be added to the file without signature or stamp. Replace it with a PDF so that it gets signed.",
+      "erreurRemplacement": "Replacing the document failed. Please try again."
+    },
+    "equipe": {
+      "titre": "Proposed team",
+      "aPourvoir": "To be filled",
+      "aucunCv": "No matching CV in your team"
     }
   },
   "settings": {

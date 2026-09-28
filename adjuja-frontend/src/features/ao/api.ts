@@ -120,6 +120,25 @@ export async function cancelAoPipeline(aoId: string): Promise<AoStatus> {
   return json;
 }
 
+/** Remplace un document produit (note, formulaire rempli) par la version
+ *  corrigee de l'utilisateur, PDF ou Word. `signable` est faux si un Word n'a
+ *  pas pu etre converti en PDF : l'etape Signature ne pourra pas le signer. */
+export async function replaceAoDocument(
+  aoId: string,
+  docType: string,
+  file: File,
+): Promise<{ documents: AoDocumentOut[]; signable: boolean }> {
+  const form = new FormData();
+  form.append('doc_type', docType);
+  form.append('file', file);
+  const res = await fetch(`/api/v1/ao/${aoId}/documents/replace`, {
+    method:  'POST',
+    headers: authHeaders(),
+    body:    form,
+  });
+  return readJson(res, 'Remplacement du document impossible.');
+}
+
 export async function getAoDocumentDownloadUrl(aoId: string, docId: string): Promise<string> {
   const res = await fetch(`/api/v1/ao/${aoId}/documents/${docId}/download`, { headers: authHeaders() });
   const json = await readJson<{ url: string }>(res, 'Erreur téléchargement.');

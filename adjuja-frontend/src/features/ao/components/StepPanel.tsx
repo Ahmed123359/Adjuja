@@ -10,6 +10,8 @@ import { useState } from "react";
 import { ErrorNotice } from "./ErrorNotice";
 import { FitScoreForAo } from "./FitScore";
 import { FicheAnalyse, SECTIONS_COMPREHENSION, SECTIONS_PREPARATION } from "./analyse/FicheAnalyse";
+import { DocumentsEtape } from "./DocumentsEtape";
+import { EquipeProposee } from "./EquipeProposee";
 import { useTranslation } from "react-i18next";
 import type { AoDocumentOut, AoResponse, AoStep, AoStepKey } from "../types";
 
@@ -83,6 +85,7 @@ export function StepPanel({
   onValidate,
   onAbandon,
   onRerun,
+  onDocumentsChanged,
 }: {
   ao: AoResponse;
   step: AoStep;
@@ -90,6 +93,8 @@ export function StepPanel({
   onValidate: (stepKey: AoStepKey) => void;
   onAbandon: () => void;
   onRerun: (stepKey: AoStepKey) => void;
+  /** Un document a ete remplace : recharger l'AO pour afficher la nouvelle version. */
+  onDocumentsChanged: () => void;
 }) {
   const { t } = useTranslation();
   const [confirmRerun, setConfirmRerun] = useState(false);
@@ -135,11 +140,19 @@ export function StepPanel({
               (spec analyse-ao-enrichie, client.md). */}
           {step.step_key === "comprehension" && <FicheAnalyse analyse={ao.analyse_json} sections={SECTIONS_COMPREHENSION} />}
           {step.step_key === "decision" && <FitScoreForAo aoId={ao.id} />}
-          {step.step_key === "preparation" && <FicheAnalyse analyse={ao.analyse_json} sections={SECTIONS_PREPARATION} />}
-          {!["documents", "comprehension", "decision", "preparation"].includes(step.step_key) && (
-            <p style={{ margin: 0, fontSize: 13, color: "var(--adj-ink-4)" }}>
-              {t(`pipeline.steps.${step.step_key}.placeholder`)}
-            </p>
+          {step.step_key === "preparation" && (
+            <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
+              <FicheAnalyse analyse={ao.analyse_json} sections={SECTIONS_PREPARATION} />
+              <EquipeProposee aoId={ao.id} />
+            </div>
+          )}
+          {(step.step_key === "redaction" || step.step_key === "remplissage" || step.step_key === "signature") && (
+            <DocumentsEtape
+              ao={ao}
+              etape={step.step_key}
+              modifiable={step.statut !== "en_cours"}
+              onChange={onDocumentsChanged}
+            />
           )}
         </Bloc>
       )}

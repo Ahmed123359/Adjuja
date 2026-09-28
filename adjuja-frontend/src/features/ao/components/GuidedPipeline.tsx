@@ -119,6 +119,7 @@ export function GuidedPipeline({
                 onValidate={handleValidate}
                 onAbandon={handleAbandon}
                 onRerun={handleRerun}
+                onDocumentsChanged={onAoChanged}
               />
             )}
           </div>
