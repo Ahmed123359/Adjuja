@@ -35,8 +35,15 @@ Review blockers, not style preferences.
 - `JWT_SECRET_KEY` is >= 32 chars and never the literal default in production,
   enforced by a startup validator, do not weaken it.
 - Never modify a DB schema without a real Alembic migration, discussed first if it
-  touches an existing table with data. The `try/except pass` idempotent pattern
-  established in migrations `007`-`011` is the house style for additive changes.
+  touches an existing table with data. Since 2026-09-28 the schema comes ONLY from
+  migrations: `app/scripts/migrate.py` runs `upgrade head` in the `api` container
+  before uvicorn (and in CI before the tests); `create_all` is gone from startup.
+  A model change without its migration now breaks production and CI.
+- Idempotent additive changes use SQL `IF NOT EXISTS` (`ADD COLUMN IF NOT EXISTS`,
+  `CREATE INDEX IF NOT EXISTS`), as in migration `017`. The `try/except pass`
+  pattern of migrations `007`-`016` does NOT work on PostgreSQL: a failed
+  statement aborts the whole transaction even when Python catches the exception,
+  so the next statement fails too. Do not copy it.
 - A design pattern (Strategy, Factory, Repository) is used where there is a real
   axis of variation (LLM providers, payment providers), not spec ulatively wrapped
   around something that will never vary.

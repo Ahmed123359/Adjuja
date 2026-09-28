@@ -14,9 +14,36 @@ des corrections ciblées d'UX/scraping.
 
 ### Reprise de la prochaine session (noté le 2026-09-27)
 
-**Chantier : site public et écrans de connexion (état au 2026-09-27, fin de
-session).** Tout est **non commité** dans l'arbre de travail. Rien n'a été vu
-dans un navigateur par l'assistant : l'utilisateur a validé sur captures.
+**Déployé en production le 2026-09-27.** Tout le travail est commité et
+poussé : `main` = `develop` = `916fd8f` (site public, pages légales, écrans de
+connexion, puis fournisseurs IA, fit score, OCR, refonte des écrans applicatifs).
+`main` avait été laissé sur la séparation en dépôts annulée : rattaché par une
+fusion `ours` (`adfc55f`), sans réécriture d'historique.
+
+**Incident au déploiement, réparé** : tableau de bord en erreur 500, colonnes
+`appels_offres.mode` et `date_limite` absentes de la base de production
+(migrations jamais appliquées). Ajoutées à la main sur le serveur. Détail et
+défaut de fond : `bugs-connus.md`, entrée « Les migrations Alembic ne sont
+jamais appliquées ». **Le prochain déploiement qui ajoute une colonne cassera
+de la même façon** tant que la décision n'est pas prise.
+
+Serveur : compose lancé depuis `~/Adjuja/adjuja-infra` avec `-p <ancien nom de
+projet>` pour garder les volumes de données (sans `-p`, Docker crée des volumes
+neufs et vides : le nom de projet vient du dossier).
+
+**Fiabilisation du 2026-09-28 (non déployée, voir « à faire sur le serveur »)** :
+migrations appliquées automatiquement au démarrage d'`api`
+(`app/scripts/migrate.py`, migration 017 de rattrapage, `create_all` retiré) ;
+nginx en résolution dynamique (plus de 502 quand un service est recréé seul) ;
+tests backend réparés (104 verts) et CI déplacée à la racine
+(`.github/workflows/backend.yml`, elle ne tournait plus depuis le 2026-09-12) ;
+trois bugs de production corrigés au passage (`fitz` non importé dans le
+remplissage, type MIME des images de profil choisi par le client, `/health`
+bloquant) et un quatrième (suppression d'un CV affecté à une équipe en 500).
+Détails dans `bugs-connus.md`, section CORRIGÉ.
+
+**Chantier : site public et écrans de connexion.** Rien n'a été vu dans un
+navigateur par l'assistant : l'utilisateur a validé sur captures.
 
 Validé par l'utilisateur :
 - **Héros** : scène 3D Terre + lune gardée, titre + phrase + deux boutons,
@@ -61,7 +88,8 @@ tarif annuel affiché mais non souscriptible ; promesse « 1 AO gratuit » ;
 CNSS contre CNAS/CASNOS ; application automatique des migrations ; les cinq
 décisions de la spec `gestion-abonnement`.
 
-**À faire côté utilisateur, sans code :** rotation de `JWT_SECRET_KEY` ; clés et
+**À faire côté utilisateur, sans code :** (rotation de `JWT_SECRET_KEY` faite
+en production le 2026-09-27) ; clés et
 rôles IA dans `adjuja-infra/.env` (cible : tout sur GPT, lignes prêtes dans
 `.env.example`), puis `python -m app.scripts.reindex_rag` une fois les
 embeddings basculés.

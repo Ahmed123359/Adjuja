@@ -223,20 +223,6 @@ Reporté à l'étape 1 de `context/feature-spec/gestion-abonnement/api.md`
 invérifiable de bout en bout sans compte marchand CMI, et aucun paiement réel
 n'a encore eu lieu, donc aucune donnée n'est perdue en attendant.
 
-### `JWT_SECRET_KEY` exposée publiquement et identique à celle de production
-
-La clé est en clair dans `.env.example`, présent dans l'historique GitHub depuis
-le commit `2635b21`, et identique à celle réellement utilisée
-(`adjuja-infra/.env`). Quiconque accède au dépôt peut forger des tokens
-d'authentification valides.
-
-Le fichier a été corrigé (placeholder) le 2026-09-12, **mais la valeur reste
-dans l'historique** : seule une rotation de la clé règle le problème.
-
-Reporté parce que c'est un **arbitrage d'exploitation** qui appartient à
-l'utilisateur : la rotation invalide toutes les sessions actives et impose un
-redéploiement.
-
 ### La course `task_match_team` du mode express, corrigée mais non vérifiée en réel
 
 `adjuja-backend/app/tasks/ao_tasks.py`
@@ -297,18 +283,106 @@ Si le bucket est supprimé ou recréé sans lui, le téléchargement de DAO éch
 avec `NoSuchBucket`. Recréé manuellement en prod le 2026-07-05, jamais corrigé
 au niveau du code.
 
-### Trois tests orphelins cassent la CI backend
-
-`tests/unit/test_worker_config.py`, `test_worker_db.py`, `test_worker_scraper.py`
-importent `worker`, sorti du suivi git le 2026-07-02 sans que ses tests soient
-supprimés. `pytest tests/` échoue à la collecte sur toute machine sans le dossier
-`worker/` local, donc la CI GitHub Actions est rouge depuis cette date.
-
-Supprimer des tests est un choix qui appartient à l'utilisateur.
-
 ---
 
 ## CORRIGÉ
+
+### Les migrations Alembic n'étaient jamais appliquées : le schéma venait de `create_all`
+
+Relevé le 2026-09-25, **incident de production le 2026-09-27** (tableau de bord
+en 500 : `appels_offres.mode` et `date_limite` absentes, ajoutées à la main sur
+le serveur). **Corrigé le 2026-09-28, vérifié sur quatre bases réelles.**
+
+- `create_all` retiré du démarrage (`app/main.py`).
+- `app/scripts/migrate.py`, lancé par le conteneur `api` avant uvicorn
+  (Dockerfile, deux étages, et `docker-compose.dev.yml`) ; jamais par les
+  workers. Trois cas : base suivie par Alembic -> `upgrade head` ; base vide ->
+  toutes les migrations ; ancienne base `create_all` (production, dev) ->
+  dernier `create_all`, estampille 016, puis 017.
+- Migration **017, rattrapage idempotent** : colonnes des migrations 011 à 014,
+  `company_profiles.lu_et_accepte_minio_key` et la table
+  `newsletter_subscribers` (ajoutées aux modèles sans migration), deux index
+  (`marches.org_id`, `users.verification_token`), règles de suppression
+  d'`ao_team_members`.
+- **Bug de production corrigé au passage** : sans `ON DELETE SET NULL` sur
+  `ao_team_members.staff_cv_id` (absent des bases `create_all`), supprimer un
+  CV affecté à une équipe violait la clé étrangère (500). Reproduit, puis
+  vérifié corrigé : le membre d'équipe est détaché.
+- Vérification : base suivie (016), base `create_all` récente, base imitant la
+  production avant l'incident (colonnes, table et règles absentes, avec
+  données), base vide. Toutes finissent en 017 avec le même schéma (seule
+  nuance : l'unicité email/slug/profil y est une contrainte ou un index unique,
+  même garantie), données conservées, second démarrage sans effet.
+- La CI applique les migrations sur une base vide avant les tests : la chaîne
+  est vérifiée à chaque push.
+
+### nginx du frontend perdait l'API quand un service était recréé seul (502)
+
+Constaté en production le 2026-09-27 après la rotation de `JWT_SECRET_KEY`
+(connexion Google en « service momentanément indisponible »). **Corrigé le
+2026-09-28, vérifié** sur un banc reproduisant l'incident : après recréation
+d'`api` avec une nouvelle IP, l'ancienne configuration répond 502, la
+nouvelle 200 sans redémarrage de nginx.
+
+`adjuja-frontend/nginx.conf` : `resolver 127.0.0.11 valid=10s` et variables
+dans `proxy_pass` (résolution à chaque requête). Pour `/watcher/` et
+`/notifications/`, la variable supprime le retrait automatique du préfixe :
+remplacé par un `rewrite` explicite ; chemins transmis vérifiés identiques à
+l'ancienne configuration.
+
+
+### Tests et CI backend : la CI ne tournait plus du tout, trois bugs réels dessous
+
+Corrigé le 2026-09-27, vérifié : 104 tests passent, trois exécutions de suite.
+
+- **Trois tests orphelins** (`test_worker_config.py`, `test_worker_db.py`,
+  `test_worker_scraper.py`) importaient `worker/`, sorti du dépôt : `pytest`
+  échouait à la collecte. Supprimés (accord de l'utilisateur) ; ce code vit
+  désormais dans le watcher.
+- **La CI ne tournait pas** : le workflow était dans
+  `adjuja-backend/.github/workflows/`, que GitHub ignore (seul
+  `.github/workflows/` à la racine compte). Déplacé en
+  `.github/workflows/backend.yml`, avec un PostgreSQL de service. Lint limité
+  aux vraies erreurs (`--select E9,F,ASYNC`), seuil de couverture ramené au
+  niveau réel (33 %, mesure 34 %) au lieu d'un 60 % jamais tenu.
+- **Tests dépendants de l'état de la base** : le compteur d'usage global n'était
+  pas mocké et s'incrémentait dans la vraie base ; à 50 appels
+  (`max_appels`), `/generate` répondait 429 et les tests échouaient. Idem pour
+  le limiteur en mémoire. `tests/conftest.py` isole les deux.
+
+Bugs de production trouvés par les vérifications, corrigés :
+
+- **`filler_orchestrator.py` utilisait `fitz` sans l'importer.** Le `NameError`
+  était avalé par `except Exception: return False` : la détection des PDF à
+  encodage de police corrompu **n'a jamais fonctionné**, ces documents
+  n'étaient jamais envoyés vers l'OCR et le remplissage lisait du texte haché.
+- **Type MIME des images de profil fixé par le client.** Signature, cachet et
+  « lu et accepté » étaient stockés dans MinIO avec `file.content_type` : un PNG
+  valide déclaré `text/html` aurait été servi comme une page web (injection de
+  script). Le type est maintenant déduit des octets déjà validés.
+- **`/health` bloquait le serveur** : appel HTTP synchrone vers Qdrant dans une
+  fonction asynchrone, jusqu'à 2 s de gel de toute l'application à chaque
+  healthcheck Docker (30 s). Passé en client asynchrone.
+
+
+### `JWT_SECRET_KEY` exposée publiquement et identique à celle de production
+
+La clé est en clair dans `.env.example`, présent dans l'historique GitHub depuis
+le commit `2635b21`, et identique à celle réellement utilisée
+(`adjuja-infra/.env`). Quiconque accède au dépôt peut forger des tokens
+d'authentification valides.
+
+Le fichier a été corrigé (placeholder) le 2026-09-12, **mais la valeur reste
+dans l'historique** : seule une rotation de la clé règle le problème.
+
+**Corrigé le 2026-09-27 : rotation faite par l'utilisateur en production.**
+Nouvelle clé de 64 caractères (`openssl rand -hex 32`) dans
+`adjuja-infra/.env` du serveur, puis `up -d --force-recreate` des quatre
+services qui la lisent : `api`, `celery-io`, `celery-cpu`, `notification-api`
+(un simple `restart` ne relit pas le `.env`). Toutes les sessions ont été
+invalidées. La clé exposée dans l'historique ne signe plus rien. Reste à
+donner aussi une valeur propre au `.env` de développement, pour que dev et
+production ne partagent plus jamais une clé.
 
 ### Veille : les AO échus réapparaissaient, et leurs fichiers restaient sur MinIO
 
@@ -733,50 +807,3 @@ issues suppriment ou déplacent de la couverture :
 
 La seconde voie est la bonne -- c'est la seule qui donne enfin des tests au
 watcher -- mais c'est un chantier à part, pas un correctif de passage.
-
-
-### Les migrations Alembic ne sont jamais appliquées : le schéma vient de `create_all`
-
-`adjuja-backend/app/main.py:34`, `adjuja-backend/alembic/versions/`
-
-Relevé le 2026-09-25 en posant la migration 015 (`team_messages`).
-
-Constat, vérifié en base et non supposé :
-
-- la table `alembic_version` **n'existe pas** dans la base de développement :
-  aucune migration n'a jamais été enregistrée comme appliquée ;
-- `alembic upgrade head` **échoue immédiatement** :
-  `asyncpg.exceptions.DuplicateTableError: relation "users" already exists`.
-  Alembic repart de la révision 001 et tente de recréer des tables présentes ;
-- le schéma réel est produit par `Base.metadata.create_all`, appelé au démarrage
-  de l'application (`main.py:34`).
-
-Les quinze migrations du dossier sont donc **décoratives** : elles décrivent
-l'intention, rien ne les exécute.
-
-**Pourquoi c'est dangereux et pas seulement inélégant.** `create_all` ne crée
-que les tables MANQUANTES ; il n'ajoute jamais une colonne à une table qui
-existe déjà. Tant qu'on repart d'une base vide, tout semble fonctionner -- c'est
-le cas ici, `date_limite`, `mode` et `team_messages.refs` sont bien présents,
-parce que cette base a été recréée après la mise à jour des modèles. Sur une
-base qui a de l'historique, en revanche, une migration du type de la 014
-(`ALTER TABLE appels_offres ADD COLUMN date_limite`) ne s'appliquerait
-**jamais**, et l'application écrirait dans une colonne inexistante. C'est
-exactement la famille de défaut qui a déjà coûté la perte silencieuse de
-`date_limite` à l'import (voir plus haut dans ce registre).
-
-**Correction non appliquée dans la foulée, arbitrage nécessaire.** Remettre la
-chaîne d'aplomb demande de décider de l'état de départ, ce qui touche la base de
-production :
-
-- estampiller la base existante à la dernière révision
-  (`alembic stamp head`) admet que les migrations 001 à 015 sont déjà reflétées
-  par `create_all` -- vrai pour cette base de dev, à vérifier une par une pour la
-  production avant d'en faire autant ;
-- puis retirer `create_all` du démarrage, sans quoi les deux mécanismes
-  continueront de se marcher dessus et le problème reviendra à la première
-  colonne ajoutée ;
-- et lancer `alembic upgrade head` au déploiement.
-
-Tant que ce n'est pas fait, **toute migration qui ajoute une colonne doit être
-considérée comme non appliquée** et vérifiée à la main en base.
