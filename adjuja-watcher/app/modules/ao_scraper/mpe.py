@@ -7,7 +7,7 @@ from collections.abc import Callable
 from datetime import date, datetime
 from decimal import Decimal, InvalidOperation
 from pathlib import Path
-from urllib.parse import parse_qs, urlencode, urlparse, urljoin
+from urllib.parse import parse_qs, urlparse, urljoin
 
 import httpx
 import structlog

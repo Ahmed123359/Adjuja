@@ -16,6 +16,12 @@ from typing import Any, Callable
 
 from celery import shared_task
 
+from app.services.analyse_enrichissement import (
+    REGLES as REGLES_ENRICHIES,
+    STRUCTURE_JSON as STRUCTURE_ENRICHIE,
+    normaliser_analyse,
+    prioriser_articles,
+)
 from app.services.pipeline_steps_service import (
     advance_or_gate,
     applicable_steps,
@@ -244,7 +250,8 @@ Retourne UNIQUEMENT un JSON valide (sans markdown) avec cette structure :
       "annees_experience_min": 10,
       "description": "texte exact du CPS"
     }}
-  ]
+  ],
+{STRUCTURE_ENRICHIE}
 }}
 
 RÈGLES :
@@ -254,6 +261,7 @@ RÈGLES :
 - strategie_offre_technique : insister sur les critères avec les poids les plus élevés
 - profils_requis : TOUS les profils humains exigés dans le CPS/RC (chef de projet, conducteur de travaux, ingénieurs spécialisés...). Si aucun profil n'est exigé, retourner []
 - Si RC absent : déduis depuis le CPS, marque date_limite="non_disponible"
+{REGLES_ENRICHIES}
 """
 
 
@@ -299,25 +307,100 @@ def _assemble_lots(
     morceaux: list[str] = []
     perdu_total = 0
     lu_total = 0
+    articles_total, articles_gardes, ecartes = 0, 0, {}
     for i, (_, doc) in enumerate(lots, start=1):
-        texte = lire_texte(doc)
-        lu_total += min(len(texte), part)
-        perdu = max(0, len(texte) - part)
+        # Priorisation des articles (spec analyse-ao-enrichie, api.md section 3) :
+        # la coupe en fin de texte faisait disparaitre les clauses de penalites
+        # ou de paiement souvent placees en fin de CPS.
+        texte, meta = prioriser_articles(lire_texte(doc), part)
+        perdu = meta["caracteres_perdus"]
+        lu_total += len(texte)
         if perdu:
             logger.warning(
-                "[analyze] texte tronqué avant analyse doc=%s type=%s garde=%d perdu=%d",
-                getattr(doc, "id", "?"), doc.doc_type, part, perdu,
+                "[analyze] texte réduit avant analyse doc=%s type=%s methode=%s garde=%d perdu=%d",
+                getattr(doc, "id", "?"), doc.doc_type, meta["methode"], len(texte), perdu,
             )
         perdu_total += perdu
+        articles_total += meta.get("articles_total", 0)
+        articles_gardes += meta.get("articles_gardes", 0)
+        if meta.get("articles_ecartes"):
+            ecartes[doc.doc_type] = meta["articles_ecartes"]
         entete = f"\n\n--- {doc.doc_type.upper()} ({i}/{len(lots)}) ---\n" if len(lots) > 1 else ""
-        morceaux.append(entete + texte[:part])
+        morceaux.append(entete + texte)
 
-    return "".join(morceaux), {
+    resultat = {
         "lots": len(lots),
         "types": [doc.doc_type for _, doc in lots],
         "caracteres_lus": lu_total,
         "caracteres_perdus": perdu_total,
     }
+    if articles_total:
+        resultat.update(articles_total=articles_total, articles_gardes=articles_gardes, articles_ecartes=ecartes)
+    return "".join(morceaux), resultat
+
+
+async def analyser_documents_ao(ao_id: str) -> dict:
+    """Lit le CPS et le RC d'un AO (tous lots), appelle le modele d'analyse et
+    renvoie l'analyse_json normalisee, SANS rien ecrire en base.
+
+    Extrait de task_analyze_ao_context le 2026-09-28 pour que le script
+    app/scripts/enrichir_analyses.py puisse re-analyser un AO sans toucher a son
+    statut, a son avancement ni au parcours du mode accompagne.
+    """
+    import json, re
+    from app.db.base import AsyncSessionLocal
+    from app.db.models import AoDocument
+    from app.storage import minio_client as mc
+    from sqlalchemy import select
+
+    # Tous les documents de l'AO : le filtrage par type (lots compris) se fait
+    # dans _assemble_lots, une sélection SQL `in ("cps", "rc")` ignorait `cps_2`.
+    async with AsyncSessionLocal() as session:
+        docs_result = await session.execute(
+            select(AoDocument).where(
+                AoDocument.ao_id == ao_id,
+                AoDocument.minio_key.isnot(None),
+            )
+        )
+        docs = docs_result.scalars().all()
+
+    def _texte(doc: AoDocument) -> str:
+        # Couche texte, ou OCR Tesseract si le document est scanne (texte
+        # mis en cache sur MinIO : un document n'est lu qu'une fois).
+        from app.services.ocr_service import texte_document
+        return texte_document(doc.minio_key, mc.get_file_bytes(doc.minio_key))
+
+    cps_text, meta_cps = _assemble_lots(list(docs), "cps", 60000, _texte)
+    rc_text, meta_rc   = _assemble_lots(list(docs), "rc", 40000, _texte)
+
+    # Role « analysis » (spec fournisseurs-ia) : le fournisseur se choisit
+    # dans .env (LLM_ANALYSIS), plus dans le code.
+    from app.providers.router import get_chat
+    raw, _tokens = await get_chat("analysis").generate_text(
+        "Tu es un expert en marches publics marocains. Tu reponds en JSON.",
+        _build_analyze_prompt(cps_text, rc_text),
+        max_tokens=8000, temperature=0.1, json_mode=True,
+    )
+    raw = raw or "{}"
+    try:
+        analyse_json = json.loads(raw)
+    except json.JSONDecodeError:
+        match = re.search(r"\{.*\}", raw, re.DOTALL)
+        analyse_json = json.loads(match.group()) if match else {}
+
+    # Sur quoi le modèle a réellement travaillé : sans cela une analyse
+    # partielle (lot manquant, texte tronqué) est indiscernable d'une complète.
+    # Préfixe `_` : métadonnée, filtrée par l'affichage frontend.
+    analyse_json = normaliser_analyse(analyse_json)
+    analyse_json["_analyse_meta"] = {
+        **analyse_json.get("_analyse_meta", {}),
+        "cps": meta_cps,
+        "rc": meta_rc,
+        "partielle": bool(meta_cps.get("caracteres_perdus") or meta_rc.get("caracteres_perdus")),
+        "sans_texte": [t for t, m in (("cps", meta_cps), ("rc", meta_rc))
+                       if m.get("lots") and not m.get("caracteres_lus")],
+    }
+    return analyse_json
 
 
 @shared_task(bind=True, name="app.tasks.ao_tasks.task_analyze_ao_context", max_retries=2)
@@ -332,10 +415,8 @@ def task_analyze_ao_context(self, ao_id: str) -> dict:
     _run_async(_set_pct(ao_id, 10))
 
     async def _analyze() -> dict:
-        import json, re
         from app.db.base import AsyncSessionLocal
-        from app.db.models import AoDocument, AppelOffre
-        from app.storage import minio_client as mc
+        from app.db.models import AppelOffre
         from sqlalchemy import select
 
         # Deja analyse cote ao-watcher (veille) avant l'import -> pas de
@@ -351,51 +432,7 @@ def task_analyze_ao_context(self, ao_id: str) -> dict:
                 logger.info("[analyze] analyse_json deja present (reuse ao-watcher) ao_id=%s", ao_id)
                 return {"ao_id": ao_id, "analyse_json": existing_ao.analyse_json}
 
-        # Tous les documents de l'AO : le filtrage par type (lots compris) se fait
-        # dans _assemble_lots, une sélection SQL `in ("cps", "rc")` ignorait `cps_2`.
-        async with AsyncSessionLocal() as session:
-            docs_result = await session.execute(
-                select(AoDocument).where(
-                    AoDocument.ao_id == ao_id,
-                    AoDocument.minio_key.isnot(None),
-                )
-            )
-            docs = docs_result.scalars().all()
-
-        def _texte(doc: AoDocument) -> str:
-            # Couche texte, ou OCR Tesseract si le document est scanne (texte
-            # mis en cache sur MinIO : un document n'est lu qu'une fois).
-            from app.services.ocr_service import texte_document
-            return texte_document(doc.minio_key, mc.get_file_bytes(doc.minio_key))
-
-        cps_text, meta_cps = _assemble_lots(list(docs), "cps", 60000, _texte)
-        rc_text, meta_rc   = _assemble_lots(list(docs), "rc", 40000, _texte)
-
-        # Role « analysis » (spec fournisseurs-ia) : le fournisseur se choisit
-        # dans .env (LLM_ANALYSIS), plus dans le code.
-        from app.providers.router import get_chat
-        raw, _tokens = await get_chat("analysis").generate_text(
-            "Tu es un expert en marches publics marocains. Tu reponds en JSON.",
-            _build_analyze_prompt(cps_text, rc_text),
-            max_tokens=8000, temperature=0.1, json_mode=True,
-        )
-        raw = raw or "{}"
-        try:
-            analyse_json = json.loads(raw)
-        except json.JSONDecodeError:
-            match = re.search(r"\{.*\}", raw, re.DOTALL)
-            analyse_json = json.loads(match.group()) if match else {}
-
-        # Sur quoi le modèle a réellement travaillé : sans cela une analyse
-        # partielle (lot manquant, texte tronqué) est indiscernable d'une complète.
-        # Préfixe `_` : métadonnée, filtrée par l'affichage frontend.
-        analyse_json["_analyse_meta"] = {
-            "cps": meta_cps,
-            "rc": meta_rc,
-            "partielle": bool(meta_cps.get("caracteres_perdus") or meta_rc.get("caracteres_perdus")),
-            "sans_texte": [t for t, m in (("cps", meta_cps), ("rc", meta_rc))
-                           if m.get("lots") and not m.get("caracteres_lus")],
-        }
+        analyse_json = await analyser_documents_ao(ao_id)
 
         async with AsyncSessionLocal() as session:
             result = await session.execute(select(AppelOffre).where(AppelOffre.id == ao_id))

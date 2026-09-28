@@ -22,6 +22,12 @@ from app.core.config import settings
 from app.core.llm import get_chat
 from app.core.models import ScrapedAo
 from app.modules.ao_scraper import ocr
+from app.modules.ao_scraper.enrichissement import (
+    REGLES as REGLES_ENRICHIES,
+    STRUCTURE_JSON as STRUCTURE_ENRICHIE,
+    normaliser_analyse,
+    prioriser_articles,
+)
 
 log = structlog.get_logger(__name__)
 
@@ -44,12 +50,13 @@ def _minio_client() -> Minio:
     )
 
 
-def _extract_pdf_text(minio_key: str, max_chars: int) -> tuple[str, int]:
-    """Retourne (texte tronque, nombre de caracteres perdus).
+def _extract_pdf_text(minio_key: str) -> str:
+    """Texte complet d'un PDF (ou son OCR en cache pour un scan).
 
-    La troncature etait muette : sur un gros CPS le modele analysait un document
-    ampute sans qu'aucun signal ne remonte. L'appelant sait desormais ce qui a
-    ete coupe et le fait remonter dans l'analyse.
+    La reduction au budget du modele se fait ensuite par `prioriser_articles`
+    (garde les articles porteurs de risque) et non plus par une coupe en fin
+    de texte, qui faisait disparaitre les clauses de penalites ou de paiement
+    souvent placees en fin de CPS.
     """
     minio = _minio_client()
     response = minio.get_object(settings.minio_bucket, minio_key)
@@ -64,13 +71,7 @@ def _extract_pdf_text(minio_key: str, max_chars: int) -> tuple[str, int]:
     # (cache MinIO ecrit par app/workers/tasks/ocr_tasks.py).
     if len(text.strip()) < ocr.SEUIL_TEXTE:
         text = ocr.lire_cache(minio, settings.minio_bucket, minio_key) or text
-    perdu = max(0, len(text) - max_chars)
-    if perdu:
-        log.warning(
-            "Texte tronque avant analyse",
-            minio_key=minio_key, garde=max_chars, perdu=perdu, total=len(text),
-        )
-    return text[:max_chars], perdu
+    return text
 
 
 def _collect_docs(docs: dict, prefixe: str) -> list[tuple[str, str]]:
@@ -106,19 +107,36 @@ def _lire_type(docs: dict, prefixe: str, budget: int) -> tuple[str, dict]:
 
     part = max(4000, budget // len(cles))
     morceaux, perdu_total, lu_total = [], 0, 0
+    articles_total, articles_gardes, ecartes = 0, 0, {}
     for cle, minio_key in cles:
-        texte, perdu = _extract_pdf_text(minio_key, part)
+        texte, meta = prioriser_articles(_extract_pdf_text(minio_key), part)
+        perdu = meta["caracteres_perdus"]
+        if perdu:
+            log.warning(
+                "Texte reduit avant analyse",
+                minio_key=minio_key, methode=meta["methode"], garde=len(texte), perdu=perdu,
+                articles_ecartes=meta.get("articles_ecartes"),
+            )
         perdu_total += perdu
         lu_total += len(texte)
+        articles_total += meta.get("articles_total", 0)
+        articles_gardes += meta.get("articles_gardes", 0)
+        if meta.get("articles_ecartes"):
+            ecartes[cle] = meta["articles_ecartes"]
         entete = f"\n\n--- {cle.upper()} ---\n" if len(cles) > 1 else ""
         morceaux.append(entete + texte)
 
-    return "".join(morceaux), {
+    resultat = {
         "lots": len(cles),
         "cles": [c for c, _ in cles],
         "caracteres_lus": lu_total,
         "caracteres_perdus": perdu_total,
     }
+    # Presents seulement si des articles ont ete tries : la fiche affiche alors
+    # « analyse etablie sur 31 articles sur 40 ».
+    if articles_total:
+        resultat.update(articles_total=articles_total, articles_gardes=articles_gardes, articles_ecartes=ecartes)
+    return "".join(morceaux), resultat
 
 
 def _build_analyze_prompt(cps_text: str, rc_text: str) -> str:
@@ -161,7 +179,8 @@ Retourne UNIQUEMENT un JSON valide (sans markdown) avec cette structure :
   "certifications_requises": ["ISO 9001:2015", "..."],
   "chiffre_affaires_minimum_exige": null,
   "nombre_references_similaires_exige": null,
-  "montant_caution": null
+  "montant_caution": null,
+{STRUCTURE_ENRICHIE}
 }}
 
 REGLES :
@@ -173,6 +192,7 @@ REGLES :
 - nombre_references_similaires_exige : nombre entier de references similaires exigees, sinon null
 - montant_caution : montant numerique du cautionnement provisoire si precise, sinon null
 - Si RC absent : deduis depuis le CPS, marque date_limite="non_disponible"
+{REGLES_ENRICHIES}
 """
 
 
@@ -239,7 +259,8 @@ async def analyze_ao(ao: ScrapedAo) -> dict:
     # un CPS tronque) est indiscernable d'une analyse complete.
     # `.get` obligatoire : un type absent a pour meta {"lots": 0}. La premiere
     # version indexait directement et levait KeyError sur tout AO sans RC.
-    resultat["_analyse_meta"] = {
+    resultat = normaliser_analyse(resultat)
+    resultat["_analyse_meta"] = {**resultat.get("_analyse_meta", {}),
         "cps": meta_cps,
         "rc": meta_rc,
         "partielle": bool(meta_cps.get("caracteres_perdus") or meta_rc.get("caracteres_perdus")),

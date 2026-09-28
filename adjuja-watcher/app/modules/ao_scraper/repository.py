@@ -81,7 +81,7 @@ class AoRepository:
         return list(rows), total
 
     async def get_stats(self) -> dict:
-        from sqlalchemy import func, distinct
+        from sqlalchemy import func
         result = await self.db.execute(
             select(
                 ScrapedAo.categorie,
