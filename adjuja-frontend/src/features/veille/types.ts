@@ -1,7 +1,7 @@
 // Veille des appels d'offres et des bons de commande (service ao-watcher).
 // Decoupe depuis l'ancien src/types.ts monolithique (2026-09-12).
 
-import type { FitScore } from '../ao/types';
+import type { AnalyseAo, FitScore } from '../ao/types';
 
 
 // ── AO Watcher ───────────────────────────────────────────────────────────────
@@ -46,14 +46,14 @@ export interface ScrapedAo {
   classified_docs:  Record<string, string> | null;
   description:      string | null;
   secteur_codes:    string[] | null;
-  analyse_json:     Record<string, unknown> | null;
+  analyse_json:     AnalyseAo | null;
   download_progress?: DownloadProgress | null;
 }
 
 export type EligibilityVerdictType = 'go' | 'no_go' | 'risque';
 
 export interface EligibilityVerdict {
-  analyse_json: Record<string, unknown>;
+  analyse_json: AnalyseAo;
   verdict:      EligibilityVerdictType;
   raisons:      string[];
   details:      Record<string, unknown>;

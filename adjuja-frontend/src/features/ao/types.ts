@@ -32,7 +32,7 @@ export interface AoSummary {
 
 export interface AoResponse extends AoSummary {
   erreur_message: string | null;
-  analyse_json:   Record<string, unknown> | null;
+  analyse_json:   AnalyseAo | null;
   documents:      AoDocumentOut[];
 }
 
@@ -113,4 +113,69 @@ export interface FitScore {
   avertissements:     string[];
   facteurs:           FitFacteur[];
   methode_references: 'embeddings' | 'mots_cles';
+}
+
+// ── Analyse enrichie (spec analyse-ao-enrichie) ──────────────────────────────
+// Toutes les cles sont optionnelles : une analyse anterieure au chantier n'a
+// ni `risques` ni les autres sections. La gravite vient TOUJOURS du serveur.
+
+export type Gravite = 'critique' | 'elevee' | 'moderee' | 'faible';
+export type TypeRisque = 'financier' | 'penalites' | 'eliminatoire' | 'capacite_technique' | 'delai' | 'administratif';
+export type Probabilite = 'faible' | 'moyenne' | 'forte';
+export type Impact = 'faible' | 'moyen' | 'fort';
+export type TypeJalon = 'depot' | 'visite' | 'questions' | 'ouverture' | 'execution' | 'autre';
+
+export interface Risque {
+  type:        TypeRisque;
+  titre:       string;
+  clause?:     string;
+  reference?:  string;
+  probabilite: Probabilite;
+  impact:      Impact;
+  gravite:     Gravite;
+  conseil?:    string;
+}
+
+export interface Jalon { libelle: string; date?: string | null; type: TypeJalon; reference?: string }
+export interface QuestionMoa { question: string; motif?: string; reference?: string }
+export interface ClauseSurveillee { sujet: string; clause?: string; reference?: string; pourquoi?: string }
+export interface DecompositionBudgetaire {
+  montant_estime?: number | null;
+  postes?: { libelle: string; montant?: number | null }[];
+  source?: string;
+}
+
+export interface MetaTypeDocument {
+  lots?: number;
+  caracteres_lus?: number;
+  caracteres_perdus?: number;
+  articles_total?: number;
+  articles_gardes?: number;
+}
+
+export interface AnalyseAo {
+  [cle: string]: unknown;
+  contexte?: {
+    intitule?: string; acheteur?: string; objet?: string;
+    date_limite?: string; budget_estime?: number | null; lots?: unknown[];
+  };
+  documents_requis?: { nom: string; obligatoire?: boolean; source?: string }[];
+  criteres_ponderation?: { nom: string; poids?: number | null }[];
+  profils_requis?: { poste?: string; specialite?: string; diplome_min?: string; annees_experience_min?: number | null }[];
+  qualification_requise?: string | null;
+  certifications_requises?: string[];
+  chiffre_affaires_minimum_exige?: number | null;
+  nombre_references_similaires_exige?: number | null;
+  montant_caution?: number | null;
+  risques?: Risque[];
+  decomposition_budgetaire?: DecompositionBudgetaire | null;
+  clauses_a_surveiller?: ClauseSurveillee[];
+  questions_moa?: QuestionMoa[];
+  jalons?: Jalon[];
+  _analyse_meta?: {
+    cps?: MetaTypeDocument;
+    rc?: MetaTypeDocument;
+    partielle?: boolean;
+    sans_texte?: string[];
+  };
 }

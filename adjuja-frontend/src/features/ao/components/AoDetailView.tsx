@@ -22,6 +22,7 @@ import { AoDetailHeader } from "./AoDetailHeader";
 import { ErrorNotice } from "./ErrorNotice";
 import { ProgressBar } from "./ProgressBar";
 import { DossierSection } from "./DossierSection";
+import { FicheAnalyse, SECTIONS_EXPRESS } from "./analyse/FicheAnalyse";
 
 export function AoDetailView({ aoId, onBack }: { aoId: string; onBack: () => void }) {
   const { t } = useTranslation();
@@ -348,6 +349,25 @@ export function AoDetailView({ aoId, onBack }: { aoId: string; onBack: () => voi
               son panneau : le repeter ici affichait deux fois le meme texte, ce
               qui laissait croire a deux problemes. */}
           {ao.erreur_message && !isGuided && <ErrorNotice message={ao.erreur_message} />}
+
+          {/* Mode express : l'analyse du CPS/RC n'etait affichee nulle part
+              (spec analyse-ao-enrichie, client.md). En mode accompagne, elle vit
+              dans les etapes Comprehension et Preparation. */}
+          {!isGuided && ao.analyse_json && (
+            <section style={{
+              display: "flex", flexDirection: "column", gap: "var(--adj-4)",
+              padding: "var(--adj-pad)",
+              background: "var(--adj-panel)",
+              border: "1px solid var(--adj-hairline)",
+              borderRadius: "var(--adj-round-l)",
+              minWidth: 0,
+            }}>
+              <h2 style={{ margin: 0, fontSize: "var(--adj-t-md)", fontWeight: 700, color: "var(--adj-ink)" }}>
+                {t("analyse.titreDossier")}
+              </h2>
+              <FicheAnalyse analyse={ao.analyse_json} sections={SECTIONS_EXPRESS} />
+            </section>
+          )}
 
           {/* Zone de depot et documents sources : un seul panneau titre.
               Separes, ils se lisaient comme deux sujets sans rapport. */}

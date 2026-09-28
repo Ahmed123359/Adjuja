@@ -1380,7 +1380,7 @@
       "showLess": "Show less",
       "tabResume": "Summary",
       "tabDocs": "Documents",
-      "tabGoNoGo": "Fit score",
+      "tabGoNoGo": "Analysis",
       "noDesc": "No description available.",
       "budget": "Budget",
       "caution": "Deposit",
@@ -1745,6 +1745,126 @@
       "profil": "Complete my profile",
       "documents": "Add the tax certificate",
       "equipe": "Complete my team"
+    }
+  },
+  "analyse": {
+    "titreDossier": "File analysis",
+    "vide": "This file has not been analysed yet.",
+    "nonPrecise": "not specified",
+    "matrice": {
+      "titre": "Risk matrix",
+      "resume": "{{detail}} out of {{total}} risks",
+      "case_one": "{{count}} risk, {{gravite}} severity",
+      "case_other": "{{count}} risks, {{gravite}} severity",
+      "axes": "Rows: likelihood. Columns: impact."
+    },
+    "gravite": {
+      "nom": {
+        "critique": "Critical",
+        "elevee": "High",
+        "moderee": "Moderate",
+        "faible": "Low"
+      },
+      "compte": {
+        "critique_one": "{{count}} critical",
+        "critique_other": "{{count}} critical",
+        "elevee_one": "{{count}} high",
+        "elevee_other": "{{count}} high",
+        "moderee_one": "{{count}} moderate",
+        "moderee_other": "{{count}} moderate",
+        "faible_one": "{{count}} low",
+        "faible_other": "{{count}} low"
+      }
+    },
+    "probabilite": {
+      "forte": "Likely",
+      "moyenne": "Possible",
+      "faible": "Unlikely"
+    },
+    "impact": {
+      "faible": "Low impact",
+      "moyen": "Medium impact",
+      "fort": "High impact"
+    },
+    "risques": {
+      "titre": "Risks found in the CPS and RC",
+      "aucun": "No risk found in the CPS and RC.",
+      "aFaire": "To do:",
+      "anterieure": "This analysis predates risk analysis."
+    },
+    "typeRisque": {
+      "financier": "Financial",
+      "penalites": "Penalties",
+      "eliminatoire": "Eliminatory",
+      "capacite_technique": "Technical capacity",
+      "delai": "Timeline",
+      "administratif": "Administrative"
+    },
+    "contexte": {
+      "titre": "The contract",
+      "objet": "Subject",
+      "acheteur": "Buyer",
+      "dateLimite": "Deadline",
+      "budget": "Estimated budget",
+      "lots": "Number of lots",
+      "criteres": "Award criteria",
+      "profils": "Required profiles",
+      "exigences": "Requirements",
+      "qualification": "Qualification",
+      "certifications": "Certifications",
+      "chiffreAffaires": "Minimum turnover",
+      "references": "Similar references",
+      "caution": "Bid bond",
+      "experience_one": "{{count}} year of experience",
+      "experience_other": "{{count}} years of experience"
+    },
+    "jalons": {
+      "titre": "Key dates",
+      "aujourdhui": "today",
+      "dans_one": "tomorrow",
+      "dans_other": "in {{count}} days",
+      "passe_one": "{{count}} day ago",
+      "passe_other": "{{count}} days ago",
+      "type": {
+        "depot": "Bid submission",
+        "visite": "Site visit",
+        "questions": "Questions to the buyer",
+        "ouverture": "Bid opening",
+        "execution": "Execution",
+        "autre": "Other"
+      }
+    },
+    "questions": {
+      "titre": "Questions to ask the buyer",
+      "copier": "Copy questions",
+      "copie": "Copied",
+      "enteteCourrier": "Subject: request for clarification, {{objet}}"
+    },
+    "clauses": {
+      "titre": "Clauses to watch",
+      "pourquoi": "Why:"
+    },
+    "budget": {
+      "titre": "Budget breakdown"
+    },
+    "pieces": {
+      "titre": "Documents to provide",
+      "facultative": "optional",
+      "nom": {
+        "note_metho": "Methodology note",
+        "acte_engagement": "Commitment form",
+        "bordereau": "Price schedule",
+        "declaration_honneur": "Sworn statement",
+        "cps_signe": "Signed and initialled CPS",
+        "rc_signe": "Signed and initialled RC",
+        "attestation_cnss": "CNSS certificate",
+        "attestation_fiscale": "Tax certificate"
+      }
+    },
+    "meta": {
+      "articles": "Analysis based on {{gardes}} of the {{total}} CPS articles: the others were left out for lack of space.",
+      "partielle": "Partial analysis: the document was too long and was shortened.",
+      "sansTexte": "The {{document}} is a scanned document that could not be read: the analysis relies on the other documents."
     }
   }
 }

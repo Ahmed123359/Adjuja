@@ -1382,7 +1382,7 @@
       "showLess": "Voir moins",
       "tabResume": "Résumé",
       "tabDocs": "Documents",
-      "tabGoNoGo": "Compatibilité",
+      "tabGoNoGo": "Analyse",
       "noDesc": "Aucune description disponible.",
       "budget": "Budget",
       "caution": "Caution",
@@ -1747,6 +1747,126 @@
       "profil": "Compléter mon profil",
       "documents": "Ajouter l'attestation fiscale",
       "equipe": "Compléter mon équipe"
+    }
+  },
+  "analyse": {
+    "titreDossier": "Analyse du dossier",
+    "vide": "Ce dossier n'a pas encore été analysé.",
+    "nonPrecise": "non précisé",
+    "matrice": {
+      "titre": "Matrice de risque",
+      "resume": "{{detail}} sur {{total}} risques",
+      "case_one": "{{count}} risque, gravité {{gravite}}",
+      "case_other": "{{count}} risques, gravité {{gravite}}",
+      "axes": "Lignes : probabilité. Colonnes : impact."
+    },
+    "gravite": {
+      "nom": {
+        "critique": "Critique",
+        "elevee": "Élevée",
+        "moderee": "Modérée",
+        "faible": "Faible"
+      },
+      "compte": {
+        "critique_one": "{{count}} critique",
+        "critique_other": "{{count}} critiques",
+        "elevee_one": "{{count}} élevé",
+        "elevee_other": "{{count}} élevés",
+        "moderee_one": "{{count}} modéré",
+        "moderee_other": "{{count}} modérés",
+        "faible_one": "{{count}} faible",
+        "faible_other": "{{count}} faibles"
+      }
+    },
+    "probabilite": {
+      "forte": "Probable",
+      "moyenne": "Possible",
+      "faible": "Peu probable"
+    },
+    "impact": {
+      "faible": "Impact faible",
+      "moyen": "Impact moyen",
+      "fort": "Impact fort"
+    },
+    "risques": {
+      "titre": "Risques relevés dans le CPS et le RC",
+      "aucun": "Aucun risque relevé dans le CPS et le RC.",
+      "aFaire": "À faire :",
+      "anterieure": "Analyse antérieure à l'analyse des risques."
+    },
+    "typeRisque": {
+      "financier": "Financier",
+      "penalites": "Pénalités",
+      "eliminatoire": "Éliminatoire",
+      "capacite_technique": "Capacité technique",
+      "delai": "Délai",
+      "administratif": "Administratif"
+    },
+    "contexte": {
+      "titre": "Le marché",
+      "objet": "Objet",
+      "acheteur": "Acheteur",
+      "dateLimite": "Date limite",
+      "budget": "Budget estimé",
+      "lots": "Nombre de lots",
+      "criteres": "Critères de jugement",
+      "profils": "Profils exigés",
+      "exigences": "Exigences",
+      "qualification": "Qualification",
+      "certifications": "Certifications",
+      "chiffreAffaires": "Chiffre d'affaires minimum",
+      "references": "Références similaires",
+      "caution": "Caution provisoire",
+      "experience_one": "{{count}} an d'expérience",
+      "experience_other": "{{count}} ans d'expérience"
+    },
+    "jalons": {
+      "titre": "Dates clés",
+      "aujourdhui": "aujourd'hui",
+      "dans_one": "demain",
+      "dans_other": "dans {{count}} jours",
+      "passe_one": "passé depuis {{count}} jour",
+      "passe_other": "passé depuis {{count}} jours",
+      "type": {
+        "depot": "Dépôt des offres",
+        "visite": "Visite des lieux",
+        "questions": "Questions au maître d'ouvrage",
+        "ouverture": "Ouverture des plis",
+        "execution": "Exécution",
+        "autre": "Autre"
+      }
+    },
+    "questions": {
+      "titre": "Questions à poser au maître d'ouvrage",
+      "copier": "Copier les questions",
+      "copie": "Copié",
+      "enteteCourrier": "Objet : demande d'éclaircissements, {{objet}}"
+    },
+    "clauses": {
+      "titre": "Clauses à surveiller",
+      "pourquoi": "Pourquoi :"
+    },
+    "budget": {
+      "titre": "Décomposition budgétaire"
+    },
+    "pieces": {
+      "titre": "Pièces à produire",
+      "facultative": "facultative",
+      "nom": {
+        "note_metho": "Note méthodologique",
+        "acte_engagement": "Acte d'engagement",
+        "bordereau": "Bordereau des prix",
+        "declaration_honneur": "Déclaration sur l'honneur",
+        "cps_signe": "CPS signé et paraphé",
+        "rc_signe": "RC signé et paraphé",
+        "attestation_cnss": "Attestation CNSS",
+        "attestation_fiscale": "Attestation fiscale"
+      }
+    },
+    "meta": {
+      "articles": "Analyse établie sur {{gardes}} articles sur {{total}} du CPS : les autres ont été écartés faute de place.",
+      "partielle": "Analyse partielle : le document était trop long et a été raccourci.",
+      "sansTexte": "Le {{document}} est un document scanné non lu : l'analyse repose sur les autres pièces."
     }
   }
 }

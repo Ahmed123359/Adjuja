@@ -9,6 +9,7 @@
 import { useState } from "react";
 import { ErrorNotice } from "./ErrorNotice";
 import { FitScoreForAo } from "./FitScore";
+import { FicheAnalyse, SECTIONS_COMPREHENSION, SECTIONS_PREPARATION } from "./analyse/FicheAnalyse";
 import { useTranslation } from "react-i18next";
 import type { AoDocumentOut, AoResponse, AoStep, AoStepKey } from "../types";
 
@@ -75,39 +76,6 @@ function VueDocuments({ documents }: { documents: AoDocumentOut[] }) {
   );
 }
 
-/** Etape 2 : l'analyse extraite du CPS et du RC, telle qu'elle sera utilisee ensuite. */
-function VueComprehension({ analyse }: { analyse: Record<string, unknown> | null }) {
-  const { t } = useTranslation();
-  if (!analyse || !Object.keys(analyse).length) {
-    return <p style={{ margin: 0, fontSize: 13, color: "var(--adj-ink-4)" }}>{t("pipeline.steps.comprehension.empty")}</p>;
-  }
-  // Les cles prefixees `_` sont des metadonnees d'analyse (ex. `_analyse_meta` :
-  // lots lus, caracteres tronques), pas des champs du marche a relire.
-  const champs = Object.entries(analyse).filter(
-    ([k, v]) => !k.startsWith("_") && v !== null && v !== "" && !(Array.isArray(v) && v.length === 0),
-  );
-  return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-      {champs.map(([cle, valeur]) => (
-        <div key={cle}>
-          <p style={{ margin: "0 0 2px", fontSize: 11, fontWeight: 600, color: "var(--adj-ink-2)" }}>{cle}</p>
-          <p
-            style={{
-              margin: 0,
-              fontSize: 12.5,
-              color: "var(--adj-ink)",
-              whiteSpace: "pre-wrap",
-              wordBreak: "break-word",
-            }}
-          >
-            {typeof valeur === "object" ? JSON.stringify(valeur, null, 2) : String(valeur)}
-          </p>
-        </div>
-      ))}
-    </div>
-  );
-}
-
 export function StepPanel({
   ao,
   step,
@@ -163,9 +131,12 @@ export function StepPanel({
       {!nonApplicable && (
         <Bloc titre={t("pipeline.steps.resultLabel")}>
           {step.step_key === "documents" && <VueDocuments documents={ao.documents} />}
-          {step.step_key === "comprehension" && <VueComprehension analyse={ao.analyse_json} />}
+          {/* Etape 2 : la fiche d'analyse lisible remplace l'ancien JSON brut
+              (spec analyse-ao-enrichie, client.md). */}
+          {step.step_key === "comprehension" && <FicheAnalyse analyse={ao.analyse_json} sections={SECTIONS_COMPREHENSION} />}
           {step.step_key === "decision" && <FitScoreForAo aoId={ao.id} />}
-          {step.step_key !== "documents" && step.step_key !== "comprehension" && step.step_key !== "decision" && (
+          {step.step_key === "preparation" && <FicheAnalyse analyse={ao.analyse_json} sections={SECTIONS_PREPARATION} />}
+          {!["documents", "comprehension", "decision", "preparation"].includes(step.step_key) && (
             <p style={{ margin: 0, fontSize: 13, color: "var(--adj-ink-4)" }}>
               {t(`pipeline.steps.${step.step_key}.placeholder`)}
             </p>

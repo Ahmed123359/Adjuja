@@ -8,6 +8,7 @@ import { updateScrapedAoStatus, importScrapedAo, analyzeScrapedAo, fetchScrapedA
 import { fetchScrapedAoDocument } from '../api';
 import { useApercuDocument } from '../../../shared/ui/DocumentPreviewModal';
 import { FitScore } from '../../ao/components/FitScore';
+import { FicheAnalyse, SECTIONS_VEILLE } from '../../ao/components/analyse/FicheAnalyse';
 import { useIsMobile } from '../../../hooks/useIsMobile';
 import { formatTitre, splitReservationClause } from '../../../utils/formatTitre';
 
@@ -839,6 +840,15 @@ export default function AoDetailPanel({ ao: initialAo, onClose, onUpdated }: Pro
                       </ul>
                     )}
                   </>
+                )}
+
+                {/* Analyse enrichie : risques, jalons, questions, clauses,
+                    budget (spec analyse-ao-enrichie). Apres le score : on
+                    decide d'abord, on approfondit ensuite. */}
+                {ao.analyse_json && (
+                  <div style={{ borderTop: '1px solid var(--adj-hairline)', paddingTop: 16 }}>
+                    <FicheAnalyse analyse={ao.analyse_json} sections={SECTIONS_VEILLE} />
+                  </div>
                 )}
               </>
             )}
