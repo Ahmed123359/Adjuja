@@ -118,44 +118,6 @@ pendant plus de 2 minutes (AO 5, vrai échec puis relance, suivi via l'API), mai
 le comportement du composant lui-même n'a été vérifié que par `tsc` et
 `npm run build`. À confirmer à l'écran avant de passer en CORRIGÉ.
 
-### Les documents scannés ne sont jamais lus : pas d'OCR sur le chemin d'analyse
-
-`adjuja-watcher/app/modules/ao_scraper/analysis.py` et
-`adjuja-backend/app/tasks/ao_tasks.py`, `task_analyze_ao_context`
-
-Constaté le 2026-09-13 sur l'AO 599 : CPS et RC sont des scans (30 pages pour
-30 images et 0 caractère ; 17 pages pour 17 images et 0 caractère). L'extraction
-PyMuPDF n'en tire rien. Le conteneur de veille n'a ni `tesseract` ni
-`pytesseract` ; le backend dispose d'un OCR (utilisé pour l'ingestion RAG) qui
-n'est pas branché sur ce chemin.
-
-**Mesure du 2026-09-27** : sur les 5 AO de veille dont les documents sont
-téléchargés, 4 ont un CPS et un RC entièrement scannés (0 caractère de texte :
-AO 599, 600, 3389, 6387) ; seul l'AO 3412 a une couche texte. Ce n'est donc pas
-un cas marginal : la plupart des analyses de veille échouent pour cette raison.
-Et en dev, même l'AO 3412 échouerait ensuite à l'appel Mistral (clé factice).
-
-**Veille : corrigé le 2026-09-27 (Tesseract).** `app/modules/ao_scraper/ocr.py`
-+ tâche `ocr_tasks.ocr_ao_documents` : pages rendues à 300 dpi, lues par
-Tesseract 5 (`fra`, ajouté à l'image du watcher), texte mis en cache sur MinIO
-(`<clé>.ocr.txt`), partagé par tous les utilisateurs. La route du verdict répond
-202 avec la progression pendant l'OCR ; le panneau affiche « page X / N » et
-rappelle jusqu'au verdict. Vérifié sur l'AO 6387 : 53 pages lues en ~80 s
-(~0,65 page/s), 119 707 caractères, texte fidèle (accents, références de
-décret) ; analyse suivante sans nouvel OCR en 0,5 s. L'appel au modèle échoue
-ensuite en dev (clé factice) avec un message clair.
-**Pipeline : corrigé le 2026-09-27** (`app/services/ocr_service.py`, appelé par
-`task_analyze_ao_context`) : même repli Tesseract, cache `<clé>.ocr.txt`.
-Vérifié dans le worker `celery-cpu` sur le RC scanné de l'AO 6387 : 23 pages en
-43 s à froid, 0,01 s depuis le cache. Deux défauts de la première version, trouvés
-au test réel et corrigés : l'analyse partait dès le CPS lu sans attendre le RC,
-et une erreur du modèle remontait en 500 brut.
-
-Les **symptômes** ont été traités le 2026-09-13 (voir CORRIGÉ : diagnostic faux
-et absence de signal). Le **fond** reste ouvert : un AO dont le DCE est scanné ne
-peut pas être analysé automatiquement. Correction envisagée : repli OCR quand
-l'extraction renvoie un texte vide, en réutilisant la chaîne OCR du backend.
-
 ### Règle de classement `plan` trop large
 
 `adjuja-watcher/app/workers/tasks/download_tasks.py`, `CLASSIFICATION_RULES`
@@ -286,6 +248,58 @@ au niveau du code.
 ---
 
 ## CORRIGÉ
+
+### Route équipe d'un AO : aucun contrôle d'appartenance (faille)
+
+`adjuja-backend/app/api/routes/staff_cvs_routes.py`, `GET /staff-cvs/ao/{ao_id}/team`
+
+Trouvé le 2026-09-28 en branchant l'équipe proposée dans le mode accompagné. La
+route ne vérifiait pas que l'AO appartient à l'organisation de l'utilisateur :
+tout utilisateur connecté lisait la composition d'équipe (rôles, profils visés,
+alertes) de l'AO d'une autre entreprise à partir de son identifiant. Les CV
+restaient filtrés par organisation.
+
+**Corrigé le même jour, vérifié par test** (`tests/integration/test_remplacement_document.py`) :
+404 pour une autre organisation, 200 pour la propriétaire (contre-épreuve : le
+404 ne vient pas d'une mauvaise adresse).
+
+### Les documents scannés ne sont jamais lus : pas d'OCR sur le chemin d'analyse
+
+`adjuja-watcher/app/modules/ao_scraper/analysis.py` et
+`adjuja-backend/app/tasks/ao_tasks.py`, `task_analyze_ao_context`
+
+Constaté le 2026-09-13 sur l'AO 599 : CPS et RC sont des scans (30 pages pour
+30 images et 0 caractère ; 17 pages pour 17 images et 0 caractère). L'extraction
+PyMuPDF n'en tire rien. Le conteneur de veille n'a ni `tesseract` ni
+`pytesseract` ; le backend dispose d'un OCR (utilisé pour l'ingestion RAG) qui
+n'est pas branché sur ce chemin.
+
+**Mesure du 2026-09-27** : sur les 5 AO de veille dont les documents sont
+téléchargés, 4 ont un CPS et un RC entièrement scannés (0 caractère de texte :
+AO 599, 600, 3389, 6387) ; seul l'AO 3412 a une couche texte. Ce n'est donc pas
+un cas marginal : la plupart des analyses de veille échouent pour cette raison.
+Et en dev, même l'AO 3412 échouerait ensuite à l'appel Mistral (clé factice).
+
+**Veille : corrigé le 2026-09-27 (Tesseract).** `app/modules/ao_scraper/ocr.py`
++ tâche `ocr_tasks.ocr_ao_documents` : pages rendues à 300 dpi, lues par
+Tesseract 5 (`fra`, ajouté à l'image du watcher), texte mis en cache sur MinIO
+(`<clé>.ocr.txt`), partagé par tous les utilisateurs. La route du verdict répond
+202 avec la progression pendant l'OCR ; le panneau affiche « page X / N » et
+rappelle jusqu'au verdict. Vérifié sur l'AO 6387 : 53 pages lues en ~80 s
+(~0,65 page/s), 119 707 caractères, texte fidèle (accents, références de
+décret) ; analyse suivante sans nouvel OCR en 0,5 s. L'appel au modèle échoue
+ensuite en dev (clé factice) avec un message clair.
+**Pipeline : corrigé le 2026-09-27** (`app/services/ocr_service.py`, appelé par
+`task_analyze_ao_context`) : même repli Tesseract, cache `<clé>.ocr.txt`.
+Vérifié dans le worker `celery-cpu` sur le RC scanné de l'AO 6387 : 23 pages en
+43 s à froid, 0,01 s depuis le cache. Deux défauts de la première version, trouvés
+au test réel et corrigés : l'analyse partait dès le CPS lu sans attendre le RC,
+et une erreur du modèle remontait en 500 brut.
+
+Les **symptômes** ont été traités le 2026-09-13 (voir CORRIGÉ : diagnostic faux
+et absence de signal). Le **fond** reste ouvert : un AO dont le DCE est scanné ne
+peut pas être analysé automatiquement. Correction envisagée : repli OCR quand
+l'extraction renvoie un texte vide, en réutilisant la chaîne OCR du backend.
 
 ### Les migrations Alembic n'étaient jamais appliquées : le schéma venait de `create_all`
 

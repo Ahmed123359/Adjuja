@@ -136,13 +136,31 @@ Des tokens de couleur d'état (`--l-success/warn/error/info` et leurs fonds et
 bordures) ont été ajoutés dans `index.css`, en thème clair et sombre : il n'en
 existait aucun, et `ui-context.md` interdit un hex en dur dans du code neuf.
 
+## Terminé le 2026-09-28
+
+- Étape 3 : fit score (spec `fit-score`). Étape 4 : pièces à produire, jalons,
+  questions au maître d'ouvrage (spec `analyse-ao-enrichie`) et **équipe
+  proposée** (`EquipeProposee.tsx`, route `GET /staff-cvs/ao/{id}/team`).
+- Étapes 5, 6 et 7 : `DocumentsEtape.tsx`, aperçu et téléchargement des
+  documents produits ; étape 7 : ZIP final en tête.
+- **Correction reprise par l'étape suivante** : `POST /ao/{id}/documents/replace`
+  (`services/remplacement_document.py`). La version corrigée (origine
+  `modifie`) retire TOUTES les versions produites du document (sinon l'ancien
+  PDF, seul signé, partait dans le ZIP), un Word est converti en PDF pour être
+  signé, et `task_sign_and_compile` inclut l'origine `modifie`. Relancer la
+  rédaction ou le remplissage retire aussi la version corrigée (régénération
+  demandée explicitement). Refus si une étape tourne (409).
+
+**Écarts assumés par rapport à la décision du 2026-09-12 :**
+- Étape 5 : pas de champ texte. La note est un fichier Word mis en forme avec le
+  modèle de l'entreprise ; un champ texte en perdait la mise en forme.
+  L'utilisateur corrige dans Word et téléverse sa version.
+- Étape 6 : pas de correction champ par champ, le remplisseur ne conserve pas la
+  liste des champs qu'il a remplis. Remplacement du document entier, même
+  circuit que l'étape 5. Le champ par champ reste possible plus tard, en
+  enregistrant les opérations de remplissage.
+
 ## Reste à faire
 
-- Les panneaux des étapes 3 à 7 affichent un texte d'attente. Leur contenu réel
-  dépend de `fit-score` (étape 3, verdict et score) et de `analyse-ao-enrichie`
-  (étape 4, checklist des pièces).
-- L'édition de la note à l'étape 5 et la correction champ par champ à l'étape 6
-  portent sur des artefacts MinIO : le corps `corrections` de `validate` ne
-  traite pour l'instant que l'étape 2.
-- **Rien n'a été vérifié sur un AO réel** : les critères de recette demandent une
-  stack qui tourne.
+- **Rien n'a été vérifié sur un AO réel de bout en bout** (clé IA, remplissage,
+  signature, ZIP).

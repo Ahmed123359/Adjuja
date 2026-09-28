@@ -74,6 +74,13 @@ accompagné. Décisions de l'utilisateur consignées dans `00-overview.md`.
 juger la fiche sur capture (clair et sombre, téléphone). Le watcher n'a pas de
 CI : ses tests se lancent à la main.
 
+**Mode accompagné terminé côté code** (2026-09-28, non commité) : équipe
+proposée à l'étape 4, documents des étapes 5 à 7, remplacement d'un document
+par la version corrigée (reprise par la signature). Détail et écarts assumés
+dans `feature-spec/mode-accompagne/client.md`. Faille de la route équipe
+corrigée (`bugs-connus.md`). 148 tests backend verts. Reste : un parcours réel
+complet avec une vraie clé IA.
+
 **Chantier : site public et écrans de connexion.** Rien n'a été vu dans un
 navigateur par l'assistant : l'utilisateur a validé sur captures.
 
@@ -1805,6 +1812,14 @@ arbitrage :
     sans rapport avec ce chantier.
 
 ## Questions ouvertes
+
+- 🔴 **Sauvegardes de la production : aucune n'existe** (noté le 2026-09-28,
+  laissé en question ouverte par l'utilisateur). Ni PostgreSQL ni MinIO ne sont
+  sauvegardés automatiquement ; la seule copie connue est le `pg_dump` manuel
+  fait avant la migration 017. Spec prête :
+  `context/feature-spec/securite-chiffrement-backup/` (sauvegarde quotidienne
+  avec rotation, test de restauration, copie hors serveur, chiffrement au
+  repos). Chantier d'infrastructure seul, sans risque pour l'application.
 
 - 🟠 **IMPORTANTE pour le mode express : la méthode de rédaction des notes
   méthodologiques de l'utilisateur** (noté le 2026-09-28, à sa demande).
