@@ -684,12 +684,14 @@ def task_generate_note_metho(self, ao_id: str) -> dict:
             if not ao:
                 raise ValueError(f"AO {ao_id} introuvable")
 
-            # Supprimer l'ancienne note métho pour éviter les doublons sur relance
+            # Supprimer l'ancienne note métho pour éviter les doublons sur relance.
+            # `modifie` compris : relancer la rédaction est une demande explicite
+            # de régénération, la version corrigée ne doit pas rester à côté.
             await session.execute(
                 sa_delete(AoDocument).where(
                     AoDocument.ao_id == ao_id,
                     AoDocument.doc_type == "note_metho",
-                    AoDocument.origine == "genere",
+                    AoDocument.origine.in_(["genere", "modifie"]),
                 )
             )
             await session.commit()
@@ -882,11 +884,14 @@ def task_fill_documents(self, ao_id: str) -> dict:
             )
             docs = docs_res.scalars().all()
 
-            # Supprimer les anciens docs remplis pour éviter les doublons sur relance
+            # Supprimer les anciens docs remplis pour éviter les doublons sur relance,
+            # y compris ceux que l'utilisateur avait corrigés (hors note métho,
+            # qui relève de l'étape Rédaction).
             await session.execute(
                 sa_delete(AoDocument).where(
                     AoDocument.ao_id == ao_id,
-                    AoDocument.origine == "rempli",
+                    (AoDocument.origine == "rempli")
+                    | ((AoDocument.origine == "modifie") & (AoDocument.doc_type != "note_metho")),
                 )
             )
             await session.commit()
@@ -1001,7 +1006,9 @@ def task_sign_and_compile(self, ao_id: str) -> dict:
                     AoDocument.ao_id == ao_id,
                     AoDocument.statut == "traite",
                     AoDocument.minio_key.isnot(None),
-                    AoDocument.origine.in_(["genere", "rempli", "upload"]),
+                    # `modifie` : version corrigée par l'utilisateur (étapes 5 et
+                    # 6 du mode accompagné), qui remplace la version produite.
+                    AoDocument.origine.in_(["genere", "rempli", "upload", "modifie"]),
                 )
             )
             docs = docs_res.scalars().all()

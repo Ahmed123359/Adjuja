@@ -9,7 +9,7 @@ from sqlalchemy import select
 
 from app.api.dependencies import get_current_user
 from app.db.base import AsyncSessionLocal
-from app.db.models import StaffCv, AoTeamMember
+from app.db.models import AoTeamMember, AppelOffre, StaffCv
 from app.models.staff_cv import StaffCvCreate, StaffCvUpdate, StaffCvResponse, AoTeamMemberResponse
 from app.models.user import UserPublic
 
@@ -332,6 +332,15 @@ async def get_ao_team(
     """Retourne les membres de l'équipe affectés à un AO."""
     org_id = current_user.org_id or current_user.id
     async with AsyncSessionLocal() as session:
+        # L'AO doit appartenir a l'organisation (2026-09-28) : sans ce controle,
+        # tout utilisateur connecte lisait les roles et profils vises de l'equipe
+        # d'un AO d'une autre entreprise a partir de son identifiant.
+        proprietaire = await session.execute(
+            select(AppelOffre.id).where(AppelOffre.id == ao_id, AppelOffre.org_id == org_id)
+        )
+        if proprietaire.first() is None:
+            raise HTTPException(status_code=404, detail="Appel d'offres introuvable.")
+
         result = await session.execute(
             select(AoTeamMember).where(AoTeamMember.ao_id == ao_id)
         )

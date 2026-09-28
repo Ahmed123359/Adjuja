@@ -2,7 +2,7 @@ import logging
 import uuid
 from datetime import datetime, timezone
 
-from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, status
+from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, status
 from pydantic import BaseModel
 from typing import Annotated
 from sqlalchemy import delete as sa_delete, select
@@ -533,6 +533,34 @@ async def download_document(
     from app.storage import minio_client as mc
     url = mc.presigned_get(key)
     return {"url": url}
+
+
+class RemplacementOut(BaseModel):
+    documents: list[AoDocumentOut]
+    # Faux si la version Word n'a pas pu etre convertie en PDF : l'etape 7 ne
+    # pourra pas la signer, l'ecran le dit.
+    signable: bool
+
+
+@router.post("/{ao_id}/documents/replace", response_model=RemplacementOut)
+async def replace_document(
+    ao_id: str,
+    file: UploadFile,
+    doc_type: Annotated[str, Form()],
+    current_user: UserPublic = Depends(get_current_user),
+) -> RemplacementOut:
+    """Remplace un document produit (note, formulaire rempli) par la version
+    corrigee de l'utilisateur, PDF ou Word. C'est elle que l'etape 7 signe."""
+    from app.services.remplacement_document import RemplacementRefuse, remplacer_document
+
+    org_id = current_user.org_id or current_user.id
+    data = await file.read()
+    validate_upload_size(data, file.filename or "document")
+    try:
+        resultat = await remplacer_document(ao_id, org_id, doc_type, file.filename or doc_type, data)
+    except RemplacementRefuse as exc:
+        raise HTTPException(status_code=exc.code, detail=str(exc)) from exc
+    return RemplacementOut(documents=[_doc_to_out(d) for d in resultat.documents], signable=resultat.signable)
 
 
 @router.post("/{ao_id}/start-pipeline", response_model=AoStatus)
