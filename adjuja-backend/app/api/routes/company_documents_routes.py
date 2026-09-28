@@ -10,7 +10,6 @@ from app.api.dependencies import get_current_user, require_within_limit
 from app.db.base import AsyncSessionLocal
 from app.db.models import CompanyDocument
 from app.models.company_document import (
-    CompanyDocumentCreate,
     CompanyDocumentResponse,
     COMPANY_DOC_TYPES,
 )

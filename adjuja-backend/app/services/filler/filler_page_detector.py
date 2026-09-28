@@ -6,7 +6,6 @@ Détection intelligente des pages pertinentes dans un document multi-pages.
 Stratégie en 4 couches (keyword scoring → OCR headers → fallback → all pages).
 """
 
-import re
 import sys
 from pathlib import Path
 from typing import Any
@@ -111,7 +110,6 @@ def find_document_pages(
     is_scanned: bool,
 ) -> DetectionResult:
     doc   = fitz.open(str(pdf_path))
-    total = len(doc)
     doc.close()
 
     if doc_type == "unknown":

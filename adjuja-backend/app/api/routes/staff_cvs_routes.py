@@ -3,9 +3,9 @@ import logging
 import uuid
 from datetime import datetime, timezone
 
-from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
 from pydantic import BaseModel
-from sqlalchemy import select, delete as sa_delete
+from sqlalchemy import select
 
 from app.api.dependencies import get_current_user
 from app.db.base import AsyncSessionLocal
@@ -295,7 +295,6 @@ async def upload_cv_pdf(
     # Indexer dans le RAG de l'org (non bloquant)
     try:
         import fitz
-        import asyncio
         from app.services.rag_service import get_rag_service
 
         with fitz.open(stream=data, filetype="pdf") as pdf:

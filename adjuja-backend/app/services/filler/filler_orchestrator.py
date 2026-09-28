@@ -24,8 +24,10 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
+import fitz  # PyMuPDF : manquait, la detection d'encodage corrompu levait NameError, avale par except
+
 from app.services.filler.company_adapter import get_company_info
-from app.services.filler.filler_llm import call_mistral, call_pixtral_vision
+from app.services.filler.filler_llm import call_mistral
 from app.services.filler.filler_processors import (
     _build_docx_from_paragraphs,
     _build_pdf_from_paragraphs,
@@ -375,7 +377,6 @@ def _fill_scanned_with_case(
     print(f"  Lecture par paliers  cas : {case_label} | lot : {lot_number or 'tous'}...")
     system_prompt = get_vision_prompt_case(doc_type, case_name, case_label, lot_number)
 
-    from app.services.filler.company_adapter import get_company_info
     from app.services.filler.filler_llm import lire_et_remplir_scan
 
     # Palier 2 (Tesseract avec mise en page + modele de texte), palier 3

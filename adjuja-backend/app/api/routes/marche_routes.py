@@ -8,7 +8,7 @@ from sqlalchemy.orm import selectinload
 
 from app.api.dependencies import get_current_user
 from app.db.base import AsyncSessionLocal
-from app.db.models import FillerJob, Marche, OffreTechniqueJob, SigningJob
+from app.db.models import Marche
 from app.models.marche import JobSummary, MarcheCreate, MarcheResponse, MarcheSummary
 from app.models.user import UserPublic
 from app.services.security.input_sanitizer import validate_upload_size

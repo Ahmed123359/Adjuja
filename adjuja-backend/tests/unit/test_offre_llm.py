@@ -24,7 +24,7 @@ class _FauxProvider:
         if self.echecs:
             self.echecs -= 1
             raise _RateLimitError("trop de requetes")
-        time.sleep(self.pause)  # SDK synchrone, comme les vrais providers
+        time.sleep(self.pause)  # noqa: ASYNC251  SDK synchrone, comme les vrais providers : voulu
         return '{"ok": true}', 10
 
 

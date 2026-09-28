@@ -16,11 +16,9 @@ except ImportError:
 from app.services.filler.filler_page_detector import (
     _score_page_text,
     detect_pages_in_scanned_pdf,
-    detect_pages_in_text_pdf,
 )
 from app.services.filler.filler_settings import (
     DOCUMENT_REGISTRY,
-    PAGE_TITLE_KEYWORD_WEIGHT,
     SEGMENTATION_MIN_SCORE,
 )
 

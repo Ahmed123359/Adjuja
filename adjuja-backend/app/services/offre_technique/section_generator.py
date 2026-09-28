@@ -6,7 +6,6 @@ Sections structurées (équipe, chronogramme) sont assemblées dans doc_assemble
 import asyncio
 import json
 import logging
-import httpx
 
 from app.models.offre_technique import CPSContext, RCContext, StrategyAngle
 from app.services.offre_technique.prompts import SECTION_SYSTEMS

@@ -5,7 +5,7 @@ l'org appelante (company_profiles.extra). Aucune comparaison ne necessite
 d'appel IA supplementaire : c'est une comparaison Python deterministe.
 """
 
-from datetime import date, datetime
+from datetime import date
 from typing import Any
 
 

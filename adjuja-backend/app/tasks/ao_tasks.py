@@ -333,11 +333,9 @@ def task_analyze_ao_context(self, ao_id: str) -> dict:
 
     async def _analyze() -> dict:
         import json, re
-        import fitz
         from app.db.base import AsyncSessionLocal
         from app.db.models import AoDocument, AppelOffre
         from app.storage import minio_client as mc
-        from app.config.settings import get_settings
         from sqlalchemy import select
 
         # Deja analyse cote ao-watcher (veille) avant l'import -> pas de
@@ -507,7 +505,6 @@ def task_match_team(self, ao_id: str) -> dict:
         import json
         from app.db.base import AsyncSessionLocal
         from app.db.models import AppelOffre, StaffCv, AoTeamMember
-        from app.config.settings import get_settings
         from sqlalchemy import select, delete as sa_delete
 
         async with AsyncSessionLocal() as session:

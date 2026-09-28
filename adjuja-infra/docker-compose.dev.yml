@@ -47,7 +47,7 @@ services:
       context: ../adjuja-backend
       dockerfile: Dockerfile
       target: api-dev
-    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+    command: sh -c "python -m app.scripts.migrate && exec uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload"
     ports:
       - "8000:8000"
     environment:

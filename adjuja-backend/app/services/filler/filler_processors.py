@@ -33,7 +33,7 @@ except ImportError:
     DOCX_AVAILABLE = False
 
 from app.services.filler.filler_llm import call_mistral, call_pixtral_vision
-from app.services.filler.filler_placeholders import PH_RE, build_fill_operations, extract_replacement_pairs, has_placeholder
+from app.services.filler.filler_placeholders import build_fill_operations, extract_replacement_pairs, has_placeholder
 from app.services.filler.filler_settings import (
     DOCUMENT_TYPE_KEYWORDS,
     PAGE_HEIGHT_PT,
@@ -41,8 +41,6 @@ from app.services.filler.filler_settings import (
     PAGE_MARGIN_TOP_PT,
     PAGE_MARGIN_X_PT,
     PAGE_WIDTH_PT,
-    RECONSTRUCTION_FONT,
-    SCAN_DPI,
     SCANNED_IMAGE_AREA_RATIO,
     SCANNED_MAX_SUSPICIOUS_RATIO,
     SCANNED_MIN_READABLE_WORD_RATIO,

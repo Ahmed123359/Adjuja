@@ -242,12 +242,15 @@ async def _upload_image_asset(
     from app.services.security.input_sanitizer import validate_logo
     validate_logo(data, file.filename or "upload.png")
 
-    allowed = ("image/png", "image/jpeg", "image/jpg")
-    ext = "png" if file.content_type == "image/png" else "jpg"
+    # Type deduit des octets deja valides, jamais de l'en-tete envoye par le
+    # client : un PNG declare « text/html » aurait ete servi comme une page web.
+    est_png = data.startswith(b"\x89PNG")
+    ext = "png" if est_png else "jpg"
+    content_type = "image/png" if est_png else "image/jpeg"
     key = f"{org_id}/profile/{asset}.{ext}"
 
     from app.storage import minio_client as mc
-    mc.upload_bytes(key, data, file.content_type or "image/png")
+    mc.upload_bytes(key, data, content_type)
 
     now = _now_iso()
     async with AsyncSessionLocal() as session:

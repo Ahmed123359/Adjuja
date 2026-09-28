@@ -310,8 +310,8 @@ class AoTeamMember(Base):
     )
 
     id:                Mapped[str]        = mapped_column(String(36), primary_key=True)
-    ao_id:             Mapped[str]        = mapped_column(String(36), ForeignKey("appels_offres.id"), nullable=False)
-    staff_cv_id:       Mapped[Optional[str]] = mapped_column(String(36), ForeignKey("staff_cvs.id"), nullable=True)
+    ao_id:             Mapped[str]        = mapped_column(String(36), ForeignKey("appels_offres.id", ondelete="CASCADE"), nullable=False)
+    staff_cv_id:       Mapped[Optional[str]] = mapped_column(String(36), ForeignKey("staff_cvs.id", ondelete="SET NULL"), nullable=True)
     created_at:        Mapped[str]        = mapped_column(String(50), nullable=False)
     role_dans_offre:   Mapped[str]        = mapped_column(String(255), default="")
     profil_requis_ref: Mapped[str | None] = mapped_column(Text, nullable=True)

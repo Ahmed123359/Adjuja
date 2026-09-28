@@ -28,10 +28,12 @@ settings = get_settings()
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    # Le schema vient des migrations Alembic, appliquees avant uvicorn par
+    # app/scripts/migrate.py (Dockerfile, docker-compose). Le create_all qui
+    # tenait lieu de schema jusqu'au 2026-09-27 creait les tables manquantes
+    # mais jamais une colonne : la production a perdu appels_offres.mode et
+    # date_limite de cette facon (erreur 500 le 2026-09-27).
     from app.db.base import engine
-    from app.db.models import Base  # noqa: F401
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
     yield
     await engine.dispose()
 
@@ -217,7 +219,10 @@ async def health(response: Response):
     if settings.qdrant_url:
         try:
             import httpx
-            r = httpx.get(f"{settings.qdrant_url}/healthz", timeout=2)
+            # Client asynchrone : l'appel synchrone bloquait toute la boucle
+            # d'evenements jusqu'a 2 s, a chaque healthcheck Docker (30 s).
+            async with httpx.AsyncClient(timeout=2) as client:
+                r = await client.get(f"{settings.qdrant_url}/healthz")
             checks["qdrant"] = "ok" if r.is_success else f"error: HTTP {r.status_code}"
         except Exception as e:
             checks["qdrant"] = f"error: {e}"

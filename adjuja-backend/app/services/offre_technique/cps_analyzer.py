@@ -24,7 +24,6 @@ def extract_text(pdf_path: Path) -> str:
 
 def analyze(pdf_path: Path, api_key: str) -> CPSContext:
     from app.cache import cache
-    from app.config.settings import get_settings
 
     raw_bytes = pdf_path.read_bytes()
     cache_key = f"cache:cps:{cache.sha256(raw_bytes)}"

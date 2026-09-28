@@ -349,7 +349,6 @@ def _stamp_lu_et_accepte(page: fitz.Page) -> None:
     Appose le tampon "Lu et accepté" en bas à gauche de chaque page,
     juste au-dessus de la zone du paraphe.
     """
-    pw = page.rect.width
     ph = page.rect.height
     text = "Lu et accepté"
     fontsize = 8.5

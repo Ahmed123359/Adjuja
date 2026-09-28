@@ -345,7 +345,7 @@ class FitScoreService:
         self._embedder = embedder
 
     async def _vecteur(self, texte: str) -> list[float]:
-        cle = "fit:emb:" + hashlib.sha1(texte.encode("utf-8")).hexdigest()
+        cle = "fit:emb:" + hashlib.sha1(texte.encode("utf-8"), usedforsecurity=False).hexdigest()
         cached = cache.get(cle)
         if isinstance(cached, list) and cached:
             return cached

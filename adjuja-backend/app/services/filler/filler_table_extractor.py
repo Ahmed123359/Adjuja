@@ -27,7 +27,6 @@ Point d'entrée principal : extract_table_to_excel()
 
 import re
 import sys
-from io import BytesIO
 from pathlib import Path
 from typing import Any
 
@@ -45,11 +44,8 @@ except ImportError:
 
 from app.services.filler.filler_settings import (
     EXCEL_TABLE_SHEET_NAME,
-    IMAGE_JPEG_QUALITY,
-    IMAGE_MAX_SIDE_PX,
     LOT_REGISTRY,
     SCAN_DPI,
-    TABLE_CELL_FONT_SIZE_MIN,
 )
 
 
@@ -219,7 +215,6 @@ def _call_pixtral_for_tables(images: list[Any], api_key: str) -> list[TableData]
     Returns:
         Liste de TableData extraites depuis la réponse JSON de Pixtral.
     """
-    import base64
     import json
     import re as _re
 

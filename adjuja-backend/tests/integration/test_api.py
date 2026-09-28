@@ -44,8 +44,10 @@ def mock_generation_service():
 def mock_history_service():
     # On mocke history_service pour éviter les écritures SQLite en test.
     # Sans ça, history.add() lève une FK constraint (user_id inexistant en DB).
+    # HistoryService.add est asynchrone (awaité par la route) : un MagicMock
+    # simple levait « object MagicMock can't be used in 'await' expression ».
     service = MagicMock()
-    service.add = MagicMock()
+    service.add = AsyncMock()
     return service
 
 
