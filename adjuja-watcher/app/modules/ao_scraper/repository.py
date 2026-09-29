@@ -1,7 +1,7 @@
 from datetime import date, datetime, timezone
 
 import structlog
-from sqlalchemy import delete, func, select, update
+from sqlalchemy import case, delete, func, select, update
 from sqlalchemy.dialects.postgresql import array
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -178,11 +178,24 @@ class AoRepository:
                 "acheteur": stmt.excluded.acheteur,
                 "date_limite": stmt.excluded.date_limite,
                 "categorie": stmt.excluded.categorie,
-                "secteur": stmt.excluded.secteur,
                 "region": stmt.excluded.region,
-                "budget_estime": stmt.excluded.budget_estime,
-                "caution": stmt.excluded.caution,
-                "secteur_codes": stmt.excluded.secteur_codes,
+                # Estimation, caution et secteur viennent de la page detail, lue
+                # une seule fois a la decouverte de l'AO. Les re-scrapes suivants
+                # (liste seule, toutes les 6 h) les ecrasaient avec NULL : 88 % des
+                # AO sans estimation ni caution dans les notifications (« non
+                # precise ») alors que le portail les publie, constate le
+                # 2026-09-29. Meme protection que zip_url, ville, date_publication.
+                "secteur": func.coalesce(stmt.excluded.secteur, ScrapedAo.secteur),
+                "budget_estime": func.coalesce(stmt.excluded.budget_estime, ScrapedAo.budget_estime),
+                "caution": func.coalesce(stmt.excluded.caution, ScrapedAo.caution),
+                # Les codes de secteur calcules sans le secteur (liste seule) sont
+                # plus pauvres : l'AO ne correspondait plus aux preferences des
+                # organisations et n'etait jamais notifie. On garde ceux calcules
+                # a la decouverte tant que la liste n'apporte pas de secteur.
+                "secteur_codes": case(
+                    (stmt.excluded.secteur.is_(None), func.coalesce(ScrapedAo.secteur_codes, stmt.excluded.secteur_codes)),
+                    else_=stmt.excluded.secteur_codes,
+                ),
                 # zip_url vient de l'enrichissement de la page detail, pas du listing :
                 # un re-scrape planifie qui ne le porte pas l'ecrasait avec NULL, et
                 # le telechargement echouait ensuite avec "has no zip_url" sur des AO
