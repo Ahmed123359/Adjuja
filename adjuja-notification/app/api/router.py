@@ -1,3 +1,4 @@
+import json
 from datetime import datetime, timezone
 from typing import Literal
 
@@ -10,7 +11,6 @@ from app.channels.base import NotificationContent
 from app.channels.factory import NotificationChannelFactory
 from app.core.config import settings
 from app.core.database import get_session
-from app.core.models import NotificationPreference
 from app.services.recipients import resolve_org_email
 from app.templates.ao_digest import AoItem
 from app.templates.registry import TemplateRegistry
@@ -106,6 +106,14 @@ def get_preferences(org_id: str, caller_org: str = Depends(_require_jwt)):
 @router.put("/preferences/{org_id}", response_model=PreferenceOut)
 def upsert_preferences(org_id: str, body: PreferenceIn, caller_org: str = Depends(_require_jwt)):
     _check_org_access(org_id, caller_org)
+    # Une veille activee sans secteur n'envoie jamais rien (le batch exclut les
+    # listes vides) et l'utilisateur n'en sait rien : constate en production le
+    # 2026-09-29 sur une organisation. On refuse avec un message clair.
+    if body.enabled and not body.secteur_codes:
+        raise HTTPException(
+            status_code=400,
+            detail="Choisissez au moins un secteur pour activer la veille : sans secteur, aucun appel d'offres ne peut vous être envoyé.",
+        )
     now = datetime.now(timezone.utc)
     with get_session() as session:
         session.execute(
@@ -130,7 +138,9 @@ def upsert_preferences(org_id: str, body: PreferenceIn, caller_org: str = Depend
             {
                 "org_id": org_id,
                 "enabled": body.enabled,
-                "codes": str(body.secteur_codes).replace("'", '"'),
+                # json.dumps : l'ancien str(...).replace("'", '"') cassait le
+                # JSON des qu'un code contenait une apostrophe.
+                "codes": json.dumps(body.secteur_codes),
                 "notify_bdc": body.notify_bdc,
                 "cadence_unit": body.cadence_unit,
                 "cadence_value": body.cadence_value,
@@ -193,7 +203,9 @@ def test_send(org_id: str, body: PreferenceIn, caller_org: str = Depends(_requir
                 FROM watcher.scraped_aos sa
                 WHERE sa.secteur_codes IS NOT NULL
                   AND sa.secteur_codes ?| :codes
-                ORDER BY sa.date_publication DESC
+                  -- Comme l'envoi reel : AO encore ouverts, echeance la plus proche d'abord.
+                  AND (sa.date_limite IS NULL OR sa.date_limite >= CURRENT_DATE)
+                ORDER BY sa.date_limite ASC NULLS LAST, sa.scraped_at DESC
                 LIMIT :max_items
             """),
             {"codes": body.secteur_codes, "max_items": body.max_items},

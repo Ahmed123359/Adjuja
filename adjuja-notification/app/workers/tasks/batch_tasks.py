@@ -1,5 +1,5 @@
 import logging
-from datetime import date, datetime, timedelta, timezone
+from datetime import datetime, timedelta, timezone
 
 from celery import chord, group
 from sqlalchemy import text
@@ -7,7 +7,7 @@ from sqlalchemy import text
 from app.channels.factory import NotificationChannelFactory
 from app.core.config import settings
 from app.core.database import get_session
-from app.core.models import NotificationBatch, NotificationLog
+from app.core.models import NotificationBatch
 from app.services.recipients import resolve_org_email
 from app.templates.ao_digest import AoItem
 from app.templates.registry import TemplateRegistry
@@ -45,15 +45,23 @@ def run_notification_batch() -> dict:
                 WHERE enabled = TRUE
                   AND jsonb_array_length(secteur_codes) > 0
                   AND send_hour = EXTRACT(HOUR FROM NOW() AT TIME ZONE 'Africa/Casablanca')
+                  -- Cadence comptee en JOURS CALENDAIRES a l'heure du Maroc.
+                  -- L'ancien test (NOW() - last_notified_at >= 1 jour) echouait
+                  -- de quelques millisecondes : last_notified_at est ecrit a la
+                  -- fin de l'envoi (09:00:00,109), le tick du lendemain part a
+                  -- 09:00:00,017, soit 23 h 59 min 59,9 s -> « pas du », et
+                  -- l'heure d'envoi etait perdue pour la journee. Une veille
+                  -- quotidienne partait un jour sur deux, une hebdomadaire une
+                  -- semaine sur deux (constate en production le 2026-09-29).
                   AND (
                     last_notified_at IS NULL
-                    OR NOW() - last_notified_at >= make_interval(days =>
-                         CASE cadence_unit
-                           WHEN 'week'  THEN cadence_value * 7
-                           WHEN 'month' THEN cadence_value * 30
-                           ELSE cadence_value
-                         END
-                       )
+                    OR (NOW() AT TIME ZONE 'Africa/Casablanca')::date
+                       - (last_notified_at AT TIME ZONE 'Africa/Casablanca')::date
+                       >= CASE cadence_unit
+                            WHEN 'week'  THEN cadence_value * 7
+                            WHEN 'month' THEN cadence_value * 30
+                            ELSE cadence_value
+                          END
                   )
             """)
         ).fetchall()
@@ -123,12 +131,22 @@ def notify_org(
                 FROM watcher.scraped_aos sa
                 WHERE sa.secteur_codes IS NOT NULL
                   AND sa.secteur_codes ?| :codes
-                  AND sa.date_publication >= :since
+                  -- Date de DECOUVERTE par la veille, pas de publication : la
+                  -- veille decouvre la plupart des AO 1 a 10 jours apres leur
+                  -- publication. Filtrer sur date_publication >= dernier envoi
+                  -- ecartait definitivement tout AO publie avant l'envoi mais
+                  -- decouvert apres (constate le 2026-09-29 : cause principale
+                  -- du faible nombre d'AO notifies). Le NOT EXISTS ci-dessous
+                  -- garantit deja qu'un AO n'est jamais envoye deux fois.
+                  AND sa.scraped_at >= :since
+                  -- Un AO dont la date limite est passee ne sert plus a rien.
+                  AND (sa.date_limite IS NULL OR sa.date_limite >= CURRENT_DATE)
                   AND NOT EXISTS (
                       SELECT 1 FROM notifications.notification_log nl
                       WHERE nl.org_id = :org_id AND nl.ao_id = sa.id
                   )
-                ORDER BY sa.date_publication DESC
+                -- Echeance la plus proche d'abord : c'est l'AO a traiter en premier.
+                ORDER BY sa.date_limite ASC NULLS LAST, sa.scraped_at DESC
                 LIMIT :max_items
             """),
             {"codes": secteur_codes, "org_id": org_id, "since": since, "max_items": max_items},
@@ -235,10 +253,14 @@ def notify_newsletter_subscribers(batch_id: int) -> dict:
         rows = session.execute(
             text("""
                 SELECT sa.id, sa.titre, sa.acheteur, sa.categorie,
-                       sa.date_limite, sa.url_source
+                       sa.date_limite, sa.url_source, sa.external_id,
+                       sa.mode_passation, sa.ville, sa.budget_estime, sa.caution
                 FROM watcher.scraped_aos sa
-                WHERE sa.date_publication >= NOW() - INTERVAL '24 hours'
-                ORDER BY sa.date_publication DESC
+                -- Decouverts dans les dernieres 24 h (meme raison que notify_org),
+                -- encore ouverts.
+                WHERE sa.scraped_at >= NOW() - INTERVAL '24 hours'
+                  AND (sa.date_limite IS NULL OR sa.date_limite >= CURRENT_DATE)
+                ORDER BY sa.date_limite ASC NULLS LAST
                 LIMIT 20
             """)
         ).fetchall()
@@ -253,6 +275,8 @@ def notify_newsletter_subscribers(batch_id: int) -> dict:
         if not subscribers:
             return {"newsletter": True, "sent": 0, "reason": "no_subscribers"}
 
+        # Tous les champs, comme pour les organisations : sans eux la newsletter
+        # affichait toujours « non precise » pour l'estimation et la caution.
         ao_items = [
             AoItem(
                 titre=r.titre,
@@ -260,6 +284,11 @@ def notify_newsletter_subscribers(batch_id: int) -> dict:
                 categorie=r.categorie,
                 date_limite=r.date_limite,
                 url_source=r.url_source,
+                reference=r.external_id,
+                mode_passation=r.mode_passation,
+                ville=r.ville,
+                budget_estime=r.budget_estime,
+                caution=r.caution,
             )
             for r in rows
         ]
