@@ -74,6 +74,15 @@ accompagné. Décisions de l'utilisateur consignées dans `00-overview.md`.
 juger la fiche sur capture (clair et sombre, téléphone). Le watcher n'a pas de
 CI : ses tests se lancent à la main.
 
+**Notifications corrigées** (2026-09-29, non commité) : estimation, caution
+et secteur ne sont plus effacés par les re-scrapes (et script de rattrapage),
+sélection des AO sur la date de découverte (4 AO -> 18 sur une même journée),
+newsletter et envoi de test alignés, nouveau gabarit d'email, cadence
+corrigée (la veille quotidienne ne partait qu'un jour sur deux ; aucun échec
+Resend dans les journaux), activation sans secteur refusée. Reste : déployer,
+lancer le rattrapage, et l'organisation `635c8ac1` doit choisir ses secteurs.
+Détail : `bugs-connus.md`.
+
 **Mode accompagné terminé côté code** (2026-09-28, non commité) : équipe
 proposée à l'étape 4, documents des étapes 5 à 7, remplacement d'un document
 par la version corrigée (reprise par la signature). Détail et écarts assumés

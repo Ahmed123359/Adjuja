@@ -249,6 +249,84 @@ au niveau du code.
 
 ## CORRIGÉ
 
+### Notifications : la veille quotidienne ne partait qu'un jour sur deux
+
+`adjuja-notification/app/workers/tasks/batch_tasks.py` (`run_notification_batch`)
+
+Signalé comme « problème d'envoi » le 2026-09-29. Les journaux de production ne
+montrent **aucun échec Resend** : le système ne tentait simplement pas
+d'envoyer. Chaque tick horaire répondait « aucune org due ».
+
+Cause : la cadence comparait des durées à la milliseconde. `last_notified_at`
+est écrit à la fin de l'envoi (28/09 09:00:00,109 UTC) ; le tick du lendemain
+part à 09:00:00,017, soit 23 h 59 min 59,9 s, « pas dû », et la tranche
+horaire de l'organisation était perdue pour la journée. Une veille quotidienne
+partait un jour sur deux, une hebdomadaire une semaine sur deux.
+
+**Corrigé, vérifié sur PostgreSQL** avec les horodatages de production : la
+cadence est comptée en jours calendaires à l'heure du Maroc (cas de production
+« pas dû » -> « dû » ; même jour et J+6 hebdomadaire restent « pas dû »).
+
+Constaté au même moment : une organisation était **activée avec 0 secteur**,
+donc exclue de tout envoi sans le savoir. `PUT /preferences` refuse désormais
+l'activation sans secteur (400, message affiché par l'écran des préférences ;
+test `adjuja-notification/tests/test_preferences.py`). Et la liste des secteurs
+était convertie en JSON par `str(...).replace("'", '"')`, cassé par une
+apostrophe : remplacé par `json.dumps`.
+
+### Veille : chaque re-scrape effaçait estimation, caution et secteur des AO
+
+`adjuja-watcher/app/modules/ao_scraper/repository.py` (`upsert_many`)
+
+Constaté le 2026-09-29 à partir d'un email de veille affichant « Estimation :
+non précisé / Caution : non précisé ». Ces champs viennent de la page détail,
+lue une seule fois à la découverte de l'AO ; chaque re-scrape de liste (toutes
+les 6 h) les réécrivait avec NULL. Mesuré : 134 AO sur 1 098 avec estimation et
+caution (12 %) alors que le portail les publie (vérifié sur les pages des AO
+1042516 et 1043294). Les codes de secteur, recalculés sans le secteur,
+s'appauvrissaient : 53 % des AO sans aucun code, donc jamais notifiés.
+
+**Corrigé et vérifié** : `COALESCE` sur estimation, caution et secteur, codes de
+secteur conservés tant que la liste n'apporte pas de secteur. Vérifié sur la
+base locale dans une transaction annulée (valeurs conservées), contre-épreuve
+avec l'ancien code (valeurs effacées). Rattrapage des AO ouverts :
+`adjuja-watcher/rattraper_details.py` (simulation par défaut ; vérifié sur
+l'AO 1030962, estimation 1 779 718,56 et caution 35 000 restaurées).
+
+### Notifications : les AO découverts après leur publication n'étaient jamais envoyés
+
+`adjuja-notification/app/workers/tasks/batch_tasks.py` (`notify_org`)
+
+Constaté le 2026-09-29 (« je reçois peu d'appels d'offres »). La sélection
+retenait `date_publication >= dernier envoi`, or la veille découvre la plupart
+des AO 1 à 10 jours après leur publication (mesuré : 295 le jour même, 244 le
+lendemain, 113 à J+2, 149 à J+3, des dizaines au-delà d'une semaine). Tout AO
+publié avant l'envoi précédent mais découvert après était écarté pour toujours.
+
+**Corrigé** : sélection sur la date de découverte (`scraped_at`), AO encore
+ouverts seulement, échéance la plus proche d'abord ; le `NOT EXISTS` sur
+`notification_log` empêche toujours les doublons. Mesuré sur la même journée :
+4 AO avec l'ancienne règle, 18 avec la nouvelle. Au passage : la newsletter ne
+transmettait ni estimation, ni caution, ni ville, ni type (toujours « non
+précisé ») ; l'envoi de test incluait des AO échus. Les deux sont corrigés.
+
+### Email de veille : en-tête illisible dans Outlook, textes trop petits
+
+`adjuja-notification/app/templates/ao_digest.py`
+
+En-têtes en dégradé CSS (ignorés par Outlook et plusieurs webmails : texte blanc
+sur fond blanc), textes à 11,5 px, valeurs en vert d'eau peu contrastées, ville
+en double (« EL KELAA DES SRAGHNA...EL KELAA DES SRAGHNA »), montants arrondis.
+**Refait le 2026-09-29**, dans l'univers du site à la demande de l'utilisateur :
+fond spatial, bandeau de la Terre rendue en 3D depuis la texture du site,
+centrée sur le Maroc avec un signal sur Rabat, lune en pied
+(`adjuja-notification/outils/rendre_images_email.py` -> `public/email/`).
+Couleurs pleines (pas de dégradé), compte à rebours de l'échéance, objet en
+grand, estimation, caution et type sur une rangée, montants exacts, ville
+dédoublonnée, préfixe « Acheteur : » retiré, contenu du portail échappé ; lisible
+images bloquées. Vérifié par capture Chromium. Premiers tests du service
+(`adjuja-notification/tests/`, 5 verts).
+
 ### Route équipe d'un AO : aucun contrôle d'appartenance (faille)
 
 `adjuja-backend/app/api/routes/staff_cvs_routes.py`, `GET /staff-cvs/ao/{ao_id}/team`
