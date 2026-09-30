@@ -31,5 +31,10 @@ class Settings(BaseSettings):
     notification_service_url: str = "http://notification-api:8002"
     notification_admin_secret: str = "dev-admin-secret"
 
+    # Routes /admin/* (panneau d'administration du backend, seul appelant).
+    # Vide = toutes refusees : jamais ouvertes par defaut, le port 8001 est
+    # publie sur Internet.
+    watcher_admin_secret: str = ""
+
 
 settings = Settings()

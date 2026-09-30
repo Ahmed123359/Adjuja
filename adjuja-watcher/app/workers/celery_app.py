@@ -18,6 +18,7 @@ celery_app = Celery(
         "app.workers.tasks.download_bdc_tasks",
         "app.workers.tasks.cleanup_tasks",
         "app.workers.tasks.ocr_tasks",
+        "app.workers.tasks.admin_tasks",
     ],
 )
 

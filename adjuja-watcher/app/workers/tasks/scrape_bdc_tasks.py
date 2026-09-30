@@ -5,6 +5,7 @@ import redis as redis_lib
 import structlog
 
 from app.core.config import settings
+from app.core.scrape_runs import PLANIFIE, enregistrer_passage, maintenant
 from app.modules.bdc_scraper.repository import BdcRepository
 from app.modules.bdc_scraper.scraper import BdcScraper
 from app.workers.celery_app import celery_app
@@ -15,6 +16,8 @@ log = structlog.get_logger(__name__)
 MAX_PAGES = 200  # garde-fou : ~1300 resultats / ~10 par page ~= 134 pages actuellement
 _COOLDOWN_KEY = "scrape:bdc:last_run"
 _COOLDOWN_SECONDS = 3600  # 1h minimum entre deux scrapes BDC
+# Nom de la source dans watcher.scrape_runs (celui qu'affiche le panneau).
+SOURCE_TRACE = "bdc"
 
 
 def _check_and_set_cooldown() -> bool:
@@ -44,17 +47,30 @@ def _check_and_set_cooldown() -> bool:
     max_retries=2,
     default_retry_delay=300,
 )
-def run_scrape_bdc_pipeline(self) -> dict:
-    if _check_and_set_cooldown():
+def run_scrape_bdc_pipeline(self, declenchement: str = PLANIFIE) -> dict:
+    """Voir run_scrape_pipeline pour `declenchement`. Source tracee : "bdc"."""
+    debut = maintenant()
+    # Une reprise (self.retry, 5 min apres l'echec) ne repasse pas par le
+    # cooldown d'1 h pose par la premiere tentative : sinon elle etait
+    # toujours ignoree et la reprise n'a jamais servi (bugs-connus.md).
+    if self.request.retries == 0 and _check_and_set_cooldown():
+        run_async(enregistrer_passage(SOURCE_TRACE, debut, "ignore", declenchement=declenchement))
         return {"status": "skipped", "reason": "cooldown"}
 
     log.info("Starting BDC scrape pipeline")
     try:
         result = run_async(_run())
         log.info("BDC scrape pipeline complete", result=result)
+        run_async(enregistrer_passage(
+            SOURCE_TRACE, debut, "ok", result.get("total_found", 0), result.get("total_saved", 0),
+            declenchement=declenchement,
+        ))
         return result
     except Exception as exc:
         log.error("BDC scrape pipeline failed", error=str(exc))
+        run_async(enregistrer_passage(
+            SOURCE_TRACE, debut, "erreur", erreur=f"{type(exc).__name__}: {exc}", declenchement=declenchement,
+        ))
         raise self.retry(exc=exc)
 
 
@@ -85,7 +101,7 @@ async def _run() -> dict:
             page += 1
 
         if not all_items:
-            return {"status": "ok", "total_saved": 0}
+            return {"status": "ok", "total_saved": 0, "total_found": 0}
 
         # La carte listing n'a pas categorie/nature_prestation/document_url --
         # uniquement la page detail les a. Enrichir seulement les nouveaux
@@ -116,6 +132,6 @@ async def _run() -> dict:
             await db.commit()
 
         log.info("BDC scrape done", pages=page, total=len(all_items), saved=saved)
-        return {"status": "ok", "total_saved": saved, "pages_scanned": page}
+        return {"status": "ok", "total_saved": saved, "total_found": len(all_items), "pages_scanned": page}
     finally:
         await scraper.close()

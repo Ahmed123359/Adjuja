@@ -7,6 +7,7 @@ import redis as redis_lib
 import structlog
 
 from app.core.config import settings
+from app.core.scrape_runs import PLANIFIE, enregistrer_passage, maintenant
 from app.modules.ao_scraper.mpe import MPEPlatformScraper
 from app.modules.ao_scraper.repository import AoRepository
 from app.workers.celery_app import celery_app
@@ -51,13 +52,19 @@ def _check_and_set_cooldown() -> bool:
     max_retries=2,
     default_retry_delay=300,
 )
-def run_scrape_pipeline(self) -> dict:
-    if _check_and_set_cooldown():
+def run_scrape_pipeline(self, declenchement: str = PLANIFIE) -> dict:
+    """`declenchement` : "planifie" (Celery Beat, sans argument) ou "admin"
+    (panneau d'administration). Enregistre dans watcher.scrape_runs."""
+    # Une reprise (self.retry, 5 min apres l'echec) ne repasse pas par le
+    # cooldown d'1 h pose par la premiere tentative : sinon elle etait
+    # toujours ignoree et la reprise n'a jamais servi (bugs-connus.md).
+    if self.request.retries == 0 and _check_and_set_cooldown():
+        run_async(_enregistrer_ignores(declenchement))
         return {"status": "skipped", "reason": "cooldown"}
 
     log.info("Starting scrape pipeline")
     try:
-        result = run_async(_run_all_sources())
+        result = run_async(_run_all_sources(declenchement))
         log.info("Scrape pipeline complete", result=result)
 
         if result.get("total_saved", 0) > 0:
@@ -92,24 +99,38 @@ def _trigger_notification_batch(new_ao_count: int) -> None:
         log.warning("Notification trigger failed", error=str(exc))
 
 
-async def _run_all_sources() -> dict:
+async def _enregistrer_ignores(declenchement: str) -> None:
+    """Passage refuse par le cooldown : on le trace quand meme, sinon une
+    demande du panneau semblerait n'avoir rien produit."""
+    debut = maintenant()
+    for config_name in _get_all_configs():
+        await enregistrer_passage(config_name, debut, "ignore", declenchement=declenchement)
+
+
+async def _run_all_sources(declenchement: str = PLANIFIE) -> dict:
     configs = _get_all_configs()
     total_saved = 0
     results = {}
 
     for config_name in configs:
+        debut = maintenant()
         try:
-            saved = await _scrape_source(config_name)
+            trouves, saved = await _scrape_source(config_name)
             total_saved += saved
             results[config_name] = {"status": "ok", "saved": saved}
+            await enregistrer_passage(config_name, debut, "ok", trouves, saved, declenchement=declenchement)
         except Exception as exc:
             log.error("Source scrape failed", source=config_name, error=str(exc))
             results[config_name] = {"status": "error", "error": str(exc)}
+            await enregistrer_passage(
+                config_name, debut, "erreur", erreur=f"{type(exc).__name__}: {exc}", declenchement=declenchement,
+            )
 
     return {"status": "ok", "total_saved": total_saved, "sources": results}
 
 
-async def _scrape_source(config_name: str) -> int:
+async def _scrape_source(config_name: str) -> tuple[int, int]:
+    """Renvoie (avis lus sur le portail, avis enregistres)."""
     scraper = MPEPlatformScraper(config_name)
     log.info("Scraping source", source=config_name)
 
@@ -117,7 +138,7 @@ async def _scrape_source(config_name: str) -> int:
     all_aos = await scraper.fetch_page()
     if not all_aos:
         log.info("No AOs found", source=config_name)
-        return 0
+        return 0, 0
 
     # Fetch details for AOs not yet in DB (new ones only)
     async with task_db() as db:
@@ -157,7 +178,7 @@ async def _scrape_source(config_name: str) -> int:
         await db.commit()
 
     log.info("Source scrape done", source=config_name, total=len(all_aos), new=len(new_aos), saved=saved)
-    return saved
+    return len(all_aos), saved
 
 
 def _org_from_url(url: str) -> str:

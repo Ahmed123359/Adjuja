@@ -2,6 +2,7 @@ from datetime import date
 
 import structlog
 
+from app.core.scrape_runs import purger_passages
 from app.modules.ao_scraper.repository import AoRepository
 from app.modules.bdc_scraper.repository import BdcRepository
 from app.workers.celery_app import celery_app
@@ -49,4 +50,6 @@ async def _cleanup() -> dict:
         bdc_deleted, bdc_cles = await BdcRepository(db).delete_expired_unactioned(today)
 
     fichiers = _supprimer_fichiers(ao_cles + bdc_cles)
-    return {"ao_deleted": ao_deleted, "bdc_deleted": bdc_deleted, "files_deleted": fichiers}
+    passages = await purger_passages()
+    return {"ao_deleted": ao_deleted, "bdc_deleted": bdc_deleted, "files_deleted": fichiers,
+            "scrape_runs_deleted": passages}

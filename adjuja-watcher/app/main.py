@@ -6,6 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.core.config import settings
 from app.core.schema import assurer_colonnes
+from app.modules.admin.router import router as admin_router
 from app.modules.ao_scraper.router import router as ao_router
 from app.modules.ao_scraper.router import secteurs_router
 from app.modules.bdc_scraper.router import router as bdc_router
@@ -39,6 +40,7 @@ app.add_middleware(
 app.include_router(ao_router)
 app.include_router(secteurs_router)
 app.include_router(bdc_router)
+app.include_router(admin_router)
 
 
 @app.get("/health")

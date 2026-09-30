@@ -8,6 +8,9 @@ AJOUTEES a l'analyse existante, jamais a sa place (fusionner_enrichissement).
 
 Par defaut : simulation (compte les AO, n'appelle pas le modele).
 
+Le travail est fait par app.modules.maintenance.enrichir_analyses, aussi lance
+depuis le panneau d'administration (tache Celery) depuis le 2026-09-30.
+
 Usage (dans le conteneur ao-watcher-api) :
   python enrichir_analyses.py              # simulation
   python enrichir_analyses.py --reel       # appels reels, un AO a la fois
@@ -19,66 +22,26 @@ recopie ces analyses dans les AO importes.
 
 import argparse
 import asyncio
-from datetime import date
 
-from sqlalchemy import or_, select, update
-from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
-from sqlalchemy.orm import sessionmaker
+from app.modules.maintenance import enrichir_analyses
 
-from app.core.config import settings
-from app.core.models import ScrapedAo
-from app.modules.ao_scraper.analysis import AnalysisError, analyze_ao
-from app.modules.ao_scraper.enrichissement import a_enrichir, fusionner_enrichissement
 
-# Ordre de grandeur d'une analyse : jusqu'a 100 000 caracteres de CPS + RC
-# (~25 000 jetons en entree) et ~3 000 jetons en sortie.
-JETONS_ENTREE, JETONS_SORTIE = 25_000, 3_000
+def _afficher(fait: int, total: int) -> None:
+    if fait:
+        print(f"[{fait}/{total}]")
 
 
 async def main(reel: bool, limite: int | None, pause: float) -> None:
-    engine = create_async_engine(settings.database_url)
-    Session = sessionmaker(engine, expire_on_commit=False, class_=AsyncSession)
-
-    async with Session() as session:
-        candidats = (await session.execute(
-            select(ScrapedAo)
-            .where(ScrapedAo.analyse_json.isnot(None))
-            .where(or_(ScrapedAo.date_limite.is_(None), ScrapedAo.date_limite >= date.today()))
-            .order_by(ScrapedAo.date_limite.asc().nulls_last())
-        )).scalars().all()
-    a_faire = [ao for ao in candidats if a_enrichir(ao.analyse_json)]
-    if limite:
-        a_faire = a_faire[:limite]
-
-    print(f"AO ouverts deja analyses : {len(candidats)} ; a enrichir : {len(a_faire)}")
-    print(f"Estimation : au plus {len(a_faire)} appels, ~{len(a_faire) * JETONS_ENTREE:,} jetons "
-          f"en entree et ~{len(a_faire) * JETONS_SORTIE:,} en sortie (modele {settings.llm_analysis}).")
+    r = await enrichir_analyses(reel, limite, pause, _afficher)
+    print(f"AO ouverts deja analyses : {r['deja_analyses']} ; a enrichir : {r['a_enrichir']}")
+    print(f"Estimation : au plus {r['a_enrichir']} appels, ~{r['jetons_entree_estimes']:,} jetons "
+          f"en entree et ~{r['jetons_sortie_estimes']:,} en sortie (modele {r['modele']}).")
     if not reel:
         print("Simulation : rien n'a ete appele ni modifie. Relancer avec --reel.")
-        await engine.dispose()
         return
-
-    faits, echecs = 0, []
-    for i, ao in enumerate(a_faire, start=1):
-        try:
-            nouvelle = await analyze_ao(ao)
-        except AnalysisError as exc:  # OcrRequise comprise : documents scannes non lus
-            echecs.append((ao.id, str(exc)[:120]))
-            print(f"[{i}/{len(a_faire)}] AO {ao.id} : ignore ({type(exc).__name__})")
-            continue
-        fusion = fusionner_enrichissement(ao.analyse_json, nouvelle)
-        async with Session() as session:
-            await session.execute(update(ScrapedAo).where(ScrapedAo.id == ao.id).values(analyse_json=fusion))
-            await session.commit()
-        faits += 1
-        print(f"[{i}/{len(a_faire)}] AO {ao.id} : {len(fusion.get('risques') or [])} risque(s)")
-        if i < len(a_faire):
-            await asyncio.sleep(pause)  # limite de debit du fournisseur
-
-    await engine.dispose()
-    print(f"Termine : {faits} AO enrichis, {len(echecs)} ignores.")
-    for ao_id, raison in echecs:
-        print(f"  - AO {ao_id} : {raison}")
+    print(f"Termine : {r['enrichis']} AO enrichis, {len(r['ignores'])} ignores.")
+    for e in r["ignores"]:
+        print(f"  - AO {e['ao_id']} : {e['raison']}")
 
 
 if __name__ == "__main__":
