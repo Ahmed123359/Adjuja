@@ -129,7 +129,11 @@ class UserService:
         if user.org_id:
             return user.org_id
 
-        org_id = str(uuid.uuid4())
+        # L'org prend l'id de l'utilisateur : c'est sous cet id (`org_id or id`)
+        # que ses dossiers, profil, CV et documents sont deja ranges. Un nouvel
+        # uuid les rendait tous invisibles a la premiere invitation
+        # (context/bugs-connus.md).
+        org_id = user.id
         org = Organization(
             id=org_id,
             owner_id=user.id,
@@ -160,6 +164,13 @@ class UserService:
         )
         await self._db.commit()
 
+    async def marquer_connexion(self, user_id: str) -> None:
+        """Derniere connexion reussie (suivi d'activite du panneau d'administration)."""
+        await self._db.execute(
+            update(User).where(User.id == user_id).values(last_login_at=datetime.now(timezone.utc).isoformat())
+        )
+        await self._db.commit()
+
     async def update_password(self, user_id: str, hashed_pwd: str) -> None:
         await self._db.execute(
             update(User).where(User.id == user_id).values(hashed_pwd=hashed_pwd)
@@ -181,5 +192,5 @@ class UserService:
             created_at=row.created_at, email_verified=row.email_verified,
             generations_used=row.generations_used, max_generations=row.max_generations,
             entreprise=row.entreprise, secteur_activite=row.secteur_activite,
-            nb_ao_par_an=row.nb_ao_par_an,
+            nb_ao_par_an=row.nb_ao_par_an, suspendu=row.disabled_at is not None,
         )

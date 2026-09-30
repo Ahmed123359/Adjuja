@@ -7,11 +7,12 @@ from google.auth.transport import requests as google_requests
 from google.oauth2 import id_token as google_id_token
 from pydantic import BaseModel, field_validator
 
-from app.api.dependencies import get_current_user, get_user_service
+from app.api.dependencies import COMPTE_SUSPENDU, get_current_user, get_user_service
 from app.cache import cache
 from app.config.settings import Settings, get_settings
 from app.limiter import limiter
 from app.models.user import Token, UserCreate, UserPublic, PASSWORD_MIN_LENGTH, PASSWORD_REQUIRE_DIGIT, validate_password_strength
+from app.services.admin.acces import adresse_admin, est_admin_plateforme
 from app.services.email_service import send_password_reset_otp_email, send_verification_otp_email
 from app.services.jwt_service import create_access_token
 from app.services.user_service import UserService
@@ -33,7 +34,7 @@ class LoginRequest(BaseModel):
 
 
 class RegisterResponse(BaseModel):
-    message:      str        # "email_sent" | "admin_ok"
+    message:      str        # "otp_sent"
     access_token: str | None = None
 
 
@@ -79,9 +80,10 @@ async def register(
     settings: Settings    = Depends(get_settings),
 ) -> RegisterResponse:
     """Ne cree PAS de compte immediatement : envoie un code OTP par email, le
-    compte n'est cree qu'apres confirmation via POST /auth/verify-otp. Exception :
-    les admins (liste blanche settings.admin_emails) n'ont pas besoin de
-    verification, compte + JWT crees directement comme avant."""
+    compte n'est cree qu'apres confirmation via POST /auth/verify-otp. Sans
+    exception : les adresses de settings.admin_emails etaient autrefois
+    inscrites sans code, ce qui donnait un compte admin a quiconque s'inscrivait
+    le premier avec l'une d'elles (voir context/bugs-connus.md)."""
     if settings.allowed_emails and data.email.lower() not in [e.lower() for e in settings.allowed_emails]:
         logger.warning("Inscription refusée (hors liste blanche)  email=%s", data.email)
         raise HTTPException(
@@ -95,22 +97,9 @@ async def register(
             detail=f"L'adresse e-mail '{data.email}' est déjà utilisée.",
         )
 
-    is_admin   = data.email.lower() in [e.lower() for e in settings.admin_emails]
     hashed_pwd = UserService.hash_password(data.password)
 
-    if is_admin:
-        try:
-            user = await users.create(
-                nom=data.nom, prenom=data.prenom, email=data.email, hashed_pwd=hashed_pwd,
-                entreprise=data.entreprise, secteur_activite=data.secteur_activite,
-                nb_ao_par_an=data.nb_ao_par_an, unlimited=True, email_verified=True,
-            )
-        except ValueError as e:
-            raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(e))
-        logger.info("Inscription admin réussie  user_id=%s email=%s", user.id, user.email)
-        return RegisterResponse(message="admin_ok", access_token=create_access_token(user.id, settings))
-
-    otp = f"{secrets.randbelow(1_000_000):06d}"
+    otp =f"{secrets.randbelow(1_000_000):06d}"
     cache.set(
         f"{_OTP_CACHE_PREFIX}{data.email.lower()}",
         {
@@ -165,13 +154,14 @@ async def verify_otp(
             nom=pending["nom"], prenom=pending["prenom"], email=pending["email"],
             hashed_pwd=pending["hashed_pwd"], entreprise=pending["entreprise"],
             secteur_activite=pending["secteur_activite"], nb_ao_par_an=pending["nb_ao_par_an"],
-            unlimited=False, email_verified=True,
+            unlimited=adresse_admin(pending["email"], settings), email_verified=True,
         )
     except ValueError as e:
         cache.delete(key)
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(e))
 
     cache.delete(key)
+    await users.marquer_connexion(user.id)
     logger.info("Inscription confirmée via OTP  user_id=%s email=%s", user.id, user.email)
     return Token(access_token=create_access_token(user.id, settings))
 
@@ -295,6 +285,11 @@ async def login(
             detail="Email ou mot de passe incorrect.",
         )
 
+    # Après le mot de passe : qui ne le connaît pas n'apprend rien du compte.
+    if user.suspendu:
+        logger.warning("Connexion refusée, compte suspendu  user_id=%s", user.id)
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=COMPTE_SUSPENDU)
+    await users.marquer_connexion(user.id)
     logger.info("Connexion réussie  user_id=%s email=%s", user.id, user.email)
     return Token(access_token=create_access_token(user.id, settings))
 
@@ -358,14 +353,30 @@ async def login_google_callback(
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Accès sur invitation uniquement.")
 
     user = await users.get_or_create_google_user(email=email, prenom=prenom, nom=nom)
+    if user.suspendu:
+        logger.warning("Connexion Google refusée, compte suspendu  user_id=%s", user.id)
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=COMPTE_SUSPENDU)
+    await users.marquer_connexion(user.id)
     logger.info("Connexion Google réussie  user_id=%s email=%s", user.id, email)
     return Token(access_token=create_access_token(user.id, settings))
 
 
+class MeResponse(UserPublic):
+    # Affiche l'onglet Administration ; chaque route /admin/* revérifie
+    # côté serveur (require_platform_admin), ce drapeau n'ouvre rien seul.
+    is_platform_admin: bool = False
+
+
 @router.get(
     "/me",
-    response_model=UserPublic,
+    response_model=MeResponse,
     summary="Profil de l'utilisateur connecté",
 )
-def me(current_user: UserPublic = Depends(get_current_user)) -> UserPublic:
-    return current_user
+def me(
+    current_user: UserPublic = Depends(get_current_user),
+    settings:     Settings   = Depends(get_settings),
+) -> MeResponse:
+    return MeResponse(
+        **current_user.model_dump(),
+        is_platform_admin=est_admin_plateforme(current_user, settings),
+    )

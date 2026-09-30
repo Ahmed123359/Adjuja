@@ -68,10 +68,14 @@ export function consommerAoVeille(): number | null {
   return id;
 }
 
-/** Garde un chemin de l'application pour apres la connexion. Seuls les
- *  chemins /app/... sont acceptes : jamais de redirection vers l'exterieur. */
+/** Chemins internes qu'on peut rouvrir apres la connexion : l'application
+ *  (/app/...) et l'administration (/admin, /admin/...). Jamais de redirection
+ *  vers l'exterieur. */
+const CHEMIN_INTERNE = /^\/(app\/[\w/-]*|admin(\/[\w/-]*)?)$/;
+
+/** Garde un chemin interne pour apres la connexion. */
 export function memoriserApresConnexion(chemin: string): void {
-  if (!/^\/app\/[\w/-]*$/.test(chemin)) return;
+  if (!CHEMIN_INTERNE.test(chemin)) return;
   try { sessionStorage.setItem(CLE_APRES_CONNEXION, chemin); } catch { /* stockage bloque : on ira sur /app */ }
 }
 
@@ -79,7 +83,7 @@ export function consommerApresConnexion(): string | null {
   try {
     const chemin = sessionStorage.getItem(CLE_APRES_CONNEXION);
     sessionStorage.removeItem(CLE_APRES_CONNEXION);
-    return chemin && /^\/app\/[\w/-]*$/.test(chemin) ? chemin : null;
+    return chemin && CHEMIN_INTERNE.test(chemin) ? chemin : null;
   } catch {
     return null;
   }

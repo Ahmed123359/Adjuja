@@ -609,7 +609,8 @@
       "expand": "Expand menu",
       "openMenu": "Open menu",
       "tagline": "Public tenders",
-      "tasks": "Tasks"
+      "tasks": "Tasks",
+      "admin": "Administration"
     },
     "topbar": {
       "accueil": "Dashboard",
@@ -628,13 +629,15 @@
         "marches": "Your tenders and how far along they are.",
         "veille": "Public tenders monitored for you.",
         "outils": "Signatures, initials and document filling.",
-        "taches": "What the team is carrying, and by when."
+        "taches": "What the team is carrying, and by when.",
+        "admin": "Health of tender watch, notifications and services."
       },
       "taches": "Team tasks",
       "searchShort": "Search",
       "searchRecent": "Recent searches",
       "searchHint": "Type a reference, a subject or a buyer.",
-      "newTender": "New tender"
+      "newTender": "New tender",
+      "admin": "Administration"
     },
     "status": {
       "online": "Service online",
@@ -1880,6 +1883,352 @@
       "articles": "Analysis based on {{gardes}} of the {{total}} CPS articles: the others were left out for lack of space.",
       "partielle": "Partial analysis: the document was too long and was shortened.",
       "sansTexte": "The {{document}} is a scanned document that could not be read: the analysis relies on the other documents."
+    }
+  },
+  "admin": {
+    "refuse": "Access restricted to platform administrators.",
+    "actualiser": "Refresh",
+    "chargement": "Loading…",
+    "veille": {
+      "misAJour": "Figures computed at {{heure}}",
+      "source": {
+        "marchespublics": "Public procurement (national portal)",
+        "safakat_cdg": "Safakat (CDG)",
+        "achats_cimr": "CIMR purchasing",
+        "bdc": "Purchase orders"
+      },
+      "sources": {
+        "titre": "Watch sources",
+        "source": "Source",
+        "ouverts": "Open notices",
+        "nouveaux24h": "Found in 24 h",
+        "nouveaux7j": "Found in 7 days",
+        "dceEchec": "Failed DCE downloads",
+        "analyses": "Analyses of open notices",
+        "analysesValeur": "{{faites}} done, {{aEnrichir}} to enrich",
+        "dernierPassage": "Last run",
+        "nonEnregistre": "Not recorded",
+        "note": "A notice is open until its deadline has passed. \"Last run\" is the last successful scrape; it is overdue after two scheduled intervals without success.",
+        "jamaisReussi": "No successful run",
+        "enRetard": "(overdue)",
+        "essaiEchoue": "Last attempt failed,"
+      },
+      "champ": {
+        "budget_estime": "Estimate",
+        "caution": "Bid bond",
+        "secteur": "Sector",
+        "secteur_codes": "Sector codes",
+        "ville": "City",
+        "zip_url": "DCE link",
+        "reference": "Notice reference",
+        "categorie": "Category",
+        "nature_prestation": "Type of service",
+        "document_url": "Document link"
+      },
+      "remplissage": {
+        "titre": "Completeness of open notices",
+        "champ": "Field",
+        "recents": "{{taux}} of recent ones",
+        "note": "Share of open notices where the field is filled; below, the same share among those found in the last 7 days. A field that is rare everywhere (the bid bond) is not a defect.",
+        "alerte": "Flagged fields are half as filled on open notices as on recent ones: a re-scrape is probably erasing them.",
+        "alerteCourte": "Field probably erased"
+      },
+      "dce": {
+        "titre": "Failed DCE downloads",
+        "aucun": "No open notice has a failed download.",
+        "compte": "{{affiches}} of {{total}}, nearest deadline first",
+        "identifiant": "Notice #{{id}}",
+        "aujourdhui": "closes today",
+        "dans_one": "closes in {{count}} day",
+        "dans_other": "closes in {{count}} days",
+        "voirErreur": "Show error"
+      },
+      "depuis": {
+        "minutes_one": "{{count}} min ago",
+        "minutes_other": "{{count}} min ago",
+        "heures_one": "{{count}} h ago",
+        "heures_other": "{{count}} h ago",
+        "jours_one": "{{count}} day ago",
+        "jours_other": "{{count}} days ago"
+      }
+    },
+    "actions": {
+      "titre": "Maintenance actions",
+      "note": "An action that writes data or calls the model is simulated first: the real run is only possible after a simulation with the same parameters. Every request is logged.",
+      "enAttente": "Queued…",
+      "enCours": "Running…",
+      "progression": "{{fait}} of {{total}}",
+      "limite": "Maximum number of notices",
+      "limiteToutes": "All notices",
+      "toutesSources": "All sources",
+      "simuler": "Simulate",
+      "lancerReel": "Run for real",
+      "relancer": "Run now",
+      "simulationFaite": "Simulation: {{resume}}",
+      "simulerDabord": "Simulate first to see what would be done.",
+      "termineReel": "Done.",
+      "termineSimulation": "Simulation done.",
+      "voirIgnores": "Show skipped notices",
+      "ignore": "Notice {{ao_id}}: {{raison}}",
+      "echec": "The task failed.",
+      "scrape-ao": {
+        "titre": "Rerun the public procurement scrape",
+        "description": "Reads the three portals again (public procurement, Safakat, CIMR). Skipped if a run happened less than an hour ago, to spare the portals."
+      },
+      "scrape-bdc": {
+        "titre": "Rerun the purchase order scrape",
+        "description": "Reads the purchase order portal again. Same one-hour minimum delay."
+      },
+      "rattrapage-details": {
+        "titre": "Recover details of open notices",
+        "description": "Reads the detail page of open notices missing estimate, bid bond, sector, reference or DCE link, and recomputes sector codes. Never replaces a value with an empty one."
+      },
+      "enrichir-analyses": {
+        "titre": "Enrich analyses",
+        "description": "Re-analyses open notices whose analysis predates the enriched analysis (risks, budget, clauses, questions, milestones). Calls the AI model: costly."
+      },
+      "rapport": {
+        "scrapeIgnore": "Skipped: a run happened less than an hour ago.",
+        "scrape": "{{n}} notices saved.",
+        "rattrapageSimulation": "{{n}} open notices to complete ({{detail}}), about {{min}} min.",
+        "rattrapageReel": "{{faits}} notices updated, {{illisibles}} unreadable pages, {{sans}} with no published estimate or bid bond.",
+        "enrichirSimulation": "{{n}} notices to enrich out of {{total}} already analysed: at most {{n}} calls, about {{entree}} input tokens and {{sortie}} output tokens ({{modele}}).",
+        "enrichirReel": "{{faits}} notices enriched, {{ignores}} skipped.",
+        "offre": "{{offre}} plan",
+        "offreJusquau": "{{offre}} plan until {{echeance}}"
+      },
+      "changer-offre": {
+        "titre": "Plan change"
+      },
+      "suspendre": {
+        "titre": "Account suspension"
+      },
+      "reactiver": {
+        "titre": "Account reactivation"
+      }
+    },
+    "journal": {
+      "titre": "Action log",
+      "vide": "No action run from the panel yet.",
+      "date": "Date",
+      "action": "Action",
+      "mode": "Mode",
+      "par": "By",
+      "statutCol": "Status",
+      "compteRendu": "Report",
+      "reel": "Real",
+      "simulation": "Simulation",
+      "limite": "at most {{n}}",
+      "statut": {
+        "lance": "Running",
+        "termine": "Done",
+        "echec": "Failed",
+        "refuse": "Refused"
+      }
+    },
+    "nav": {
+      "marque": "Administration",
+      "tableau": "Dashboard",
+      "comptes": "Accounts",
+      "abonnements": "Subscriptions",
+      "sources": "Sources",
+      "remplissage": "Completeness",
+      "actions": "Actions",
+      "dce": "DCE downloads",
+      "acces": "Access",
+      "journal": "Log",
+      "retourApp": "Back to the app",
+      "deconnexion": "Log out",
+      "menu": "Open menu",
+      "groupe": {
+        "pilotage": "Overview",
+        "clients": "Customers",
+        "veille": "Tender watch",
+        "securite": "Security"
+      }
+    },
+    "offres": {
+      "free": "Free",
+      "starter": "Essential",
+      "pro": "Pro",
+      "enterprise": "Firm"
+    },
+    "pages": {
+      "tableau": "The state of the platform on one screen.",
+      "comptes": "Each customer organisation: its plan, members and activity. A solo user is their own organisation.",
+      "abonnements": "Current plans, nearest renewal date first.",
+      "acces": "Who can open this panel, and who can sign up.",
+      "journal": "Every action run from the panel: who, what, when, and the result. Refusals are logged too.",
+      "sources": "What each portal produced, and when it last ran.",
+      "parSource": "By source",
+      "appelsOffres": "Tenders",
+      "versRattrapage": "Run a recovery",
+      "voirJournal": "See the log",
+      "dce": "Open notices whose tender file could not be downloaded, nearest deadline first."
+    },
+    "tableau": {
+      "surveiller": "Needs attention",
+      "rienASignaler": "Nothing to report: no late payment, no overdue source, no field alert.",
+      "alerte": {
+        "paiements_one": "subscription with a late payment",
+        "paiements_other": "subscriptions with a late payment",
+        "echeances_one": "subscription renews within 7 days",
+        "echeances_other": "subscriptions renew within 7 days",
+        "sources_one": "overdue watch source",
+        "sources_other": "overdue watch sources",
+        "remplissage_one": "watch field probably erased",
+        "remplissage_other": "watch fields probably erased",
+        "dce_one": "failed DCE download",
+        "dce_other": "failed DCE downloads",
+        "suspendus_one": "suspended account",
+        "suspendus_other": "suspended accounts"
+      },
+      "clients": "Customers",
+      "activite": "Activity",
+      "comptes": "Accounts",
+      "nouveaux": "+{{j7}} in 7 days, +{{j30}} in 30 days",
+      "actifs": "Active accounts over 30 days",
+      "actifsContexte": "{{j7}} over 7 days (last login)",
+      "organisations": "Organisations",
+      "revenu": "Estimated monthly revenue",
+      "mad": "{{n}} MAD",
+      "revenuContexte": "Listed price of active paid subscriptions, not collected money",
+      "dossiers": "Tender files created over 30 days",
+      "generations": "Generations over 30 days",
+      "sur7": "{{n}} over 7 days",
+      "abonnementsActifs": "Active subscriptions",
+      "abonnementsContexte": "{{retard}} late on payment, {{annules}} cancelled",
+      "trenteJours": "Last 30 days",
+      "inscriptions": "Sign-ups per day",
+      "dossiersCrees": "Tender files created per day",
+      "uniteInscriptions": "sign-ups",
+      "uniteDossiers": "files",
+      "total30": "{{n}} in total",
+      "voirValeurs": "Show values"
+    },
+    "comptes": {
+      "recherche": "Name or email address",
+      "toutesOffres": "All plans",
+      "tousEtats": "All states",
+      "etat": {
+        "actif": "Active (30 days)",
+        "inactif": "Inactive",
+        "suspendu": "Suspended"
+      },
+      "jamaisConnecte": "Never logged in",
+      "aucun": "No account yet.",
+      "aucunFiltre": "No account matches these filters.",
+      "resumeMobile": "{{membres}} member(s), {{dossiers}} file(s)",
+      "pagination": "{{debut}} to {{fin}} of {{total}}",
+      "precedent": "Previous",
+      "suivant": "Next",
+      "col": {
+        "organisation": "Organisation",
+        "offre": "Plan",
+        "membres": "Members",
+        "dossiersMois": "Files this month",
+        "dossiersTotal": "Files in total",
+        "derniereConnexion": "Last login",
+        "creee": "Created"
+      }
+    },
+    "compte": {
+      "titre": "Account",
+      "retour": "All accounts",
+      "introuvable": "This organisation does not exist or no longer exists.",
+      "creeeLe": "Created on",
+      "abonnement": "Subscription and usage",
+      "prix": "{{prix}} MAD per month",
+      "gratuit": "Free",
+      "sansAbonnement": "No subscription recorded",
+      "jusquau": "until",
+      "grace": "grace period ends",
+      "dossiersMois": "Files this month",
+      "documents": "Documents",
+      "membres": "Members",
+      "illimite": "{{n}}, unlimited",
+      "surLimite": "{{n}} of {{limite}}",
+      "changerOffre": "Change plan",
+      "changerOffreAide": "After a bank transfer or as a commercial gesture. A period lasts 30 days, like an online payment.",
+      "mois_one": "{{count}} month",
+      "mois_other": "{{count}} months",
+      "appliquer": "Apply",
+      "confirmerOffre": "Confirm plan change",
+      "activerTexte": "{{nom}} will move to the {{offre}} plan, valid until {{fin}}. The plan limits apply immediately.",
+      "retrograderTexte": "{{nom}} will go back to the free plan and its limits. Its data is kept.",
+      "annuler": "Cancel",
+      "confirmer": "Confirm",
+      "membresTitre_one": "{{count}} member",
+      "membresTitre_other": "{{count}} members",
+      "proprietaire": "Owner",
+      "admin": "Administrator",
+      "nonVerifie": "Email not verified",
+      "membre": "Member",
+      "vous": "You",
+      "adminProtege": "Administrator: not editable here",
+      "suspendre": "Suspend",
+      "reactiver": "Reactivate",
+      "suspenduLe": "Suspended on",
+      "suspendreTitre": "Suspend {{email}}",
+      "reactiverTitre": "Reactivate {{email}}",
+      "suspendreTexte": "The account will no longer be able to log in, and its open sessions stop working at once. Nothing is deleted: reactivation restores access as it was.",
+      "reactiverTexte": "The account will be able to log in again, with all its data.",
+      "raison": "Reason (written to the log, optional)",
+      "activite": "Activity",
+      "aucunDossier": "No tender file",
+      "statutCompte": "{{n}} {{statut}}",
+      "generations_one": "{{count}} generation over 30 days",
+      "generations_other": "{{count}} generations over 30 days",
+      "col": {
+        "membre": "Member",
+        "role": "Role",
+        "inscrit": "Signed up",
+        "connexion": "Last login",
+        "action": "Action",
+        "dossier": "Latest files",
+        "statut": "Status",
+        "cree": "Created"
+      }
+    },
+    "abonnements": {
+      "tous": "All statuses",
+      "aucun": "No subscription recorded: every organisation is on the free plan.",
+      "aucunFiltre": "No subscription with this status.",
+      "bientot": "renews soon",
+      "statut": {
+        "active": "Active",
+        "past_due": "Payment late",
+        "canceled": "Cancelled",
+        "trialing": "Trial"
+      },
+      "fournisseur": {
+        "manual": "Manual (transfer)",
+        "cmi": "CMI"
+      },
+      "col": {
+        "statut": "Status",
+        "echeance": "Renewal",
+        "grace": "Grace ends",
+        "fournisseur": "Provider"
+      }
+    },
+    "acces": {
+      "administrateurs": "Administrators",
+      "aucun": "No address in ADMIN_EMAILS: nobody can open this panel.",
+      "commentAjouter": "The list comes from ADMIN_EMAILS in the server's .env file. To add or remove an administrator: edit that line, then restart the API. No button allows it here, so that a web flaw can never create an administrator.",
+      "pasDeCompte": "No account yet",
+      "nonVerifie": "Email not verified",
+      "suspendu": "Account suspended",
+      "actif": "Active",
+      "inscription": "Sign-up",
+      "ouverte": "Open to everyone: anyone can create an account (with email verification by code).",
+      "surInvitation_one": "Invitation only: only {{count}} address can sign up (ALLOWED_EMAILS).",
+      "surInvitation_other": "Invitation only: only {{count}} addresses can sign up (ALLOWED_EMAILS).",
+      "col": {
+        "email": "Address",
+        "etat": "State",
+        "connexion": "Last login"
+      }
     }
   }
 }

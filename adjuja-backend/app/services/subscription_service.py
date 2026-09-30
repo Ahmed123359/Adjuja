@@ -7,7 +7,7 @@ from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.billing.plans import Plan, get_plan
-from app.db.models import AppelOffre, CompanyDocument, Subscription, User
+from app.db.models import AppelOffre, CompanyDocument, Organization, Subscription, User
 
 CounterName = Literal["ao_per_month", "documents"]
 
@@ -101,6 +101,7 @@ class SubscriptionService:
         rapide pour tous les users de l'org (User.max_generations=0), qui
         reste le mécanisme existant pour ce flux -- voir api.md."""
         now = _now_iso()
+        await self._assurer_organisation(org_id)
         await self._db.execute(
             pg_insert(Subscription)
             .values(
@@ -119,6 +120,24 @@ class SubscriptionService:
         )
         await self._db.execute(update(User).where(User.org_id == org_id).values(max_generations=0))
         await self._db.commit()
+
+    async def _assurer_organisation(self, org_id: str) -> None:
+        """L'org d'un utilisateur seul est son id d'utilisateur, sans ligne dans
+        `organizations` : la cle etrangere de `subscriptions` refusait alors
+        l'insertion (context/bugs-connus.md). On cree cette ligne, avec le meme
+        id, comme UserService.ensure_own_org."""
+        if await self._db.get(Organization, org_id) is not None:
+            return
+        user = await self._db.get(User, org_id)
+        if user is None:
+            raise ValueError(f"Organisation introuvable : {org_id}")
+        self._db.add(Organization(
+            id=org_id, owner_id=user.id,
+            name=user.entreprise or f"{user.prenom} {user.nom}".strip(),
+            slug=f"org-{org_id[:8]}", created_at=_now_iso(),
+        ))
+        await self._db.execute(update(User).where(User.id == user.id).values(org_id=org_id))
+        await self._db.flush()
 
     async def mark_past_due(self, org_id: str, grace_days: int) -> None:
         grace_until = (datetime.now(timezone.utc) + timedelta(days=grace_days)).isoformat()

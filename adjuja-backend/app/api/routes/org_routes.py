@@ -143,6 +143,7 @@ async def accept_invite(
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(e))
 
     cache.delete(key)
+    await users.marquer_connexion(user.id)
     logger.info("Invitation acceptée  org=%s user_id=%s email=%s", pending["org_id"], user.id, user.email)
     return Token(access_token=create_access_token(user.id, settings))
 

@@ -277,6 +277,17 @@ class Settings(BaseSettings):
     notification_admin_secret: str = ""
     """Secret partagé avec notification-service pour POST /admin/trigger."""
 
+    watcher_service_url: str = ""
+    """URL interne de la veille (ex: http://ao-watcher-api:8001), pour les
+    actions du panneau d'administration. Vide = actions indisponibles (503)."""
+
+    watcher_admin_secret: str = ""
+    """Secret partagé avec les routes /admin/* de la veille."""
+
+    watcher_scrape_interval_hours: int = 6
+    """Intervalle des scrapes planifiés de la veille (son SCRAPE_INTERVAL_HOURS).
+    Un dernier passage réussi plus vieux que deux intervalles est une alerte."""
+
     @model_validator(mode="after")
     def _valider_jwt_secret(self) -> "Settings":
         """

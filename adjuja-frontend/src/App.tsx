@@ -35,6 +35,7 @@ import type {
   User,
 } from "./types";
 import { DEFAULT_COMPANY } from "./types";
+import type { AppTab } from "./shared/layout/tabs";
 
 const CHEAP_KEYWORDS = ["haiku", "mini", "small", "flash"];
 
@@ -70,9 +71,7 @@ export default function App({
   const [langue, setLangue] = useState<"fr" | "en">("fr");
 
   // Navigation principale
-  const [mainTab, setMainTab] = useState<
-    "accueil" | "offres" | "marches" | "taches" | "outils" | "veille" | "entreprise"
-  >("accueil");
+  const [mainTab, setMainTab] = useState<AppTab>("accueil");
   const [outilSection, setOutilSection] = useState<Outil>("signatures");
 
   // App state

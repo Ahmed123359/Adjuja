@@ -110,6 +110,10 @@ class User(Base):
     entreprise: Mapped[str]              = mapped_column(String(255), default="")
     secteur_activite: Mapped[str]        = mapped_column(String(100), default="")
     nb_ao_par_an: Mapped[int | None]     = mapped_column(Integer, nullable=True)
+    # Migration 019 : suspension par un administrateur (NULL = actif) et
+    # derniere connexion reussie. Chaines ISO comme created_at.
+    disabled_at: Mapped[str | None]      = mapped_column(String(50), nullable=True)
+    last_login_at: Mapped[str | None]    = mapped_column(String(50), nullable=True)
 
     org: Mapped["Organization | None"]   = relationship(back_populates="users", foreign_keys=[org_id])
     launches: Mapped[list["Launch"]]     = relationship(back_populates="user", cascade="all, delete-orphan")
@@ -479,3 +483,30 @@ class AoAssistMessage(Base):
     # Qui a pose la question. Nul pour les tours de l'assistant.
     author_id:  Mapped[str | None] = mapped_column(String(36), ForeignKey("users.id"), nullable=True)
     created_at: Mapped[str]        = mapped_column(String(50), nullable=False)
+
+
+class AdminAction(Base):
+    """Journal des actions du panneau d'administration (migration 018).
+
+    L'email de l'administrateur est recopie et aucune cle etrangere ne pointe
+    vers users : la trace doit survivre a la suppression du compte.
+    Statuts : lance, termine, echec, refuse.
+    """
+
+    __tablename__ = "admin_actions"
+    __table_args__ = (
+        Index("idx_admin_actions_created", "created_at"),
+        Index("idx_admin_actions_task", "task_id"),
+    )
+
+    id:            Mapped[str]              = mapped_column(String(36), primary_key=True)
+    created_at:    Mapped[str]              = mapped_column(String(50), nullable=False)
+    termine_at:    Mapped[str | None]       = mapped_column(String(50), nullable=True)
+    admin_user_id: Mapped[str]              = mapped_column(String(36), nullable=False)
+    admin_email:   Mapped[str]              = mapped_column(String(255), nullable=False)
+    module:        Mapped[str]              = mapped_column(String(50), nullable=False)
+    action:        Mapped[str]              = mapped_column(String(50), nullable=False)
+    params:        Mapped[dict[str, Any] | None] = mapped_column(JSONB, nullable=True)
+    task_id:       Mapped[str | None]       = mapped_column(String(255), nullable=True)
+    statut:        Mapped[str]              = mapped_column(String(20), nullable=False)
+    resultat:      Mapped[dict[str, Any] | None] = mapped_column(JSONB, nullable=True)

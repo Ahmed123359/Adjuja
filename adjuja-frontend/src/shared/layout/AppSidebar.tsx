@@ -22,15 +22,17 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useNavigate } from 'react-router-dom';
 import {
-  Building2, ChevronDown, LayoutGrid, ListChecks, LogOut, Radar, ScrollText, Wrench,
+  Building2, ChevronDown, LayoutGrid, ListChecks, LogOut, Radar, ScrollText, ShieldCheck, Wrench,
   type LucideIcon,
 } from 'lucide-react';
 import { useTheme } from '../../hooks/useTheme';
 import { RailCalendar } from './RailCalendar';
 import type { User } from '../../types';
 
-export type AppTab = 'accueil' | 'offres' | 'marches' | 'taches' | 'outils' | 'veille' | 'entreprise';
+import type { AppTab } from './tabs';
+export type { AppTab };
 
 type Props = {
   mainTab: AppTab;
@@ -55,6 +57,8 @@ const PILOTAGE: Item[] = [
 const ENTREPRISE: Item[] = [
   { tab: 'entreprise', key: 'company', Icon: Building2 },
 ];
+
+
 
 const STATUS_COLOR: Record<Props['apiStatus'], string> = {
   online:     '#34D399',
@@ -133,6 +137,7 @@ export default function AppSidebar({ mainTab, onTabChange, user, onLogout, apiSt
     return () => { document.removeEventListener('mousedown', clic); document.removeEventListener('keydown', touche); };
   }, [menuOuvert]);
 
+  const navigate = useNavigate();
   const initiales = `${user.prenom?.[0] ?? ''}${user.nom?.[0] ?? ''}`.toUpperCase() || '?';
 
   return (
@@ -226,6 +231,16 @@ export default function AppSidebar({ mainTab, onTabChange, user, onLogout, apiSt
               label={t(`app.nav.${item.key}`)}
             />
           ))}
+          {/* Administration : page à part (/admin), affichée aux seuls comptes
+              de ADMIN_EMAILS. Ce n'est qu'un affichage, chaque route revérifie. */}
+          {user.is_platform_admin && (
+            <NavButton
+              item={{ tab: 'accueil', key: 'admin', Icon: ShieldCheck }}
+              active={false}
+              onClick={() => navigate('/admin')}
+              label={t('app.nav.admin')}
+            />
+          )}
         </div>
       </nav>
 

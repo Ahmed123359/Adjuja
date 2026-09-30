@@ -609,7 +609,8 @@
       "expand": "Deplier le menu",
       "openMenu": "Ouvrir le menu",
       "tagline": "Appels d'offres",
-      "tasks": "Taches"
+      "tasks": "Taches",
+      "admin": "Administration"
     },
     "topbar": {
       "accueil": "Tableau de bord",
@@ -628,13 +629,15 @@
         "marches": "Vos appels d'offres et leur avancement.",
         "veille": "Les marches publics surveilles pour vous.",
         "outils": "Signatures, paraphes et remplissage de documents.",
-        "taches": "Ce que porte l'equipe, et pour quand."
+        "taches": "Ce que porte l'equipe, et pour quand.",
+        "admin": "État de la veille, des notifications et des services."
       },
       "taches": "Taches d'equipe",
       "searchShort": "Rechercher",
       "searchRecent": "Recherches recentes",
       "searchHint": "Tapez une reference, un objet ou un acheteur.",
-      "newTender": "Nouvel AO"
+      "newTender": "Nouvel AO",
+      "admin": "Administration"
     },
     "status": {
       "online": "Service en ligne",
@@ -1882,6 +1885,352 @@
       "articles": "Analyse établie sur {{gardes}} articles sur {{total}} du CPS : les autres ont été écartés faute de place.",
       "partielle": "Analyse partielle : le document était trop long et a été raccourci.",
       "sansTexte": "Le {{document}} est un document scanné non lu : l'analyse repose sur les autres pièces."
+    }
+  },
+  "admin": {
+    "refuse": "Accès réservé aux administrateurs de la plateforme.",
+    "actualiser": "Actualiser",
+    "chargement": "Chargement…",
+    "veille": {
+      "misAJour": "Chiffres calculés à {{heure}}",
+      "source": {
+        "marchespublics": "Marchés publics (portail national)",
+        "safakat_cdg": "Safakat (CDG)",
+        "achats_cimr": "Achats CIMR",
+        "bdc": "Bons de commande"
+      },
+      "sources": {
+        "titre": "Sources de la veille",
+        "source": "Source",
+        "ouverts": "Avis ouverts",
+        "nouveaux24h": "Découverts sur 24 h",
+        "nouveaux7j": "Découverts sur 7 jours",
+        "dceEchec": "DCE en échec",
+        "analyses": "Analyses des avis ouverts",
+        "analysesValeur": "{{faites}} faites, {{aEnrichir}} à enrichir",
+        "dernierPassage": "Dernier passage",
+        "nonEnregistre": "Non enregistré",
+        "note": "Un avis est ouvert tant que sa date limite n'est pas passée. « Dernier passage » est le dernier scrape réussi ; il est en retard après deux intervalles planifiés sans succès.",
+        "jamaisReussi": "Aucun passage réussi",
+        "enRetard": "(en retard)",
+        "essaiEchoue": "Dernier essai en échec,"
+      },
+      "champ": {
+        "budget_estime": "Estimation",
+        "caution": "Caution provisoire",
+        "secteur": "Secteur",
+        "secteur_codes": "Codes de secteur",
+        "ville": "Ville",
+        "zip_url": "Lien du DCE",
+        "reference": "Référence de l'avis",
+        "categorie": "Catégorie",
+        "nature_prestation": "Nature de la prestation",
+        "document_url": "Lien du document"
+      },
+      "remplissage": {
+        "titre": "Remplissage des avis ouverts",
+        "champ": "Champ",
+        "recents": "{{taux}} des récents",
+        "note": "Part des avis ouverts où le champ est rempli ; dessous, la même part parmi ceux découverts ces 7 jours. Un champ rare partout (la caution) n'est pas un défaut.",
+        "alerte": "Les champs signalés sont deux fois moins remplis sur les avis ouverts que sur les récents : un re-scrape les efface probablement.",
+        "alerteCourte": "Champ probablement effacé"
+      },
+      "dce": {
+        "titre": "Téléchargements DCE en échec",
+        "aucun": "Aucun avis ouvert n'a de téléchargement en échec.",
+        "compte": "{{affiches}} sur {{total}}, échéance la plus proche d'abord",
+        "identifiant": "Avis n° {{id}}",
+        "aujourdhui": "clôture aujourd'hui",
+        "dans_one": "clôture dans {{count}} jour",
+        "dans_other": "clôture dans {{count}} jours",
+        "voirErreur": "Voir l'erreur"
+      },
+      "depuis": {
+        "minutes_one": "il y a {{count}} min",
+        "minutes_other": "il y a {{count}} min",
+        "heures_one": "il y a {{count}} h",
+        "heures_other": "il y a {{count}} h",
+        "jours_one": "il y a {{count}} jour",
+        "jours_other": "il y a {{count}} jours"
+      }
+    },
+    "actions": {
+      "titre": "Actions de maintenance",
+      "note": "Une action qui écrit ou appelle le modèle se simule d'abord : le lancement réel n'est possible qu'après une simulation avec les mêmes paramètres. Chaque demande est inscrite au journal.",
+      "enAttente": "En file d'attente…",
+      "enCours": "En cours…",
+      "progression": "{{fait}} sur {{total}}",
+      "limite": "Nombre maximum d'avis",
+      "limiteToutes": "Tous les avis",
+      "toutesSources": "Toutes les sources",
+      "simuler": "Simuler",
+      "lancerReel": "Lancer pour de vrai",
+      "relancer": "Relancer maintenant",
+      "simulationFaite": "Simulation : {{resume}}",
+      "simulerDabord": "Simulez d'abord pour voir ce qui serait fait.",
+      "termineReel": "Terminé.",
+      "termineSimulation": "Simulation terminée.",
+      "voirIgnores": "Voir les avis ignorés",
+      "ignore": "AO {{ao_id}} : {{raison}}",
+      "echec": "La tâche a échoué.",
+      "scrape-ao": {
+        "titre": "Relancer le scrape des marchés publics",
+        "description": "Relit les trois portails (marchés publics, Safakat, CIMR). Ignoré si un passage a eu lieu il y a moins d'une heure, pour ne pas surcharger les portails."
+      },
+      "scrape-bdc": {
+        "titre": "Relancer le scrape des bons de commande",
+        "description": "Relit le portail des bons de commande. Même délai minimal d'une heure."
+      },
+      "rattrapage-details": {
+        "titre": "Rattraper les détails des avis ouverts",
+        "description": "Relit la page détail des avis ouverts sans estimation, caution, secteur, référence ou lien du DCE, et recalcule les codes de secteur. Ne remplace jamais une valeur par une valeur vide."
+      },
+      "enrichir-analyses": {
+        "titre": "Enrichir les analyses",
+        "description": "Ré-analyse les avis ouverts dont l'analyse date d'avant l'analyse enrichie (risques, budget, clauses, questions, jalons). Appelle le modèle d'IA : coûteux."
+      },
+      "rapport": {
+        "scrapeIgnore": "Ignoré : un passage a eu lieu il y a moins d'une heure.",
+        "scrape": "{{n}} avis enregistrés.",
+        "rattrapageSimulation": "{{n}} avis ouverts à compléter ({{detail}}), environ {{min}} min.",
+        "rattrapageReel": "{{faits}} avis mis à jour, {{illisibles}} pages illisibles, {{sans}} sans estimation ni caution publiées.",
+        "enrichirSimulation": "{{n}} avis à enrichir sur {{total}} déjà analysés : au plus {{n}} appels, environ {{entree}} jetons en entrée et {{sortie}} en sortie ({{modele}}).",
+        "enrichirReel": "{{faits}} avis enrichis, {{ignores}} ignorés.",
+        "offre": "Offre {{offre}}",
+        "offreJusquau": "Offre {{offre}} jusqu'au {{echeance}}"
+      },
+      "changer-offre": {
+        "titre": "Changement d'offre"
+      },
+      "suspendre": {
+        "titre": "Suspension d'un compte"
+      },
+      "reactiver": {
+        "titre": "Réactivation d'un compte"
+      }
+    },
+    "journal": {
+      "titre": "Journal des actions",
+      "vide": "Aucune action lancée depuis le panneau.",
+      "date": "Date",
+      "action": "Action",
+      "mode": "Mode",
+      "par": "Par",
+      "statutCol": "Statut",
+      "compteRendu": "Compte rendu",
+      "reel": "Réel",
+      "simulation": "Simulation",
+      "limite": "{{n}} au plus",
+      "statut": {
+        "lance": "En cours",
+        "termine": "Terminé",
+        "echec": "Échec",
+        "refuse": "Refusé"
+      }
+    },
+    "nav": {
+      "marque": "Administration",
+      "tableau": "Tableau de bord",
+      "comptes": "Comptes",
+      "abonnements": "Abonnements",
+      "sources": "Sources",
+      "remplissage": "Remplissage",
+      "actions": "Actions",
+      "dce": "Téléchargements DCE",
+      "acces": "Accès",
+      "journal": "Journal",
+      "retourApp": "Retour à l'application",
+      "deconnexion": "Se déconnecter",
+      "menu": "Ouvrir le menu",
+      "groupe": {
+        "pilotage": "Pilotage",
+        "clients": "Clients",
+        "veille": "Veille",
+        "securite": "Sécurité"
+      }
+    },
+    "offres": {
+      "free": "Gratuit",
+      "starter": "Essentiel",
+      "pro": "Pro",
+      "enterprise": "Cabinet"
+    },
+    "pages": {
+      "tableau": "L'état de la plateforme en un écran.",
+      "comptes": "Chaque organisation cliente : son offre, ses membres, son activité. Un utilisateur seul est sa propre organisation.",
+      "abonnements": "Les offres en cours, l'échéance la plus proche d'abord.",
+      "acces": "Qui peut ouvrir ce panneau, et qui peut s'inscrire.",
+      "journal": "Chaque action lancée depuis le panneau : qui, quoi, quand, et le résultat. Les refus y figurent aussi.",
+      "sources": "Ce que chaque portail a produit, et quand il a tourné pour la dernière fois.",
+      "parSource": "Par source",
+      "appelsOffres": "Appels d'offres",
+      "versRattrapage": "Lancer un rattrapage",
+      "voirJournal": "Voir le journal",
+      "dce": "Avis encore ouverts dont le dossier n'a pas pu être téléchargé, échéance la plus proche d'abord."
+    },
+    "tableau": {
+      "surveiller": "À surveiller",
+      "rienASignaler": "Rien à signaler : aucun paiement en retard, aucune source en retard, aucun champ en alerte.",
+      "alerte": {
+        "paiements_one": "abonnement en retard de paiement",
+        "paiements_other": "abonnements en retard de paiement",
+        "echeances_one": "abonnement arrive à échéance dans les 7 jours",
+        "echeances_other": "abonnements arrivent à échéance dans les 7 jours",
+        "sources_one": "source de veille en retard",
+        "sources_other": "sources de veille en retard",
+        "remplissage_one": "champ de la veille probablement effacé",
+        "remplissage_other": "champs de la veille probablement effacés",
+        "dce_one": "dossier DCE en échec de téléchargement",
+        "dce_other": "dossiers DCE en échec de téléchargement",
+        "suspendus_one": "compte suspendu",
+        "suspendus_other": "comptes suspendus"
+      },
+      "clients": "Clients",
+      "activite": "Activité",
+      "comptes": "Comptes",
+      "nouveaux": "+{{j7}} sur 7 jours, +{{j30}} sur 30 jours",
+      "actifs": "Comptes actifs sur 30 jours",
+      "actifsContexte": "{{j7}} sur 7 jours (dernière connexion)",
+      "organisations": "Organisations",
+      "revenu": "Revenu mensuel estimé",
+      "mad": "{{n}} MAD",
+      "revenuContexte": "Tarif affiché des abonnements actifs payants, pas un encaissement",
+      "dossiers": "Dossiers créés sur 30 jours",
+      "generations": "Générations sur 30 jours",
+      "sur7": "{{n}} sur 7 jours",
+      "abonnementsActifs": "Abonnements actifs",
+      "abonnementsContexte": "{{retard}} en retard de paiement, {{annules}} annulés",
+      "trenteJours": "Les 30 derniers jours",
+      "inscriptions": "Inscriptions par jour",
+      "dossiersCrees": "Dossiers créés par jour",
+      "uniteInscriptions": "inscriptions",
+      "uniteDossiers": "dossiers",
+      "total30": "{{n}} au total",
+      "voirValeurs": "Voir les valeurs"
+    },
+    "comptes": {
+      "recherche": "Nom ou adresse email",
+      "toutesOffres": "Toutes les offres",
+      "tousEtats": "Tous les états",
+      "etat": {
+        "actif": "Actifs (30 jours)",
+        "inactif": "Inactifs",
+        "suspendu": "Suspendus"
+      },
+      "jamaisConnecte": "Jamais connecté",
+      "aucun": "Aucun compte pour l'instant.",
+      "aucunFiltre": "Aucun compte ne correspond à ces filtres.",
+      "resumeMobile": "{{membres}} membre(s), {{dossiers}} dossier(s)",
+      "pagination": "{{debut}} à {{fin}} sur {{total}}",
+      "precedent": "Précédent",
+      "suivant": "Suivant",
+      "col": {
+        "organisation": "Organisation",
+        "offre": "Offre",
+        "membres": "Membres",
+        "dossiersMois": "Dossiers ce mois",
+        "dossiersTotal": "Dossiers au total",
+        "derniereConnexion": "Dernière connexion",
+        "creee": "Créée le"
+      }
+    },
+    "compte": {
+      "titre": "Compte",
+      "retour": "Tous les comptes",
+      "introuvable": "Cette organisation n'existe pas ou n'existe plus.",
+      "creeeLe": "Créée le",
+      "abonnement": "Abonnement et consommation",
+      "prix": "{{prix}} MAD par mois",
+      "gratuit": "Gratuit",
+      "sansAbonnement": "Aucun abonnement enregistré",
+      "jusquau": "jusqu'au",
+      "grace": "fin de grâce le",
+      "dossiersMois": "Dossiers ce mois",
+      "documents": "Documents",
+      "membres": "Membres",
+      "illimite": "{{n}}, illimité",
+      "surLimite": "{{n}} sur {{limite}}",
+      "changerOffre": "Changer l'offre",
+      "changerOffreAide": "Après un virement ou pour un geste commercial. Une période dure 30 jours, comme un paiement en ligne.",
+      "mois_one": "{{count}} mois",
+      "mois_other": "{{count}} mois",
+      "appliquer": "Appliquer",
+      "confirmerOffre": "Confirmer le changement d'offre",
+      "activerTexte": "{{nom}} passera à l'offre {{offre}}, valable jusqu'au {{fin}}. Les limites de l'offre s'appliquent tout de suite.",
+      "retrograderTexte": "{{nom}} repassera à l'offre gratuite, avec ses limites. Ses données sont conservées.",
+      "annuler": "Annuler",
+      "confirmer": "Confirmer",
+      "membresTitre_one": "{{count}} membre",
+      "membresTitre_other": "{{count}} membres",
+      "proprietaire": "Propriétaire",
+      "admin": "Administrateur",
+      "nonVerifie": "Email non vérifié",
+      "membre": "Membre",
+      "vous": "Vous",
+      "adminProtege": "Administrateur : non modifiable ici",
+      "suspendre": "Suspendre",
+      "reactiver": "Réactiver",
+      "suspenduLe": "Suspendu le",
+      "suspendreTitre": "Suspendre {{email}}",
+      "reactiverTitre": "Réactiver {{email}}",
+      "suspendreTexte": "Le compte ne pourra plus se connecter, et ses sessions ouvertes cessent de fonctionner tout de suite. Rien n'est effacé : la réactivation rend l'accès tel quel.",
+      "reactiverTexte": "Le compte pourra de nouveau se connecter, avec toutes ses données.",
+      "raison": "Raison (inscrite au journal, facultative)",
+      "activite": "Activité",
+      "aucunDossier": "Aucun dossier",
+      "statutCompte": "{{n}} {{statut}}",
+      "generations_one": "{{count}} génération sur 30 jours",
+      "generations_other": "{{count}} générations sur 30 jours",
+      "col": {
+        "membre": "Membre",
+        "role": "Rôle",
+        "inscrit": "Inscrit le",
+        "connexion": "Dernière connexion",
+        "action": "Action",
+        "dossier": "Derniers dossiers",
+        "statut": "Statut",
+        "cree": "Créé le"
+      }
+    },
+    "abonnements": {
+      "tous": "Tous les statuts",
+      "aucun": "Aucun abonnement enregistré : toutes les organisations sont sur l'offre gratuite.",
+      "aucunFiltre": "Aucun abonnement avec ce statut.",
+      "bientot": "échéance proche",
+      "statut": {
+        "active": "Actif",
+        "past_due": "Paiement en retard",
+        "canceled": "Annulé",
+        "trialing": "Essai"
+      },
+      "fournisseur": {
+        "manual": "Manuel (virement)",
+        "cmi": "CMI"
+      },
+      "col": {
+        "statut": "Statut",
+        "echeance": "Échéance",
+        "grace": "Fin de grâce",
+        "fournisseur": "Fournisseur"
+      }
+    },
+    "acces": {
+      "administrateurs": "Administrateurs",
+      "aucun": "Aucune adresse dans ADMIN_EMAILS : personne ne peut ouvrir ce panneau.",
+      "commentAjouter": "La liste vient de ADMIN_EMAILS dans le fichier .env du serveur. Pour ajouter ou retirer un administrateur : modifier cette ligne, puis redémarrer l'API. Aucun bouton ne le permet ici, pour qu'une faille web ne puisse jamais créer d'administrateur.",
+      "pasDeCompte": "Pas encore de compte",
+      "nonVerifie": "Email non vérifié",
+      "suspendu": "Compte suspendu",
+      "actif": "Actif",
+      "inscription": "Inscription",
+      "ouverte": "Ouverte à tous : n'importe qui peut créer un compte (avec vérification de l'adresse par code).",
+      "surInvitation_one": "Sur invitation : seule {{count}} adresse peut s'inscrire (ALLOWED_EMAILS).",
+      "surInvitation_other": "Sur invitation : seules {{count}} adresses peuvent s'inscrire (ALLOWED_EMAILS).",
+      "col": {
+        "email": "Adresse",
+        "etat": "État",
+        "connexion": "Dernière connexion"
+      }
     }
   }
 }

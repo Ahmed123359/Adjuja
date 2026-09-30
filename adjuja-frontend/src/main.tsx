@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import ReactDOM from 'react-dom/client';
 import { BrowserRouter, Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom';
 import App from './App';
+import AdminApp from './features/admin/AdminApp';
 import LandingPage from './features/landing/LandingPage';
 import LoginPage from './features/auth/LoginPage';
 import RegisterPage from './features/auth/RegisterPage';
@@ -158,6 +159,16 @@ function AppRouter() {
             onGoLanding={() => navigate('/')}
             onLogout={handleLogout}
           />
+        ) : <VersConnexion />}
+      />
+      {/* Administration de la plateforme : page à part. Un compte ordinaire
+          est renvoyé vers l'application ; le serveur revérifie chaque route. */}
+      <Route
+        path="/admin/*"
+        element={user ? (
+          user.is_platform_admin
+            ? <AdminApp user={user} onLogout={handleLogout} />
+            : <Navigate to="/app" replace />
         ) : <VersConnexion />}
       />
       <Route path="*" element={<NotFoundPage onGoHome={() => navigate('/')} />} />

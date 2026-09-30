@@ -77,6 +77,11 @@ services:
       RESEND_API_KEY: ${RESEND_API_KEY:-}
       # Sans valeur, POST /billing/admin/activate repond 403.
       BILLING_ADMIN_SECRET: ${BILLING_ADMIN_SECRET:-}
+      # Panneau d'administration : relais vers les routes /admin/* de la veille.
+      WATCHER_SERVICE_URL: http://ao-watcher-api:8001
+      WATCHER_ADMIN_SECRET: ${WATCHER_ADMIN_SECRET:-dev-watcher-admin-secret}
+      # Administrateurs de la plateforme (onglet Administration). Format JSON.
+      ADMIN_EMAILS: ${ADMIN_EMAILS:-[]}
     depends_on:
       postgres:
         condition: service_healthy
@@ -90,6 +95,9 @@ services:
       - ao_network
     volumes:
       - ../adjuja-backend/app:/app/app
+      # Sans ce montage, une migration neuve restait invisible jusqu'a la
+      # reconstruction de l'image, alors que le code (monte) s'en servait deja.
+      - ../adjuja-backend/alembic:/app/alembic
 
   # frontend:
   #   build:
@@ -286,6 +294,8 @@ services:
       EMBEDDINGS: ${EMBEDDINGS:-mistral:mistral-embed}
       EMBEDDINGS_DIMENSIONS: ${EMBEDDINGS_DIMENSIONS:-1024}
       VISION: ${VISION:-mistral:pixtral-large-latest}
+      # Routes /admin/* : sans valeur, toutes refusees (port 8001 publie).
+      WATCHER_ADMIN_SECRET: ${WATCHER_ADMIN_SECRET:-dev-watcher-admin-secret}
     extra_hosts:
       - "host.docker.internal:host-gateway"
     volumes:

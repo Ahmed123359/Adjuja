@@ -14,10 +14,8 @@ import type {
 import { exportDocx } from "../../api";
 import AoPipelinePage from "../../features/ao/AoPipelinePage";
 
-/** Onglets de premier niveau. « accueil » est le tableau de bord depuis le
- *  2026-09-15 ; « entreprise » porte les reglages, atteints par le pied de la
- *  barre laterale. */
-export type AppTab = "accueil" | "offres" | "marches" | "taches" | "outils" | "veille" | "entreprise";
+import type { AppTab } from './tabs';
+export type { AppTab };
 import CompanySettingsPage from "../../features/company/CompanySettingsPage";
 import DashboardHomePage from "../../features/dashboard/DashboardHomePage";
 import TasksPage from "../../features/tasks/TasksPage";
@@ -898,6 +896,7 @@ export default function RightPanel({
           <VeilleHubPage />
         </div>
       )}
+
 
       {/* Outils tab  contenu seul (panneau gauche rendu dans App.tsx sur desktop) */}
       {mainTab === "outils" && (

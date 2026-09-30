@@ -9,6 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.config.settings import Settings, get_settings
 from app.db.base import get_db
 from app.models.user import UserPublic
+from app.services.admin.acces import est_admin_plateforme
 from app.services.ao_parser_service import AOParserService
 from app.services.fit_score_service import FitScoreService
 from app.services.generation_service import GenerationService
@@ -21,6 +22,8 @@ from app.services.usage_service import UsageService
 from app.services.user_service import UserService
 
 _bearer = HTTPBearer(auto_error=False)
+
+COMPTE_SUSPENDU = "Ce compte est suspendu. Contactez le support Adjuja."
 
 @lru_cache
 def get_ao_parser() -> AOParserService:
@@ -83,6 +86,10 @@ async def get_current_user(
             detail="Utilisateur introuvable.",
             headers={"WWW-Authenticate": "Bearer"},
         )
+    # Verifie a chaque requete : un jeton emis avant la suspension ne doit
+    # plus rien ouvrir.
+    if user.suspendu:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=COMPTE_SUSPENDU)
     return user
 
 
@@ -113,6 +120,17 @@ def require_within_limit(counter: Literal["ao_per_month", "documents"]):
             )
 
     return _check
+
+
+def require_platform_admin(
+    current_user: UserPublic = Depends(get_current_user),
+    settings: Settings = Depends(get_settings),
+) -> UserPublic:
+    """Panneau d'administration : posée sur le routeur /admin entier, pour
+    qu'une route ajoutée plus tard soit protégée sans qu'on y pense."""
+    if not est_admin_plateforme(current_user, settings):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Accès refusé.")
+    return current_user
 
 
 def require_billing_admin(x_billing_admin_secret: str = Header(..., alias="X-Billing-Admin-Secret")) -> None:

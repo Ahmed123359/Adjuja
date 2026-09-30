@@ -20,7 +20,8 @@ import { useTheme } from '../../hooks/useTheme';
 import LanguageSelector from '../ui/LanguageSelector';
 import { SearchPalette } from './SearchPalette';
 
-export type AppTab = 'accueil' | 'offres' | 'marches' | 'taches' | 'outils' | 'veille' | 'entreprise';
+import type { AppTab } from './tabs';
+export type { AppTab };
 
 type Props = {
   mainTab: AppTab;

@@ -59,6 +59,8 @@ class UserPublic(BaseModel):
     entreprise:       str  = ""
     secteur_activite: str  = ""
     nb_ao_par_an:     int | None = None
+    # Suspendu par un administrateur : refusé à la connexion et à chaque requête.
+    suspendu:         bool = False
 
 
 class Token(BaseModel):

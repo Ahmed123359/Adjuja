@@ -12,4 +12,6 @@ export interface User {
   email_verified:   boolean;
   generations_used: number;
   max_generations:  number;  // 0 = illimité
+  /** Ouvre l'onglet Administration ; chaque route admin revérifie côté serveur. */
+  is_platform_admin?: boolean;
 }
