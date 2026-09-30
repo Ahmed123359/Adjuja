@@ -87,12 +87,117 @@ part, vérifié ; sinon la procédure. 10 tests notification verts, `tsc` vert.
 Reste en prod : déployer, puis `python rattraper_details.py --reel` dans
 `ao-watcher-api` pour remplir les références des AO ouverts.
 
-**Nouvelle feature en cadrage : panneau d'administration** (2026-09-29).
-Modules retenus : Veille, Notifications, Santé système et coûts IA (pas
-Clients et abonnements). Accès : `ADMIN_EMAILS`. Aperçu écrit :
-`context/feature-spec/admin-panel/00-overview.md`. Point clé : les coûts IA ne
-sont presque pas mesurés (un compteur global, 4 routes) ; instrumentation et
-migration 018 proposées, à valider. Reste : `api.md`, `client.md`, code.
+**Panneau d'administration devenu une page à part `/admin`** (2026-10-01,
+demande de l'utilisateur ; non commité). Décisions du 2026-09-30 : page
+séparée, `ADMIN_EMAILS` seul (écran Accès en lecture seule), comptes et
+abonnements **retenus** (écartés le 2026-09-29), quatre actions sur les comptes
+(offre, suspension, suivi d'activité, suppression), migration 019 validée.
+
+Fait :
+- backend : migration 019 (`users.disabled_at`, `users.last_login_at`) ;
+  suspension appliquée à chaque requête (`get_current_user`, 403) et à la
+  connexion (mot de passe et Google, après vérification du mot de passe) ;
+  dernière connexion posée aux quatre entrées (mot de passe, Google, OTP,
+  invitation) ; `services/admin/comptes.py` (organisations effectives,
+  fiche, changement d'offre, suspension / réactivation, abonnements, accès)
+  et `tableau_de_bord.py` ; journal commun à tous les modules ;
+- **deux bugs trouvés et corrigés** (reproduits par test d'intégration) : la
+  première invitation rendait invisibles les dossiers du propriétaire ;
+  activer une offre pour un utilisateur seul violait une clé étrangère
+  (`bugs-connus.md`, requête de contrôle à lancer en production) ;
+- frontend : `features/admin/AdminApp.tsx` (rail par thème, une URL par
+  écran, tiroir sur téléphone), pages Tableau de bord, Comptes, fiche,
+  Abonnements, Veille (4 écrans), Accès, Journal ; ancien onglet supprimé ;
+- tests : 235 backend verts (dont intégration sur base réelle : suspension,
+  jeton antérieur refusé, dernière connexion, offre, tableau de bord, accès),
+  `tsc` vert ; rendu serveur des 10 écrans avec les **données réelles** de dev,
+  bureau et téléphone, FR et EN : aucune clé brute ni date invalide.
+
+Pas encore fait : **suppression d'un compte** (spec à écrire avant : périmètre
+des données, MinIO, Qdrant, préférences) ; Notifications, Santé, Coûts IA
+(migration 020). Écran jamais vu dans un navigateur par l'assistant. En dev,
+`ADMIN_EMAILS` passe maintenant par `docker-compose.dev.yml` (il n'y était
+pas : impossible d'avoir un admin en dev).
+
+**Panneau d'administration : étape 1 codée** (cadrage le 2026-09-29, code le
+2026-09-30, non commité). Modules retenus : Veille, Notifications, Santé
+système et coûts IA. Accès : `ADMIN_EMAILS` + adresse vérifiée. Spec complète :
+`feature-spec/admin-panel/` (`00-overview.md`, `api.md`, `client.md`).
+
+Fait (étape 1, sans changement de schéma) :
+- **faille corrigée** : une adresse de `ADMIN_EMAILS` s'inscrivait sans code
+  OTP (`bugs-connus.md`) ; elle aurait ouvert le panneau à qui s'inscrivait le
+  premier avec cette adresse ;
+- backend : `services/admin/acces.py`, `require_platform_admin` posé sur tout
+  le routeur `/api/v1/admin`, `is_platform_admin` dans `GET /auth/me`,
+  `GET /admin/veille/sources` (ouverts, nouveaux 24 h / 7 j, remplissage par
+  champ avec alerte « ouverts deux fois moins remplis que récents », DCE en
+  échec, analyses) et `GET /admin/veille/dce-echecs` ; 24 tests
+  (`test_admin_acces.py`, dont 401/403 sur chaque route du routeur), 151
+  tests unitaires verts ;
+- frontend : `features/admin/` (écran Veille, carte par source sous 900px),
+  entrée « Administration » dans la barre latérale pour les seuls admins,
+  `AppTab` déclaré une seule fois (`shared/layout/tabs.ts`, il l'était quatre
+  fois), textes `admin.*` FR/EN ; `tsc` vert, rendu serveur vérifié sur 5 cas
+  (bureau, téléphone, alerte, aucun échec, accès refusé) ;
+- `ADMIN_EMAILS` documentée dans `adjuja-infra/.env.example`.
+
+**Non vérifié** : le SQL de lecture de la veille n'a jamais tourné sur une
+base (Docker Desktop figé depuis le 2026-09-28, `docker version` sans
+réponse ; disque C: à 97 %). À faire dès que Docker répond : lancer les deux
+routes sur la base de dev et comparer un taux au calcul SQL fait à la main.
+
+**Étape 2 codée le 2026-09-30** (tables `watcher.scrape_runs` et
+`admin_actions` validées par l'utilisateur le même jour ; non commité) :
+- veille : `scrape_runs` créée au démarrage (`app/core/schema.py`), une ligne
+  par source et par passage (`app/core/scrape_runs.py`), purgée à 90 jours ;
+  corps des scripts `rattraper_details.py` / `enrichir_analyses.py` déplacé
+  dans `app/modules/maintenance.py` (scripts réduits à leur ligne de
+  commande, même usage) ; tâches `admin_tasks.py` avec progression et verrou
+  Redis ; routes `/admin/*` protégées par `WATCHER_ADMIN_SECRET` (vide = tout
+  refusé) ; 24 tests (54 au total, dans un environnement Python à part : les
+  dépendances de la veille ne sont pas dans `venv/` de la racine) ;
+- **bug corrigé au passage** : la reprise automatique d'un scrape en échec
+  tombait toujours sur le cooldown d'1 h (`bugs-connus.md`) ;
+- backend : migration 018 `admin_actions`, relais et journal
+  (`services/admin/actions.py`), dernier passage / dernier essai / retard dans
+  `GET /admin/veille/sources`, routes `POST /admin/veille/actions/{action}`,
+  `GET /admin/veille/taches/{id}`, `GET /admin/actions` ; 177 tests unitaires ;
+- écran : actions (simulation obligatoire avant le réel, mêmes paramètres),
+  progression, journal ; rendu serveur vérifié ; `tsc` vert ;
+- configuration : `WATCHER_SERVICE_URL`, `WATCHER_ADMIN_SECRET` dans les deux
+  compose et `.env.example`.
+
+**Vérifié en réel sur la pile de dev le 2026-09-30** (Docker relancé) :
+- migrations 001 -> 018 sur une base vide (index compris) et 017 -> 018 sur
+  la base de dev ; `watcher.scrape_runs` créée au démarrage de la veille ;
+- lecture de la veille sur 1 114 AO et 714 BDC : taux identiques au calcul SQL
+  fait à la main (estimation 12,5 %, lien DCE 54,5 % des ouverts, 100 % des
+  récents) ;
+- accès : `is_platform_admin` vrai / faux, 403 sur l'API sans `ADMIN_EMAILS` ;
+- actions de bout en bout (backend -> veille -> Celery -> base) : simulations
+  de rattrapage (1 110 AO, ~56 min) et de ré-analyse, scrape BDC lancé du
+  panneau (1 376 lus, 1 049 enregistrés, 11 min), deuxième demande tracée
+  `ignore` (cooldown), 409 quand l'action tourne déjà, action inconnue 404 ;
+  rattrapage réel limité à 3 AO : progression 1/3..3/3, références, estimations
+  et liens DCE restaurés ; journal complété à la fin de chaque tâche ;
+- passages planifiés tracés source par source (marchespublics 685 lus / 500
+  enregistrés).
+
+Corrigé pendant cette vérification : `alembic/` n'était pas monté dans l'API de
+dev (migrations neuves invisibles sans reconstruire l'image) ; le rattrapage
+ignorait le lien DCE (500 AO du 2026-09-12 sans lien depuis l'effacement du
+2026-09-13, révélé par le panneau) ; le journal restait « en cours » quand
+personne ne suivait une tâche (il se rafraîchit maintenant à la lecture) ;
+message 409 redondant. Détail dans `bugs-connus.md`.
+
+Reste avant la production : définir `WATCHER_ADMIN_SECRET` dans `.env`, puis
+lancer le rattrapage réel depuis le panneau (compter d'abord par simulation).
+L'écran n'a été vu que par rendu serveur, pas dans un navigateur.
+
+Reporté : la recopie des analyses côté backend (script ponctuel, voir
+`api.md`). Restent à valider pour les étapes 3 et 5 :
+`notifications.send_failures`, `llm_usage`.
 
 **Notifications corrigées** (2026-09-29, non commité) : estimation, caution
 et secteur ne sont plus effacés par les re-scrapes (et script de rattrapage),

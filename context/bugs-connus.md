@@ -18,6 +18,100 @@ règle) · `À CONFIRMER` (soupçonné, pas encore reproduit).
 
 ## OUVERT
 
+### Première invitation : le propriétaire perd la vue sur tous ses dossiers
+
+`adjuja-backend/app/services/user_service.py`, `ensure_own_org`
+
+Trouvé le 2026-09-30 en lisant l'activation d'offre pour le panneau
+d'administration. Reproduit par `tests/integration/test_organisation_solo.py`
+(échoue sans la correction, passe avec). Un utilisateur seul n'a pas
+d'organisation : ses données sont rangées sous son propre id (`org_id or id`,
+60 endroits : dossiers, profil, CV, documents, tâches, messages...). À sa
+première invitation, `ensure_own_org` créait une organisation avec un
+**nouvel** identifiant et le lui assignait : dès lors, toutes les lectures
+filtraient sur ce nouvel id et ses dossiers antérieurs, restés sous l'ancien,
+disparaissaient de son écran (sans être effacés).
+
+**Corrigé dans le code le 2026-09-30** : l'organisation créée prend l'id de
+l'utilisateur, celui sous lequel ses données sont déjà rangées. À vérifier en
+production : un propriétaire qui a déjà invité quelqu'un a peut-être des
+données orphelines. Requête de contrôle :
+`SELECT u.email FROM users u JOIN organizations o ON o.owner_id = u.id AND o.id <> u.id
+WHERE EXISTS (SELECT 1 FROM appels_offres a WHERE a.org_id = u.id);` -- si elle
+renvoie des lignes, un rattrapage des `org_id` est à écrire.
+
+### Activer une offre pour un utilisateur seul échoue (clé étrangère)
+
+`adjuja-backend/app/services/subscription_service.py`, `activate`
+
+Trouvé le même jour, même lecture, reproduit par le même test d'intégration.
+`subscriptions.org_id` référence
+`organizations.id`, mais l'org d'un utilisateur seul est son id d'utilisateur,
+sans ligne dans `organizations` : l'insertion violait la clé étrangère. Un
+client seul payant par CMI (webhook) ou activé à la main n'aurait jamais eu
+son offre, et la levée du plafond de génération (`User.org_id == org_id`)
+ne le touchait pas non plus.
+
+**Corrigé dans le code le 2026-09-30** : `activate` crée d'abord, si besoin,
+l'organisation de l'utilisateur seul (même id), comme `ensure_own_org`.
+
+### Veille : 500 AO sans lien DCE depuis l'effacement du 2026-09-13, jamais restaurés
+
+`adjuja-watcher/app/modules/maintenance.py` (rattrapage)
+
+Relevé le 2026-09-30 par le panneau d'administration, sur la base de dev :
+lien du DCE présent sur 54,5 % des AO ouverts de marchespublics contre 100 %
+des récents. Recoupé en SQL : 500 des 517 AO découverts le 2026-09-12 n'ont
+pas de `zip_url`, tous les AO découverts ensuite en ont un. Cause : le bug du
+2026-09-13 (re-scrape qui effaçait `zip_url`, corrigé ce jour-là dans
+`upsert_many`) a laissé ces AO vides, et aucun rattrapage n'a jamais visé ce
+champ. Conséquence atténuée : le téléchargement au favori relit l'URL
+(`refresh_and_download_ao_zip`).
+
+**Corrigé dans le code le 2026-09-30, vérifié en dev** : le rattrapage des
+détails vise aussi les AO ouverts sans `zip_url` et le restaure s'il est
+publié. Rattrapage réel limité à 3 AO du 2026-09-12 lancé depuis le panneau :
+lien DCE, référence et estimation restaurés sur les trois. Reste : le lancer en
+production (compter d'abord par simulation), puis classer ce bug CORRIGÉ.
+
+### Veille : la reprise d'un scrape en échec était toujours ignorée
+
+`adjuja-watcher/app/workers/tasks/scrape_tasks.py`, `scrape_bdc_tasks.py`
+
+Trouvé le 2026-09-30 en branchant la trace des passages (lecture du code, pas
+reproduit en réel). Les deux tâches de scrape posent un cooldown d'1 h dans
+Redis puis, en cas d'échec, se relancent 5 min plus tard (`self.retry`,
+`default_retry_delay=300`). La reprise retombait sur le cooldown encore actif
+et s'arrêtait aussitôt (`skipped: cooldown`) : un scrape en échec attendait
+toujours le passage planifié suivant, 6 h plus tard, malgré le mécanisme de
+reprise.
+
+**Corrigé dans le code le 2026-09-30, non vérifié en réel** : une reprise
+(`self.request.retries > 0`) ne repasse plus par le cooldown. À confirmer au
+premier échec réel, visible désormais dans `watcher.scrape_runs` (une ligne
+`erreur` suivie d'une ligne `ok` ou `erreur`, jamais `ignore`).
+
+### Inscription d'une adresse de `ADMIN_EMAILS` sans vérification (faille)
+
+`adjuja-backend/app/api/routes/auth_routes.py`, `register`
+
+Trouvé le 2026-09-30 en écrivant `feature-spec/admin-panel/api.md` (lecture du
+code, pas reproduit en réel). Une adresse présente dans `ADMIN_EMAILS` était
+inscrite **immédiatement**, sans code OTP, avec `email_verified=True` et des
+générations illimitées. Quiconque connaît une adresse admin pas encore inscrite
+(ou dont le compte a été supprimé) obtenait ce compte sans en posséder la
+boîte. Avec le panneau d'administration, qui s'ouvre sur cette même liste, le
+défaut serait devenu une prise de contrôle de la plateforme.
+
+**Corrigé dans le code le 2026-09-30, pas encore déployé** : les admins passent
+par l'OTP comme tout le monde (la branche `is_admin` de `register` est
+supprimée), `verify_otp` leur pose les générations illimitées
+(`services/admin/acces.adresse_admin`), et le panneau exige en plus
+`email_verified`. Vérifié par requête réelle sur l'application
+(`tests/unit/test_admin_acces.py::test_inscription_admin_passe_par_le_code` :
+201 `otp_sent`, aucun compte créé). Reste, avant de le classer CORRIGÉ :
+l'essayer en production après déploiement.
+
 ### Écrans de connexion : cinq défauts relevés pendant leur refonte
 
 `adjuja-frontend/src/features/auth/`
@@ -264,6 +358,18 @@ au niveau du code.
 ---
 
 ## CORRIGÉ
+
+### Dev : les migrations neuves n'étaient pas appliquées sans reconstruire l'image
+
+`adjuja-infra/docker-compose.dev.yml`, service `api`
+
+Trouvé le 2026-09-30 en vérifiant la migration 018. En développement, seul
+`adjuja-backend/app/` était monté dans le conteneur ; `alembic/` venait de
+l'image (construite deux semaines plus tôt, sans les migrations 015 à 018).
+`app.scripts.migrate` s'arrêtait donc à une tête périmée pendant que le code
+monté utilisait déjà les nouvelles tables. Corrigé le même jour : `alembic/`
+est monté aussi. Vérifié par le démarrage de l'API de développement (voir
+le suivi de l'étape 2 du panneau d'administration).
 
 ### Email de veille : « N° » affiche l'identifiant interne du portail, pas la référence de l'avis
 

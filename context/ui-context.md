@@ -148,6 +148,25 @@ Confirmé pendant cette refonte, souvent après essai :
 - **Un zéro reste lisible** : le griser jusqu'à `--adj-ink-4` le faisait passer
   pour un champ vide.
 
+## Administration `/admin` (2026-10-01)
+
+Page à part, pas un onglet (`features/admin/`, spec
+`feature-spec/admin-panel/client.md`). Référence : un pupitre de poste
+d'aiguillage, tout est calme, seul l'anormal s'allume.
+
+- Une URL par écran, rail sombre groupé par thème (Pilotage, Clients, Veille,
+  Sécurité) ; un écran répond à une question, on n'empile pas tout dans une
+  page à défiler (reproche de l'utilisateur sur l'onglet du 2026-09-30).
+- Gabarit unique `PageAdmin` + `Section` + tableaux de `components/ui.tsx` ;
+  pleine largeur.
+- Tableau de bord : « À surveiller » d'abord, puis registre ligné (libellé,
+  chiffre, contexte), puis barres sur 30 jours. Jamais de tuiles
+  d'indicateurs à pastille.
+- Toute action qui change un compte passe par une `Modal` qui dit
+  exactement ce qui va se produire ; une action impossible est remplacée par
+  sa raison (« Vous », « Administrateur : non modifiable ici »), pas par un
+  bouton grisé muet.
+
 ## Site public et écrans de connexion (2026-09-27)
 
 Tokens `--l-*` sous `.landing-dark`, **forcé** sur toutes ces pages (accueil,

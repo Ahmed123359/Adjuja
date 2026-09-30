@@ -22,21 +22,16 @@ in sync").
 
 ## Repository Topology
 
-Since 2026-09-10 ADJUJA is **not one repo**. Each service is its own git repository,
-cloned side by side in a workspace folder that is itself not a repo (`e-himaya` model):
+Since 2026-09-12 ADJUJA is **one git repository** again, at the workspace root
+(the per-service split of 2026-09-10 was cancelled, see `CLAUDE.md` and
+`feature-spec/separation-depots/`). The folders per service remain:
 `adjuja-backend`, `adjuja-frontend`, `adjuja-watcher`, `adjuja-notification`,
-`adjuja-infra` (orchestration, entry point), `adjuja-docs`.
+`adjuja-infra`, `adjuja-docs`.
 
-Consequences that bind day-to-day work:
-
-- A change spanning services produces **one commit per repo**. There is no root repo to
-  commit to.
-- Compose build contexts are relative to `adjuja-infra/` (`context: ../adjuja-backend`),
-  so the repos must stay siblings. `adjuja-infra/scripts/clone.sh` enforces the layout.
-- No repo can build another's code. This is why `adjuja-backend/Dockerfile` no longer
-  builds the SPA, and why `:8000/ui` no longer exists -- the SPA is served only by the
-  `frontend` nginx container.
-- `CLAUDE.md` and `context/` live unversioned at the workspace root, in no repo at all.
+- A cross-service change is one commit, run from the root.
+- Compose build contexts are relative to `adjuja-infra/`
+  (`context: ../adjuja-backend`), so the folders must stay siblings.
+- The SPA is served only by the `frontend` nginx container.
 
 ## System Boundaries
 
@@ -85,6 +80,13 @@ Consequences that bind day-to-day work:
   header is present, not that it's valid); notification-service does validate JWTs
   itself where it needs org-scoped access (preferences endpoints), using the same
   `JWT_SECRET_KEY`, shared across services for exactly this reason.
+- Platform administration (since 2026-09-30): accounts whose email is in
+  `ADMIN_EMAILS` **and** verified. `require_platform_admin` is set on the whole
+  `/api/v1/admin` router; `GET /auth/me` exposes `is_platform_admin` for the
+  UI only. The backend is the single entry point: it reads the `watcher` and
+  `notifications` schemas directly and calls the other services with their
+  admin secret, the browser never talks to them. See
+  `feature-spec/admin-panel/`.
 - Google Sign-In: ID-token verification only (`google.oauth2.id_token`), needs only
   `GOOGLE_CLIENT_ID` server-side, never a client secret for this flow.
 
@@ -109,6 +111,10 @@ Consequences that bind day-to-day work:
   (`ao-watcher` -> `notification-service`'s `/admin/trigger`), not a message bus.
   This is a deliberate choice for a three-service system this size, reconsider only
   if a fourth consumer of the same event appears.
+- The admin panel follows the same pattern: backend -> ao-watcher `/admin/*`
+  (`X-Admin-Secret` = `WATCHER_ADMIN_SECRET`, empty = everything refused),
+  which queues Celery tasks (scrape rerun, detail recovery, enriched
+  re-analysis). Each scrape run is recorded in `watcher.scrape_runs`.
 
 ## Reusability Model
 

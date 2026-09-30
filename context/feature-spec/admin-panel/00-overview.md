@@ -1,12 +1,25 @@
 # Panneau d'administration de la plateforme
 
-Écrit le 2026-09-29, à la demande de l'utilisateur. Décisions du même jour :
+Écrit le 2026-09-29, à la demande de l'utilisateur. **Élargi le 2026-09-30**
+(l'utilisateur, après avoir vu l'onglet : « l'administration mérite toute une
+autre page, bien organisée et séparée », avec tableau de bord, comptes,
+abonnements, accès et suivi). Décisions en vigueur :
 
-- **Modules** : Veille (santé des sources), Notifications, Santé système et
-  coûts IA. *Clients et abonnements* n'est **pas** retenu pour l'instant.
-- **Accès** : les comptes dont l'email figure dans `ADMIN_EMAILS` (`.env`),
-  vérifié côté serveur. Pas de migration pour l'accès, pas d'application
-  séparée.
+- **Page séparée `/admin`** (2026-09-30), avec sa propre barre latérale par
+  module et des sous-écrans : plus un onglet de l'application, plus une longue
+  page à défiler. Lien depuis l'application, retour vers elle.
+- **Modules** : Tableau de bord, Comptes et organisations, Abonnements,
+  Accès, Veille, Notifications, Santé, Coûts IA, Journal. *Clients et
+  abonnements*, écarté le 2026-09-29, est **retenu** le 2026-09-30.
+- **Accès** : `ADMIN_EMAILS` (`.env`) seul, adresse vérifiée ; l'écran
+  « Accès » l'affiche en lecture seule. Nommer un admin demande un
+  redéploiement : une faille web ne peut jamais en créer un.
+- **Actions sur les comptes** (2026-09-30) : changer l'offre d'une
+  organisation, suspendre / réactiver, suivi d'activité (dernière connexion),
+  supprimer un compte. Migration 019 validée : `users.disabled_at`,
+  `users.last_login_at`. Les coûts IA passent en migration 020.
+- **Ordre** : page + navigation + Veille rangée en sous-écrans, Tableau de
+  bord, Comptes et Abonnements ; puis Notifications, Santé, Coûts IA.
 
 ## Pourquoi (constaté pendant les sessions du 2026-09-27 au 2026-09-29)
 
