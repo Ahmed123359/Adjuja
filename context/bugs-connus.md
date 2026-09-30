@@ -209,6 +209,22 @@ texte** : l'AO 599 est scanné et s'arrêterait à l'étape d'analyse.
 
 ## À CONFIRMER
 
+### Ports de production publiés sur toutes les interfaces (MinIO, veille sans authentification)
+
+`adjuja-infra/docker-compose.yml`
+
+Relevé le 2026-09-29 en cadrant le test d'intrusion du panneau
+d'administration. Sont publiés sur `0.0.0.0` : 8000 (API), **8001 (API de
+veille, aucune authentification)**, 8002 (notifications), 8090 (frontend),
+**9010 et 9011 (API et console MinIO : tous les documents des clients)**.
+Docker insère ses propres règles et **contourne `ufw`** : seul le pare-feu
+Hetzner peut fermer ces ports. Non vérifié depuis l'extérieur.
+
+À confirmer depuis une machine hors du serveur :
+`curl -m 5 http://46.224.154.138:<port>/` pour chaque port. Si l'un répond :
+publier les ports sur `127.0.0.1` seulement (`"127.0.0.1:8000:8000"`) ou les
+retirer, le proxy HTTPS de l'hôte restant le seul point d'entrée.
+
 ### Fichiers de dossier AO stockés en `.pdf` sans en être
 
 `adjuja-watcher/app/workers/tasks/download_tasks.py`, branche zip de
@@ -248,6 +264,28 @@ au niveau du code.
 ---
 
 ## CORRIGÉ
+
+### Email de veille : « N° » affiche l'identifiant interne du portail, pas la référence de l'avis
+
+`adjuja-watcher/app/modules/ao_scraper/mpe.py` (`fetch_detail`), `adjuja-notification/app/templates/ao_digest.py`
+
+Trouvé le 2026-09-30 sur une demande de l'utilisateur (« la référence aussi »).
+L'email affiche `N° 1030962` : c'est `external_id`, le `refConsultation` interne
+du portail, que personne ne retrouve dans l'avis ni dans le dossier. La vraie
+référence (`10012003`, champ `..._reference` de la fiche) est déclarée dans les
+configurations (`reference_human`) mais **jamais lue** par `fetch_detail` ni
+enregistrée : aucune colonne ne peut la recevoir. La corriger demande une colonne
+`reference` dans `watcher.scraped_aos`, donc une migration, soumise à
+l'utilisateur avant tout code (`CLAUDE.md`).
+
+**Corrigé le 2026-09-30** (migration validée par l'utilisateur) : colonne
+`reference` ajoutée au démarrage de l'API et du worker de la veille
+(`app/core/schema.py`, `ADD COLUMN IF NOT EXISTS`), lue par `fetch_detail`
+(vérifié sur une fiche réelle : `10012003`), protégée par `COALESCE` dans
+l'upsert, remplie pour les AO ouverts par `rattraper_details.py`. L'email
+affiche « Réf. 10012003 », la fiche de l'application aussi. Non vérifié sur une
+base (Docker bloqué par le disque plein) : à contrôler au déploiement.
+
 
 ### Notifications : la veille quotidienne ne partait qu'un jour sur deux
 

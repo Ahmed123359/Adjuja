@@ -74,6 +74,26 @@ accompagné. Décisions de l'utilisateur consignées dans `00-overview.md`.
 juger la fiche sur capture (clair et sombre, téléphone). Le watcher n'a pas de
 CI : ses tests se lancent à la main.
 
+**Email de veille : lien Adjuja, référence, type** (2026-09-30, demande de
+l'utilisateur). « Voir dans Adjuja » ouvre la fiche de l'AO
+(`/app/veille/ao/<id>`, lien conservé à travers la connexion, Google compris).
+Vraie référence de l'avis enregistrée (colonne `watcher.scraped_aos.reference`,
+ajoutée au démarrage de la veille par `app/core/schema.py`, la veille n'a pas
+d'Alembic ; migration validée par l'utilisateur) et affichée dans l'email et la
+fiche. Type « National / International » seulement s'il est écrit (objet de
+l'avis, ou champ `portee` de l'analyse du RC) : le portail ne le publie nulle
+part, vérifié ; sinon la procédure. 10 tests notification verts, `tsc` vert.
+**Non vérifié sur une base** : Docker bloqué par le disque plein ce jour-là.
+Reste en prod : déployer, puis `python rattraper_details.py --reel` dans
+`ao-watcher-api` pour remplir les références des AO ouverts.
+
+**Nouvelle feature en cadrage : panneau d'administration** (2026-09-29).
+Modules retenus : Veille, Notifications, Santé système et coûts IA (pas
+Clients et abonnements). Accès : `ADMIN_EMAILS`. Aperçu écrit :
+`context/feature-spec/admin-panel/00-overview.md`. Point clé : les coûts IA ne
+sont presque pas mesurés (un compteur global, 4 routes) ; instrumentation et
+migration 018 proposées, à valider. Reste : `api.md`, `client.md`, code.
+
 **Notifications corrigées** (2026-09-29, non commité) : estimation, caution
 et secteur ne sont plus effacés par les re-scrapes (et script de rattrapage),
 sélection des AO sur la date de découverte (4 AO -> 18 sur une même journée),
