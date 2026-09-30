@@ -5,6 +5,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.core.config import settings
+from app.core.schema import assurer_colonnes
 from app.modules.ao_scraper.router import router as ao_router
 from app.modules.ao_scraper.router import secteurs_router
 from app.modules.bdc_scraper.router import router as bdc_router
@@ -15,6 +16,7 @@ log = structlog.get_logger(__name__)
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     log.info("AO Watcher starting", port=settings.watcher_api_port)
+    await assurer_colonnes()
     yield
     log.info("AO Watcher shutting down")
 

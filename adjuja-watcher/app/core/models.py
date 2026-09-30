@@ -51,6 +51,9 @@ class ScrapedAo(Base):
     date_limite: Mapped[date | None] = mapped_column(Date)
     categorie: Mapped[str | None] = mapped_column(String(100))
     mode_passation: Mapped[str | None] = mapped_column(String(255))
+    # Reference de l'avis telle que publiee (« 10012003 ») ; external_id est
+    # l'identifiant interne du portail. Colonne ajoutee par app.core.schema.
+    reference: Mapped[str | None] = mapped_column(String(255))
     secteur: Mapped[str | None] = mapped_column(Text)
     region: Mapped[str | None] = mapped_column(String(100))
     ville: Mapped[str | None] = mapped_column(Text)

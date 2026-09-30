@@ -22,6 +22,7 @@ class AoData:
     description: str | None = None
     zip_url: str | None = None
     mode_passation: str | None = None
+    reference: str | None = None
 
 
 class IAOScraper(ABC):

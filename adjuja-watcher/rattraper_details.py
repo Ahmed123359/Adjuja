@@ -1,5 +1,5 @@
 """
-Rattrape l'estimation, la caution et le secteur des AO encore ouverts.
+Rattrape l'estimation, la caution, le secteur et la reference des AO encore ouverts.
 
 Jusqu'au 2026-09-29, chaque re-scrape de liste (toutes les 6 h) effacait ces
 champs, lus une seule fois sur la page detail a la decouverte de l'AO (bug
@@ -10,6 +10,9 @@ des organisations et n'etait jamais notifie.
 Ce script relit la page detail des AO ouverts (date limite non passee) a qui il
 manque l'un de ces champs, les restaure et recalcule les codes de secteur. Il
 ne remplace jamais une valeur existante par une valeur vide.
+
+Depuis le 2026-09-30, il remplit aussi la reference de l'avis (colonne
+`reference`, jusque-la jamais enregistree) des AO ouverts qui n'en ont pas.
 
 Par defaut : simulation (compte, ne lit ni n'ecrit rien).
 
@@ -30,6 +33,7 @@ from sqlalchemy.orm import sessionmaker
 
 from app.core.config import settings
 from app.core.models import ScrapedAo
+from app.core.schema import assurer_colonnes
 from app.modules.ao_scraper.matching import match_secteurs
 from app.modules.ao_scraper.mpe import MPEPlatformScraper
 
@@ -41,6 +45,7 @@ def _org(url: str) -> str:
 
 
 async def main(reel: bool, limite: int | None, pause: float, sources: tuple[str, ...]) -> None:
+    await assurer_colonnes()
     engine = create_async_engine(settings.database_url)
     Session = sessionmaker(engine, expire_on_commit=False, class_=AsyncSession)
 
@@ -50,7 +55,8 @@ async def main(reel: bool, limite: int | None, pause: float, sources: tuple[str,
                    ScrapedAo.titre, ScrapedAo.description, ScrapedAo.secteur)
             .where(ScrapedAo.source.in_(sources))
             .where(ScrapedAo.date_limite >= date.today())
-            .where(or_(ScrapedAo.budget_estime.is_(None), ScrapedAo.caution.is_(None), ScrapedAo.secteur.is_(None)))
+            .where(or_(ScrapedAo.budget_estime.is_(None), ScrapedAo.caution.is_(None), ScrapedAo.secteur.is_(None),
+                       ScrapedAo.reference.is_(None)))
             .order_by(ScrapedAo.date_limite.asc())
         )).all()
     if limite:
@@ -84,6 +90,8 @@ async def main(reel: bool, limite: int | None, pause: float, sources: tuple[str,
                 valeurs["secteur"] = detail.secteur
             if detail.mode_passation:
                 valeurs["mode_passation"] = detail.mode_passation
+            if detail.reference:
+                valeurs["reference"] = detail.reference
             valeurs["secteur_codes"] = match_secteurs(ao.titre, secteur, ao.description)
             # Le portail ne publie parfois ni estimation ni caution : rien a restaurer.
             if detail.budget_estime is None and detail.caution is None:

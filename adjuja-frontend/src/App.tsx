@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
-import { surOuvertureReglages } from "./shared/lib/navigation";
+import { useLocation, useNavigate } from "react-router-dom";
+import { surOuvertureReglages, aoDepuisChemin, ouvrirAoVeille } from "./shared/lib/navigation";
 import LeftPanel from "./shared/layout/LeftPanel";
 import RightPanel from "./shared/layout/RightPanel";
 import AppSidebar from "./shared/layout/AppSidebar";
@@ -91,6 +92,18 @@ export default function App({
   // Actions « completer mon profil » du fit score : ouvrent les reglages
   // d'entreprise depuis n'importe quel ecran (shared/lib/navigation).
   useEffect(() => surOuvertureReglages(() => setMainTab("entreprise")), []);
+
+  // Lien d'un email de veille (/app/veille/ao/<id>) : on ouvre la fiche puis
+  // on remet l'URL sur /app, les onglets n'etant pas routes par URL.
+  const location = useLocation();
+  const navigate = useNavigate();
+  useEffect(() => {
+    const id = aoDepuisChemin(location.pathname);
+    if (id === null) return;
+    ouvrirAoVeille(id);
+    setMainTab("veille");
+    navigate("/app", { replace: true });
+  }, [location.pathname, navigate]);
 
   const reloadHistory = useCallback(() => {
     fetchHistory()

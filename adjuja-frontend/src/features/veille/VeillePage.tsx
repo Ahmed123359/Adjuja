@@ -7,7 +7,8 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { ScrapedAo, ScrapedAoList, WatcherFilters } from '../../types';
-import { fetchScrapedAos, updateScrapedAoStatus } from '../../api';
+import { fetchScrapedAo, fetchScrapedAos, updateScrapedAoStatus } from './api';
+import { consommerAoVeille } from '../../shared/lib/navigation';
 import WatcherStatusBadge from './components/WatcherStatusBadge';
 import VeilleFilters from './components/VeilleFilters';
 import AoDetailPanel from './components/AoDetailPanel';
@@ -114,6 +115,7 @@ export default function VeillePage() {
   const [loading, setLoading]           = useState(false);
   const [error, setError]               = useState<string | null>(null);
   const [selectedAo, setSelectedAo]     = useState<ScrapedAo | null>(null);
+  const [lienIntrouvable, setLienIntrouvable] = useState(false);
   const [showFilters, setShowFilters]   = useState(() => !isMobile);
   const debounceRef                     = useRef<ReturnType<typeof setTimeout> | null>(null);
   const loadIdRef                       = useRef(0);
@@ -170,6 +172,16 @@ export default function VeillePage() {
     }
   }, [handleRowUpdated]);
 
+  // Fiche demandee par un lien d'email (shared/lib/navigation) : chargee a
+  // part, l'AO n'est pas forcement dans la page de resultats affichee.
+  useEffect(() => {
+    const id = consommerAoVeille();
+    if (id === null) return;
+    fetchScrapedAo(id)
+      .then(handleRowClick)
+      .catch(() => setLienIntrouvable(true));
+  }, [handleRowClick]);
+
   const activeTab = filters.status as StatusTab;
   const hasActiveTextFilters = !!(
     filters.search || filters.categorie || filters.mode_passation || filters.region || filters.date_limite_from
@@ -201,6 +213,7 @@ export default function VeillePage() {
         />
 
         {error && <ListError>{error}</ListError>}
+        {lienIntrouvable && <ListError>{t('veille.error.aoIntrouvable')}</ListError>}
 
         <div
           className="adj-scroll"

@@ -1393,6 +1393,7 @@
       "openSource": "Voir sur le portail",
       "showMore": "Voir plus",
       "showLess": "Voir moins",
+      "reference": "Réf. {{ref}}",
       "tabResume": "Résumé",
       "tabDocs": "Documents",
       "tabGoNoGo": "Analyse",
@@ -1430,7 +1431,8 @@
       "favDesc": "Marquez des AOs comme favoris pour les retrouver ici et lancer le téléchargement du DAO."
     },
     "error": {
-      "loadFailed": "Impossible de charger les appels d'offres."
+      "loadFailed": "Impossible de charger les appels d'offres.",
+      "aoIntrouvable": "Cet appel d'offres n'est plus dans la veille : sa date limite est sans doute passée."
     },
     "pagination": {
       "prev": "Précédent",

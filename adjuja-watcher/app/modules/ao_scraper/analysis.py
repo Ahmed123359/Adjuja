@@ -180,6 +180,7 @@ Retourne UNIQUEMENT un JSON valide (sans markdown) avec cette structure :
   "chiffre_affaires_minimum_exige": null,
   "nombre_references_similaires_exige": null,
   "montant_caution": null,
+  "portee": null,
 {STRUCTURE_ENRICHIE}
 }}
 
@@ -191,6 +192,7 @@ REGLES :
 - chiffre_affaires_minimum_exige : montant numerique en MAD si un seuil de chiffre d'affaires est exige, sinon null
 - nombre_references_similaires_exige : nombre entier de references similaires exigees, sinon null
 - montant_caution : montant numerique du cautionnement provisoire si precise, sinon null
+- portee : "internationale" si le RC ou l'avis qualifie explicitement l'appel d'offres d'international (ou l'ouvre a la concurrence internationale), "nationale" s'il le qualifie explicitement de national, sinon null. Ne jamais deduire.
 - Si RC absent : deduis depuis le CPS, marque date_limite="non_disponible"
 {REGLES_ENRICHIES}
 """

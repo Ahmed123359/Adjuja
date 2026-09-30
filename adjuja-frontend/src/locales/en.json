@@ -1391,6 +1391,7 @@
       "openSource": "View on portal",
       "showMore": "Show more",
       "showLess": "Show less",
+      "reference": "Ref. {{ref}}",
       "tabResume": "Summary",
       "tabDocs": "Documents",
       "tabGoNoGo": "Analysis",
@@ -1428,7 +1429,8 @@
       "favDesc": "Mark tenders as favorites to find them here and trigger document download."
     },
     "error": {
-      "loadFailed": "Failed to load tenders."
+      "loadFailed": "Failed to load tenders.",
+      "aoIntrouvable": "This tender is no longer in the watch list: its deadline has probably passed."
     },
     "pagination": {
       "prev": "Previous",

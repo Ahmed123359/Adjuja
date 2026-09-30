@@ -19,6 +19,7 @@ class AoOut(BaseModel):
     date_limite: date | None
     categorie: str | None
     mode_passation: str | None
+    reference: str | None = None
     secteur: str | None
     region: str | None
     ville: str | None

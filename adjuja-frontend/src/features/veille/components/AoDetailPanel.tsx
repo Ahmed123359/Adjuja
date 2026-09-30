@@ -356,7 +356,7 @@ export default function AoDetailPanel({ ao: initialAo, onClose, onUpdated }: Pro
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
           <WatcherStatusBadge status={ao.status} size="md" />
           <span
-            title={ao.external_id || ao.source}
+            title={ao.reference ? t('veille.detail.reference', { ref: ao.reference }) : (ao.external_id || ao.source)}
             style={{
               fontSize:       'var(--adj-t-xs)',
               color:          'var(--adj-ink-4)',
@@ -366,7 +366,7 @@ export default function AoDetailPanel({ ao: initialAo, onClose, onUpdated }: Pro
               textOverflow:   'ellipsis',
             }}
           >
-            {ao.external_id || ao.source}
+            {ao.reference ? t('veille.detail.reference', { ref: ao.reference }) : (ao.external_id || ao.source)}
           </span>
         </div>
         <button

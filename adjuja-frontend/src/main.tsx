@@ -14,6 +14,7 @@ import CguPage from './features/legal/CguPage';
 import ConfidentialitePage from './features/legal/ConfidentialitePage';
 import { getMe, clearToken, startCheckout, CHECKOUT_INTENT_KEY } from './api';
 import { viderCache } from './shared/lib/cache';
+import { memoriserApresConnexion, consommerApresConnexion } from './shared/lib/navigation';
 import type { User } from './types';
 import './index.css';
 import "./shared/ui/tokens.css";
@@ -38,6 +39,14 @@ function useScrollToTopOnNavigate() {
   useEffect(() => {
     window.scrollTo(0, 0);
   }, [location.pathname]);
+}
+
+/** /app/... sans session : on garde le chemin (lien d'un email de veille) pour
+ * y revenir apres la connexion, au lieu d'atterrir sur l'accueil. */
+function VersConnexion() {
+  const location = useLocation();
+  memoriserApresConnexion(location.pathname);
+  return <Navigate to="/login" replace />;
 }
 
 function AppRouter() {
@@ -75,7 +84,7 @@ function AppRouter() {
           }
         }
 
-        navigate('/app', { replace: true });
+        navigate(consommerApresConnexion() ?? '/app', { replace: true });
       })
       .catch(() => navigate('/login', { replace: true }));
   }
@@ -149,7 +158,7 @@ function AppRouter() {
             onGoLanding={() => navigate('/')}
             onLogout={handleLogout}
           />
-        ) : <Navigate to="/login" replace />}
+        ) : <VersConnexion />}
       />
       <Route path="*" element={<NotFoundPage onGoHome={() => navigate('/')} />} />
     </Routes>

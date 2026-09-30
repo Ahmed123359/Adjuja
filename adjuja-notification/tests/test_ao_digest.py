@@ -3,7 +3,7 @@
 from datetime import date, timedelta
 from decimal import Decimal
 
-from app.templates.ao_digest import AoDigestTemplate, AoItem, _acheteur, _echeance, _montant, _ville
+from app.templates.ao_digest import AoDigestTemplate, AoItem, _acheteur, _echeance, _montant, _portee, _ville
 
 
 def _ao(**champs) -> AoItem:
@@ -58,6 +58,39 @@ def test_contenu_du_portail_echappe():
     assert "<script>" not in contenu.html
     assert "&lt;script&gt;" in contenu.html
     assert "&amp; co" in contenu.html
+
+
+def test_lien_vers_la_fiche_adjuja():
+    contenu = AoDigestTemplate().render({"aos": [_ao(ao_id=812)]})
+    assert 'href="https://adjuja.com/app/veille/ao/812"' in contenu.html
+    assert "https://portail/avis" not in contenu.html
+    assert "Voir dans Adjuja : https://adjuja.com/app/veille/ao/812" in contenu.text
+    # Sans identifiant (ne devrait pas arriver), on retombe sur le portail.
+    assert _ao().lien == "https://portail/avis?id=1"
+
+
+def test_portee_seulement_si_ecrite():
+    # Formes reelles relevees dans watcher.scraped_aos le 2026-09-30.
+    assert _portee("Lot : STATION D'EPURATION (AO OUVERT INTERNATIONAL)", None) == "International"
+    assert _portee("Appel d’offres ouvert international n° 12/2026", None) == "International"
+    assert _portee("AOI 05/2026 fourniture de compteurs", None) == "International"
+    assert _portee("Appel d'offres ouvert national sur offres de prix", None) == "National"
+    # « international » qui qualifie autre chose que l'appel d'offres : rien.
+    assert _portee("ORGANISATION DU SALON INTERNATIONAL DU LIVRE ENFANT", None) is None
+    assert _portee("Travaux du centre international de diffusion de Casablanca", None) is None
+    # Sinon ce que l'analyse du RC a lu, sinon rien (jamais devine).
+    assert _portee("Travaux de voirie", "internationale") == "International"
+    assert _portee("Travaux de voirie", "nationale") == "National"
+    assert _portee("Travaux de voirie", None) is None
+
+
+def test_type_et_reference_dans_la_carte():
+    html = AoDigestTemplate().render({"aos": [_ao(portee_analyse="internationale", reference="10012003")]}).html
+    assert "International" in html and "Appel d&#x27;offres ouvert" not in html
+    assert "Réf. 10012003" in html
+    # Portee inconnue : la procedure du portail, comme avant.
+    html = AoDigestTemplate().render({"aos": [_ao(reference=None)]}).html
+    assert "Appel d&#x27;offres ouvert" in html and "Réf." not in html
 
 
 def test_prefixe_acheteur_retire():

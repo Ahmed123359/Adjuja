@@ -25,6 +25,8 @@ export interface ScrapedAo {
   id:               number;
   source:           string;
   external_id:      string;
+  /** Reference de l'avis telle que publiee ; external_id est l'identifiant interne du portail. */
+  reference?:       string | null;
   url_source:       string;
   acheteur:         string | null;
   titre:            string;

@@ -15,10 +15,13 @@ Contraintes email tenues : pas de 3D ni d'animation, pas de degrade CSS
 meme images bloquees), texte >= 14 px, contenu du portail echappe.
 """
 
+import re
 from dataclasses import dataclass
 from datetime import date
 from decimal import Decimal
 from html import escape
+
+from sqlalchemy.engine import Row
 
 from app.channels.base import NotificationContent
 from app.templates.base import NotificationTemplate
@@ -57,6 +60,29 @@ class AoItem:
     ville: str | None = None
     budget_estime: Decimal | None = None
     caution: Decimal | None = None
+    ao_id: int | None = None      # id de watcher.scraped_aos : lien vers la fiche dans Adjuja
+    portee_analyse: str | None = None  # « nationale » / « internationale » lu dans le RC par l'analyse
+
+    @classmethod
+    def depuis_ligne(cls, ligne: Row) -> "AoItem":
+        """Ligne SQL de watcher.scraped_aos (id, titre, ..., caution, reference,
+        portee) -> AoItem. Un seul endroit pour les trois envois (lot,
+        newsletter, test). La reference affichee est celle de l'avis ;
+        external_id (identifiant interne du portail) ne parle a personne."""
+        return cls(
+            titre=ligne.titre, acheteur=ligne.acheteur, categorie=ligne.categorie,
+            date_limite=ligne.date_limite, url_source=ligne.url_source,
+            reference=ligne.reference, mode_passation=ligne.mode_passation,
+            ville=ligne.ville, budget_estime=ligne.budget_estime, caution=ligne.caution,
+            ao_id=ligne.id, portee_analyse=ligne.portee,
+        )
+
+    @property
+    def lien(self) -> str:
+        """La fiche de l'AO dans Adjuja (retour utilisateur du 2026-09-30 : le
+        lien doit mener a Adjuja, pas au portail). Le portail seulement si l'id
+        manque."""
+        return f"{APP_URL}/veille/ao/{self.ao_id}" if self.ao_id else self.url_source
 
 
 _HTML = """\
@@ -194,7 +220,7 @@ _AO_CARD = """\
       <table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr>
         <td style="font-size:14px;color:{discret};">{reference}</td>
         <td align="right">
-          <a href="{url_source}" style="font-size:15px;font-weight:700;color:{bleu_doux};text-decoration:none;">Voir l'avis &rarr;</a>
+          <a href="{lien}" style="font-size:15px;font-weight:700;color:{bleu_doux};text-decoration:none;">Voir dans Adjuja &rarr;</a>
         </td>
       </tr></table>
     </td>
@@ -257,6 +283,26 @@ def _acheteur(v: str | None) -> str | None:
     return v.strip() or None
 
 
+# Le portail ne publie pas la portee (verifie le 2026-09-30 sur une fiche reelle
+# et sur ses filtres de recherche) : on ne l'affiche que si l'objet de l'avis la
+# dit en toutes lettres. « Salon international du livre » ne dit rien de la
+# portee de l'appel d'offres : seules les formes « appel d'offres (ouvert)
+# international » et leurs sigles comptent.
+_AO = r"(?:appel\s+d['\u2019]\s*offres?|\bAO)\s+(?:ouvert\s+)?(?:sur\s+offres?\s+de\s+prix\s+)?"
+_INTERNATIONAL = re.compile(_AO + r"internationa|\bAOO?I\b", re.IGNORECASE)
+_NATIONAL = re.compile(_AO + r"nationa|\bAOO?N\b", re.IGNORECASE)
+
+
+def _portee(titre: str | None, portee_analyse: str | None) -> str | None:
+    """« International » / « National » seulement si c'est ecrit : dans l'objet
+    de l'avis, sinon dans le RC (analyse). Jamais devine."""
+    if titre and _INTERNATIONAL.search(titre):
+        return "International"
+    if titre and _NATIONAL.search(titre):
+        return "National"
+    return {"internationale": "International", "nationale": "National"}.get((portee_analyse or "").strip().lower())
+
+
 def _sujet(n: int) -> tuple[str, str]:
     if n == 1:
         return "1 nouvel appel d'offres capté", "Adjuja : 1 nouvel appel d'offres pour vous"
@@ -278,6 +324,9 @@ class AoDigestTemplate(NotificationTemplate):
             echeance, echeance_couleur, echeance_fond = _echeance(ao.date_limite)
             estimation, estimation_couleur = _montant(ao.budget_estime)
             caution, caution_couleur = _montant(ao.caution)
+            # Portee (national / international) quand elle est ecrite, sinon la
+            # procedure du portail.
+            type_ao = _portee(ao.titre, ao.portee_analyse) or ao.mode_passation
             lieu = " · ".join(escape(x) for x in (_acheteur(ao.acheteur), _ville(ao.ville)) if x) or "Acheteur non publié"
             cartes.append(_AO_CARD.format(
                 panneau=PANNEAU, filet=FILET, blanc=BLANC, texte=TEXTE, discret=DISCRET, bleu_doux=BLEU_DOUX,
@@ -286,10 +335,10 @@ class AoDigestTemplate(NotificationTemplate):
                 acheteur_ville=lieu,
                 estimation=estimation, estimation_couleur=estimation_couleur,
                 caution=caution, caution_couleur=caution_couleur,
-                type=escape(ao.mode_passation) if ao.mode_passation else "Non publié",
-                type_couleur=BLANC if ao.mode_passation else DISCRET,
-                reference=f"N° {escape(ao.reference)}" if ao.reference else "",
-                url_source=escape(ao.url_source, quote=True),
+                type=escape(type_ao) if type_ao else "Non publié",
+                type_couleur=BLANC if type_ao else DISCRET,
+                reference=f"Réf. {escape(ao.reference)}" if ao.reference else "",
+                lien=escape(ao.lien, quote=True),
             ))
 
         html = _HTML.format(
@@ -315,11 +364,11 @@ class AoDigestTemplate(NotificationTemplate):
             for libelle, valeur in (("Estimation", ao.budget_estime), ("Caution", ao.caution)):
                 texte, _ = _montant(valeur)
                 lines.append(f"  {libelle} : {texte.replace('&#8239;', ' ').replace('&nbsp;', ' ')}")
-            if ao.mode_passation:
-                lines.append(f"  Type : {ao.mode_passation}")
+            if type_ao := _portee(ao.titre, ao.portee_analyse) or ao.mode_passation:
+                lines.append(f"  Type : {type_ao}")
             if ao.reference:
                 lines.append(f"  Référence : {ao.reference}")
-            lines.append(f"  Avis : {ao.url_source}")
+            lines.append(f"  Voir dans Adjuja : {ao.lien}")
             lines.append("")
         lines.append("Le prochain marché est peut-être déjà en ligne.")
         lines.append(f"Modifier mes secteurs ou la fréquence : {APP_URL}")

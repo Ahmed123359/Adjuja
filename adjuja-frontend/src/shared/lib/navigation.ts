@@ -37,3 +37,50 @@ export function surOuvertureReglages(fn: (cible: CibleReglages) => void): () => 
   window.addEventListener(EVENEMENT, ecoute);
   return () => window.removeEventListener(EVENEMENT, ecoute);
 }
+
+// Lien direct vers une fiche de la veille -- 2026-09-30.
+//
+// Les emails de veille pointent vers https://adjuja.com/app/veille/ao/<id>.
+// L'application ne route pas ses onglets par URL : App lit le chemin au
+// chargement, bascule sur la veille et met l'AO en attente ; VeillePage le
+// consomme a son montage et ouvre la fiche. Si l'utilisateur n'est pas
+// connecte, le chemin est garde le temps de la connexion (Google compris,
+// meme onglet) puis rejoue.
+
+const CHEMIN_FICHE_AO = /^\/app\/veille\/ao\/(\d+)\/?$/;
+const CLE_APRES_CONNEXION = "adj:apres-connexion";
+let aoEnAttente: number | null = null;
+
+/** Identifiant de l'AO si le chemin est celui d'une fiche de la veille. */
+export function aoDepuisChemin(chemin: string): number | null {
+  const m = CHEMIN_FICHE_AO.exec(chemin);
+  return m ? Number(m[1]) : null;
+}
+
+export function ouvrirAoVeille(id: number): void {
+  aoEnAttente = id;
+}
+
+/** Rend l'AO en attente et l'efface (lu une seule fois). */
+export function consommerAoVeille(): number | null {
+  const id = aoEnAttente;
+  aoEnAttente = null;
+  return id;
+}
+
+/** Garde un chemin de l'application pour apres la connexion. Seuls les
+ *  chemins /app/... sont acceptes : jamais de redirection vers l'exterieur. */
+export function memoriserApresConnexion(chemin: string): void {
+  if (!/^\/app\/[\w/-]*$/.test(chemin)) return;
+  try { sessionStorage.setItem(CLE_APRES_CONNEXION, chemin); } catch { /* stockage bloque : on ira sur /app */ }
+}
+
+export function consommerApresConnexion(): string | null {
+  try {
+    const chemin = sessionStorage.getItem(CLE_APRES_CONNEXION);
+    sessionStorage.removeItem(CLE_APRES_CONNEXION);
+    return chemin && /^\/app\/[\w/-]*$/.test(chemin) ? chemin : null;
+  } catch {
+    return null;
+  }
+}

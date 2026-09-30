@@ -127,7 +127,7 @@ def notify_org(
                        sa.mode_passation,
                        sa.ville,
                        sa.budget_estime,
-                       sa.caution
+                       sa.caution, sa.reference, sa.analyse_json->>'portee' AS portee
                 FROM watcher.scraped_aos sa
                 WHERE sa.secteur_codes IS NOT NULL
                   AND sa.secteur_codes ?| :codes
@@ -163,18 +163,7 @@ def notify_org(
 
         # 3. Build email content
         ao_items = [
-            AoItem(
-                titre=row.titre,
-                acheteur=row.acheteur,
-                categorie=row.categorie,
-                date_limite=row.date_limite,
-                url_source=row.url_source,
-                reference=row.external_id,
-                mode_passation=row.mode_passation,
-                ville=row.ville,
-                budget_estime=row.budget_estime,
-                caution=row.caution,
-            )
+            AoItem.depuis_ligne(row)
             for row in aos_rows
         ]
 
@@ -254,7 +243,7 @@ def notify_newsletter_subscribers(batch_id: int) -> dict:
             text("""
                 SELECT sa.id, sa.titre, sa.acheteur, sa.categorie,
                        sa.date_limite, sa.url_source, sa.external_id,
-                       sa.mode_passation, sa.ville, sa.budget_estime, sa.caution
+                       sa.mode_passation, sa.ville, sa.budget_estime, sa.caution, sa.reference, sa.analyse_json->>'portee' AS portee
                 FROM watcher.scraped_aos sa
                 -- Decouverts dans les dernieres 24 h (meme raison que notify_org),
                 -- encore ouverts.
@@ -278,18 +267,7 @@ def notify_newsletter_subscribers(batch_id: int) -> dict:
         # Tous les champs, comme pour les organisations : sans eux la newsletter
         # affichait toujours « non precise » pour l'estimation et la caution.
         ao_items = [
-            AoItem(
-                titre=r.titre,
-                acheteur=r.acheteur,
-                categorie=r.categorie,
-                date_limite=r.date_limite,
-                url_source=r.url_source,
-                reference=r.external_id,
-                mode_passation=r.mode_passation,
-                ville=r.ville,
-                budget_estime=r.budget_estime,
-                caution=r.caution,
-            )
+            AoItem.depuis_ligne(r)
             for r in rows
         ]
         content = TemplateRegistry.get("ao_digest").render({"aos": ao_items})

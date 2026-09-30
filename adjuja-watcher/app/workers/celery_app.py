@@ -1,7 +1,11 @@
+import asyncio
+
 from celery import Celery
 from celery.schedules import crontab
+from celery.signals import worker_init
 
 from app.core.config import settings
+from app.core.schema import assurer_colonnes
 
 celery_app = Celery(
     "ao_watcher",
@@ -40,3 +44,10 @@ celery_app.conf.update(
         },
     },
 )
+
+
+@worker_init.connect
+def _assurer_colonnes(**_: object) -> None:
+    """Avant le premier scrape : l'upsert ecrit dans les colonnes ajoutees
+    (app.core.schema), le worker peut demarrer avant l'API."""
+    asyncio.run(assurer_colonnes())

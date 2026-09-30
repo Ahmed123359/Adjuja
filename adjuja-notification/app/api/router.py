@@ -199,7 +199,7 @@ def test_send(org_id: str, body: PreferenceIn, caller_org: str = Depends(_requir
         aos_rows = session.execute(
             text("""
                 SELECT sa.id, sa.titre, sa.acheteur, sa.categorie, sa.date_limite, sa.url_source, sa.external_id,
-                       sa.mode_passation, sa.ville, sa.budget_estime, sa.caution
+                       sa.mode_passation, sa.ville, sa.budget_estime, sa.caution, sa.reference, sa.analyse_json->>'portee' AS portee
                 FROM watcher.scraped_aos sa
                 WHERE sa.secteur_codes IS NOT NULL
                   AND sa.secteur_codes ?| :codes
@@ -215,18 +215,7 @@ def test_send(org_id: str, body: PreferenceIn, caller_org: str = Depends(_requir
         return TestSendResult(sent=False, recipient=recipient, reason="no_matching_aos")
 
     ao_items = [
-        AoItem(
-            titre=row.titre,
-            acheteur=row.acheteur,
-            categorie=row.categorie,
-            date_limite=row.date_limite,
-            url_source=row.url_source,
-            reference=row.external_id,
-            mode_passation=row.mode_passation,
-            ville=row.ville,
-            budget_estime=row.budget_estime,
-            caution=row.caution,
-        )
+        AoItem.depuis_ligne(row)
         for row in aos_rows
     ]
     content = TemplateRegistry.get("ao_digest").render({"aos": ao_items})

@@ -357,6 +357,7 @@ class MPEPlatformScraper(IAOScraper):
         caution_raw = get_field("caution")
         secteur = get_field("secteur")
         mode_passation = get_field("procedure")
+        reference = get_field("reference_human")
 
         # Budget  uses a dynamic repeater ID
         budget_el = soup.select_one(detail_cfg.get("budget_selector", ""))
@@ -390,6 +391,7 @@ class MPEPlatformScraper(IAOScraper):
             caution=_parse_amount(caution_raw),
             zip_url=zip_url,
             mode_passation=mode_passation or None,
+            reference=reference or None,
         )
 
     # ------------------------------------------------------------------ #

@@ -156,6 +156,7 @@ class AoRepository:
                 "date_limite": ao.date_limite,
                 "categorie": ao.categorie,
                 "mode_passation": ao.mode_passation,
+                "reference": ao.reference,
                 "secteur": ao.secteur,
                 "region": ao.region,
                 "ville": ao.ville,
@@ -210,6 +211,8 @@ class AoRepository:
                 "date_publication": func.coalesce(stmt.excluded.date_publication, ScrapedAo.date_publication),
                 "ville": func.coalesce(stmt.excluded.ville, ScrapedAo.ville),
                 "mode_passation": func.coalesce(stmt.excluded.mode_passation, ScrapedAo.mode_passation),
+                # Reference de l'avis : page detail seulement, meme protection.
+                "reference": func.coalesce(stmt.excluded.reference, ScrapedAo.reference),
                 # Preserve: status, classified_docs, zip_minio_key, zip_downloaded_at
             },
         )
