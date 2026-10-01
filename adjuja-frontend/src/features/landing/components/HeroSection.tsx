@@ -114,7 +114,11 @@ export default function HeroSection({
   const { t } = useTranslation();
 
   return (
-    <section className="relative flex h-[100svh] min-h-[760px] w-full flex-col overflow-hidden bg-[#0A0F1E]">
+    // min-h et non h : a hauteur fixe, sur telephone le titre et les boutons
+    // empiles poussaient la bande des acheteurs sous le bord du heros, qui la
+    // coupait (overflow-hidden), constate le 2026-10-01. Le heros garde au
+    // moins un ecran et grandit si son contenu l'exige.
+    <section className="relative flex min-h-[max(100svh,760px)] w-full flex-col overflow-hidden bg-[#0A0F1E]">
 
       {/* Corner color bleed  brand cobalt top-left, teal bottom-right */}
       <div className="pointer-events-none absolute -left-32 -top-32 z-[1] h-[420px] w-[420px] rounded-full bg-[#3248CE] opacity-35 blur-[120px]" />
@@ -140,7 +144,7 @@ export default function HeroSection({
 
       {/* Contenu : titre, phrase, deux boutons. Le vide sous les boutons est
           occupe par la bande des acheteurs, pas par une maquette d'ecran. */}
-      <div className="relative z-[3] mx-auto flex w-full max-w-[1200px] flex-1 flex-col items-center justify-center px-5 pb-[15vh] pt-20 text-center md:px-10">
+      <div className="relative z-[3] mx-auto flex w-full max-w-[1200px] flex-1 flex-col items-center justify-center px-5 pb-10 pt-24 text-center md:px-10 md:pb-[15vh] md:pt-20">
         <h1 className="m-0 max-w-[1240px] text-[clamp(2.5rem,5.4vw,4.6rem)] font-extrabold leading-[1.04] tracking-[-.035em] text-white">
           {t("landing.hero.titleLine1")}
           <br />
