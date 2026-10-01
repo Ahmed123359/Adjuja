@@ -43,8 +43,18 @@
     "zip_link_id": "ctl0_CONTENU_PAGE_linkDownloadDce"
   },
   "delays": {
-    "between_pages_s": [2, 4],
-    "after_click_ms": [1500, 3000],
-    "between_detail_requests_s": [1, 2]
-  }
+    "between_pages_s": [
+      2,
+      4
+    ],
+    "after_click_ms": [
+      1500,
+      3000
+    ],
+    "between_detail_requests_s": [
+      1,
+      2
+    ]
+  },
+  "listing_attribution": null
 }

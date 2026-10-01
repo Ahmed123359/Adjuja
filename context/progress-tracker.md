@@ -87,6 +87,16 @@ part, vérifié ; sinon la procédure. 10 tests notification verts, `tsc` vert.
 Reste en prod : déployer, puis `python rattraper_details.py --reel` dans
 `ao-watcher-api` pour remplir les références des AO ouverts.
 
+**Collecte des résultats publiés, phase 2 codée** (2026-10-01, lot A de
+`feature-spec/resultats-attribution/`) : tables `watcher.award_results` et
+`award_bids` (créées au démarrage de la veille), module `award_scraper`,
+tâche quotidienne 03h30, traces `resultats_*` dans `scrape_runs`, 6 tests.
+Vérifié en réel : BDC 495 résultats (405 attributaires), liens de PV 5/5.
+**Non revérifié** : la collecte des annonces AO après correction (la liste du
+portail n'est pas triée par date ; arrêt désormais sur les annonces déjà
+connues, 2 pages au premier passage). Profondeur : BDC jusqu'au 29/11/2023 au
+moins ; AO 38 098 résultats définitifs et 95 370 extraits de PV consultables.
+
 **Suivi des soumissions, phase 1 codée** (2026-10-01, spec
 `feature-spec/suivi-resultats/`) : moteur `app/services/attribution.py`
 (décret 2-22-431 art. 43, 44, 144 ; 16 tests sur cas faits à la main),

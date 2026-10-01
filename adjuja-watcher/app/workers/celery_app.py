@@ -19,6 +19,7 @@ celery_app = Celery(
         "app.workers.tasks.cleanup_tasks",
         "app.workers.tasks.ocr_tasks",
         "app.workers.tasks.admin_tasks",
+        "app.workers.tasks.scrape_award_tasks",
     ],
 )
 
@@ -38,6 +39,12 @@ celery_app.conf.update(
         "scrape-bdc": {
             "task": "app.workers.tasks.scrape_bdc_tasks.run_scrape_bdc_pipeline",
             "schedule": crontab(hour=f"*/{settings.scrape_interval_hours}", minute=15),
+        },
+        # Résultats publiés (annonces de résultat, extraits de PV, BDC) : une
+        # fois par jour, après le nettoyage de 02h00.
+        "scrape-award-results": {
+            "task": "app.workers.tasks.scrape_award_tasks.run_scrape_awards_pipeline",
+            "schedule": crontab(hour=3, minute=30),
         },
         "cleanup-expired-watcher-items": {
             "task": "app.workers.tasks.cleanup_tasks.cleanup_expired_watcher_items",

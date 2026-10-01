@@ -42,8 +42,34 @@
     "zip_link_id": "ctl0_CONTENU_PAGE_linkDownloadDce"
   },
   "delays": {
-    "between_pages_s": [3, 6],
-    "after_click_ms": [2000, 4000],
-    "between_detail_requests_s": [1, 2]
+    "between_pages_s": [
+      3,
+      6
+    ],
+    "after_click_ms": [
+      2000,
+      4000
+    ],
+    "between_detail_requests_s": [
+      1,
+      2
+    ]
+  },
+  "listing_attribution": {
+    "path": "/index.php?page=entreprise.EntrepriseAdvancedSearch&AllAnn",
+    "annonce_type_select": "#ctl0_CONTENU_PAGE_AdvancedSearch_annonceType",
+    "rows": "table.table-results tbody tr",
+    "no_result_text": "Aucun résultat",
+    "max_pages": 40,
+    "cols": {
+      "detail_link": "a[href*='EntrepriseDetailConsultation']",
+      "reference": "span[id$='_reference']",
+      "procedure": "div[id$='_type_procedure']",
+      "categorie": "td.col-90 div[id*='panelBlocCategorie']",
+      "date_publication": "td.col-90 > div:not([id]):not([class])",
+      "acheteur": "td.col-450 div[id*='panelBlocDenomination']",
+      "titre": "td.col-450 div[id*='panelBlocObjet']",
+      "lieu": "td.col-90 div[id*='panelBlocLieuxExec']"
+    }
   }
 }

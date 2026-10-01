@@ -36,5 +36,9 @@ class Settings(BaseSettings):
     # publie sur Internet.
     watcher_admin_secret: str = ""
 
+    # Résultats publiés : fenêtre du premier passage (jours), avant de ne
+    # suivre que les nouveaux.
+    award_bootstrap_days: int = 7
+
 
 settings = Settings()

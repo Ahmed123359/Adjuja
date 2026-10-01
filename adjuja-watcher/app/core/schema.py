@@ -13,6 +13,7 @@ from sqlalchemy.ext.asyncio import create_async_engine
 from sqlalchemy.pool import NullPool
 
 from app.core.config import settings
+from app.core.database import Base
 
 log = structlog.get_logger(__name__)
 
@@ -49,6 +50,15 @@ COLONNES_AJOUTEES: tuple[str, ...] = (
 async def assurer_colonnes() -> None:
     moteur = create_async_engine(settings.database_url, poolclass=NullPool)
     try:
+        # Tables des résultats publiés (2026-10-01) : créées depuis leurs
+        # modèles ORM, pour qu'elles ne divergent jamais du code qui les lit.
+        try:
+            from app.core.models import AwardBid, AwardResult
+            async with moteur.begin() as conn:
+                await conn.run_sync(lambda c: Base.metadata.create_all(
+                    c, tables=[AwardResult.__table__, AwardBid.__table__]))
+        except Exception as exc:
+            log.warning("Tables des résultats non vérifiées", error=str(exc))
         # Une transaction par groupe : un ALTER qui echoue (table des AO pas
         # encore creee) ne doit pas annuler la creation des tables neuves.
         for groupe in (TABLES_AJOUTEES, COLONNES_AJOUTEES):
