@@ -2232,5 +2232,120 @@
         "connexion": "Dernière connexion"
       }
     }
+  },
+  "suivi": {
+    "titre": "Suivi du dépôt",
+    "deposeLe": "Déposé le {{date}}",
+    "chargement": "Chargement du suivi…",
+    "invitation": "Une fois le dossier déposé, suivez-le jusqu'au résultat : saisissez ce qui est lu en séance d'ouverture des plis (admis, écartés, montants) et Adjuja calcule tout de suite le classement prévu par le décret, sans attendre la publication du procès-verbal.",
+    "marquerDepose": "Marquer comme déposé",
+    "enregistrer": "Enregistrer",
+    "vous": "vous",
+    "marche": {
+      "titre": "Le marché",
+      "aide": "La nature du marché fixe la règle d'attribution (décret 2-22-431, art. 43). L'estimation du maître d'ouvrage est lue en séance avant l'ouverture des offres financières.",
+      "nature": "Nature du marché",
+      "estimation": "Estimation du maître d'ouvrage (MAD TTC)",
+      "seance": "Date de la séance d'ouverture des plis",
+      "poids": "Poids de la note financière (règlement de consultation, 10 à 40)",
+      "seuil": "Seuil technique d'admissibilité (sur 100)",
+      "suggestion": "Estimation publiée sur le portail : {{montant}} MAD.",
+      "utiliser": "Utiliser ce montant"
+    },
+    "nature": {
+      "travaux": "Travaux",
+      "fournitures": "Fournitures",
+      "services": "Services (hors études)",
+      "etudes": "Études",
+      "gardiennage_nettoyage": "Gardiennage, nettoyage, espaces verts"
+    },
+    "offres": {
+      "titre": "Offres lues en séance",
+      "aide": "Une ligne par soumissionnaire, la vôtre comprise. Le montant corrigé (erreurs de calcul rectifiées par la commission) prime sur le montant lu.",
+      "nom": "Soumissionnaire",
+      "votreOffre": "Votre offre",
+      "statut": "Statut",
+      "motif": "Motif de l'écartement",
+      "montantLu": "Montant lu",
+      "montantCorrige": "Montant corrigé",
+      "note": "Note technique",
+      "retirer": "Retirer {{nom}}",
+      "ajouter": "Ajouter un concurrent",
+      "calculer": "Enregistrer et calculer",
+      "montantInvalide": "Un montant n'est pas lisible : chiffres seulement, virgule pour les centimes."
+    },
+    "statutOffre": {
+      "en_attente": "Pas encore connu",
+      "admis": "Admis",
+      "ecarte_administratif": "Écarté (dossier administratif)",
+      "ecarte_technique": "Écarté (offre technique)"
+    },
+    "classement": {
+      "titre": "Classement prévu",
+      "gagnante": "Mieux-disante",
+      "rang": "Rang {{rang}}",
+      "gagnantPrevu": "Gagnant prévu : {{nom}}, {{montant}} MAD",
+      "vousGagnez": "Votre offre serait retenue.",
+      "prixReference": "Prix de référence : {{p}} MAD",
+      "votreRang": "votre rang : {{rang}}",
+      "ecart": "vous êtes {{ecart}} MAD {{sens}} de l'offre gagnante",
+      "auDessus": "au-dessus",
+      "enDessous": "en dessous",
+      "vousEcarte": "votre offre est écartée du calcul",
+      "col": {
+        "resultat": "Résultat",
+        "soumissionnaire": "Soumissionnaire",
+        "montant": "Montant retenu (MAD)",
+        "noteFinanciere": "Note financière",
+        "noteGlobale": "Note globale",
+        "taux": "Taux de majoration",
+        "ecartReference": "Écart au prix de référence"
+      }
+    },
+    "issue": {
+      "retenue": "Retenue",
+      "excessive": "Écartée : excessive (plus de 20 % au-dessus de l'estimation)",
+      "anormalement_basse": "Écartée : anormalement basse",
+      "ecarte_administratif": "Écartée au dossier administratif",
+      "ecarte_technique": "Écartée à l'offre technique",
+      "sous_seuil_technique": "Sous le seuil technique",
+      "sans_montant": "Montant non saisi"
+    },
+    "raison": {
+      "estimation_manquante": "Saisissez l'estimation du maître d'ouvrage pour calculer le classement.",
+      "aucune_offre": "Ajoutez les offres lues en séance pour calculer le classement.",
+      "aucune_offre_retenue": "Aucune offre ne reste après les écartements : l'appel d'offres serait déclaré infructueux.",
+      "ponderation_manquante": "Études : saisissez le poids de la note financière fixé par le règlement de consultation (10 à 40).",
+      "ponderation_hors_bornes": "Études : le poids de la note financière doit être compris entre 10 et 40 (art. 144).",
+      "notes_techniques_manquantes": "Études : saisissez la note technique de chaque offre admise."
+    },
+    "avertissement": {
+      "statuts_supposes_admis": "Les offres dont le statut n'est pas encore connu sont supposées admises.",
+      "anormalement_basse_sous_reserve": "Une offre anormalement basse n'est écartée qu'après justification refusée par la commission : le classement réel peut différer.",
+      "ex_aequo": "Égalité au premier rang : la commission départage selon les préférences prévues par le décret.",
+      "methode_note_financiere_rc": "Note financière calculée selon l'article 144 (100 points à la moins-disante) ; le règlement de consultation peut prévoir une autre méthode.",
+      "reserve_art20_non_verifiee": "Classement au taux de majoration le plus faible (art. 43) ; la réserve de l'article 20 n'est pas vérifiée ici."
+    },
+    "regle": {
+      "travaux": "Travaux : les offres excessives (plus de 20 % au-dessus de l'estimation) et anormalement basses (plus de 20 % en dessous) sont écartées ; le prix de référence est la moyenne de l'estimation et de la moyenne des offres restantes ; la mieux-disante est la plus proche de ce prix par défaut (art. 43 et 44).",
+      "fournitures": "Fournitures : offres excessives (plus de 20 %) et anormalement basses (plus de 25 % en dessous) écartées, puis la plus proche du prix de référence par défaut (art. 43 et 44).",
+      "services": "Services hors études : offres excessives (plus de 20 %) et anormalement basses (plus de 25 % en dessous) écartées, puis la plus proche du prix de référence par défaut (art. 43 et 44).",
+      "etudes": "Études : seuil technique, offres excessives et anormalement basses écartées, note financière de 100 à la moins-disante, note globale pondérée selon le règlement de consultation (art. 144).",
+      "gardiennage_nettoyage": "Gardiennage, nettoyage, espaces verts : le taux de majoration le plus faible appliqué à l'estimation l'emporte (art. 43)."
+    },
+    "resultat": {
+      "titre": "Résultat officiel",
+      "aide": "À compléter quand le résultat est publié ou notifié : il reste à côté du classement prévu pour comparer.",
+      "statut": "Résultat",
+      "attributaire": "Attributaire",
+      "montant": "Montant attribué (MAD)"
+    },
+    "statutFinal": {
+      "en_attente": "En attente",
+      "retenu": "Notre offre est retenue",
+      "non_retenu": "Non retenue",
+      "infructueux": "Appel d'offres infructueux",
+      "annule": "Appel d'offres annulé"
+    }
   }
 }

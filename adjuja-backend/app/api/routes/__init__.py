@@ -24,6 +24,7 @@ from app.api.routes.billing_routes import router as billing_router
 from app.api.routes.org_routes import router as org_router
 from app.api.routes.dashboard_routes import dashboard_router, messages_router, tasks_router
 from app.api.routes.admin_routes import admin_router
+from app.api.routes.suivi_routes import suivi_router
 
 __all__ = [
     "generation_router",
@@ -54,4 +55,5 @@ __all__ = [
     "tasks_router",
     "messages_router",
     "admin_router",
+    "suivi_router",
 ]

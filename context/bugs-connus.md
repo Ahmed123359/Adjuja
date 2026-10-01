@@ -18,6 +18,37 @@ règle) · `À CONFIRMER` (soupçonné, pas encore reproduit).
 
 ## OUVERT
 
+### Partage du lien : l'aperçu affiche encore « OffrIA / Offria.cloud »
+
+`adjuja-frontend/public/og-image.png`, `index.html`
+
+Signalé par l'utilisateur le 2026-10-01 (capture WhatsApp). Le titre et la
+description de l'aperçu étaient déjà « ADJUJA », mais l'image de partage
+(`og:image`) était restée l'ancienne bannière OffrIA, de surcroît hors format
+(704 x 248 au lieu de 1200 x 630). Le logo des données structurées (JSON-LD)
+pointait sur la même image.
+
+**Corrigé dans le code le 2026-10-01** : nouvelle image `og-adjuja.png`
+(1200 x 630, sigle, mot-symbole Manrope, accroche, fond de marque), sous un
+**nouveau nom** pour contourner le cache de WhatsApp et Facebook ; l'ancien
+fichier est remplacé par la même image ; dimensions et texte alternatif
+déclarés ; JSON-LD sur `logo-adjuja-mark.png`. À confirmer après déploiement
+(un aperçu déjà vu par WhatsApp peut rester en cache quelque temps ; le
+débogueur de partage de Facebook force la relecture).
+
+### Site public sur téléphone : logos des acheteurs coupés sous le héros
+
+`adjuja-frontend/src/features/landing/components/HeroSection.tsx`
+
+Signalé par l'utilisateur le 2026-10-01 (capture téléphone). Le héros avait une
+hauteur fixe d'un écran avec `overflow-hidden` ; sur téléphone, le titre, la
+phrase et les deux boutons empilés poussaient la bande des acheteurs sous le
+bord du héros, qui la coupait à mi-hauteur. **Corrigé dans le code le
+2026-10-01** : hauteur minimale d'un écran (`min-h`) au lieu d'une hauteur
+fixe, marge sous les boutons réduite sur téléphone ; rien ne change sur
+ordinateur. Vérifié par construction (règle CSS générée). À confirmer sur
+téléphone après déploiement.
+
 ### Première invitation : le propriétaire perd la vue sur tous ses dossiers
 
 `adjuja-backend/app/services/user_service.py`, `ensure_own_org`

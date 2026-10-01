@@ -87,6 +87,17 @@ part, vérifié ; sinon la procédure. 10 tests notification verts, `tsc` vert.
 Reste en prod : déployer, puis `python rattraper_details.py --reel` dans
 `ao-watcher-api` pour remplir les références des AO ouverts.
 
+**Suivi des soumissions, phase 1 codée** (2026-10-01, spec
+`feature-spec/suivi-resultats/`) : moteur `app/services/attribution.py`
+(décret 2-22-431 art. 43, 44, 144 ; 16 tests sur cas faits à la main),
+migration 020 (`ao_suivi`, `ao_offres_concurrentes`), routes
+`/api/v1/ao/{id}/suivi` (4 tests d'intégration), panneau « Suivi du dépôt »
+sur tout dossier terminé (marché, offres lues en séance, classement prévu,
+résultat officiel) ; `tsc` vert. Jamais vu dans un navigateur. Phases
+suivantes : collecte des résultats publiés, lecture des PV, historique par
+entreprise. Recherche du 2026-10-01 : aucun jeu de données ouvert sur les
+attributions, les PV du portail sont la seule source.
+
 **Panneau d'administration devenu une page à part `/admin`** (2026-10-01,
 demande de l'utilisateur ; non commité). Décisions du 2026-09-30 : page
 séparée, `ADMIN_EMAILS` seul (écran Accès en lecture seule), comptes et

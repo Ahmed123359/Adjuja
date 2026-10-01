@@ -15,6 +15,7 @@ from app.api.routes import (
     filler_router, offre_technique_router, marche_router, ao_router, company_profile_router,
     staff_cvs_router, company_documents_router, newsletter_router, billing_router,
     org_router, dashboard_router, tasks_router, messages_router, admin_router,
+    suivi_router,
 )
 try:
     from app.celery_app import celery_app as _celery_app  # noqa: F401  initialise le broker/task_routes pour les shared_tasks
@@ -137,6 +138,7 @@ app.include_router(dashboard_router, prefix="/api/v1")
 app.include_router(tasks_router,     prefix="/api/v1")
 app.include_router(messages_router,  prefix="/api/v1")
 app.include_router(admin_router,     prefix="/api/v1")
+app.include_router(suivi_router,     prefix="/api/v1")
 
 
 @app.get("/", include_in_schema=False)

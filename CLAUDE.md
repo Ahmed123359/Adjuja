@@ -24,6 +24,21 @@ déjà commencé.
 Ne jamais utiliser l'outil Agent (subagents) sur ce projet, quelle que soit la tâche.
 Tout le travail se fait directement dans la session courante.
 
+## Économie de tokens
+
+Demande de l'utilisateur (2026-10-01) : les sessions consomment trop de quota
+hebdomadaire.
+
+- Messages courts : l'essentiel et la question à trancher, pas de récit.
+- Regrouper le travail en peu d'étapes ; ne pas relire un fichier déjà lu
+  ni vérifier chaque petit pas.
+- Vérifier une fois, à la fin d'un lot (tests, `tsc`), pas après chaque
+  modification.
+- Lire seulement les passages utiles (`grep`, plages de lignes), jamais un
+  gros fichier entier sans raison.
+- Pas d'exploration ni de rendu d'images (PDF, captures) sans nécessité
+  réelle.
+
 ## Structure du workspace
 
 Depuis le 2026-09-12, ADJUJA est **de nouveau un dépôt unique**, à la racine de ce

@@ -1,4 +1,6 @@
-from sqlalchemy import Boolean, ForeignKey, Index, Integer, String, Text, UniqueConstraint
+from decimal import Decimal
+
+from sqlalchemy import Boolean, ForeignKey, Index, Integer, Numeric, String, Text, UniqueConstraint
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from typing import Any, Optional
@@ -510,3 +512,54 @@ class AdminAction(Base):
     task_id:       Mapped[str | None]       = mapped_column(String(255), nullable=True)
     statut:        Mapped[str]              = mapped_column(String(20), nullable=False)
     resultat:      Mapped[dict[str, Any] | None] = mapped_column(JSONB, nullable=True)
+
+
+class AoSuivi(Base):
+    """Suivi d'un dossier après dépôt (migration 020). Une ligne par dossier.
+
+    `nature_marche` fixe la règle d'attribution (décret 2-22-431, art. 43) ;
+    `poids_financier` et `seuil_technique` viennent du règlement de
+    consultation, pour les études seulement (art. 144). Nos propres statuts
+    administratif et technique sont ceux de notre ligne dans
+    `ao_offres_concurrentes` (`est_nous`).
+    """
+
+    __tablename__ = "ao_suivi"
+
+    ao_id:            Mapped[str]             = mapped_column(
+        String(36), ForeignKey("appels_offres.id", ondelete="CASCADE"), primary_key=True)
+    nature_marche:    Mapped[str]             = mapped_column(String(30), nullable=False, default="travaux")
+    estimation_mad:   Mapped[Decimal | None]  = mapped_column(Numeric(15, 2), nullable=True)
+    poids_financier:  Mapped[Decimal | None]  = mapped_column(Numeric(5, 2), nullable=True)
+    seuil_technique:  Mapped[Decimal | None]  = mapped_column(Numeric(5, 2), nullable=True)
+    date_depot:       Mapped[str | None]      = mapped_column(String(50), nullable=True)
+    date_ouverture:   Mapped[str | None]      = mapped_column(String(50), nullable=True)
+    statut_final:     Mapped[str]             = mapped_column(String(20), nullable=False, default="en_attente")
+    attributaire:     Mapped[str | None]      = mapped_column(String(255), nullable=True)
+    montant_attribue: Mapped[Decimal | None]  = mapped_column(Numeric(15, 2), nullable=True)
+    source:           Mapped[str]             = mapped_column(String(10), nullable=False, default="saisie")
+    created_at:       Mapped[str]             = mapped_column(String(50), nullable=False)
+    updated_at:       Mapped[str]             = mapped_column(String(50), nullable=False)
+    updated_by:       Mapped[str | None]      = mapped_column(String(36), nullable=True)
+
+
+class AoOffreConcurrente(Base):
+    """Une offre déposée sur un dossier suivi, la nôtre comprise (`est_nous`).
+    Le montant pris en compte est le montant corrigé par la commission s'il
+    existe, sinon le montant lu en séance (art. 43, rectification des erreurs)."""
+
+    __tablename__ = "ao_offres_concurrentes"
+    __table_args__ = (Index("idx_offres_concurrentes_ao", "ao_id", "ordre"),)
+
+    id:              Mapped[str]            = mapped_column(String(36), primary_key=True)
+    ao_id:           Mapped[str]            = mapped_column(
+        String(36), ForeignKey("appels_offres.id", ondelete="CASCADE"), nullable=False)
+    nom:             Mapped[str]            = mapped_column(String(255), nullable=False)
+    est_nous:        Mapped[bool]           = mapped_column(Boolean, nullable=False, default=False)
+    montant_lu:      Mapped[Decimal | None] = mapped_column(Numeric(15, 2), nullable=True)
+    montant_corrige: Mapped[Decimal | None] = mapped_column(Numeric(15, 2), nullable=True)
+    statut:          Mapped[str]            = mapped_column(String(30), nullable=False, default="en_attente")
+    motif:           Mapped[str | None]     = mapped_column(Text, nullable=True)
+    note_technique:  Mapped[Decimal | None] = mapped_column(Numeric(5, 2), nullable=True)
+    ordre:           Mapped[int]            = mapped_column(Integer, nullable=False, default=0)
+    created_at:      Mapped[str]            = mapped_column(String(50), nullable=False)

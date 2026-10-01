@@ -2,7 +2,7 @@
 // Decoupe depuis l'ancien src/api.ts monolithique (2026-09-12).
 
 import { authHeaders, readJson } from '../../shared/lib/http';
-import type { FitScore } from './types';
+import type { FitScore, OffreSaisie, Suivi, SuiviData } from './types';
 import type { AoDocumentOut, AoMode, AoResponse, AoStatus, AoStep, AoStepKey, AoSummary, StepAssistResponse } from '../../types';
 
 // ── Pipeline Appel d'offres (Phase 4) ────────────────────────────────────────
@@ -160,4 +160,31 @@ export async function deleteAo(aoId: string): Promise<void> {
 export async function fetchFitScore(aoId: string): Promise<FitScore> {
   const res = await fetch(`/api/v1/ao/${aoId}/fit-score`, { headers: authHeaders() });
   return readJson<FitScore>(res, 'Impossible de calculer le score de compatibilite.');
+}
+
+/* ---------------------------------------------- suivi après dépôt (2026-10-01) */
+
+export async function fetchSuivi(aoId: string): Promise<Suivi> {
+  const res = await fetch(`/api/v1/ao/${aoId}/suivi`, { headers: authHeaders() });
+  return readJson<Suivi>(res, 'Impossible de lire le suivi du dossier.');
+}
+
+/** Crée le suivi au premier appel (« marquer comme déposé »), le remplace ensuite. */
+export async function enregistrerSuivi(aoId: string, data: SuiviData): Promise<Suivi> {
+  const res = await fetch(`/api/v1/ao/${aoId}/suivi`, {
+    method: 'PUT',
+    headers: { ...authHeaders(), 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
+  return readJson<Suivi>(res, "Impossible d'enregistrer le suivi.");
+}
+
+/** Remplace le tableau des offres ; renvoie le classement recalculé. */
+export async function enregistrerOffres(aoId: string, offres: OffreSaisie[]): Promise<Suivi> {
+  const res = await fetch(`/api/v1/ao/${aoId}/suivi/offres`, {
+    method: 'PUT',
+    headers: { ...authHeaders(), 'Content-Type': 'application/json' },
+    body: JSON.stringify({ offres }),
+  });
+  return readJson<Suivi>(res, "Impossible d'enregistrer les offres.");
 }

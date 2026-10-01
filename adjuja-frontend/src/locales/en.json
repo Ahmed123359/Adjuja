@@ -2230,5 +2230,120 @@
         "connexion": "Last login"
       }
     }
+  },
+  "suivi": {
+    "titre": "Submission tracking",
+    "deposeLe": "Submitted on {{date}}",
+    "chargement": "Loading tracking…",
+    "invitation": "Once the file is submitted, track it to the result: enter what is read out at the bid opening session (admitted, rejected, amounts) and Adjuja immediately computes the ranking set by the decree, without waiting for the minutes to be published.",
+    "marquerDepose": "Mark as submitted",
+    "enregistrer": "Save",
+    "vous": "you",
+    "marche": {
+      "titre": "The contract",
+      "aide": "The type of contract sets the award rule (decree 2-22-431, art. 43). The contracting authority's estimate is read out at the session before the financial bids are opened.",
+      "nature": "Type of contract",
+      "estimation": "Contracting authority's estimate (MAD incl. tax)",
+      "seance": "Bid opening session date",
+      "poids": "Weight of the financial score (tender rules, 10 to 40)",
+      "seuil": "Technical eligibility threshold (out of 100)",
+      "suggestion": "Estimate published on the portal: {{montant}} MAD.",
+      "utiliser": "Use this amount"
+    },
+    "nature": {
+      "travaux": "Works",
+      "fournitures": "Supplies",
+      "services": "Services (excluding studies)",
+      "etudes": "Studies",
+      "gardiennage_nettoyage": "Security, cleaning, green spaces"
+    },
+    "offres": {
+      "titre": "Bids read out at the session",
+      "aide": "One row per bidder, yours included. The corrected amount (calculation errors fixed by the committee) takes precedence over the amount read out.",
+      "nom": "Bidder",
+      "votreOffre": "Your bid",
+      "statut": "Status",
+      "motif": "Reason for rejection",
+      "montantLu": "Amount read out",
+      "montantCorrige": "Corrected amount",
+      "note": "Technical score",
+      "retirer": "Remove {{nom}}",
+      "ajouter": "Add a competitor",
+      "calculer": "Save and compute",
+      "montantInvalide": "An amount cannot be read: digits only, comma or dot for cents."
+    },
+    "statutOffre": {
+      "en_attente": "Not known yet",
+      "admis": "Admitted",
+      "ecarte_administratif": "Rejected (administrative file)",
+      "ecarte_technique": "Rejected (technical bid)"
+    },
+    "classement": {
+      "titre": "Expected ranking",
+      "gagnante": "Best bid",
+      "rang": "Rank {{rang}}",
+      "gagnantPrevu": "Expected winner: {{nom}}, {{montant}} MAD",
+      "vousGagnez": "Your bid would be selected.",
+      "prixReference": "Reference price: {{p}} MAD",
+      "votreRang": "your rank: {{rang}}",
+      "ecart": "you are {{ecart}} MAD {{sens}} the winning bid",
+      "auDessus": "above",
+      "enDessous": "below",
+      "vousEcarte": "your bid is excluded from the computation",
+      "col": {
+        "resultat": "Result",
+        "soumissionnaire": "Bidder",
+        "montant": "Amount used (MAD)",
+        "noteFinanciere": "Financial score",
+        "noteGlobale": "Overall score",
+        "taux": "Mark-up rate",
+        "ecartReference": "Gap to reference price"
+      }
+    },
+    "issue": {
+      "retenue": "Kept",
+      "excessive": "Excluded: excessive (more than 20 % above the estimate)",
+      "anormalement_basse": "Excluded: abnormally low",
+      "ecarte_administratif": "Rejected at the administrative file",
+      "ecarte_technique": "Rejected at the technical bid",
+      "sous_seuil_technique": "Below the technical threshold",
+      "sans_montant": "Amount not entered"
+    },
+    "raison": {
+      "estimation_manquante": "Enter the contracting authority's estimate to compute the ranking.",
+      "aucune_offre": "Add the bids read out at the session to compute the ranking.",
+      "aucune_offre_retenue": "No bid remains after exclusions: the tender would be declared unsuccessful.",
+      "ponderation_manquante": "Studies: enter the weight of the financial score set by the tender rules (10 to 40).",
+      "ponderation_hors_bornes": "Studies: the weight of the financial score must be between 10 and 40 (art. 144).",
+      "notes_techniques_manquantes": "Studies: enter the technical score of each admitted bid."
+    },
+    "avertissement": {
+      "statuts_supposes_admis": "Bids whose status is not known yet are assumed admitted.",
+      "anormalement_basse_sous_reserve": "An abnormally low bid is only excluded after its justification is refused by the committee: the actual ranking may differ.",
+      "ex_aequo": "Tie for first place: the committee decides according to the preferences set by the decree.",
+      "methode_note_financiere_rc": "Financial score computed per article 144 (100 points to the lowest bid); the tender rules may set another method.",
+      "reserve_art20_non_verifiee": "Ranked by lowest mark-up rate (art. 43); the article 20 reservation is not checked here."
+    },
+    "regle": {
+      "travaux": "Works: excessive bids (more than 20 % above the estimate) and abnormally low bids (more than 20 % below) are excluded; the reference price is the average of the estimate and the average of the remaining bids; the best bid is the closest to that price from below (art. 43 and 44).",
+      "fournitures": "Supplies: excessive (more than 20 %) and abnormally low bids (more than 25 % below) excluded, then the closest to the reference price from below (art. 43 and 44).",
+      "services": "Services excluding studies: excessive (more than 20 %) and abnormally low bids (more than 25 % below) excluded, then the closest to the reference price from below (art. 43 and 44).",
+      "etudes": "Studies: technical threshold, excessive and abnormally low bids excluded, financial score of 100 to the lowest bid, overall score weighted per the tender rules (art. 144).",
+      "gardiennage_nettoyage": "Security, cleaning, green spaces: the lowest mark-up rate applied to the estimate wins (art. 43)."
+    },
+    "resultat": {
+      "titre": "Official result",
+      "aide": "To fill in when the result is published or notified: it stays next to the expected ranking for comparison.",
+      "statut": "Result",
+      "attributaire": "Awardee",
+      "montant": "Awarded amount (MAD)"
+    },
+    "statutFinal": {
+      "en_attente": "Pending",
+      "retenu": "Our bid is selected",
+      "non_retenu": "Not selected",
+      "infructueux": "Tender unsuccessful",
+      "annule": "Tender cancelled"
+    }
   }
 }

@@ -22,6 +22,7 @@ import { AoDetailHeader } from "./AoDetailHeader";
 import { ErrorNotice } from "./ErrorNotice";
 import { ProgressBar } from "./ProgressBar";
 import { DossierSection } from "./DossierSection";
+import { SuiviDepot } from "./suivi/SuiviDepot";
 import { FicheAnalyse, SECTIONS_EXPRESS } from "./analyse/FicheAnalyse";
 
 export function AoDetailView({ aoId, onBack }: { aoId: string; onBack: () => void }) {
@@ -282,6 +283,10 @@ export function AoDetailView({ aoId, onBack }: { aoId: string; onBack: () => voi
           {/* Parcours accompagne : remplace la barre de progression, c'est le
               stepper qui porte l'etat quand ce regime est actif. */}
           {isGuided && <GuidedPipeline ao={ao} onAoChanged={load} />}
+
+          {/* Suivi apres depot (2026-10-01) : un dossier termine, dans les deux
+              modes, se suit jusqu'au resultat ; c'est alors le sujet principal. */}
+          {ao.statut === "termine" && <SuiviDepot aoId={ao.id} />}
 
           {/* Progress */}
           {(isPipelineRunning || isPipelineDone) && (

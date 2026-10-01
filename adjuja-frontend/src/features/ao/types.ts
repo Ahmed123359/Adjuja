@@ -179,3 +179,66 @@ export interface AnalyseAo {
     sans_texte?: string[];
   };
 }
+
+/* ---------------------------------------------- suivi après dépôt (2026-10-01) */
+// Miroir de adjuja-backend/app/models/suivi.py. Les montants arrivent en
+// chaînes (Decimal côté serveur) : « 983333.33 ».
+
+export type NatureMarche = 'travaux' | 'fournitures' | 'services' | 'etudes' | 'gardiennage_nettoyage';
+export type StatutFinal = 'en_attente' | 'retenu' | 'non_retenu' | 'infructueux' | 'annule';
+export type StatutOffre = 'en_attente' | 'admis' | 'ecarte_administratif' | 'ecarte_technique';
+
+export interface SuiviData {
+  nature_marche: NatureMarche;
+  estimation_mad: string | null;
+  poids_financier: string | null;
+  seuil_technique: string | null;
+  date_depot: string | null;
+  date_ouverture: string | null;
+  statut_final: StatutFinal;
+  attributaire: string | null;
+  montant_attribue: string | null;
+}
+
+export interface OffreSaisie {
+  nom: string;
+  est_nous: boolean;
+  montant_lu: string | null;
+  montant_corrige: string | null;
+  statut: StatutOffre;
+  motif: string | null;
+  note_technique: string | null;
+}
+
+export interface OffreCalculee extends OffreSaisie {
+  id: string;
+  /** retenue | excessive | anormalement_basse | ecarte_administratif |
+   *  ecarte_technique | sous_seuil_technique | sans_montant ; null si non calculé. */
+  issue: string | null;
+  rang: number | null;
+  ecart_reference_pct: string | null;
+  taux_majoration_pct: string | null;
+  note_financiere: string | null;
+  note_globale: string | null;
+  gagnante: boolean;
+}
+
+export interface ClassementPrevu {
+  calculable: boolean;
+  raison: string | null;
+  prix_reference: string | null;
+  gagnante_id: string | null;
+  avertissements: string[];
+  notre_rang: number | null;
+  ecart_avec_gagnante: string | null;
+}
+
+export interface Suivi {
+  ouvert: boolean;
+  suivi: SuiviData | null;
+  offres: OffreCalculee[];
+  classement: ClassementPrevu | null;
+  estimation_suggeree: string | null;
+  nature_suggeree: NatureMarche | null;
+  nom_entreprise: string;
+}
