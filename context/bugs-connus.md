@@ -18,6 +18,25 @@ règle) · `À CONFIRMER` (soupçonné, pas encore reproduit).
 
 ## OUVERT
 
+### Email de veille : estimation et caution « Non publiée » sur les AO allotis, « 0 DH »
+
+`adjuja-watcher/app/modules/ao_scraper/mpe.py`, `adjuja-notification/app/templates/ao_digest.py`
+
+Signalé par l'utilisateur le 2026-10-02 (email de production). Deux causes,
+vérifiées sur le portail :
+- **AO alloti** : la page de synthèse indique « N Lots » et laisse estimation
+  et caution vides ; elles sont publiées **par lot** sur une page à part
+  (`commun.PopUpDetailLots`), que la lecture de la page détail ne suivait pas.
+- **Caution nulle** : le portail publie 0 quand aucune caution n'est exigée,
+  l'email affichait « 0 DH ».
+
+**Corrigé dans le code le 2026-10-02** : pour un AO alloti, la page des lots
+est lue et les estimations et cautions sont additionnées (vérifié en réel sur
+l'AO 1041008 : 104 324 532,10 DH, caution 1 664 000 DH ; test
+`test_sommes_lots`) ; une caution nulle s'affiche « Non exigée ». Reste : après
+déploiement, lancer le rattrapage des détails (panneau d'administration) pour
+compléter les AO allotis déjà en base.
+
 ### Partage du lien : l'aperçu affiche encore « OffrIA / Offria.cloud »
 
 `adjuja-frontend/public/og-image.png`, `index.html`

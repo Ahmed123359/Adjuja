@@ -251,11 +251,16 @@ def _echeance(d: date | None) -> tuple[str, str, str]:
     return libelle, NEUTRE, NEUTRE_FOND
 
 
-def _montant(v: Decimal | None) -> tuple[str, str]:
+def _montant(v: Decimal | None, zero: str | None = None) -> tuple[str, str]:
     """(texte, couleur). Montant exact au format francais (1 779 718,56 DH),
-    centimes omis s'ils sont nuls. Absent = non publie par le portail."""
+    centimes omis s'ils sont nuls. Absent = non publie par le portail.
+    `zero` : libelle d'un montant nul publie (« Non exigée » pour une caution :
+    le portail publie 0 quand aucune caution n'est demandee, l'email
+    affichait « 0 DH », signale le 2026-10-02)."""
     if v is None:
         return "Non publiée", DISCRET
+    if zero is not None and v == 0:
+        return zero, DISCRET
     entier, _, centimes = f"{v:,.2f}".partition(".")
     texte = entier.replace(",", "&#8239;")  # espace fine insecable
     if centimes != "00":
@@ -323,7 +328,7 @@ class AoDigestTemplate(NotificationTemplate):
         for ao in aos:
             echeance, echeance_couleur, echeance_fond = _echeance(ao.date_limite)
             estimation, estimation_couleur = _montant(ao.budget_estime)
-            caution, caution_couleur = _montant(ao.caution)
+            caution, caution_couleur = _montant(ao.caution, zero="Non exigée")
             # Portee (national / international) quand elle est ecrite, sinon la
             # procedure du portail.
             type_ao = _portee(ao.titre, ao.portee_analyse) or ao.mode_passation
@@ -361,8 +366,8 @@ class AoDigestTemplate(NotificationTemplate):
                 lines.append(f"  Acheteur : {_acheteur(ao.acheteur)}")
             if _ville(ao.ville):
                 lines.append(f"  Ville : {_ville(ao.ville)}")
-            for libelle, valeur in (("Estimation", ao.budget_estime), ("Caution", ao.caution)):
-                texte, _ = _montant(valeur)
+            for libelle, valeur, zero in (("Estimation", ao.budget_estime, None), ("Caution", ao.caution, "Non exigée")):
+                texte, _ = _montant(valeur, zero=zero)
                 lines.append(f"  {libelle} : {texte.replace('&#8239;', ' ').replace('&nbsp;', ' ')}")
             if type_ao := _portee(ao.titre, ao.portee_analyse) or ao.mode_passation:
                 lines.append(f"  Type : {type_ao}")

@@ -80,3 +80,17 @@ def test_liens_pieces_jointes_id_non_vide() -> None:
     liens = liens_pieces_jointes(html, "https://www.marchespublics.gov.ma")
     assert [l["id_avis"] for l in liens] == ["532542"]
     assert liens[0]["url"].startswith("https://www.marchespublics.gov.ma/index.php?page=entreprise.EntrepriseDownloadAvisJAL")
+
+
+# ── AO alloti : estimation et caution par lot (2026-10-02) ───────────────────
+
+def test_sommes_lots() -> None:
+    from app.modules.ao_scraper.mpe import sommes_lots
+    p = "ctl0_CONTENU_PAGE_repeaterLots_ctl{}_"
+    html = "".join(
+        f'<span id="{p.format(i)}idReferentielZoneTextLot_RepeaterReferentielZoneText_ctl0_labelReferentielZoneText">{e}</span>'
+        f'<span id="{p.format(i)}cautionProvisoire">{c}</span>'
+        for i, (e, c) in enumerate([("56 504 964,10", "904 000,00 DH"), ("40 000 000,00", "640 000,00 DH")])
+    )
+    assert sommes_lots(html) == (Decimal("96504964.10"), Decimal("1544000.00"))
+    assert sommes_lots("<html></html>") == (None, None)

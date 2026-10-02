@@ -71,6 +71,21 @@ def _parse_amount(raw: str) -> Decimal | None:
         return None
 
 
+def sommes_lots(html: str) -> tuple[Decimal | None, Decimal | None]:
+    """(estimation totale, caution totale) depuis la page « détail des lots »
+    d'un AO alloti (commun.PopUpDetailLots). None si aucun lot ne publie la
+    valeur. Ids vérifiés sur le portail le 2026-10-02."""
+    soup = BeautifulSoup(html, "html.parser")
+
+    def somme(motif: str) -> Decimal | None:
+        valeurs = [_parse_amount(el.get_text(strip=True)) for el in soup.find_all(id=re.compile(motif))]
+        valeurs = [v for v in valeurs if v is not None]
+        return sum(valeurs, Decimal(0)) if valeurs else None
+
+    return (somme(r"^ctl0_CONTENU_PAGE_repeaterLots_ctl\d+_.*_labelReferentielZoneText$"),
+            somme(r"^ctl0_CONTENU_PAGE_repeaterLots_ctl\d+_cautionProvisoire$"))
+
+
 def _extract_ref_org(href: str) -> tuple[str, str] | None:
     """Parse refConsultation and orgAcronyme from a detail page href."""
     qs = parse_qs(urlparse(href).query)
@@ -363,6 +378,26 @@ class MPEPlatformScraper(IAOScraper):
         budget_el = soup.select_one(detail_cfg.get("budget_selector", ""))
         budget_raw = budget_el.get_text(strip=True) if budget_el else ""
 
+        budget = _parse_amount(budget_raw)
+        caution = _parse_amount(caution_raw)
+        # AO alloti : la page de synthèse laisse estimation et caution vides,
+        # elles sont publiées par lot sur une page à part. Constaté en
+        # production le 2026-10-02 (email « Non publiée » sur un AO en deux
+        # lots). On additionne les lots.
+        lots_el = soup.find(id=f"{prefix}nbrLots")  # absent de la config : lu directement
+        nb_lots = re.search(r"\d+", lots_el.get_text(strip=True) if lots_el else "")
+        if nb_lots and int(nb_lots.group()) > 1 and (budget is None or caution is None):
+            try:
+                lots_url = (f"{self.base_url}/index.php?page=commun.PopUpDetailLots"
+                            f"&orgAccronyme={org}&refConsultation={external_id}&lang=fr")
+                lots = await self._get_http().get(lots_url)
+                lots.raise_for_status()
+                total_budget, total_caution = sommes_lots(lots.text)
+                budget = budget if budget is not None else total_budget
+                caution = caution if caution is not None else total_caution
+            except Exception as e:
+                log.warning("Detail des lots illisible", ref=external_id, error=str(e))
+
         # Date publication : essayer le champ config d'abord, puis recherche par ID
         date_pub_raw = get_field("date_publication")
         if not date_pub_raw:
@@ -387,8 +422,8 @@ class MPEPlatformScraper(IAOScraper):
             categorie=categorie or None,
             secteur=secteur or None,
             ville=lieu or None,
-            budget_estime=_parse_amount(budget_raw),
-            caution=_parse_amount(caution_raw),
+            budget_estime=budget,
+            caution=caution,
             zip_url=zip_url,
             mode_passation=mode_passation or None,
             reference=reference or None,
