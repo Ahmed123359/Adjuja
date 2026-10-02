@@ -18,6 +18,24 @@ règle) · `À CONFIRMER` (soupçonné, pas encore reproduit).
 
 ## OUVERT
 
+### Serveur de production saturé en mémoire (OOM), SSH impossible
+
+Serveur Hetzner 4 Go, `adjuja-infra/docker-compose.yml`
+
+Constaté par l'utilisateur le 2026-10-02 (console Hetzner) : le noyau tue des
+processus en boucle, `systemd` compris, la connexion SSH échoue. Plus gros
+consommateurs : Chromium de Playwright (`headless_shell`, 300 à 430 Mo chacun,
+2 en parallèle dans le worker de veille), l'application Java du projet voisin
+(`docker`), les workers Celery (4 + 2 + 10 processus). Aucune mémoire
+d'échange.
+
+**Corrigé dans le code le 2026-10-02** : worker de veille à 1 processus
+(recyclé toutes les 20 tâches) et plafonné à 1200 Mo, API de veille à 900 Mo,
+`celery-io` 4 -> 2, `celery-cpu` 2 -> 1, notifications 10 -> 2. **Reste côté
+serveur** : redémarrer depuis la console Hetzner, ajouter 4 Go de swap,
+déployer. **Arbitrage utilisateur** : 4 Go pour deux applications et deux
+bases est juste ; passer à 8 Go ou déplacer le projet voisin.
+
 ### Email de veille : estimation et caution « Non publiée » sur les AO allotis, « 0 DH »
 
 `adjuja-watcher/app/modules/ao_scraper/mpe.py`, `adjuja-notification/app/templates/ao_digest.py`

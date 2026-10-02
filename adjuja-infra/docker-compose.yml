@@ -131,7 +131,7 @@ services:
     command: >
       celery -A app.celery_app.celery_app worker
       --queues=celery_io
-      --concurrency=4
+      --concurrency=2
       --loglevel=info
       --hostname=celery-io@%h
     # Le HEALTHCHECK du Dockerfile teste http://localhost:8000/health -- pertinent pour
@@ -182,7 +182,7 @@ services:
     command: >
       celery -A app.celery_app.celery_app worker
       --queues=celery_cpu
-      --concurrency=2
+      --concurrency=1
       --loglevel=info
       --hostname=celery-cpu@%h
     # Voir le commentaire equivalent sur celery-io -- meme cause, meme fix.
@@ -308,6 +308,8 @@ services:
         condition: service_healthy
       api:
         condition: service_healthy
+    # Lance aussi Chromium (téléchargement des DCE) : même garde-fou.
+    mem_limit: 900m
     networks:
       - ao_network
 
@@ -319,9 +321,14 @@ services:
     command: >
       celery -A app.workers.celery_app.celery_app worker
       --pool=prefork
-      --concurrency=2
+      --concurrency=1
+      --max-tasks-per-child=20
       --loglevel=info
       --hostname=ao-watcher-worker@%h
+    # Serveur de 4 Go saturé le 2026-10-02 (OOM en boucle, SSH impossible) :
+    # chaque Chromium de Playwright prend 300 à 430 Mo. Un seul navigateur à
+    # la fois, et un plafond : un dépassement tue ce conteneur, pas l'hôte.
+    mem_limit: 1200m
     environment:
       DATABASE_URL: postgresql+asyncpg://offria:${POSTGRES_PASSWORD}@postgres:5432/offria
       REDIS_URL: redis://redis:6379/3
@@ -403,7 +410,7 @@ services:
     command: >
       celery -A app.workers.celery_app.celery_app worker
       --pool=gevent
-      --concurrency=10
+      --concurrency=2
       --loglevel=info
       --hostname=notification-worker@%h
     environment:
